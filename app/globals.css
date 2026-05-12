@@ -253,14 +253,13 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--border);
   border-radius: var(--r);
   padding: 22px;
-  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+  transition: background 0.3s, border-color 0.3s;
   position: relative;
   overflow: hidden;
 }
 .bento-card:hover {
   background: var(--card-hover);
   border-color: var(--border-hover);
-  transform: translateY(-2px);
 }
 .bento-card::after {
   content: '';

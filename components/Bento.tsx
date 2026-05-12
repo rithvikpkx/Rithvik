@@ -1,5 +1,6 @@
+"use client";
+import { motion } from "motion/react";
 import LocalTime from "./LocalTime";
-import FadeIn from "./FadeIn";
 
 const stack = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
@@ -7,19 +8,43 @@ const stack = [
   "NumPy","Pandas","scikit-learn","OpenAI API",
 ];
 
+const grid = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const card = {
+  hidden: { opacity: 0, filter: "blur(8px)", y: 20 },
+  visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
+};
+
 export default function Bento() {
   return (
     <section className="bento-section">
-      <div className="bento-grid">
+      <motion.div
+        className="bento-grid"
+        variants={grid}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+      >
 
-        <FadeIn delay={0.05} className="bento-card bento-location">
+        <motion.div
+          className="bento-card bento-location"
+          variants={card}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
           <p className="card-eyebrow">Location</p>
           <h3 className="card-title">West Lafayette, IN</h3>
           <p className="card-sub">Purdue University</p>
           <LocalTime />
-        </FadeIn>
+        </motion.div>
 
-        <FadeIn delay={0.15} className="bento-card bento-building">
+        <motion.div
+          className="bento-card bento-building"
+          variants={card}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
           <p className="card-eyebrow">Currently Building</p>
           <h3 className="card-title">Rithvik.ai</h3>
           <p className="card-sub">
@@ -31,9 +56,13 @@ export default function Bento() {
               <span key={t}>{t}</span>
             ))}
           </div>
-        </FadeIn>
+        </motion.div>
 
-        <FadeIn delay={0.25} className="bento-card bento-stats">
+        <motion.div
+          className="bento-card bento-stats"
+          variants={card}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
           <p className="card-eyebrow">By the numbers</p>
           <div className="stats-grid">
             {[
@@ -47,9 +76,13 @@ export default function Bento() {
               </div>
             ))}
           </div>
-        </FadeIn>
+        </motion.div>
 
-        <FadeIn delay={0.35} className="bento-card bento-marquee">
+        <motion.div
+          className="bento-card bento-marquee"
+          variants={card}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
           <p className="card-eyebrow">Stack</p>
           <div className="marquee-wrapper">
             <div className="marquee-track">
@@ -58,9 +91,13 @@ export default function Bento() {
               ))}
             </div>
           </div>
-        </FadeIn>
+        </motion.div>
 
-        <FadeIn delay={0.45} className="bento-card bento-interests">
+        <motion.div
+          className="bento-card bento-interests"
+          variants={card}
+          whileHover={{ y: -3, transition: { duration: 0.2 } }}
+        >
           <p className="card-eyebrow">Interests</p>
           <div className="interests-list">
             {[
@@ -70,9 +107,9 @@ export default function Bento() {
               <span key={i}>{i}</span>
             ))}
           </div>
-        </FadeIn>
+        </motion.div>
 
-      </div>
+      </motion.div>
     </section>
   );
 }
