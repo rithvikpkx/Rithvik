@@ -27,3 +27,5 @@ Final:
 - Always write a short 1-2 sentence description of functions.
 - Include a short 1 line comment for any potentially confusing or convoluted sections of code.
 - Keep code human readable and easily understandable when possible.
+- Always develop in vertical slices across the full stack to keep developments visible, testable, and clear.
+- Always self-test your code and validate everything for minimum bugs and error.
