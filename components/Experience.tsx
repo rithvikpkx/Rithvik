@@ -1,27 +1,17 @@
-"use client";
-import { motion } from "motion/react";
+import { serverClient } from "@/lib/supabase";
+import type { Experience as ExperienceRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
+import TimelineBeam from "./TimelineBeam";
 
-const entries = [
-  {
-    org: "Purdue University",
-    date: "Aug 2023 — Present",
-    role: "B.S. Computer Science + Mathematics",
-    desc: "Studying CS and Math with a focus on software engineering, AI systems, and applied mathematics. Building end-to-end projects alongside coursework.",
-    tags: ["CS", "Mathematics", "AI"],
-    delay: 0.1,
-  },
-  {
-    org: "Independent Projects",
-    date: "2023 — Present",
-    role: "Builder",
-    desc: "Shipping full-stack and AI projects across web development, computer vision, browser automation, and education technology.",
-    tags: ["Full Stack", "AI", "Open Source"],
-    delay: 0.2,
-  },
-];
+export default async function Experience() {
+  const { data } = await serverClient()
+    .from("experience")
+    .select("*")
+    .order("sort_order");
+  const entries = (data ?? []) as ExperienceRow[];
 
-export default function Experience() {
+  if (!entries.length) return null;
+
   return (
     <section className="experience-section" id="experience">
       <FadeIn>
@@ -33,22 +23,18 @@ export default function Experience() {
 
       <div className="timeline">
         <div className="timeline-beam">
-          <motion.div
-            className="timeline-beam-glow"
-            animate={{ top: ["-50%", "120%"] }}
-            transition={{ duration: 3.2, ease: "easeInOut", repeat: Infinity }}
-          />
+          <TimelineBeam />
         </div>
-        {entries.map(({ org, date, role, desc, tags, delay }) => (
-          <FadeIn key={org} delay={delay} className="timeline-entry">
+        {entries.map(({ slug, org, date_range, role, description, tags }, i) => (
+          <FadeIn key={slug} delay={i * 0.1} className="timeline-entry">
             <div className="timeline-dot" />
             <div className="timeline-content">
               <div className="timeline-header">
                 <h3>{org}</h3>
-                <span className="timeline-date">{date}</span>
+                <span className="timeline-date">{date_range}</span>
               </div>
               <p className="timeline-role">{role}</p>
-              <p className="timeline-desc">{desc}</p>
+              <p className="timeline-desc">{description}</p>
               <div className="timeline-tags">
                 {tags.map((t) => <span key={t}>{t}</span>)}
               </div>
