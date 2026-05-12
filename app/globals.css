@@ -695,6 +695,97 @@ a { color: inherit; text-decoration: none; }
 }
 .footer-sub { font-family: var(--mono); font-size: 0.74rem; }
 
+.footer-admin-link {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--border);
+  transition: color 0.2s;
+}
+.footer-admin-link:hover { color: var(--muted); }
+
+/* ===== ADMIN ===== */
+.admin-login-wrap {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.admin-login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.admin-login-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.admin-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.admin-field input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.admin-field input:focus { border-color: var(--accent); }
+
+.admin-error {
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.admin-submit {
+  display: block;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  text-decoration: none;
+}
+.admin-submit:hover { opacity: 0.85; }
+.admin-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ===== RAG CHATBOT ===== */
 .rag-launcher {
   position: fixed;
