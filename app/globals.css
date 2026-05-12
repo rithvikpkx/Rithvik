@@ -584,18 +584,12 @@ a { color: inherit; text-decoration: none; }
   background: var(--border);
   overflow: hidden;
 }
-.timeline-beam::after {
-  content: '';
+.timeline-beam-glow {
   position: absolute;
   left: 0;
   width: 100%;
   height: 50%;
   background: linear-gradient(to bottom, transparent, var(--accent) 40%, transparent);
-  animation: beam 3.2s ease-in-out infinite;
-}
-@keyframes beam {
-  0%   { top: -50%; }
-  100% { top: 120%; }
 }
 
 .timeline-entry {
@@ -744,15 +738,6 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   box-shadow: 0 24px 72px rgba(0,0,0,0.55);
   transform-origin: bottom right;
-  transform: scale(0.94) translateY(10px);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease;
-}
-.rag-panel.open {
-  transform: scale(1) translateY(0);
-  opacity: 1;
-  pointer-events: all;
 }
 
 .rag-header {

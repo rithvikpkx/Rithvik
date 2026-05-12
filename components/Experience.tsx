@@ -1,3 +1,5 @@
+"use client";
+import { motion } from "motion/react";
 import FadeIn from "./FadeIn";
 
 const entries = [
@@ -30,7 +32,13 @@ export default function Experience() {
       </FadeIn>
 
       <div className="timeline">
-        <div className="timeline-beam" />
+        <div className="timeline-beam">
+          <motion.div
+            className="timeline-beam-glow"
+            animate={{ top: ["-50%", "120%"] }}
+            transition={{ duration: 3.2, ease: "easeInOut", repeat: Infinity }}
+          />
+        </div>
         {entries.map(({ org, date, role, desc, tags, delay }) => (
           <FadeIn key={org} delay={delay} className="timeline-entry">
             <div className="timeline-dot" />
