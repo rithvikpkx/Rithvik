@@ -7,12 +7,10 @@ import Experience from "@/components/Experience";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import RagBot from "@/components/RagBot";
-import SectionReveal from "@/components/SectionReveal";
 
 export default function Home() {
   return (
     <>
-      <SectionReveal />
       <Nav />
       <main>
         <Hero />

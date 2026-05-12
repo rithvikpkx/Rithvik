@@ -1,4 +1,4 @@
-import React from "react";
+import FadeIn from "./FadeIn";
 
 const links = [
   {
@@ -33,15 +33,15 @@ const links = [
 export default function Contact() {
   return (
     <section className="contact-section" id="contact">
-      <div className="contact-left blur-fade">
+      <FadeIn className="contact-left">
         <p className="eyebrow">Contact</p>
         <h2>Let&apos;s connect.</h2>
         <p className="contact-sub">
           I&apos;m always interested in software engineering, AI, startups, research, and ambitious
           technical projects.
         </p>
-      </div>
-      <div className="contact-links blur-fade" style={{ "--delay": "0.15s" } as React.CSSProperties}>
+      </FadeIn>
+      <FadeIn delay={0.15} className="contact-links">
         {links.map(({ href, label, icon }) => (
           <a
             key={label}
@@ -54,7 +54,7 @@ export default function Contact() {
             {label}
           </a>
         ))}
-      </div>
+      </FadeIn>
     </section>
   );
 }

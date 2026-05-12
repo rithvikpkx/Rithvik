@@ -1,4 +1,4 @@
-import React from "react";
+import FadeIn from "./FadeIn";
 
 export default function Hero() {
   return (
@@ -6,13 +6,13 @@ export default function Hero() {
       <div className="dot-grid" />
 
       <div className="hero-content">
-        <h1 className="hero-title blur-fade" style={{ "--delay": "0s" } as React.CSSProperties}>
+        <FadeIn delay={0} className="hero-title">
           Rithvik
           <br />
           <span className="gradient-text">Praveen Kumar</span>
-        </h1>
+        </FadeIn>
 
-        <div className="hero-sub blur-fade" style={{ "--delay": "0.15s" } as React.CSSProperties}>
+        <FadeIn delay={0.15} className="hero-sub">
           <p className="hero-tagline">
             CS + Math @{" "}
             <a
@@ -27,15 +27,12 @@ export default function Hero() {
           <p className="hero-sub-line">
             Building at the intersection of AI, systems, and real-world problems.
           </p>
-        </div>
+        </FadeIn>
 
-        <div
-          className="hero-actions blur-fade"
-          style={{ "--delay": "0.28s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.28} className="hero-actions">
           <a href="#projects" className="btn-shimmer">View Projects</a>
           <a href="#contact" className="btn-outline">Get in Touch</a>
-        </div>
+        </FadeIn>
       </div>
 
       <div className="scroll-indicator">

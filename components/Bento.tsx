@@ -1,5 +1,5 @@
-import React from "react";
 import LocalTime from "./LocalTime";
+import FadeIn from "./FadeIn";
 
 const stack = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
@@ -12,22 +12,14 @@ export default function Bento() {
     <section className="bento-section">
       <div className="bento-grid">
 
-        {/* Location */}
-        <div
-          className="bento-card bento-location blur-fade"
-          style={{ "--delay": "0.05s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.05} className="bento-card bento-location">
           <p className="card-eyebrow">Location</p>
           <h3 className="card-title">West Lafayette, IN</h3>
           <p className="card-sub">Purdue University</p>
           <LocalTime />
-        </div>
+        </FadeIn>
 
-        {/* Currently Building */}
-        <div
-          className="bento-card bento-building blur-fade"
-          style={{ "--delay": "0.15s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.15} className="bento-card bento-building">
           <p className="card-eyebrow">Currently Building</p>
           <h3 className="card-title">Rithvik.ai</h3>
           <p className="card-sub">
@@ -39,13 +31,9 @@ export default function Bento() {
               <span key={t}>{t}</span>
             ))}
           </div>
-        </div>
+        </FadeIn>
 
-        {/* Stats */}
-        <div
-          className="bento-card bento-stats blur-fade"
-          style={{ "--delay": "0.25s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.25} className="bento-card bento-stats">
           <p className="card-eyebrow">By the numbers</p>
           <div className="stats-grid">
             {[
@@ -59,13 +47,9 @@ export default function Bento() {
               </div>
             ))}
           </div>
-        </div>
+        </FadeIn>
 
-        {/* Marquee */}
-        <div
-          className="bento-card bento-marquee blur-fade"
-          style={{ "--delay": "0.35s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.35} className="bento-card bento-marquee">
           <p className="card-eyebrow">Stack</p>
           <div className="marquee-wrapper">
             <div className="marquee-track">
@@ -74,13 +58,9 @@ export default function Bento() {
               ))}
             </div>
           </div>
-        </div>
+        </FadeIn>
 
-        {/* Interests */}
-        <div
-          className="bento-card bento-interests blur-fade"
-          style={{ "--delay": "0.45s" } as React.CSSProperties}
-        >
+        <FadeIn delay={0.45} className="bento-card bento-interests">
           <p className="card-eyebrow">Interests</p>
           <div className="interests-list">
             {[
@@ -90,7 +70,7 @@ export default function Bento() {
               <span key={i}>{i}</span>
             ))}
           </div>
-        </div>
+        </FadeIn>
 
       </div>
     </section>

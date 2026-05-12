@@ -1,4 +1,4 @@
-import React from "react";
+import FadeIn from "./FadeIn";
 
 const entries = [
   {
@@ -7,7 +7,7 @@ const entries = [
     role: "B.S. Computer Science + Mathematics",
     desc: "Studying CS and Math with a focus on software engineering, AI systems, and applied mathematics. Building end-to-end projects alongside coursework.",
     tags: ["CS", "Mathematics", "AI"],
-    delay: "0.1s",
+    delay: 0.1,
   },
   {
     org: "Independent Projects",
@@ -15,26 +15,24 @@ const entries = [
     role: "Builder",
     desc: "Shipping full-stack and AI projects across web development, computer vision, browser automation, and education technology.",
     tags: ["Full Stack", "AI", "Open Source"],
-    delay: "0.2s",
+    delay: 0.2,
   },
 ];
 
 export default function Experience() {
   return (
     <section className="experience-section" id="experience">
-      <div className="section-header blur-fade">
-        <p className="eyebrow">Experience</p>
-        <h2>Where I&apos;ve been.</h2>
-      </div>
+      <FadeIn>
+        <div className="section-header">
+          <p className="eyebrow">Experience</p>
+          <h2>Where I&apos;ve been.</h2>
+        </div>
+      </FadeIn>
 
       <div className="timeline">
         <div className="timeline-beam" />
         {entries.map(({ org, date, role, desc, tags, delay }) => (
-          <div
-            key={org}
-            className="timeline-entry blur-fade"
-            style={{ "--delay": delay } as React.CSSProperties}
-          >
+          <FadeIn key={org} delay={delay} className="timeline-entry">
             <div className="timeline-dot" />
             <div className="timeline-content">
               <div className="timeline-header">
@@ -47,7 +45,7 @@ export default function Experience() {
                 {tags.map((t) => <span key={t}>{t}</span>)}
               </div>
             </div>
-          </div>
+          </FadeIn>
         ))}
       </div>
     </section>

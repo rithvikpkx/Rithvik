@@ -1,17 +1,20 @@
 import React from "react";
 import EduLogo from "./EduLogo";
+import FadeIn from "./FadeIn";
 
 export default function Education() {
   return (
     <section className="education-section" id="education">
-      <div className="section-header blur-fade">
-        <p className="eyebrow">Education</p>
-        <h2 style={{ fontSize: "clamp(2rem, 5vw, 3.6rem)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 0.95 }}>
-          Academic background.
-        </h2>
-      </div>
+      <FadeIn>
+        <div className="section-header">
+          <p className="eyebrow">Education</p>
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 3.6rem)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 0.95 }}>
+            Academic background.
+          </h2>
+        </div>
+      </FadeIn>
 
-      <div className="edu-card blur-fade" style={{ "--delay": "0.1s" } as React.CSSProperties}>
+      <FadeIn delay={0.1} className="edu-card">
         <EduLogo />
 
         <div className="edu-body">
@@ -39,7 +42,7 @@ export default function Education() {
             </span>
           </p>
         </div>
-      </div>
+      </FadeIn>
     </section>
   );
 }
