@@ -27,6 +27,8 @@ export const THEMABLE_TOKENS = [
   "border-hover",
   "nav-glass",
   "panel-glass",
+  // Optional typography override — themes may swap the body font (e.g. terminal)
+  "font",
 ] as const;
 
 export type ThemeTokenKey = (typeof THEMABLE_TOKENS)[number];
@@ -60,6 +62,18 @@ export const DEFAULT_LIGHT_TOKENS: ThemeTokens = {
   green:         "#16a34a",
 };
 
+/** Rithvik Terminal — green-on-black matrix style; swaps the body font to mono. */
+export const DEFAULT_TERMINAL_TOKENS: ThemeTokens = {
+  bg:            "#001a00",
+  "bg-soft":     "#002a00",
+  text:          "#00ff41",
+  muted:         "#008f24",
+  accent:        "#39ff14",
+  "accent-glow": "rgba(57,255,20,0.28)",
+  green:         "#39ff14",
+  font:          "var(--mono)",
+};
+
 /** Fallback theme list used if the themes table is empty (migration not run). */
 export const FALLBACK_THEMES: Theme[] = [
   {
@@ -78,6 +92,16 @@ export const FALLBACK_THEMES: Theme[] = [
     name: "Rithvik Light",
     tokens: DEFAULT_LIGHT_TOKENS as Record<string, string>,
     sort_order: 1,
+    published: true,
+    created_at: "",
+    updated_at: "",
+  },
+  {
+    id: "fallback-terminal",
+    slug: "rithvik-terminal",
+    name: "Rithvik Terminal",
+    tokens: DEFAULT_TERMINAL_TOKENS as Record<string, string>,
+    sort_order: 2,
     published: true,
     created_at: "",
     updated_at: "",

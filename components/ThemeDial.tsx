@@ -5,27 +5,25 @@ import type { CSSProperties } from "react";
 /**
  * Radial liquid-glass theme dial — tucked to the left edge.
  *
- * Items are stacked vertically inside a frosted-glass strip, but each is
- * rotated around its left edge so they fan out radially. The top item
- * tilts upward, the bottom tilts downward, and any items in between
- * spread between — together forming a half-circle dial the user picks
- * from. Hovering the strip slides labels in beside each swatch.
+ * Items fan around the currently SELECTED item, which sits horizontal at
+ * the pivot. Unselected items above tilt up; unselected items below tilt
+ * down. Clicking another option re-pivots: it becomes horizontal and the
+ * rest fan around it, with a spring-y transition that reads like a dial
+ * rotating into a new detent.
  *
  * Swatches are flat rounded squares with a linear gradient through the
- * theme's three major colors (bg → accent → text) so each preview is
- * recognizable at a glance.
+ * theme's three major colors (bg → accent → text).
  */
 
 const STEP_DEG = 18; // angle between adjacent items in the fan
-
-function angleFor(i: number, n: number): number {
-  return (i - (n - 1) / 2) * STEP_DEG;
-}
 
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
   if (sorted.length < 2) return null;
+
+  // Pivot the fan around the currently-selected item so it stays horizontal.
+  const selectedIdx = Math.max(0, sorted.findIndex((t) => t.slug === currentSlug));
 
   return (
     <aside
@@ -36,7 +34,7 @@ export default function ThemeDial() {
       <div className="theme-dial-content">
         {sorted.map((t, i) => {
           const active = t.slug === currentSlug;
-          const angle = angleFor(i, sorted.length);
+          const angle = (i - selectedIdx) * STEP_DEG;
           const optionStyle: CSSProperties = {
             transform: `rotate(${angle}deg)`,
           };
