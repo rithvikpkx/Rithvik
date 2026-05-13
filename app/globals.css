@@ -92,13 +92,13 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
-.dot-grid {
+.hero-flickering-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.052) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
+  width: 100%;
+  height: 100%;
+  mask-image: radial-gradient(ellipse 80% 75% at 50% 40%, black 20%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 40%, black 20%, transparent 100%);
   pointer-events: none;
 }
 
