@@ -216,6 +216,15 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 28px;
 }
 
+/* Edit-mode name lines inherit hero-title sizing; display:block so they stack */
+.hero-title-line {
+  display: block;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
 .gradient-text {
   background: linear-gradient(135deg, var(--accent) 0%, #9b5fe0 55%, #c44fa8 100%);
   -webkit-background-clip: text;

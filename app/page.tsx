@@ -30,7 +30,12 @@ export default async function Home() {
     <>
       <Nav />
       <main>
-        <Hero subLine={content["hero.sub_line"]} />
+        <Hero
+          subLine={content["hero.sub_line"]}
+          tagLine={content["hero.tagline"]}
+          nameLine1={content["hero.name.line1"]}
+          nameLine2={content["hero.name.line2"]}
+        />
         <Bento
           location={content["bento.location"]}
           building={bentoBuilding}
