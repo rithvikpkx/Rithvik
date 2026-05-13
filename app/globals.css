@@ -193,7 +193,85 @@ a { color: inherit; text-decoration: none; }
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  z-index: 90;
+  /* Above the theme wash (z 195) so the wave visually flows OUT of the dial */
+  z-index: 196;
+}
+
+/* ===== THEME WASH =====
+   Liquid-glass wave that sweeps across the viewport during a theme change.
+   The wave is a radial mask expanding from the dial position. Behind the
+   wave the incoming theme's bg fills; the wave's leading edge is the
+   incoming accent. A backdrop-filter blur+saturate refracts the page
+   beneath as the wave passes. */
+
+@property --wash-pos {
+  syntax: '<percentage>';
+  initial-value: 0%;
+  inherits: false;
+}
+
+.theme-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 195;
+  pointer-events: none;
+
+  --wash-pos: 0%;
+
+  /* Fill: bg color from the origin outward, with the incoming accent as
+     a bright rim right at the wave front so the wave reads as a defined
+     edge moving through the viewport. */
+  background: radial-gradient(circle at 0% 50%,
+    color-mix(in srgb, var(--wash-bg) 92%, transparent) 0%,
+    color-mix(in srgb, var(--wash-bg) 72%, transparent) calc(var(--wash-pos) - 22%),
+    color-mix(in srgb, var(--wash-accent) 88%, transparent) calc(var(--wash-pos) - 1%),
+    color-mix(in srgb, white 38%, transparent) var(--wash-pos),
+    transparent calc(var(--wash-pos) + 2%)
+  );
+
+  /* Mask: opaque up to the wave front, briefly soft, then transparent.
+     The 3% transition zone gives the leading edge a glassy softness
+     without making it look like a hard reveal. */
+  mask-image: radial-gradient(circle at 0% 50%,
+    black var(--wash-pos),
+    transparent calc(var(--wash-pos) + 3%)
+  );
+  -webkit-mask-image: radial-gradient(circle at 0% 50%,
+    black var(--wash-pos),
+    transparent calc(var(--wash-pos) + 3%)
+  );
+
+  /* Page-beneath refraction */
+  backdrop-filter: blur(18px) saturate(170%);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+
+  opacity: 0;
+  animation: theme-wash 500ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  will-change: --wash-pos, opacity;
+}
+
+@keyframes theme-wash {
+  0%   { --wash-pos: 0%;   opacity: 0; }
+  10%  {                   opacity: 1; }
+  44%  { --wash-pos: 110%; opacity: 1; }
+  85%  { --wash-pos: 210%; opacity: 1; }
+  100% {                   opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-wash {
+    background: color-mix(in srgb, var(--wash-bg) 70%, transparent);
+    mask-image: none;
+    -webkit-mask-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    animation: theme-wash-fade 250ms ease-out forwards;
+  }
+  @keyframes theme-wash-fade {
+    0%   { opacity: 0; }
+    45%  { opacity: 0.75; }
+    100% { opacity: 0; }
+  }
 }
 
 .theme-dial-content {
