@@ -24,8 +24,9 @@ import type { CSSProperties } from "react";
 const STEP_DEG = 18;             // angle between adjacent pills in the fan
 const ITEM_SPACING = 56;         // vertical px between pill centers
 const WHEEL_COOLDOWN_MS = 220;   // min interval between wheel-driven steps
-const DRAG_STEP_PX = 38;         // px of vertical drag per theme step
-const DRAG_THRESHOLD_PX = 8;     // ignore tiny pointer jitter as "drag"
+const DRAG_STEP_PX = 38;         // px of vertical drag per theme step;
+                                 //   also the minimum movement before we
+                                 //   commit to "this is a drag, not a click"
 
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
@@ -63,28 +64,50 @@ export default function ThemeDial() {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  // ── Drag: vertical pointer drag cycles themes in 38px steps. Pointer
-  //   capture so the drag continues even if the cursor leaves the dial.
-  const dragRef = useRef<{ startY: number; startIdx: number; pointerId: number } | null>(null);
+  // ── Drag: vertical pointer drag cycles themes in DRAG_STEP_PX steps.
+  //   IMPORTANT: don't capture the pointer on pointerdown — that would
+  //   redirect the eventual click away from the pill button to this
+  //   container, breaking simple click-to-select. We only capture once
+  //   the user has actually dragged past DRAG_STEP_PX (a full step), at
+  //   which point we KNOW it's a drag, not a click.
+  const dragRef = useRef<{
+    startY: number;
+    startIdx: number;
+    pointerId: number;
+    isDragging: boolean;
+  } | null>(null);
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
-    dragRef.current = { startY: e.clientY, startIdx: selectedIdx, pointerId: e.pointerId };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      startY: e.clientY,
+      startIdx: selectedIdx,
+      pointerId: e.pointerId,
+      isDragging: false,
+    };
+    // intentionally no setPointerCapture here
   };
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
     if (!d || e.pointerId !== d.pointerId) return;
     const dy = e.clientY - d.startY;
-    if (Math.abs(dy) < DRAG_THRESHOLD_PX) return;
+    // Below a full step's worth of movement, this is still ambiguous —
+    // could be a click with a slight wobble. Don't capture, don't change.
+    if (Math.abs(dy) < DRAG_STEP_PX) return;
+    if (!d.isDragging) {
+      d.isDragging = true;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    }
     const steps = Math.trunc(dy / DRAG_STEP_PX);
     const next = Math.max(0, Math.min(sorted.length - 1, d.startIdx + steps));
     if (next !== selectedIdx) setTheme(sorted[next].slug);
   };
   const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (dragRef.current && e.pointerId === dragRef.current.pointerId) {
+    const d = dragRef.current;
+    if (!d || e.pointerId !== d.pointerId) return;
+    if (d.isDragging) {
       try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
-      dragRef.current = null;
     }
+    dragRef.current = null;
   };
 
   // ── Keyboard: arrow keys + Home/End. Move focus along with selection.
