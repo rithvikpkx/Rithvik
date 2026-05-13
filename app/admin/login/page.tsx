@@ -25,8 +25,13 @@ export default function LoginPage() {
   return (
     <div className="admin-login-wrap">
       <form className="admin-login-card" onSubmit={handleSubmit}>
+        <a href="/" className="admin-back-link">← Back to site</a>
+
         <p className="admin-eyebrow">Admin</p>
         <h1 className="admin-login-title">I am Rithvik.</h1>
+        <p className="admin-login-warning">
+          🚨 Rithvik-only zone. If you&apos;re not Rithvik, there&apos;s nothing to see here. Probably.
+        </p>
 
         <div className="admin-field">
           <label htmlFor="email">Email</label>
