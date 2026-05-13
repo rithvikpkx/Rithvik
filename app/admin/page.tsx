@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { serverClient } from "@/lib/supabase";
-import type { Project } from "@/lib/types";
+import type { Project, Experience } from "@/lib/types";
 import ProjectManager from "./ProjectManager";
+import ExperienceManager from "./ExperienceManager";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -25,9 +26,13 @@ export default async function AdminPage() {
   const user = await getUser();
   if (!user) redirect("/admin/login");
 
-  // Service role — fetches all projects including drafts
-  const { data } = await serverClient().from("projects").select("*").order("sort_order");
-  const projects = (data ?? []) as Project[];
+  // Service role — fetches all rows including drafts
+  const [{ data: projectData }, { data: experienceData }] = await Promise.all([
+    serverClient().from("projects").select("*").order("sort_order"),
+    serverClient().from("experience").select("*").order("sort_order"),
+  ]);
+  const projects = (projectData ?? []) as Project[];
+  const experiences = (experienceData ?? []) as Experience[];
 
   return (
     <div className="admin-page">
@@ -46,6 +51,7 @@ export default async function AdminPage() {
 
       <main className="admin-main">
         <ProjectManager projects={projects} />
+        <ExperienceManager experiences={experiences} />
       </main>
     </div>
   );

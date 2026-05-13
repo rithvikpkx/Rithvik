@@ -23,8 +23,8 @@ export default function Nav() {
       animate={{ y: hidden ? "-100%" : "0%" }}
       transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
     >
-      <nav className="nav">
-        <Link href="#" className="nav-logo">R.</Link>
+      <nav className="nav" aria-label="Main navigation">
+        <Link href="#" className="nav-logo" aria-label="Rithvik Praveen Kumar — home">R.</Link>
         <div className="nav-links">
           <a href="#about">About</a>
           <a href="#projects">Projects</a>
