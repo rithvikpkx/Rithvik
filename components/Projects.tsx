@@ -1,6 +1,7 @@
 import { serverClient } from "@/lib/supabase";
 import type { Project } from "@/lib/types";
 import FadeIn from "./FadeIn";
+import ProjectsClient from "./ProjectsClient";
 
 export default async function Projects() {
   const { data } = await serverClient()
@@ -19,20 +20,7 @@ export default async function Projects() {
           <h2>Selected work.</h2>
         </div>
       </FadeIn>
-      <div className="projects-grid">
-        {projects.map(({ slug, badge, title, description, tags }, i) => (
-          <FadeIn key={slug} delay={i * 0.1} className="project-card">
-            <div className="project-header">
-              <span className="project-badge">{badge}</span>
-            </div>
-            <h3>{title}</h3>
-            <p>{description}</p>
-            <div className="project-tags">
-              {tags.map((t) => <span key={t}>{t}</span>)}
-            </div>
-          </FadeIn>
-        ))}
-      </div>
+      <ProjectsClient initialProjects={projects} />
     </section>
   );
 }

@@ -43,9 +43,14 @@ function revalidate() {
 
 export async function createProject(data: ProjectInput) {
   await requireAuth();
-  const { error } = await adminClient().from("projects").insert(data);
+  const { data: created, error } = await adminClient()
+    .from("projects")
+    .insert(data)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   revalidate();
+  return created;
 }
 
 export async function updateProject(id: string, data: ProjectInput) {
@@ -81,9 +86,14 @@ export interface ExperienceInput {
 
 export async function createExperience(data: ExperienceInput) {
   await requireAuth();
-  const { error } = await adminClient().from("experience").insert(data);
+  const { data: created, error } = await adminClient()
+    .from("experience")
+    .insert(data)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   revalidate();
+  return created;
 }
 
 export async function updateExperience(id: string, data: ExperienceInput) {
@@ -96,6 +106,47 @@ export async function updateExperience(id: string, data: ExperienceInput) {
 export async function deleteExperience(id: string) {
   await requireAuth();
   const { error } = await adminClient().from("experience").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+/** Upsert a single key/value pair into the site_content table. */
+export async function upsertSiteContent(key: string, value: string) {
+  await requireAuth();
+  const { error } = await adminClient()
+    .from("site_content")
+    .upsert({ key, value }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export interface EducationInput {
+  school: string;
+  school_url: string | null;
+  degree: string;
+  concentrations: string[];
+  logo_path: string | null;
+  sort_order: number;
+  published: boolean;
+}
+
+export async function createEducation(data: EducationInput) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").insert(data);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function updateEducation(id: string, data: Partial<EducationInput>) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").update(data).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function deleteEducation(id: string) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidate();
 }

@@ -1,24 +1,83 @@
 "use client";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { useEditMode } from "./EditModeProvider";
+import EditableText from "./EditableText";
+import EditableTagList from "./EditableTagList";
 import LocalTime from "./LocalTime";
+import { upsertSiteContent } from "@/app/admin/actions";
 
-const stack = [
+interface Building { title: string; description: string; tags: string[] }
+interface Stat { num: string; label: string }
+
+const DEF_LOCATION = "West Lafayette, IN";
+const DEF_BUILDING: Building = {
+  title: "Rithvik.ai",
+  description: "A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and project dashboard. Built with Next.js, Supabase, and Claude.",
+  tags: ["Next.js", "Supabase", "RAG", "Claude API"],
+};
+const DEF_STATS: Stat[] = [
+  { num: "4+", label: "Projects" },
+  { num: "2+", label: "Years coding" },
+  { num: "6+", label: "Languages" },
+];
+const DEF_STACK = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
   "Supabase","AWS","Playwright","Vercel","Git","SQL","C","Java",
   "NumPy","Pandas","scikit-learn","OpenAI API",
 ];
+const DEF_INTERESTS = [
+  "Full-Stack Engineering","AI Systems","Applied ML",
+  "Computer Systems","Startups","Research","Open Source",
+];
+
+interface Props {
+  location?: string;
+  building?: Building;
+  stats?: Stat[];
+  stack?: string[];
+  interests?: string[];
+}
 
 const grid = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
 };
-
 const card = {
   hidden: { opacity: 0, filter: "blur(8px)", y: 20 },
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
-export default function Bento() {
+export default function Bento({ location: lp, building: bp, stats: sp, stack: skp, interests: ip }: Props) {
+  const { isEditing } = useEditMode();
+  const [loc, setLoc]           = useState(lp ?? DEF_LOCATION);
+  const [bld, setBld]           = useState(bp ?? DEF_BUILDING);
+  const [stats, setStats]       = useState(sp ?? DEF_STATS);
+  const [stack, setStack]       = useState(skp ?? DEF_STACK);
+  const [interests, setInterests] = useState(ip ?? DEF_INTERESTS);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setLoc(lp ?? DEF_LOCATION);
+      setBld(bp ?? DEF_BUILDING);
+      setStats(sp ?? DEF_STATS);
+      setStack(skp ?? DEF_STACK);
+      setInterests(ip ?? DEF_INTERESTS);
+    }
+  }, [lp, bp, sp, skp, ip, isEditing]);
+
+  const saveBld = async (patch: Partial<Building>) => {
+    const u = { ...bld, ...patch };
+    setBld(u);
+    await upsertSiteContent("bento.building", JSON.stringify(u));
+  };
+
+  const saveStat = async (i: number, patch: Partial<Stat>) => {
+    const u = stats.map((s, j) => j === i ? { ...s, ...patch } : s);
+    setStats(u);
+    await upsertSiteContent("bento.stats", JSON.stringify(u));
+  };
+
   return (
     <section className="bento-section">
       <motion.div
@@ -29,84 +88,88 @@ export default function Bento() {
         viewport={{ once: true, amount: 0.1 }}
       >
 
-        <motion.div
-          className="bento-card bento-location"
-          variants={card}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
+        {/* ── Location ────────────────────────────────────────────────── */}
+        <motion.div className="bento-card bento-location" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">Location</p>
-          <h3 className="card-title">West Lafayette, IN</h3>
+          <EditableText
+            tag="h3" className="card-title" value={loc}
+            onSave={async (v) => { setLoc(v); await upsertSiteContent("bento.location", v); }}
+          />
           <p className="card-sub">Purdue University</p>
           <LocalTime />
         </motion.div>
 
-        <motion.div
-          className="bento-card bento-building"
-          variants={card}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
+        {/* ── Currently Building ──────────────────────────────────────── */}
+        <motion.div className="bento-card bento-building" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">Currently Building</p>
-          <h3 className="card-title">Rithvik.ai</h3>
-          <p className="card-sub">
-            A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and
-            project dashboard. Built with Next.js, Supabase, and Claude.
-          </p>
-          <div className="building-tags">
-            {["Next.js", "Supabase", "RAG", "Claude API"].map((t) => (
-              <span key={t}>{t}</span>
-            ))}
-          </div>
+          <EditableText
+            tag="h3" className="card-title" value={bld.title}
+            onSave={(v) => saveBld({ title: v })}
+          />
+          <EditableText
+            tag="p" className="card-sub" value={bld.description}
+            onSave={(v) => saveBld({ description: v })} multiline
+          />
+          {isEditing ? (
+            <EditableTagList tags={bld.tags} onSave={(tags) => saveBld({ tags })} className="building-tags" />
+          ) : (
+            <div className="building-tags">
+              {bld.tags.map((t) => <span key={t}>{t}</span>)}
+            </div>
+          )}
         </motion.div>
 
-        <motion.div
-          className="bento-card bento-stats"
-          variants={card}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
+        {/* ── Stats ───────────────────────────────────────────────────── */}
+        <motion.div className="bento-card bento-stats" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">By the numbers</p>
           <div className="stats-grid">
-            {[
-              { num: "4+", label: "Projects" },
-              { num: "2+", label: "Years coding" },
-              { num: "6+", label: "Languages" },
-            ].map(({ num, label }) => (
-              <div className="stat" key={label}>
-                <span className="stat-num">{num}</span>
-                <span className="stat-label">{label}</span>
+            {stats.map(({ num, label }, i) => (
+              <div className="stat" key={i}>
+                <EditableText
+                  tag="span" className="stat-num" value={num}
+                  onSave={(v) => saveStat(i, { num: v })}
+                />
+                <EditableText
+                  tag="span" className="stat-label" value={label}
+                  onSave={(v) => saveStat(i, { label: v })}
+                />
               </div>
             ))}
           </div>
         </motion.div>
 
-        <motion.div
-          className="bento-card bento-marquee"
-          variants={card}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
+        {/* ── Stack ───────────────────────────────────────────────────── */}
+        <motion.div className="bento-card bento-marquee" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">Stack</p>
-          <div className="marquee-wrapper">
-            <div className="marquee-track">
-              {[...stack, ...stack].map((item, i) => (
-                <span key={i}>{item}</span>
-              ))}
+          {isEditing ? (
+            <EditableTagList
+              tags={stack}
+              onSave={async (tags) => { setStack(tags); await upsertSiteContent("bento.stack", JSON.stringify(tags)); }}
+              className="bento-stack-edit"
+            />
+          ) : (
+            <div className="marquee-wrapper">
+              <div className="marquee-track">
+                {[...stack, ...stack].map((item, i) => <span key={i}>{item}</span>)}
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
 
-        <motion.div
-          className="bento-card bento-interests"
-          variants={card}
-          whileHover={{ y: -3, transition: { duration: 0.2 } }}
-        >
+        {/* ── Interests ───────────────────────────────────────────────── */}
+        <motion.div className="bento-card bento-interests" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">Interests</p>
-          <div className="interests-list">
-            {[
-              "Full-Stack Engineering","AI Systems","Applied ML",
-              "Computer Systems","Startups","Research","Open Source",
-            ].map((i) => (
-              <span key={i}>{i}</span>
-            ))}
-          </div>
+          {isEditing ? (
+            <EditableTagList
+              tags={interests}
+              onSave={async (tags) => { setInterests(tags); await upsertSiteContent("bento.interests", JSON.stringify(tags)); }}
+              className="interests-list"
+            />
+          ) : (
+            <div className="interests-list">
+              {interests.map((i) => <span key={i}>{i}</span>)}
+            </div>
+          )}
         </motion.div>
 
       </motion.div>

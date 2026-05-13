@@ -216,6 +216,22 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 28px;
 }
 
+/* Edit-mode name lines inherit hero-title sizing; display:block so they stack */
+.hero-title-line {
+  display: block;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+/* gradient-text uses -webkit-text-fill-color: transparent which breaks contentEditable.
+   Override it when the element is also an editable-text so the text stays visible. */
+.editable-text.gradient-text {
+  -webkit-text-fill-color: var(--accent);
+  background: none;
+}
+
 .gradient-text {
   background: linear-gradient(135deg, var(--accent) 0%, #9b5fe0 55%, #c44fa8 100%);
   -webkit-background-clip: text;
@@ -796,12 +812,44 @@ a { color: inherit; text-decoration: none; }
   padding: 5px 14px;
   background: rgba(194, 48, 94, 0.06);
   white-space: nowrap;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 .nav-admin-btn:hover {
   background: rgba(194, 48, 94, 0.13);
   border-color: var(--accent);
   box-shadow: 0 0 14px var(--accent-glow);
+}
+.nav-admin-btn.is-open {
+  background: rgba(194, 48, 94, 0.13);
+  border-color: var(--accent);
+}
+
+/* Edit mode active state */
+.nav-admin-btn.is-editing {
+  color: var(--green);
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+.nav-admin-btn.is-editing:hover {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.6);
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.15);
+}
+.nav-admin-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 .nav-admin-tooltip {
@@ -834,6 +882,404 @@ a { color: inherit; text-decoration: none; }
 .nav-admin-wrap:hover .nav-admin-tooltip {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ===== EDITABLE TEXT ===== */
+.editable-text {
+  cursor: text;
+  border-radius: 5px;
+  outline: 1px dashed rgba(255, 255, 255, 0.18);
+  outline-offset: 3px;
+  transition: outline-color 0.15s, background 0.15s;
+  caret-color: var(--accent);
+}
+.editable-text:hover {
+  outline-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.025);
+}
+.editable-text:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  background: rgba(194, 48, 94, 0.04);
+}
+.editable-text.is-saved {
+  outline-color: var(--green);
+}
+.editable-text:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ===== EDIT BAR ===== */
+.edit-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  background: rgba(11, 11, 20, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(74, 222, 128, 0.08) inset;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.edit-bar-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.edit-bar-label {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.edit-bar-sep {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.edit-bar-hint {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.edit-bar-exit {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 3px 12px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.edit-bar-exit:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 640px) {
+  .edit-bar-hint { display: none; }
+  .edit-bar-sep { display: none; }
+}
+
+/* ===== EDITABLE TAG LIST ===== */
+.editable-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.editable-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 8px 3px 10px;
+  font-size: 0.72rem;
+  font-family: var(--mono);
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 1px;
+  transition: color 0.15s;
+}
+.tag-remove:hover { color: var(--text); }
+
+.tag-input {
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--border);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  padding: 2px 4px;
+  width: 80px;
+  outline: none;
+}
+.tag-input::placeholder { color: var(--muted); }
+.tag-input:focus { border-bottom-color: var(--accent); }
+
+/* ===== PROJECT EDITOR ===== */
+.project-card-editing {
+  border-color: rgba(194, 48, 94, 0.25);
+  background: var(--card-hover);
+}
+
+.proj-edit-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.proj-sort-btns { display: flex; gap: 4px; }
+
+.proj-sort-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 3px 7px;
+  transition: color 0.15s, background 0.15s;
+}
+.proj-sort-btn:hover:not(:disabled) { color: var(--text); background: rgba(255,255,255,0.08); }
+.proj-sort-btn:disabled { opacity: 0.3; cursor: default; }
+
+.proj-toggles {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.proj-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.proj-toggle input { cursor: pointer; accent-color: var(--accent); }
+
+.proj-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.proj-delete-btn:hover { color: #e55; background: rgba(220,50,50,0.08); }
+
+.proj-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(220,50,50,0.08);
+  border: 1px solid rgba(220,50,50,0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.btn-danger-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(220,50,50,0.5);
+  background: rgba(220,50,50,0.15);
+  color: #e55;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger-sm:hover { background: rgba(220,50,50,0.25); }
+
+.btn-ghost-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.btn-ghost-sm:hover { color: var(--text); }
+
+.proj-add-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.proj-add-btn {
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 1px dashed rgba(194,48,94,0.4);
+  background: rgba(194,48,94,0.06);
+  color: var(--accent);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.proj-add-btn:hover { background: rgba(194,48,94,0.12); border-color: rgba(194,48,94,0.6); }
+.proj-add-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ===== BENTO EDITOR ===== */
+.bento-stack-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: flex-start;
+  overflow-y: auto;
+  max-height: 160px;
+}
+
+/* ===== EDUCATION EDITOR ===== */
+.edu-edit-school {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edu-conc-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+/* ===== CONTACT EDITOR ===== */
+.contact-link-editing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-edit-url {
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  padding-left: 4px;
+}
+
+/* ===== EXPERIENCE EDITOR ===== */
+.exp-entry-editing {
+  border-left: 2px dashed rgba(194,48,94,0.3);
+  padding-left: 20px;
+}
+
+.exp-meta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.exp-meta-field {
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
+/* ===== INLINE LOGIN PANEL ===== */
+.login-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+}
+
+.login-panel {
+  position: fixed;
+  top: 78px;
+  right: 24px;
+  z-index: 200;
+  width: 320px;
+  background: rgba(11, 11, 20, 0.88);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 26px 24px 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 16px 64px rgba(0, 0, 0, 0.7),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.login-panel-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.login-panel-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-panel-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.login-panel-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.login-panel-warning {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.login-panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .login-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    top: 68px;
+  }
 }
 
 /* ===== ADMIN ===== */

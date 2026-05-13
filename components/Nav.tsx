@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { useEditMode } from "./EditModeProvider";
 
 type Section = "home" | "projects" | "experience" | "contact";
 
@@ -38,6 +39,7 @@ const LENS_TRANSITION = { type: "spring", stiffness: 480, damping: 36 } as const
 
 export default function Nav() {
   const [active, setActive] = useState<Section>("home");
+  const { isEditing, panelOpen, openPanel, logout } = useEditMode();
   const lockedRef = useRef(false);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -105,11 +107,31 @@ export default function Nav() {
           <span className="nav-divider" aria-hidden="true" />
 
           <div className="nav-admin-wrap">
-            <a href="/admin/login" className="nav-admin-btn">I am Rithvik</a>
-            <span className="nav-admin-tooltip">
-              <span className="nav-admin-tooltip-title">Live content editor</span>
-              Add, edit, or remove projects and experience entries directly on the site — changes go live instantly, no code required.
-            </span>
+            {isEditing ? (
+              <button
+                className="nav-admin-btn is-editing"
+                onClick={logout}
+                title="Exit edit mode"
+              >
+                <span className="nav-admin-dot" aria-hidden="true" />
+                Editing
+              </button>
+            ) : (
+              <>
+                <button
+                  className={`nav-admin-btn${panelOpen ? " is-open" : ""}`}
+                  onClick={openPanel}
+                >
+                  I am Rithvik
+                </button>
+                {!panelOpen && (
+                  <span className="nav-admin-tooltip">
+                    <span className="nav-admin-tooltip-title">Live content editor</span>
+                    Add, edit, or remove projects and experience entries directly on the site — changes go live instantly, no code required.
+                  </span>
+                )}
+              </>
+            )}
           </div>
         </nav>
       </div>
