@@ -1,5 +1,9 @@
--- feat-theme stage 1: themes table + Rithvik Dark / Rithvik Light seed
--- Run this in the Supabase SQL editor (one-time).
+-- feat-theme: themes table + Rithvik Dark / Rithvik Light seed
+-- Run once in the Supabase SQL editor.
+--
+-- Themes only need to define their primary palette. Surface tokens
+-- (--card, --border, --nav-glass, --panel-glass) are derived in
+-- globals.css via color-mix() so they auto-adapt to any theme.
 
 CREATE TABLE IF NOT EXISTS themes (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -12,13 +16,12 @@ CREATE TABLE IF NOT EXISTS themes (
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- Public read, service-role write (matches projects/experience pattern)
 ALTER TABLE themes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read themes"
   ON themes FOR SELECT USING (true);
 
--- ── Seed: Rithvik Dark (current production palette) ──────────────────────────
+-- ── Seed: Rithvik Dark ───────────────────────────────────────────────────────
 INSERT INTO themes (slug, name, tokens, sort_order)
 VALUES (
   'rithvik-dark',
@@ -26,23 +29,17 @@ VALUES (
   '{
     "bg":           "#08080e",
     "bg-soft":      "#0d0d16",
-    "card":         "rgba(255,255,255,0.034)",
-    "card-hover":   "rgba(255,255,255,0.056)",
-    "border":       "rgba(255,255,255,0.07)",
-    "border-hover": "rgba(255,255,255,0.14)",
     "text":         "#eeeef6",
     "muted":        "#82829a",
     "accent":       "#c2305e",
     "accent-glow":  "rgba(194,48,94,0.22)",
-    "green":        "#4ade80",
-    "fg-rgb":       "255,255,255",
-    "nav-glass":    "rgba(11,11,20,0.68)"
+    "green":        "#4ade80"
   }'::jsonb,
   0
 )
 ON CONFLICT (slug) DO NOTHING;
 
--- ── Seed: Rithvik Light (proposal values; refined during stage 4) ────────────
+-- ── Seed: Rithvik Light ──────────────────────────────────────────────────────
 INSERT INTO themes (slug, name, tokens, sort_order)
 VALUES (
   'rithvik-light',
@@ -50,17 +47,11 @@ VALUES (
   '{
     "bg":           "#fafaf7",
     "bg-soft":      "#f3f1ed",
-    "card":         "#ffffff",
-    "card-hover":   "#f7f4ee",
-    "border":       "rgba(14,11,10,0.08)",
-    "border-hover": "rgba(14,11,10,0.16)",
     "text":         "#0e0b0a",
     "muted":        "#6a655f",
     "accent":       "#c2305e",
-    "accent-glow":  "rgba(194,48,94,0.12)",
-    "green":        "#16a34a",
-    "fg-rgb":       "14,11,10",
-    "nav-glass":    "rgba(252,250,245,0.72)"
+    "accent-glow":  "rgba(194,48,94,0.14)",
+    "green":        "#16a34a"
   }'::jsonb,
   1
 )
