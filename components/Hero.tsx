@@ -30,7 +30,6 @@ export default function Hero({ subLine = DEFAULT_SUB_LINE }: Props) {
         <motion.div variants={container} initial="hidden" animate="visible">
           <h1 className="hero-title">
             <KineticText text="Rithvik" as="span" />
-            <br />
             <KineticText text="Praveen Kumar" as="span" className="gradient-text" />
           </h1>
 
