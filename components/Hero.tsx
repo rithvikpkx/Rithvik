@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "motion/react";
+import SocialDock from "./SocialDock";
 
 const container = {
   hidden: {},
@@ -50,14 +51,11 @@ export default function Hero() {
             >
               View Projects
             </motion.a>
-            <motion.a
-              href="#contact"
-              className="btn-outline"
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Get in Touch
-            </motion.a>
+
+            <div className="hero-contact-group">
+              <span className="hero-contact-label">Get in Touch</span>
+              <SocialDock />
+            </div>
           </motion.div>
         </motion.div>
       </div>
