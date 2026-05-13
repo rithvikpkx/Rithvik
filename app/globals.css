@@ -41,45 +41,127 @@ body {
 a { color: inherit; text-decoration: none; }
 
 /* ===== NAV ===== */
-.nav-wrapper {
+.nav-outer {
   position: fixed;
-  inset: 0 0 auto 0;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  background: rgba(8,8,14,0.72);
-  border-bottom: 1px solid var(--border);
-  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  display: flex;
+  justify-content: center;
+  padding-top: 18px;
+  pointer-events: none;
 }
 
-.nav {
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: 0 24px;
-  height: 62px;
+.nav-float { pointer-events: all; }
+
+.nav-pill {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 2px;
+  padding: 0 20px 0 4px;
+  height: 50px;
+  border-radius: 9999px;
+  background: rgba(11, 11, 20, 0.68);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 8px 40px rgba(0, 0, 0, 0.6),
+    0 2px 10px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: visible;
+}
+
+/* Specular highlight arc along the top rim */
+.nav-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 14%;
+  right: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 30%, rgba(255,255,255,0.22) 70%, transparent);
+  pointer-events: none;
 }
 
 .nav-logo {
-  font-weight: 800;
-  font-size: 1.35rem;
-  letter-spacing: -0.06em;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.04em;
   color: var(--accent);
-  transition: opacity 0.2s;
+  padding: 6px 10px;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
 }
 .nav-logo:hover { opacity: 0.75; }
+.nav-logo.is-active { opacity: 1; }
 
-.nav-links {
-  display: flex;
-  gap: 28px;
-  font-size: 0.875rem;
+.nav-sep {
+  color: rgba(130, 130, 154, 0.32);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+.nav-item-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch; /* fill full pill height so lens insets are symmetric */
+}
+
+.nav-pill-item {
+  font-family: var(--mono);
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: color 0.2s;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
-.nav-links a { transition: color 0.2s; }
-.nav-links a:hover { color: var(--text); }
+.nav-pill-item:hover,
+.nav-pill-item.is-active { color: var(--text); }
+
+/* Glass lens — inner capsule matching the pill's shape */
+.nav-lens {
+  position: absolute;
+  inset: 4px 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 4px 14px rgba(0, 0, 0, 0.32),
+    0 1px 3px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 0;
+}
 
 /* ===== HERO ===== */
 .hero {
@@ -698,6 +780,9 @@ a { color: inherit; text-decoration: none; }
 /* ===== ADMIN NAV BUTTON ===== */
 .nav-admin-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
+  align-self: center;
 }
 
 .nav-admin-btn {
@@ -1275,5 +1360,9 @@ a { color: inherit; text-decoration: none; }
   .hero-title { font-size: 3.2rem; }
   .hero-actions { flex-direction: column; }
   .btn-shimmer, .btn-outline { width: 100%; justify-content: center; }
-  .nav-links { gap: 16px; font-size: 0.8rem; }
+  .nav-outer { padding-top: 10px; }
+  .nav-pill { padding: 0 12px; height: 44px; }
+  .nav-pill-item { font-size: 0.74rem; padding: 5px 7px; }
+  .nav-sep { font-size: 0.7rem; }
+  .nav-admin-wrap { display: none; }
 }
