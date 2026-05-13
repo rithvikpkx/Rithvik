@@ -22,7 +22,7 @@ export function KineticText({ text, as: Tag = "h1", className = "", style, ...re
         <span
           key={i}
           aria-hidden="true"
-          className="[will-change:font-weight,padding] [transition:font-weight_0.4s,padding_0.4s] hover:[padding-inline:var(--hover-padding)] hover:font-[900] has-[+span+span:hover]:font-[400] has-[+span:hover]:[padding-inline:var(--hover-padding)] has-[+span:hover]:font-[600] [:hover+&]:[padding-inline:var(--hover-padding)] [:hover+&]:font-[600] [:hover+span+&]:font-[400]"
+          className="[will-change:font-weight,padding] [transition:font-weight_0.15s_cubic-bezier(0.2,0,0,1),padding_0.15s_cubic-bezier(0.2,0,0,1)] hover:[padding-inline:var(--hover-padding)] hover:font-[900] has-[+span+span:hover]:font-[400] has-[+span:hover]:[padding-inline:var(--hover-padding)] has-[+span:hover]:font-[600] [:hover+&]:[padding-inline:var(--hover-padding)] [:hover+&]:font-[600] [:hover+span+&]:font-[400]"
         >
           {letter === " " ? " " : letter}
         </span>
