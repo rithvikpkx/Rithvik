@@ -803,6 +803,21 @@ a { color: inherit; text-decoration: none; }
 }
 .admin-field input:focus { border-color: var(--accent); }
 
+.admin-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-family: var(--font);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.admin-select:focus { border-color: var(--accent); }
+
 .admin-error {
   font-size: 0.82rem;
   color: var(--accent);

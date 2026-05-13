@@ -61,3 +61,41 @@ export async function deleteProject(id: string) {
   if (error) throw new Error(error.message);
   revalidate();
 }
+
+export interface ExperienceInput {
+  slug: string;
+  org: string;
+  org_url: string | null;
+  role: string;
+  type: string;
+  date_range: string;
+  start_date: string | null;
+  end_date: string | null;
+  description: string;
+  tags: string[];
+  location: string | null;
+  featured: boolean;
+  published: boolean;
+  sort_order: number;
+}
+
+export async function createExperience(data: ExperienceInput) {
+  await requireAuth();
+  const { error } = await adminClient().from("experience").insert(data);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function updateExperience(id: string, data: ExperienceInput) {
+  await requireAuth();
+  const { error } = await adminClient().from("experience").update(data).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function deleteExperience(id: string) {
+  await requireAuth();
+  const { error } = await adminClient().from("experience").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
