@@ -1,15 +1,27 @@
 "use client";
 import { useTheme } from "./ThemeProvider";
+import type { CSSProperties } from "react";
 
 /**
- * Apple liquid-glass theme dial — tucked to the left edge as a thin vertical
- * strip. Tick marks + tiny color swatches are always visible. On hover (or
- * keyboard focus), the strip expands to reveal each theme's name.
+ * Radial liquid-glass theme dial — tucked to the left edge.
  *
- * Each swatch is a small target: theme's bg as the outer ring fill, text as
- * the ring stroke, accent as a dot in the center — a 3-color preview at a
- * glance. Active option has a colored tick + accent glow on the swatch.
+ * Items are stacked vertically inside a frosted-glass strip, but each is
+ * rotated around its left edge so they fan out radially. The top item
+ * tilts upward, the bottom tilts downward, and any items in between
+ * spread between — together forming a half-circle dial the user picks
+ * from. Hovering the strip slides labels in beside each swatch.
+ *
+ * Swatches are flat rounded squares with a linear gradient through the
+ * theme's three major colors (bg → accent → text) so each preview is
+ * recognizable at a glance.
  */
+
+const STEP_DEG = 18; // angle between adjacent items in the fan
+
+function angleFor(i: number, n: number): number {
+  return (i - (n - 1) / 2) * STEP_DEG;
+}
+
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
@@ -22,8 +34,15 @@ export default function ThemeDial() {
       aria-label="Theme selector"
     >
       <div className="theme-dial-content">
-        {sorted.map((t) => {
+        {sorted.map((t, i) => {
           const active = t.slug === currentSlug;
+          const angle = angleFor(i, sorted.length);
+          const optionStyle: CSSProperties = {
+            transform: `rotate(${angle}deg)`,
+          };
+          const swatchStyle: CSSProperties = {
+            background: `linear-gradient(135deg, ${t.tokens.bg} 0%, ${t.tokens.accent} 50%, ${t.tokens.text} 100%)`,
+          };
           return (
             <button
               key={t.slug}
@@ -33,15 +52,10 @@ export default function ThemeDial() {
               aria-checked={active}
               aria-label={`Switch to ${t.name}`}
               onClick={() => setTheme(t.slug)}
+              style={optionStyle}
             >
               <span className="theme-strip-tick" aria-hidden />
-              <span
-                className="theme-strip-swatch"
-                style={{ background: t.tokens.bg, borderColor: t.tokens.text }}
-                aria-hidden
-              >
-                <span style={{ background: t.tokens.accent }} />
-              </span>
+              <span className="theme-strip-swatch" style={swatchStyle} aria-hidden />
               <span className="theme-strip-label">{t.name}</span>
             </button>
           );

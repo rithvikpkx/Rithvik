@@ -209,10 +209,10 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
   border-left: none;
   border-radius: 0 22px 22px 0;
-  padding: 16px 14px 16px 10px;
+  padding: 22px 14px 22px 10px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 28px;            /* bigger gap so the fan-rotated items don't overlap */
   overflow: hidden;
   box-shadow:
     inset 1px 0 0 color-mix(in srgb, var(--text) 10%, transparent),
@@ -250,6 +250,10 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   text-align: left;
   -webkit-tap-highlight-color: transparent;
+  /* Fan-out: each item rotates around its left edge (under the tick mark).
+     Rotation set inline per item; this just sets the pivot + transition. */
+  transform-origin: 0 50%;
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .theme-strip-tick {
@@ -273,44 +277,32 @@ a { color: inherit; text-decoration: none; }
   background: color-mix(in srgb, var(--text) 55%, transparent);
 }
 
-/* Color preview: outer ring stroke = theme.text, ring fill = theme.bg,
-   center dot = theme.accent. Colors set inline so each swatch reflects
-   its own theme regardless of which theme is currently active. */
+/* Flat rounded-square color preview. Background is a linear gradient
+   through the theme's three major colors (bg → accent → text), set
+   inline so each swatch shows its own palette regardless of the
+   currently active theme. */
 .theme-strip-swatch {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid; /* color from inline style */
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
   flex-shrink: 0;
-  box-shadow:
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.18),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(0, 0, 0, 0.3);
+  /* background gradient set inline */
   transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+              border-color 0.25s,
               box-shadow 0.25s;
-}
-
-.theme-strip-swatch > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  box-shadow: 0 0 4px currentColor;
 }
 
 .theme-strip-option:hover .theme-strip-swatch {
   transform: scale(1.08);
+  border-color: color-mix(in srgb, var(--text) 40%, transparent);
 }
 
 .theme-strip-option.is-active .theme-strip-swatch {
-  transform: scale(1.06);
+  border-color: var(--accent);
   box-shadow:
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.2),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.18),
-    0 0 0 2.5px color-mix(in srgb, var(--accent) 30%, transparent),
-    0 3px 10px color-mix(in srgb, var(--accent) 32%, transparent);
+    0 0 0 2.5px color-mix(in srgb, var(--accent) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .theme-strip-option:focus-visible .theme-strip-swatch {
