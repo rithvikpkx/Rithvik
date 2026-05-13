@@ -225,6 +225,13 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: inherit;
 }
 
+/* gradient-text uses -webkit-text-fill-color: transparent which breaks contentEditable.
+   Override it when the element is also an editable-text so the text stays visible. */
+.editable-text.gradient-text {
+  -webkit-text-fill-color: var(--accent);
+  background: none;
+}
+
 .gradient-text {
   background: linear-gradient(135deg, var(--accent) 0%, #9b5fe0 55%, #c44fa8 100%);
   -webkit-background-clip: text;
