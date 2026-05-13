@@ -657,85 +657,28 @@ a { color: inherit; text-decoration: none; }
   max-width: 460px;
 }
 
-.contact-dock-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
+.contact-links { display: flex; flex-direction: column; gap: 9px; }
 
-.contact-dock {
+.contact-link {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  background: rgba(255,255,255,0.045);
+  align-items: center;
+  gap: 11px;
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 12px 16px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.dock-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.dock-icon {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
+  padding: 13px 18px;
+  font-weight: 600;
+  font-size: 0.88rem;
   color: var(--muted);
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
-  transform-origin: bottom center;
+  min-width: 155px;
+  filter: grayscale(1);
+  transition: color 0.25s, border-color 0.25s, transform 0.2s, filter 0.3s;
 }
-.dock-btn:hover .dock-icon {
+.contact-link:hover {
   color: var(--text);
   border-color: var(--border-hover);
-  background: rgba(255,255,255,0.07);
-}
-
-.dock-tooltip {
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  pointer-events: none;
-}
-.dock-tooltip::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: var(--border);
-}
-
-.dock-copied {
-  font-size: 0.78rem;
-  color: var(--green);
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  transform: translateX(4px);
+  filter: grayscale(0);
 }
 
 /* ===== FOOTER ===== */
@@ -1319,6 +1262,8 @@ a { color: inherit; text-decoration: none; }
     grid-template-columns: 1fr;
     gap: 32px;
   }
+  .contact-links { flex-direction: row; flex-wrap: wrap; }
+  .contact-link  { flex: 1; min-width: 130px; justify-content: center; }
 
   .edu-card { flex-direction: column; gap: 16px; }
 
