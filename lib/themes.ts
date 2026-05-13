@@ -16,6 +16,8 @@ export const THEMABLE_TOKENS = [
   "accent",
   "accent-glow",
   "green",
+  "fg-rgb",      // RGB triple ("R,G,B") for translucent foreground overlays — white on dark, near-black on light
+  "nav-glass",   // background fill for the floating nav pill
 ] as const;
 
 export type ThemeTokenKey = (typeof THEMABLE_TOKENS)[number];
@@ -40,6 +42,8 @@ export const DEFAULT_DARK_TOKENS: ThemeTokens = {
   accent:         "#c2305e",
   "accent-glow":  "rgba(194,48,94,0.22)",
   green:          "#4ade80",
+  "fg-rgb":       "255,255,255",
+  "nav-glass":    "rgba(11,11,20,0.68)",
 };
 
 /** Rithvik Light — proposal values; tuned during Stage 4. */
@@ -55,6 +59,8 @@ export const DEFAULT_LIGHT_TOKENS: ThemeTokens = {
   accent:         "#c2305e",
   "accent-glow":  "rgba(194,48,94,0.12)",
   green:          "#16a34a",
+  "fg-rgb":       "14,11,10",
+  "nav-glass":    "rgba(252,250,245,0.72)",
 };
 
 /** Fallback theme list used if the themes table is empty (migration not run). */

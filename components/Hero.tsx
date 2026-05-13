@@ -4,6 +4,7 @@ import FlickeringGrid from "./FlickeringGrid";
 import { KineticText } from "./KineticText";
 import EditableText from "./EditableText";
 import { useEditMode } from "./EditModeProvider";
+import { useTheme } from "./ThemeProvider";
 import { upsertSiteContent } from "@/app/admin/actions";
 
 const DEFAULT_SUB_LINE  = "Building at the intersection of AI, systems, and real-world problems.";
@@ -34,6 +35,10 @@ export default function Hero({
   nameLine2 = DEFAULT_NAME_2,
 }: Props) {
   const { isEditing } = useEditMode();
+  const { currentSlug } = useTheme();
+
+  // Theme-aware particle color — white particles vanish on light bg
+  const gridColor = currentSlug === "rithvik-light" ? "#0e0b0a" : "#ffffff";
 
   // Keep the Purdue link in view mode by splitting on "Purdue"
   const tagParts = tagLine.split("Purdue");
@@ -47,7 +52,7 @@ export default function Hero({
 
   return (
     <section className="hero" id="about">
-      <FlickeringGrid className="hero-flickering-grid" color="#ffffff" squareSize={4} gridGap={6} maxOpacity={0.1} flickerChance={0.08} />
+      <FlickeringGrid className="hero-flickering-grid" color={gridColor} squareSize={4} gridGap={6} maxOpacity={0.1} flickerChance={0.08} />
 
       <div className="hero-content">
         <motion.div variants={container} initial="hidden" animate="visible">

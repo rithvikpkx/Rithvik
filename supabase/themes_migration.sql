@@ -34,7 +34,9 @@ VALUES (
     "muted":        "#82829a",
     "accent":       "#c2305e",
     "accent-glow":  "rgba(194,48,94,0.22)",
-    "green":        "#4ade80"
+    "green":        "#4ade80",
+    "fg-rgb":       "255,255,255",
+    "nav-glass":    "rgba(11,11,20,0.68)"
   }'::jsonb,
   0
 )
@@ -56,7 +58,9 @@ VALUES (
     "muted":        "#6a655f",
     "accent":       "#c2305e",
     "accent-glow":  "rgba(194,48,94,0.12)",
-    "green":        "#16a34a"
+    "green":        "#16a34a",
+    "fg-rgb":       "14,11,10",
+    "nav-glass":    "rgba(252,250,245,0.72)"
   }'::jsonb,
   1
 )
