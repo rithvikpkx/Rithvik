@@ -182,6 +182,146 @@ a { color: inherit; text-decoration: none; }
   z-index: 0;
 }
 
+/* ===== THEME DIAL ===== */
+.theme-dial-container {
+  --dial-radius: clamp(140px, 18vw, 180px);
+  position: fixed;
+  top: 50%;
+  left: 0;
+  width: calc(var(--dial-radius) * 2);
+  height: calc(var(--dial-radius) * 2);
+  transform: translate(-50%, -50%);
+  z-index: 90;
+  pointer-events: none; /* children re-enable */
+}
+
+.theme-dial-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--nav-glass);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--text) 3.5%, transparent),
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 6px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: all;
+  /* Snap rotation; Stage 6 swaps this for a spring */
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Subtle radial highlight on top-left to suggest curvature */
+.theme-dial-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 28%,
+    color-mix(in srgb, var(--text) 9%, transparent) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+/* Each theme option — a small circular swatch placed on the dial arc */
+.theme-option {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -22px;        /* center a 44px button on (50%, 50%) */
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  transform-origin: center;
+  /* transform set inline as rotate(angle) translateX(R - inset) */
+}
+
+.theme-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--text) 18%, transparent);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--text) 22%, transparent),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s,
+              box-shadow 0.25s;
+}
+
+.theme-swatch-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.theme-option:hover .theme-swatch {
+  transform: scale(1.12);
+  border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+}
+
+.theme-option.is-active .theme-swatch {
+  transform: scale(1.18);
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--text) 22%, transparent),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent),
+    0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.theme-option:focus-visible .theme-swatch {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Fixed pointer at the rightmost point of the dial (3 o'clock) */
+.theme-dial-pointer {
+  position: absolute;
+  top: 50%;
+  right: -4px;          /* sits just outside the rim */
+  transform: translateY(-50%);
+  width: 10px;
+  height: 28px;
+  border-radius: 5px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 100%, white 0%),
+    color-mix(in srgb, var(--accent) 80%, black 20%)
+  );
+  box-shadow:
+    0 0 14px var(--accent-glow),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+/* Mobile: smaller dial (Stage 8 will refine further) */
+@media (max-width: 640px) {
+  .theme-dial-container {
+    --dial-radius: clamp(90px, 22vw, 120px);
+  }
+  .theme-option {
+    margin: -18px;
+    width: 36px;
+    height: 36px;
+  }
+  .theme-dial-pointer {
+    width: 8px;
+    height: 22px;
+  }
+}
+
 /* ===== HERO ===== */
 .hero {
   position: relative;
