@@ -1,13 +1,8 @@
 "use client";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
 import type { Theme } from "@/lib/types";
-import ThemeWash from "./ThemeWash";
-
-// Total wash duration must match the @keyframes in globals.css
-const WASH_DURATION_MS = 500;
-// Theme is applied at ~44% through (peak coverage) so the snap hides under the wave
-const WASH_SWAP_MS = 220;
 
 interface ThemeCtx {
   themes: Theme[];
@@ -23,39 +18,38 @@ export function useTheme() {
   return ctx;
 }
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 interface Props {
   themes: Theme[];
   children: React.ReactNode;
 }
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+// `document.startViewTransition` is in baseline-modern browsers (Chrome 111+,
+// Safari 18+, Firefox 129+) but TypeScript's lib.dom may still lag in this
+// project's TS version, so we type it here.
+type ViewTransitionDoc = Document & {
+  startViewTransition?: (callback: () => void | Promise<void>) => unknown;
+};
+
 /**
- * Owns the active theme slug and orchestrates the liquid-glass wash on every
- * change. Dial-selected state updates immediately for instant feedback; the
- * document-level data-theme attribute is delayed to the wash's peak coverage
- * so the swap hides under the wave. Reduced-motion path snaps immediately
- * and uses a brief opacity fade instead of the wave animation.
+ * Owns the active theme slug. Theme changes go through the View Transitions
+ * API so the browser snapshots OLD and NEW pages and animates between them
+ * with a radial mask sweeping from the dial — see globals.css for the
+ * ::view-transition-new(root) keyframes. flushSync forces React to commit
+ * the state change synchronously so the new snapshot includes the updated
+ * dial selection.
  */
 export default function ThemeProvider({ themes, children }: Props) {
   const [currentSlug, setCurrentSlug] = useState<string>(DEFAULT_THEME_SLUG);
-  const [wash, setWash] = useState<{ theme: Theme; id: number } | null>(null);
-  const washIdRef = useRef(0);
-  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const endTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const fromDom = document.documentElement.dataset.theme;
     if (fromDom && themes.some((t) => t.slug === fromDom)) setCurrentSlug(fromDom);
   }, [themes]);
-
-  useEffect(() => () => {
-    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
-    if (endTimerRef.current) clearTimeout(endTimerRef.current);
-  }, []);
 
   const applyTheme = (slug: string) => {
     document.documentElement.dataset.theme = slug;
@@ -63,34 +57,30 @@ export default function ThemeProvider({ themes, children }: Props) {
   };
 
   const setTheme = (slug: string) => {
-    const next = themes.find((t) => t.slug === slug);
-    if (!next || slug === currentSlug) return;
+    if (!themes.some((t) => t.slug === slug) || slug === currentSlug) return;
 
-    // Cancel any pending wash from a recent rapid click.
-    if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
-    if (endTimerRef.current)  clearTimeout(endTimerRef.current);
+    const doc = document as ViewTransitionDoc;
+    const canTransition = typeof doc.startViewTransition === "function" && !prefersReducedMotion();
 
-    // Instant dial feedback — the selected pill highlight moves immediately.
-    setCurrentSlug(slug);
-
-    if (prefersReducedMotion()) {
+    const commit = () => {
+      // flushSync so the dial state lands in the NEW snapshot the browser
+      // is about to take (otherwise React would commit on the next tick,
+      // after the snapshot, and the OLD selection would briefly persist).
+      flushSync(() => setCurrentSlug(slug));
       applyTheme(slug);
-      washIdRef.current++;
-      setWash({ theme: next, id: washIdRef.current });
-      endTimerRef.current = setTimeout(() => setWash(null), 260);
+    };
+
+    if (!canTransition) {
+      commit();
       return;
     }
 
-    washIdRef.current++;
-    setWash({ theme: next, id: washIdRef.current });
-    swapTimerRef.current = setTimeout(() => applyTheme(slug), WASH_SWAP_MS);
-    endTimerRef.current  = setTimeout(() => setWash(null), WASH_DURATION_MS + 30);
+    doc.startViewTransition!(commit);
   };
 
   return (
     <ThemeContext.Provider value={{ themes, currentSlug, setTheme }}>
       {children}
-      {wash && <ThemeWash key={wash.id} theme={wash.theme} />}
     </ThemeContext.Provider>
   );
 }
