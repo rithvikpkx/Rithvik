@@ -86,9 +86,14 @@ export interface ExperienceInput {
 
 export async function createExperience(data: ExperienceInput) {
   await requireAuth();
-  const { error } = await adminClient().from("experience").insert(data);
+  const { data: created, error } = await adminClient()
+    .from("experience")
+    .insert(data)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   revalidate();
+  return created;
 }
 
 export async function updateExperience(id: string, data: ExperienceInput) {

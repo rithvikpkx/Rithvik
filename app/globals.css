@@ -1127,6 +1127,24 @@ a { color: inherit; text-decoration: none; }
 .proj-add-btn:hover { background: rgba(194,48,94,0.12); border-color: rgba(194,48,94,0.6); }
 .proj-add-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ===== EXPERIENCE EDITOR ===== */
+.exp-entry-editing {
+  border-left: 2px dashed rgba(194,48,94,0.3);
+  padding-left: 20px;
+}
+
+.exp-meta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.exp-meta-field {
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+}
+
 /* ===== INLINE LOGIN PANEL ===== */
 .login-panel-backdrop {
   position: fixed;
