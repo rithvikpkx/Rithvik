@@ -5,6 +5,7 @@ import EditModeProvider from "@/components/EditModeProvider";
 import InlineLoginPanel from "@/components/InlineLoginPanel";
 import EditBar from "@/components/EditBar";
 import ThemeStyleInjector from "@/components/ThemeStyleInjector";
+import ThemeProvider from "@/components/ThemeProvider";
 import { serverClient } from "@/lib/supabase";
 import type { Theme } from "@/lib/types";
 import { FALLBACK_THEMES, DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
@@ -61,11 +62,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeStyleInjector themes={safeThemes} />
         {/* Boot script must run before the first paint */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <EditModeProvider>
-          {children}
-          <InlineLoginPanel />
-          <EditBar />
-        </EditModeProvider>
+        <ThemeProvider themes={safeThemes}>
+          <EditModeProvider>
+            {children}
+            <InlineLoginPanel />
+            <EditBar />
+          </EditModeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
