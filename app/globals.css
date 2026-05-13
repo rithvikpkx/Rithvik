@@ -968,6 +968,165 @@ a { color: inherit; text-decoration: none; }
   .edit-bar-sep { display: none; }
 }
 
+/* ===== EDITABLE TAG LIST ===== */
+.editable-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.editable-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 8px 3px 10px;
+  font-size: 0.72rem;
+  font-family: var(--mono);
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 1px;
+  transition: color 0.15s;
+}
+.tag-remove:hover { color: var(--text); }
+
+.tag-input {
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--border);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  padding: 2px 4px;
+  width: 80px;
+  outline: none;
+}
+.tag-input::placeholder { color: var(--muted); }
+.tag-input:focus { border-bottom-color: var(--accent); }
+
+/* ===== PROJECT EDITOR ===== */
+.project-card-editing {
+  border-color: rgba(194, 48, 94, 0.25);
+  background: var(--card-hover);
+}
+
+.proj-edit-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.proj-sort-btns { display: flex; gap: 4px; }
+
+.proj-sort-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 3px 7px;
+  transition: color 0.15s, background 0.15s;
+}
+.proj-sort-btn:hover:not(:disabled) { color: var(--text); background: rgba(255,255,255,0.08); }
+.proj-sort-btn:disabled { opacity: 0.3; cursor: default; }
+
+.proj-toggles {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.proj-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.proj-toggle input { cursor: pointer; accent-color: var(--accent); }
+
+.proj-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 3px 5px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.proj-delete-btn:hover { color: #e55; background: rgba(220,50,50,0.08); }
+
+.proj-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(220,50,50,0.08);
+  border: 1px solid rgba(220,50,50,0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.btn-danger-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(220,50,50,0.5);
+  background: rgba(220,50,50,0.15);
+  color: #e55;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger-sm:hover { background: rgba(220,50,50,0.25); }
+
+.btn-ghost-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.btn-ghost-sm:hover { color: var(--text); }
+
+.proj-add-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.proj-add-btn {
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 1px dashed rgba(194,48,94,0.4);
+  background: rgba(194,48,94,0.06);
+  color: var(--accent);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.proj-add-btn:hover { background: rgba(194,48,94,0.12); border-color: rgba(194,48,94,0.6); }
+.proj-add-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ===== INLINE LOGIN PANEL ===== */
 .login-panel-backdrop {
   position: fixed;

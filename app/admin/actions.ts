@@ -43,9 +43,14 @@ function revalidate() {
 
 export async function createProject(data: ProjectInput) {
   await requireAuth();
-  const { error } = await adminClient().from("projects").insert(data);
+  const { data: created, error } = await adminClient()
+    .from("projects")
+    .insert(data)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   revalidate();
+  return created;
 }
 
 export async function updateProject(id: string, data: ProjectInput) {
