@@ -10,7 +10,6 @@ const NAV_ITEMS: { label: string; href: string; key: Section }[] = [
   { label: "Contact",    href: "#contact",    key: "contact"    },
 ];
 
-// Map each section DOM id to a nav key
 const SECTION_MAP = [
   { id: "about",      key: "home"       },
   { id: "projects",   key: "projects"   },
@@ -31,32 +30,18 @@ function detectSection(y: number): Section {
 const LENS_TRANSITION = { type: "spring", stiffness: 480, damping: 36 } as const;
 
 export default function Nav() {
-  const [hidden, setHidden] = useState(false);
   const [active, setActive] = useState<Section>("home");
 
   useEffect(() => {
-    // Set correct section on mount (handles page refresh mid-scroll)
     setActive(detectSection(window.scrollY));
-
-    let lastY = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setHidden(y > lastY && y > 80);
-      lastY = y;
-      setActive(detectSection(y));
-    };
-
+    const onScroll = () => setActive(detectSection(window.scrollY));
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
     <div className="nav-outer">
-      <motion.div
-        className="nav-float"
-        animate={{ y: hidden ? -80 : 0, opacity: hidden ? 0 : 1 }}
-        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-      >
+      <div className="nav-float">
         <nav className="nav-pill" aria-label="Main navigation">
 
           {/* R. — home indicator */}
@@ -104,7 +89,7 @@ export default function Nav() {
             </span>
           </div>
         </nav>
-      </motion.div>
+      </div>
     </div>
   );
 }
