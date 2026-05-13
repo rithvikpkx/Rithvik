@@ -109,3 +109,34 @@ export async function upsertSiteContent(key: string, value: string) {
   if (error) throw new Error(error.message);
   revalidate();
 }
+
+export interface EducationInput {
+  school: string;
+  school_url: string | null;
+  degree: string;
+  concentrations: string[];
+  logo_path: string | null;
+  sort_order: number;
+  published: boolean;
+}
+
+export async function createEducation(data: EducationInput) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").insert(data);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function updateEducation(id: string, data: Partial<EducationInput>) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").update(data).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+export async function deleteEducation(id: string) {
+  await requireAuth();
+  const { error } = await adminClient().from("education").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
