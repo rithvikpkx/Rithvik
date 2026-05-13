@@ -868,6 +868,106 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(0);
 }
 
+/* ===== EDITABLE TEXT ===== */
+.editable-text {
+  cursor: text;
+  border-radius: 5px;
+  outline: 1px dashed rgba(255, 255, 255, 0.18);
+  outline-offset: 3px;
+  transition: outline-color 0.15s, background 0.15s;
+  caret-color: var(--accent);
+}
+.editable-text:hover {
+  outline-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.025);
+}
+.editable-text:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  background: rgba(194, 48, 94, 0.04);
+}
+.editable-text.is-saved {
+  outline-color: var(--green);
+}
+.editable-text:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ===== EDIT BAR ===== */
+.edit-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  background: rgba(11, 11, 20, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(74, 222, 128, 0.08) inset;
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.edit-bar-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.edit-bar-label {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.edit-bar-sep {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.edit-bar-hint {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.edit-bar-exit {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 3px 12px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.edit-bar-exit:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 640px) {
+  .edit-bar-hint { display: none; }
+  .edit-bar-sep { display: none; }
+}
+
 /* ===== INLINE LOGIN PANEL ===== */
 .login-panel-backdrop {
   position: fixed;

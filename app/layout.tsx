@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import EditModeProvider from "@/components/EditModeProvider";
 import InlineLoginPanel from "@/components/InlineLoginPanel";
+import EditBar from "@/components/EditBar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <EditModeProvider>
           {children}
           <InlineLoginPanel />
+          <EditBar />
         </EditModeProvider>
       </body>
     </html>

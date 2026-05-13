@@ -2,6 +2,10 @@
 import { motion } from "motion/react";
 import FlickeringGrid from "./FlickeringGrid";
 import { KineticText } from "./KineticText";
+import EditableText from "./EditableText";
+import { upsertSiteContent } from "@/app/admin/actions";
+
+const DEFAULT_SUB_LINE = "Building at the intersection of AI, systems, and real-world problems.";
 
 const container = {
   hidden: {},
@@ -13,7 +17,11 @@ const item = {
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.65, ease: "easeOut" as const } },
 };
 
-export default function Hero() {
+interface Props {
+  subLine?: string;
+}
+
+export default function Hero({ subLine = DEFAULT_SUB_LINE }: Props) {
   return (
     <section className="hero" id="about">
       <FlickeringGrid className="hero-flickering-grid" color="#ffffff" squareSize={4} gridGap={6} maxOpacity={0.1} flickerChance={0.08} />
@@ -22,6 +30,7 @@ export default function Hero() {
         <motion.div variants={container} initial="hidden" animate="visible">
           <h1 className="hero-title">
             <KineticText text="Rithvik" as="span" />
+            <br />
             <KineticText text="Praveen Kumar" as="span" className="gradient-text" />
           </h1>
 
@@ -37,9 +46,13 @@ export default function Hero() {
                 Purdue
               </a>
             </p>
-            <p className="hero-sub-line">
-              Building at the intersection of AI, systems, and real-world problems.
-            </p>
+            <EditableText
+              tag="p"
+              className="hero-sub-line"
+              value={subLine}
+              onSave={(v) => upsertSiteContent("hero.sub_line", v)}
+              placeholder="Enter a sub-headline…"
+            />
           </motion.div>
 
           <motion.div className="hero-actions" variants={item}>

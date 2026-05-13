@@ -99,3 +99,13 @@ export async function deleteExperience(id: string) {
   if (error) throw new Error(error.message);
   revalidate();
 }
+
+/** Upsert a single key/value pair into the site_content table. */
+export async function upsertSiteContent(key: string, value: string) {
+  await requireAuth();
+  const { error } = await adminClient()
+    .from("site_content")
+    .upsert({ key, value }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+  revalidate();
+}
