@@ -542,22 +542,24 @@ All must also exist in `.env.local` for local development. `.env.local` is gitig
 
 ---
 
-## Stage Completion Summary
+## Phase 1 Completion Summary (v1.0 — shipped)
 
 | Stage | Feature | Status |
 |---|---|---|
 | — | Static HTML/CSS foundation | ✅ complete (v0.1) |
 | — | Next.js migration + Vercel deploy | ✅ complete (v0.2) |
-| 1 | Framer Motion scroll reveal | ⬜ |
-| 2 | Framer Motion nav + hero | ⬜ |
-| 3 | Framer Motion bento grid | ⬜ |
-| 4 | Framer Motion RAG panel + timeline | ⬜ |
-| 5 | Supabase setup + schema | ⬜ |
-| 6 | Seed + wire dynamic content | ⬜ |
-| 7 | Admin auth + login gate | ⬜ |
-| 8 | Admin inline project CRUD | ⬜ |
-| 9 | Vector store + embed script | ⬜ |
-| 10 | RAG chat API route | ⬜ |
-| 11 | Live chat UI | ⬜ |
-| 12 | SEO + OG image + performance | ⬜ |
-| 13 | Admin experience CRUD (optional) | ⬜ |
+| 1 | Framer Motion scroll reveal | ✅ complete |
+| 2 | Framer Motion nav + hero | ✅ complete |
+| 3 | Framer Motion bento grid | ✅ complete |
+| 4 | Framer Motion RAG panel + timeline | ✅ complete |
+| 5 | Supabase setup + schema | ✅ complete |
+| 6 | Seed + wire dynamic content | ✅ complete |
+| 7 | Admin auth + login gate | ✅ complete |
+| 8 | Admin inline project CRUD | ✅ complete |
+| 9 | Vector store + embed script | ✅ complete |
+| 10 | RAG chat API route | ✅ complete |
+| 11 | Live chat UI | ✅ complete |
+| 12 | SEO + OG image + performance | ✅ complete |
+| 13 | Admin experience CRUD | ✅ complete |
+
+All Phase 1 stages complete. Tagged as `v1` and live at [rithvik.ai](https://rithvik.ai).
