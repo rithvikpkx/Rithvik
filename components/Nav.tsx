@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 
 type Section = "home" | "projects" | "experience" | "contact";
@@ -31,10 +31,26 @@ const LENS_TRANSITION = { type: "spring", stiffness: 480, damping: 36 } as const
 
 export default function Nav() {
   const [active, setActive] = useState<Section>("home");
+  const lockedRef = useRef(false);
+  const lockTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Click handler: immediately set target section and lock scroll tracking
+  // for 800 ms so the smooth-scroll animation doesn't bounce the lens.
+  const handleClick = (key: Section) => {
+    setActive(key);
+    lockedRef.current = true;
+    clearTimeout(lockTimer.current);
+    lockTimer.current = setTimeout(() => {
+      lockedRef.current = false;
+      setActive(detectSection(window.scrollY));
+    }, 800);
+  };
 
   useEffect(() => {
     setActive(detectSection(window.scrollY));
-    const onScroll = () => setActive(detectSection(window.scrollY));
+    const onScroll = () => {
+      if (!lockedRef.current) setActive(detectSection(window.scrollY));
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -53,7 +69,7 @@ export default function Nav() {
               href="#about"
               className={`nav-logo${active === "home" ? " is-active" : ""}`}
               aria-label="Rithvik Praveen Kumar — home"
-              onClick={() => setActive("home")}
+              onClick={() => handleClick("home")}
             >
               R.
             </a>
@@ -71,7 +87,7 @@ export default function Nav() {
                 <a
                   href={item.href}
                   className={`nav-pill-item${active === item.key ? " is-active" : ""}`}
-                  onClick={() => setActive(item.key)}
+                  onClick={() => handleClick(item.key)}
                 >
                   {item.label}
                 </a>
