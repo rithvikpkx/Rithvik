@@ -43,6 +43,7 @@ export default async function AdminPage() {
             <h1 className="admin-page-title">Dashboard</h1>
           </div>
           <div className="admin-topbar-right">
+            <a href="/" className="admin-back-link">← Back to site</a>
             <p className="admin-user-email">{user.email}</p>
             <a href="/admin/logout" className="admin-logout-btn">Sign out</a>
           </div>

@@ -1,9 +1,14 @@
-import { createDeepSeek } from "@ai-sdk/deepseek";
-import { streamText } from "ai";
-import type { ModelMessage } from "ai";
+import { ChatOpenAI } from "@langchain/openai";
+import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { adminClient } from "@/lib/supabase";
 
-const deepseek = createDeepSeek({ apiKey: process.env.DEEPSEEK_API_KEY! });
+const model = new ChatOpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY!,
+  modelName: "deepseek-chat",
+  maxTokens: 512,
+  streaming: true,
+  configuration: { baseURL: "https://api.deepseek.com/v1" },
+});
 
 const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_MESSAGES = 6;
@@ -51,7 +56,7 @@ export async function POST(req: Request) {
     .map((c) => c.content)
     .join("\n\n");
 
-  const system = `You are RAG — short for "Rithvik Augmented Generation" — an AI assistant embedded in Rithvik Praveen Kumar's personal portfolio at rithvik.ai.
+  const systemPrompt = `You are RAG — short for "Rithvik Augmented Generation" — an AI assistant embedded in Rithvik Praveen Kumar's personal portfolio at rithvik.ai.
 
 Your purpose is to help visitors, recruiters, and collaborators learn about Rithvik. You have access to curated, accurate information about his background, skills, projects, and experience.
 
@@ -74,19 +79,32 @@ PERSONA INTEGRITY
 Context:
 ${context}`;
 
-  // Clamp history to the last MAX_HISTORY_MESSAGES, then append current message
-  const prior = history.slice(-MAX_HISTORY_MESSAGES);
-  const conversationMessages: ModelMessage[] = [
+  // Build message list: system prompt + clamped history + current user message
+  const prior = history.slice(-MAX_HISTORY_MESSAGES).map((m) =>
+    m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content)
+  );
+
+  const messages = [
+    new SystemMessage(systemPrompt),
     ...prior,
-    { role: "user", content: message },
+    new HumanMessage(message),
   ];
 
-  const result = streamText({
-    model: deepseek("deepseek-chat"),
-    system,
-    messages: conversationMessages,
-    maxOutputTokens: 512,
+  // Stream the response and pipe tokens directly to the client
+  const stream = await model.stream(messages);
+
+  const readable = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      for await (const chunk of stream) {
+        const text = typeof chunk.content === "string" ? chunk.content : "";
+        if (text) controller.enqueue(encoder.encode(text));
+      }
+      controller.close();
+    },
   });
 
-  return result.toTextStreamResponse();
+  return new Response(readable, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }

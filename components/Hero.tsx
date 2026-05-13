@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "motion/react";
+import FlickeringGrid from "./FlickeringGrid";
 
 const container = {
   hidden: {},
@@ -14,7 +15,7 @@ const item = {
 export default function Hero() {
   return (
     <section className="hero" id="about">
-      <div className="dot-grid" />
+      <FlickeringGrid className="hero-flickering-grid" color="#ffffff" squareSize={4} gridGap={6} maxOpacity={0.1} flickerChance={0.08} />
 
       <div className="hero-content">
         <motion.div variants={container} initial="hidden" animate="visible">

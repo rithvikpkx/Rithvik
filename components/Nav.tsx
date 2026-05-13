@@ -34,7 +34,8 @@ export default function Nav() {
         <div className="nav-admin-wrap">
           <a href="/admin/login" className="nav-admin-btn">I am Rithvik</a>
           <span className="nav-admin-tooltip">
-            If you&apos;re Rithvik and want to edit this content at run-time. Only Rithvik allowed beyond this point :)
+            <span className="nav-admin-tooltip-title">Live content editor</span>
+            Add, edit, or remove projects and experience entries directly on the site — changes go live instantly, no code required.
           </span>
         </div>
       </nav>

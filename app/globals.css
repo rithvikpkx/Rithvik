@@ -92,13 +92,13 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
-.dot-grid {
+.hero-flickering-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255,255,255,0.052) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 40%, black 20%, transparent 100%);
+  width: 100%;
+  height: 100%;
+  mask-image: radial-gradient(ellipse 80% 75% at 50% 40%, black 20%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 50% 40%, black 20%, transparent 100%);
   pointer-events: none;
 }
 
@@ -726,16 +726,25 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg-soft);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   font-size: 0.78rem;
   color: var(--muted);
-  width: 260px;
-  line-height: 1.55;
+  width: 280px;
+  line-height: 1.6;
   pointer-events: none;
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 0.2s, transform 0.2s;
   z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-admin-tooltip-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
 }
 .nav-admin-wrap:hover .nav-admin-tooltip {
   opacity: 1;
@@ -743,6 +752,23 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== ADMIN ===== */
+.admin-back-link {
+  font-size: 0.82rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.admin-back-link:hover { color: var(--text); }
+
+.admin-login-warning {
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  line-height: 1.5;
+}
+
 .admin-login-wrap {
   min-height: 100svh;
   display: flex;
