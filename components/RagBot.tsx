@@ -35,17 +35,29 @@ export default function RagBot() {
     if (!text || loading) return;
 
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
 
-    // Append an empty bot message that we'll stream into
-    setMessages((prev) => [...prev, { role: "bot", content: "" }]);
+    // Build history from current messages before adding the new ones
+    // Map "bot" → "assistant" for the API, skip empty streaming placeholders
+    const history = messages
+      .filter((m) => m.content.length > 0)
+      .slice(-5)
+      .map((m) => ({
+        role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+        content: m.content,
+      }));
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: text },
+      { role: "bot", content: "" }, // streaming placeholder
+    ]);
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, messages: history }),
       });
 
       if (!res.ok || !res.body) throw new Error("Request failed");
