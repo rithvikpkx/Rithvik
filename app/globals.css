@@ -183,39 +183,33 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== THEME DIAL =====
-   Vertical liquid-glass strip on the left edge. Always shows tick marks
-   and color swatches; expands on hover to reveal theme labels. */
+   Half-pill liquid-glass shell tucked to the left edge. Each item is a
+   rounded-rectangle pill whose own bg + text are the theme's colors —
+   the pill IS the swatch. The selected pill sits horizontal at the
+   container's vertical center; non-selected pills fan radially around
+   it and fade in on hover. */
+
 .theme-dial-aside {
   position: fixed;
   top: 50%;
   left: 0;
   transform: translateY(-50%);
   z-index: 90;
-  width: 52px;
-  /* Apple-y easing for the slide-open */
-  transition: width 0.42s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.theme-dial-aside:hover,
-.theme-dial-aside:focus-within {
-  width: 184px;
 }
 
 .theme-dial-content {
   position: relative;
+  width: 60px;            /* collapsed — only the selected pill peeks through */
+  height: 280px;          /* tall enough to accommodate the fan */
   background: var(--panel-glass);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
   border-left: none;
-  /* Semi-circular right side: large radius clamped to half the container height
-     produces a continuous half-pill curve matching the radial fan of items. */
+  /* Semi-circular right side — the large radius clamps to half the height. */
   border-radius: 0 999px 999px 0;
-  padding: 26px 16px 26px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;            /* big enough that the rotated items don't visually collide */
   overflow: hidden;
+  transition: width 0.45s cubic-bezier(0.32, 0.72, 0, 1);
   box-shadow:
     inset 1px 0 0 color-mix(in srgb, var(--text) 10%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent),
@@ -224,13 +218,18 @@ a { color: inherit; text-decoration: none; }
     12px 4px 36px rgba(0, 0, 0, 0.18);
 }
 
-/* Subtle vertical highlight near the right edge — suggests glass curvature */
+.theme-dial-aside:hover .theme-dial-content,
+.theme-dial-aside:focus-within .theme-dial-content {
+  width: 220px;
+}
+
+/* Subtle highlight along the curved right edge */
 .theme-dial-content::before {
   content: '';
   position: absolute;
   top: 8%;
   bottom: 8%;
-  right: 6px;
+  right: 4px;
   width: 1px;
   background: linear-gradient(180deg,
     transparent,
@@ -241,110 +240,90 @@ a { color: inherit; text-decoration: none; }
   pointer-events: none;
 }
 
+/* Each pill — absolutely positioned at vertical center, then offset
+   by (i - selectedIdx) * spacing in the inline transform. */
 .theme-strip-option {
+  position: absolute;
+  top: 50%;
+  left: 12px;
   display: flex;
   align-items: center;
-  gap: 11px;
-  background: none;
-  border: none;
+  gap: 9px;
+  /* background + color from inline (theme.bg / theme.text) */
+  border: 1.5px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  padding: 3px 0;
-  width: 100%;
-  text-align: left;
-  -webkit-tap-highlight-color: transparent;
-  /* Fan-out: each item rotates around its left edge (under the tick mark).
-     Rotation set inline per item; this just sets the pivot + transition. */
+  white-space: nowrap;
+  min-width: 168px;
+  /* Pivot at left edge of the pill so the fan rotation reads correctly. */
   transform-origin: 0 50%;
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.theme-strip-tick {
-  display: block;
-  width: 6px;
-  height: 1.5px;
-  background: color-mix(in srgb, var(--text) 30%, transparent);
-  border-radius: 1px;
-  flex-shrink: 0;
-  transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1),
-              background 0.25s;
-}
-
-.theme-strip-option.is-active .theme-strip-tick {
-  width: 14px;
-  background: var(--accent);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
-}
-
-.theme-strip-option:hover .theme-strip-tick {
-  background: color-mix(in srgb, var(--text) 55%, transparent);
-}
-
-/* Flat rounded-square color preview. Background is a linear gradient
-   through the theme's three major colors (bg → accent → text), set
-   inline so each swatch shows its own palette regardless of the
-   currently active theme. */
-.theme-strip-swatch {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
-  flex-shrink: 0;
-  /* background gradient set inline */
-  transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1),
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
               border-color 0.25s,
               box-shadow 0.25s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.theme-strip-option:hover .theme-strip-swatch {
-  transform: scale(1.08);
-  border-color: color-mix(in srgb, var(--text) 40%, transparent);
+/* In the collapsed state, only the selected pill is visible.
+   Non-selected pills fade in on hover/focus. */
+.theme-dial-aside:not(:hover):not(:focus-within) .theme-strip-option:not(.is-active) {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.theme-strip-option.is-active .theme-strip-swatch {
-  border-color: var(--accent);
+.theme-strip-option.is-active {
+  border-color: currentColor;
   box-shadow:
-    0 0 0 2.5px color-mix(in srgb, var(--accent) 28%, transparent),
-    0 3px 10px color-mix(in srgb, var(--accent) 28%, transparent);
+    0 0 0 2.5px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
-.theme-strip-option:focus-visible .theme-strip-swatch {
+.theme-strip-option:hover:not(.is-active) {
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.theme-strip-option:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
-.theme-strip-label {
-  font-family: var(--mono);
-  font-size: 0.76rem;
-  letter-spacing: -0.01em;
-  color: var(--muted);
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.32s cubic-bezier(0.32, 0.72, 0, 1),
-              transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
-              color 0.2s;
-  pointer-events: none;
+.theme-strip-name {
+  /* Truncate name if it overflows in collapsed state — but the pill is
+     wide enough in expanded view that it shouldn't normally clip. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.theme-dial-aside:hover .theme-strip-label,
-.theme-dial-aside:focus-within .theme-strip-label {
-  opacity: 1;
-  transform: translateX(0);
+.theme-strip-dots {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.theme-strip-option.is-active .theme-strip-label {
-  color: var(--text);
-  font-weight: 600;
+.theme-strip-dots > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }
 
-/* Mobile: still tucked, slightly smaller (Stage 8 may refine) */
+/* Mobile: still tucked, but the expanded width is a bit smaller */
 @media (max-width: 640px) {
-  .theme-dial-aside {
-    width: 46px;
+  .theme-dial-content {
+    width: 54px;
+    height: 240px;
   }
-  .theme-dial-aside:hover,
-  .theme-dial-aside:focus-within {
-    width: 168px;
+  .theme-dial-aside:hover .theme-dial-content,
+  .theme-dial-aside:focus-within .theme-dial-content {
+    width: 200px;
+  }
+  .theme-strip-option {
+    min-width: 154px;
   }
 }
 

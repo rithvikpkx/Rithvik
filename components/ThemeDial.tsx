@@ -3,26 +3,26 @@ import { useTheme } from "./ThemeProvider";
 import type { CSSProperties } from "react";
 
 /**
- * Radial liquid-glass theme dial — tucked to the left edge.
+ * Radial liquid-glass theme dial.
  *
- * Items fan around the currently SELECTED item, which sits horizontal at
- * the pivot. Unselected items above tilt up; unselected items below tilt
- * down. Clicking another option re-pivots: it becomes horizontal and the
- * rest fan around it, with a spring-y transition that reads like a dial
- * rotating into a new detent.
+ * Each item is a rounded-rectangle pill whose own background is the
+ * theme's bg color and whose text is the theme's text color — so the
+ * pill IS the swatch. The currently selected pill sits horizontal at
+ * the vertical center of the dial; other pills fan above and below
+ * with a stepped rotation and matching vertical offset.
  *
- * Swatches are flat rounded squares with a linear gradient through the
- * theme's three major colors (bg → accent → text).
+ * Hovering the dial fades in the non-selected pills (in the collapsed
+ * state only the selected pill is shown, centered).
  */
 
-const STEP_DEG = 18; // angle between adjacent items in the fan
+const STEP_DEG = 18;     // angle between adjacent pills in the fan
+const ITEM_SPACING = 56; // vertical px between pill centers
 
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
   if (sorted.length < 2) return null;
 
-  // Pivot the fan around the currently-selected item so it stays horizontal.
   const selectedIdx = Math.max(0, sorted.findIndex((t) => t.slug === currentSlug));
 
   return (
@@ -34,13 +34,17 @@ export default function ThemeDial() {
       <div className="theme-dial-content">
         {sorted.map((t, i) => {
           const active = t.slug === currentSlug;
-          const angle = (i - selectedIdx) * STEP_DEG;
+          const distance = i - selectedIdx;
+          const angle = distance * STEP_DEG;
+          const yOffset = distance * ITEM_SPACING;
+
           const optionStyle: CSSProperties = {
-            transform: `rotate(${angle}deg)`,
+            transform: `translate(0, calc(-50% + ${yOffset}px)) rotate(${angle}deg)`,
+            background: t.tokens.bg,
+            color: t.tokens.text,
+            fontFamily: t.tokens.font ?? undefined,
           };
-          const swatchStyle: CSSProperties = {
-            background: `linear-gradient(135deg, ${t.tokens.bg} 0%, ${t.tokens.accent} 50%, ${t.tokens.text} 100%)`,
-          };
+
           return (
             <button
               key={t.slug}
@@ -52,9 +56,14 @@ export default function ThemeDial() {
               onClick={() => setTheme(t.slug)}
               style={optionStyle}
             >
-              <span className="theme-strip-tick" aria-hidden />
-              <span className="theme-strip-swatch" style={swatchStyle} aria-hidden />
-              <span className="theme-strip-label">{t.name}</span>
+              <span className="theme-strip-name">{t.name}</span>
+              {active && (
+                <span className="theme-strip-dots" aria-hidden>
+                  <span style={{ background: t.tokens.bg, boxShadow: `inset 0 0 0 1px ${t.tokens.text}` }} />
+                  <span style={{ background: t.tokens.accent }} />
+                  <span style={{ background: t.tokens.text }} />
+                </span>
+              )}
             </button>
           );
         })}
