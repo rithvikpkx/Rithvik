@@ -1,8 +1,28 @@
 import React from "react";
-import EduLogo from "./EduLogo";
+import { serverClient } from "@/lib/supabase";
+import type { Education as EducationRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
+import EducationClient from "./EducationClient";
 
-export default function Education() {
+// Used when the education table is empty (migration not yet run)
+const FALLBACK: EducationRow = {
+  id: "default",
+  school: "Purdue University",
+  school_url: "https://www.cs.purdue.edu/",
+  degree: "B.S. in Computer Science + Mathematics",
+  concentrations: ["Software Engineering", "AI / ML"],
+  logo_path: "/images/purdue.png",
+  sort_order: 0,
+  published: true,
+  created_at: "",
+  updated_at: "",
+};
+
+export default async function Education() {
+  const { data } = await serverClient().from("education").select("*").order("sort_order");
+  const rows = ((data ?? []) as EducationRow[]).filter((e) => e.published);
+  const entries = rows.length > 0 ? rows : [FALLBACK];
+
   return (
     <section className="education-section" id="education">
       <FadeIn>
@@ -13,36 +33,7 @@ export default function Education() {
           </h2>
         </div>
       </FadeIn>
-
-      <FadeIn delay={0.1} className="edu-card">
-        <EduLogo />
-
-        <div className="edu-body">
-          <div>
-            <a href="https://www.cs.purdue.edu/" target="_blank" rel="noreferrer" className="edu-school">
-              Purdue University
-            </a>
-          </div>
-          <p className="edu-description">
-            B.S. in{" "}
-            <span className="edu-highlight" style={{ "--gd": "0s" } as React.CSSProperties}>
-              Computer Science
-            </span>
-            {" "}+{" "}
-            <span className="edu-highlight" style={{ "--gd": "1.4s" } as React.CSSProperties}>
-              Mathematics
-            </span>
-            {" "}with concentrations in{" "}
-            <span className="edu-highlight" style={{ "--gd": "2.8s" } as React.CSSProperties}>
-              Software Engineering
-            </span>
-            {" "}and{" "}
-            <span className="edu-highlight" style={{ "--gd": "4.2s" } as React.CSSProperties}>
-              AI / ML
-            </span>
-          </p>
-        </div>
-      </FadeIn>
+      <EducationClient initialEntries={entries} />
     </section>
   );
 }
