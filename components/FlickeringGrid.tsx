@@ -32,6 +32,7 @@ export default function FlickeringGrid({
     let targets: Float32Array;
     let cols = 0;
     let rows = 0;
+    let visible = true;
 
     // Parse hex color once
     const r = parseInt(color.slice(1, 3), 16);
@@ -57,6 +58,11 @@ export default function FlickeringGrid({
     }
 
     function draw() {
+      if (!visible) {
+        animId = requestAnimationFrame(draw);
+        return;
+      }
+
       const rect = canvas!.getBoundingClientRect();
       ctx!.clearRect(0, 0, rect.width, rect.height);
 
@@ -64,12 +70,10 @@ export default function FlickeringGrid({
         for (let row = 0; row < rows; row++) {
           const i = c * rows + row;
 
-          // Occasionally pick a new target opacity
           if (Math.random() < flickerChance) {
             targets[i] = Math.random() * maxOpacity;
           }
 
-          // Ease toward target
           opacities[i] += (targets[i] - opacities[i]) * 0.15;
 
           ctx!.fillStyle = `rgba(${r},${g},${b},${opacities[i].toFixed(3)})`;
@@ -91,9 +95,17 @@ export default function FlickeringGrid({
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
+    // Pause animation when scrolled off-screen
+    const io = new IntersectionObserver(
+      ([entry]) => { visible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    io.observe(canvas);
+
     return () => {
       cancelAnimationFrame(animId);
       ro.disconnect();
+      io.disconnect();
     };
   }, [squareSize, gridGap, color, maxOpacity, flickerChance]);
 
