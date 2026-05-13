@@ -193,7 +193,47 @@ a { color: inherit; text-decoration: none; }
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  z-index: 90;
+  /* Above the theme wash (z 195) so the wash visually flows FROM the dial */
+  z-index: 196;
+}
+
+/* ===== THEME WASH =====
+   Full-viewport liquid-glass overlay that plays during theme changes.
+   Two stacked radial gradients (accent core, bg outer) on a backdrop-
+   filtered overlay, expanded via clip-path from the dial position. */
+.theme-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 195;        /* above content, edit bar, nav; below modals */
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 4% 50%,
+      color-mix(in srgb, var(--wash-accent) 80%, transparent) 0%,
+      color-mix(in srgb, var(--wash-accent) 25%, transparent) 18%,
+      transparent 45%
+    ),
+    radial-gradient(circle at 4% 50%,
+      color-mix(in srgb, var(--wash-bg) 92%, transparent) 0%,
+      color-mix(in srgb, var(--wash-bg) 60%, transparent) 38%,
+      color-mix(in srgb, var(--wash-bg) 0%,  transparent) 80%
+    );
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  clip-path: circle(0% at 4% 50%);
+  opacity: 0;
+  animation: theme-wash 750ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  will-change: clip-path, opacity;
+}
+
+@keyframes theme-wash {
+  0%   { clip-path: circle(0%   at 4% 50%); opacity: 0; }
+  15%  {                                     opacity: 1; }
+  50%  { clip-path: circle(170% at 4% 50%); opacity: 1; }
+  100% { clip-path: circle(210% at 4% 50%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-wash { display: none; }
 }
 
 .theme-dial-content {
