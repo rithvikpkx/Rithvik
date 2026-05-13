@@ -209,6 +209,8 @@ a { color: inherit; text-decoration: none; }
   /* Half-pill shape — large radius clamps to half the height in both states */
   border-radius: 0 999px 999px 0;
   overflow: hidden;
+  /* Prevent native page scroll/zoom while dragging the dial vertically */
+  touch-action: none;
   transition:
     width 0.42s cubic-bezier(0.32, 0.72, 0, 1),
     height 0.42s cubic-bezier(0.32, 0.72, 0, 1);
@@ -220,8 +222,10 @@ a { color: inherit; text-decoration: none; }
     8px 4px 24px rgba(0, 0, 0, 0.15);
 }
 
-/* Expanded size — small, non-invasive */
-.theme-dial-aside:hover .theme-dial-content {
+/* Expanded size — small, non-invasive. :has(:focus-visible) opens on
+   keyboard focus only (mouse click doesn't trigger focus-visible). */
+.theme-dial-aside:hover .theme-dial-content,
+.theme-dial-aside:has(:focus-visible) .theme-dial-content {
   width: 200px;
   height: 220px;
 }
@@ -238,7 +242,8 @@ a { color: inherit; text-decoration: none; }
   pointer-events: none;
 }
 
-.theme-dial-aside:hover .theme-dial-dormant {
+.theme-dial-aside:hover .theme-dial-dormant,
+.theme-dial-aside:has(:focus-visible) .theme-dial-dormant {
   opacity: 0;
 }
 
@@ -263,7 +268,8 @@ a { color: inherit; text-decoration: none; }
   pointer-events: none;
 }
 
-.theme-dial-aside:hover .theme-dial-fan {
+.theme-dial-aside:hover .theme-dial-fan,
+.theme-dial-aside:has(:focus-visible) .theme-dial-fan {
   opacity: 1;
   pointer-events: auto;
 }
@@ -333,11 +339,21 @@ a { color: inherit; text-decoration: none; }
     width: 52px;
     height: 30px;
   }
-  .theme-dial-aside:hover .theme-dial-content {
+  .theme-dial-aside:hover .theme-dial-content,
+  .theme-dial-aside:has(:focus-visible) .theme-dial-content {
     width: 182px;
     height: 200px;
   }
   .theme-strip-option { min-width: 136px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-dial-content,
+  .theme-dial-dormant,
+  .theme-dial-fan,
+  .theme-strip-option {
+    transition-duration: 0.001s !important;
+  }
 }
 
 /* ===== HERO ===== */
