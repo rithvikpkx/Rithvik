@@ -87,6 +87,26 @@ create policy "public read" on site_content for select using (true);
 
 ---
 
+## Admin Write Policies
+
+Run this after creating your Supabase auth user. Allows authenticated users (i.e. you) to insert, update, and delete.
+
+```sql
+create policy "admin write" on projects
+  for all using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+create policy "admin write" on experience
+  for all using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
+create policy "admin write" on site_content
+  for all using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+```
+
+---
+
 ## Seed Data
 
 Paste this separately after the schema runs.

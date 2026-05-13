@@ -13,3 +13,10 @@ export function serverClient() {
     auth: { persistSession: false },
   });
 }
+
+/** Untyped service role client for admin write operations. */
+export function adminClient() {
+  return createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  });
+}

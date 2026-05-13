@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { serverClient } from "@/lib/supabase";
+import type { Project } from "@/lib/types";
+import ProjectManager from "./ProjectManager";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -22,18 +25,28 @@ export default async function AdminPage() {
   const user = await getUser();
   if (!user) redirect("/admin/login");
 
+  // Service role — fetches all projects including drafts
+  const { data } = await serverClient().from("projects").select("*").order("sort_order");
+  const projects = (data ?? []) as Project[];
+
   return (
-    <div className="admin-login-wrap">
-      <div className="admin-login-card">
-        <p className="admin-eyebrow">Admin</p>
-        <h1 className="admin-login-title">Welcome back, Rithvik.</h1>
-        <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "8px" }}>
-          Signed in as {user.email}
-        </p>
-        <a href="/admin/logout" className="admin-submit" style={{ marginTop: "32px", textAlign: "center" }}>
-          Sign out
-        </a>
-      </div>
+    <div className="admin-page">
+      <header className="admin-topbar">
+        <div className="admin-topbar-inner">
+          <div>
+            <p className="admin-eyebrow">Admin</p>
+            <h1 className="admin-page-title">Dashboard</h1>
+          </div>
+          <div className="admin-topbar-right">
+            <p className="admin-user-email">{user.email}</p>
+            <a href="/admin/logout" className="admin-logout-btn">Sign out</a>
+          </div>
+        </div>
+      </header>
+
+      <main className="admin-main">
+        <ProjectManager projects={projects} />
+      </main>
     </div>
   );
 }
