@@ -1,10 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { login } from "./actions";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -15,15 +13,13 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const err = await login(email, password);
 
-    if (error) {
-      setError("Invalid credentials.");
+    if (err) {
+      setError(err);
       setLoading(false);
-      return;
     }
-
-    router.push("/admin");
+    // On success, the server action redirects — no client code needed.
   }
 
   return (
