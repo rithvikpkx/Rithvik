@@ -183,11 +183,10 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== THEME DIAL =====
-   Half-pill liquid-glass shell tucked to the left edge. Each item is a
-   rounded-rectangle pill whose own bg + text are the theme's colors —
-   the pill IS the swatch. The selected pill sits horizontal at the
-   container's vertical center; non-selected pills fan radially around
-   it and fade in on hover. */
+   Half-pill liquid-glass shell tucked to the left edge. Dormant state
+   is tiny and shows only three color dots previewing the active
+   theme's bg/accent/text. On hover the shell expands and the fan of
+   theme pills fades in. Same shape in both states — just scaled. */
 
 .theme-dial-aside {
   position: fixed;
@@ -199,49 +198,76 @@ a { color: inherit; text-decoration: none; }
 
 .theme-dial-content {
   position: relative;
-  width: 60px;            /* collapsed — only the selected pill peeks through */
-  height: 280px;          /* tall enough to accommodate the fan */
+  /* Dormant size — just enough for the three dots */
+  width: 58px;
+  height: 32px;
   background: var(--panel-glass);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
   border-left: none;
-  /* Semi-circular right side — the large radius clamps to half the height. */
+  /* Half-pill shape — large radius clamps to half the height in both states */
   border-radius: 0 999px 999px 0;
   overflow: hidden;
-  transition: width 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+  transition:
+    width 0.42s cubic-bezier(0.32, 0.72, 0, 1),
+    height 0.42s cubic-bezier(0.32, 0.72, 0, 1);
   box-shadow:
     inset 1px 0 0 color-mix(in srgb, var(--text) 10%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--text) 4%, transparent),
-    6px 0 28px rgba(0, 0, 0, 0.32),
-    12px 4px 36px rgba(0, 0, 0, 0.18);
+    4px 0 18px rgba(0, 0, 0, 0.28),
+    8px 4px 24px rgba(0, 0, 0, 0.15);
 }
 
-.theme-dial-aside:hover .theme-dial-content,
-.theme-dial-aside:focus-within .theme-dial-content {
-  width: 220px;
+/* Expanded size — small, non-invasive */
+.theme-dial-aside:hover .theme-dial-content {
+  width: 200px;
+  height: 220px;
 }
 
-/* Subtle highlight along the curved right edge */
-.theme-dial-content::before {
-  content: '';
+/* ── Dormant: 3 color dots, centered ─────────────────────────────────────── */
+.theme-dial-dormant {
   position: absolute;
-  top: 8%;
-  bottom: 8%;
-  right: 4px;
-  width: 1px;
-  background: linear-gradient(180deg,
-    transparent,
-    color-mix(in srgb, var(--text) 12%, transparent) 30%,
-    color-mix(in srgb, var(--text) 12%, transparent) 70%,
-    transparent
-  );
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: opacity 0.22s ease-out;
   pointer-events: none;
 }
 
-/* Each pill — absolutely positioned at vertical center, then offset
-   by (i - selectedIdx) * spacing in the inline transform. */
+.theme-dial-aside:hover .theme-dial-dormant {
+  opacity: 0;
+}
+
+.theme-dial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.theme-dial-dot.dot-bg {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 60%, transparent);
+}
+.theme-dial-dot.dot-accent { background: var(--accent); }
+.theme-dial-dot.dot-text   { background: var(--text); }
+
+/* ── Fan: full theme pills, only visible on hover ────────────────────────── */
+.theme-dial-fan {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1) 0.08s;
+  pointer-events: none;
+}
+
+.theme-dial-aside:hover .theme-dial-fan {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .theme-strip-option {
   position: absolute;
   top: 50%;
@@ -252,35 +278,27 @@ a { color: inherit; text-decoration: none; }
   /* background + color from inline (theme.bg / theme.text) */
   border: 1.5px solid color-mix(in srgb, currentColor 18%, transparent);
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 6px 11px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
   white-space: nowrap;
-  min-width: 168px;
+  min-width: 150px;
   /* Pivot at left edge of the pill so the fan rotation reads correctly. */
   transform-origin: 0 50%;
-  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1),
-              opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1),
+  transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1),
               border-color 0.25s,
               box-shadow 0.25s;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* In the collapsed state, only the selected pill is visible.
-   Non-selected pills fade in on hover/focus. */
-.theme-dial-aside:not(:hover):not(:focus-within) .theme-strip-option:not(.is-active) {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .theme-strip-option.is-active {
   border-color: currentColor;
   box-shadow:
-    0 0 0 2.5px color-mix(in srgb, var(--accent) 30%, transparent),
-    0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+    0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 4px 14px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
 .theme-strip-option:hover:not(.is-active) {
@@ -289,42 +307,37 @@ a { color: inherit; text-decoration: none; }
 
 .theme-strip-option:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 .theme-strip-name {
-  /* Truncate name if it overflows in collapsed state — but the pill is
-     wide enough in expanded view that it shouldn't normally clip. */
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .theme-strip-dots {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   margin-left: auto;
   flex-shrink: 0;
 }
 
 .theme-strip-dots > span {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
 }
 
-/* Mobile: still tucked, but the expanded width is a bit smaller */
 @media (max-width: 640px) {
   .theme-dial-content {
-    width: 54px;
-    height: 240px;
+    width: 52px;
+    height: 30px;
   }
-  .theme-dial-aside:hover .theme-dial-content,
-  .theme-dial-aside:focus-within .theme-dial-content {
-    width: 200px;
+  .theme-dial-aside:hover .theme-dial-content {
+    width: 182px;
+    height: 200px;
   }
-  .theme-strip-option {
-    min-width: 154px;
-  }
+  .theme-strip-option { min-width: 136px; }
 }
 
 /* ===== HERO ===== */
