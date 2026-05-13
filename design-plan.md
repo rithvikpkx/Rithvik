@@ -8,91 +8,135 @@ Dark-first, premium, and alive. The site should feel like a living dashboard, no
 
 ## Tech Stack
 
-- **Next.js** — framework
-- **Tailwind CSS** — utility-first styling
-- **Framer Motion** — animations and transitions
-- **Supabase** — database and auth (for admin UI and RAG)
-- **Vercel** — deployment
-- **Geist Sans + Geist Mono** — typography (clean, modern, technical)
+- **Next.js 16** — App Router, server components, server actions
+- **Tailwind CSS 4** — utility-first styling
+- **motion (Framer Motion v12)** — animations and transitions via `motion/react`
+- **Supabase** — Postgres database, pgvector, and auth
+- **OpenAI** — `text-embedding-3-small` for RAG embeddings
+- **DeepSeek** — `deepseek-chat` for RAG response generation via Vercel AI SDK
+- **Vercel** — deployment (auto-deploys on push to `main`)
+- **Geist Sans + Geist Mono** — typography
 
 ---
 
 ## Layout Structure
 
-### Hero
+### Hero ✅
+Full-viewport intro section. Name, tagline ("CS + Math @ Purdue"), and primary CTAs ("View Projects", "Get in Touch"). Dot grid background. Staggered Framer Motion entrance on load.
 
-Full-viewport intro section. Contains name, tagline, and primary CTAs. Background has a design element (e.g. dot grid).
+### Bento Dashboard Grid ✅
+CSS Grid of cards. Staggered entrance animation on scroll. Cards include:
+- Location + live local time
+- Tech stack marquee (infinite scroll, pauses on hover)
+- Status / availability
+- GitHub activity
 
-### Bento Dashboard Grid
+### Education ✅
+Purdue University card with local PNG logo (`public/images/purdue.png`), role, and date. FadeIn on scroll.
 
-The centerpiece of the page. A CSS Grid of cards rather than a standard linear sections layout. Cards include live/dynamic content — this is what makes the site feel like a product. Grid collapses gracefully on mobile.
+### Projects ✅
+Two-column card grid. Data served from Supabase `projects` table. Tags, badge, description, and links per card.
 
-### Projects
+### Experience / Timeline ✅
+Vertical timeline with animated tracing beam (Framer Motion). Data served from Supabase `experience` table.
 
-Two-column card grid with video or image previews, tags, and short descriptions.
+### Contact ✅
+Minimal icon links for GitHub, LinkedIn, and Email.
 
-### Experience / Timeline
-
-Vertical timeline with an animated tracing beam connecting entries.
-
-### Contact
-
-Minimal. Black and white icon links for GitHub, LinkedIn, and Email that grow and fill with logo color on hover.
+### Footer ✅
+Copyright + stack attribution.
 
 ---
 
 ## Components & Design Elements
 
-### Navigation
+### Navigation ✅
+- Sticky, hides on scroll down, reappears on scroll up via Framer Motion `animate={{ y }}`
+- Backdrop blur + semi-transparent background (glassmorphism)
+- "I am Rithvik" admin button with hover tooltip
+- Note: dark/light mode toggle not implemented
 
-- Sticky, hides on scroll down, reappears on scroll up
-- Backdrop blur with semi-transparent background (glassmorphism)
-- Dark/light mode toggle
+### Bento Cards ✅
+- **Location** — city + timezone + live local time (updates every second)
+- **Tools Marquee** — infinite CSS animation, pauses on hover, fade masks on edges
 
-### Bento Cards (examples)
+### Animations ✅
+- **FadeIn** (`components/FadeIn.tsx`) — `whileInView` blur+fade reveal, `once: true`, configurable delay
+- **Staggered bento reveal** — `staggerChildren: 0.08` via Framer Motion variants
+- **Hero stagger** — `staggerChildren: 0.12` on mount
+- **Nav hide/show** — `motion.header` with `animate={{ y }}`
+- **Tracing beam** — `motion.div` with `animate={{ top: ["-50%", "120%"] }}` looping in `TimelineBeam.tsx`
+- **RAG panel** — `AnimatePresence` + `motion.div` scale+fade
 
-- **Location** — city + timezone + local time
-- **Tools Marquee** — infinite scrolling strip of tech stack icons, pauses on hover, fade masks on edges
-
-### Animations
-
-- **BlurFade** — elements fade in with blur on scroll, staggered by section
-- **Staggered card reveal** — each bento card has its own transition delay (100–900ms), grid unfolds sequentially
-- **Tracing beam** — animated vertical line connecting timeline entries
-
-### Typography
-
-- Geist Sans for all UI text
-- Geist Mono for code snippets, stat labels, terminal-style elements
-- Tight letter-spacing and line-height for a premium, editorial feel
+### Typography ✅
+- Geist Sans for UI text, Geist Mono for code/terminal elements
+- Tight letter-spacing for premium feel
 - Gradient text clip on hero heading
+- CSS `::selection` highlight in yellow
 
-### Color Palette (Dark Mode Primary)
+### Color Palette ✅
+| Token | Value | Usage |
+|---|---|---|
+| `--bg` | `#08080e` | Page background |
+| `--bg-soft` | `#0d0d16` | Section alternates |
+| `--card` | `rgba(255,255,255,0.034)` | Card backgrounds |
+| `--text` | `#eeeef6` | Body text |
+| `--muted` | `#82829a` | Secondary text |
+| `--accent` | `#c2305e` | Highlights, links, logo |
+| `--green` | `#4ade80` | Status indicators |
+| `--border` | `rgba(255,255,255,0.07)` | Card edges |
 
-- Background: near-black with a subtle purple undertone
-- Foreground: off-white
-- Accent: red-purplish color
-- Borders: low-opacity white for card edges
-
-### Cards
-
-- Background: semi-transparent dark with slight blur
-- Rounded corners (~10px)
-- Smooth shadow transitions on hover
-
----
-
-## RAG Chatbot — "RAG (Rithvik Augmented Generation)"
-
-- Floating chat button, expands to modal or side panel
-- Aware of all site content, resume, and projects
-- Feels like talking to Rithvik, not a generic assistant
-- Subtle typing animation, clean message bubbles
+### Cards ✅
+- Semi-transparent dark background with border
+- `border-radius: 16px`
+- Subtle hover lift via Framer Motion `whileHover={{ y: -3 }}`
 
 ---
 
-## Admin UI — "I am Rithvik"
+## RAG Chatbot — "RAG (Rithvik Augmented Generation)" ✅
 
-- Hidden login button or easter egg trigger
-- Auth via Supabase
-- Inline editing of bento card content, projects, and bio — changes reflected live in production
+- Floating "Ask RAG" button (bottom-right), expands to chat panel
+- `AnimatePresence` open/close animation
+- Streaming responses token by token (DeepSeek `deepseek-chat`)
+- RAG pipeline: OpenAI `text-embedding-3-small` → pgvector cosine similarity → top 5 chunks → DeepSeek
+- Chat history: last 6 messages sent as context
+- Rate limiting: 20 req/min per IP (proxy.ts)
+- Input validation: 500 char max
+- Hardened system prompt: recruiter-positive framing, jailbreak refusal, context-only answers
+- Typing indicator (three animated dots) while streaming
+
+---
+
+## Admin UI — "I am Rithvik" ✅
+
+- Nav bar button with tooltip ("If you're Rithvik and want to edit this content...")
+- Auth via Supabase (email + password, single admin user)
+- Session managed via `@supabase/ssr` cookies, guarded by `proxy.ts`
+- **Projects CRUD** — add, edit, delete with inline form (all fields)
+- **Experience CRUD** — add, edit, delete with inline form (all fields)
+- Server actions with `revalidatePath("/")` — changes appear on homepage immediately
+- Logout route at `/admin/logout`
+
+---
+
+## SEO & Meta ✅
+
+- Full OpenGraph metadata (type, url, siteName, locale)
+- Twitter `summary_large_image` card
+- Dynamic OG image at `/opengraph-image` (1200×630, branded, dark theme)
+- Dynamic favicon at `/icon` (32×32, "R" in accent color)
+- Canonical URL, robots index/follow
+
+---
+
+## Static Assets
+
+| File | Usage |
+|---|---|
+| `public/images/purdue.png` | Purdue University logo in Education section |
+
+---
+
+## Phase 1 Status
+
+All planned features shipped. Tagged `v1`. Live at [rithvik.ai](https://rithvik.ai).
