@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import FlickeringGrid from "./FlickeringGrid";
-import KineticText from "./KineticText";
+import { KineticText } from "./KineticText";
 
 const container = {
   hidden: {},
@@ -21,9 +21,8 @@ export default function Hero() {
       <div className="hero-content">
         <motion.div variants={container} initial="hidden" animate="visible">
           <h1 className="hero-title">
-            <KineticText text="Rithvik" startDelay={0} />
-            <br />
-            <KineticText text="Praveen Kumar" className="gradient-text" startDelay={0.3} />
+            <KineticText text="Rithvik" as="span" />
+            <KineticText text="Praveen Kumar" as="span" className="gradient-text" />
           </h1>
 
           <motion.div className="hero-sub" variants={item}>
