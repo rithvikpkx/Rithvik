@@ -53,6 +53,17 @@ export interface SiteContent {
   updated_at: string;
 }
 
+export interface Theme {
+  id: string;
+  slug: string;
+  name: string;
+  tokens: Record<string, string>;
+  sort_order: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
@@ -60,6 +71,7 @@ export interface Database {
       experience: { Row: Experience; Insert: Omit<Experience, "id" | "created_at" | "updated_at">; Update: Partial<Omit<Experience, "id">>; };
       education: { Row: Education; Insert: Omit<Education, "id" | "created_at" | "updated_at">; Update: Partial<Omit<Education, "id">>; };
       site_content: { Row: SiteContent; Insert: SiteContent; Update: Partial<SiteContent>; };
+      themes: { Row: Theme; Insert: Omit<Theme, "id" | "created_at" | "updated_at">; Update: Partial<Omit<Theme, "id">>; };
     };
   };
 }
