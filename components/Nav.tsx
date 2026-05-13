@@ -31,6 +31,12 @@ export default function Nav() {
           <a href="#experience">Experience</a>
           <a href="#contact">Contact</a>
         </div>
+        <div className="nav-admin-wrap">
+          <a href="/admin/login" className="nav-admin-btn">I am Rithvik</a>
+          <span className="nav-admin-tooltip">
+            If you&apos;re Rithvik and want to edit this content at run-time. Only Rithvik allowed beyond this point :)
+          </span>
+        </div>
       </nav>
     </motion.header>
   );

@@ -695,13 +695,52 @@ a { color: inherit; text-decoration: none; }
 }
 .footer-sub { font-family: var(--mono); font-size: 0.74rem; }
 
-.footer-admin-link {
-  font-family: var(--mono);
-  font-size: 0.7rem;
-  color: var(--border);
-  transition: color 0.2s;
+/* ===== ADMIN NAV BUTTON ===== */
+.nav-admin-wrap {
+  position: relative;
 }
-.footer-admin-link:hover { color: var(--muted); }
+
+.nav-admin-btn {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid rgba(194, 48, 94, 0.4);
+  border-radius: 999px;
+  padding: 5px 14px;
+  background: rgba(194, 48, 94, 0.06);
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.nav-admin-btn:hover {
+  background: rgba(194, 48, 94, 0.13);
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.nav-admin-tooltip {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  width: 260px;
+  line-height: 1.55;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 300;
+}
+.nav-admin-wrap:hover .nav-admin-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* ===== ADMIN ===== */
 .admin-login-wrap {
