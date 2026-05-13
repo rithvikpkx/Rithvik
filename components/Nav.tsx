@@ -18,11 +18,18 @@ const SECTION_MAP = [
 ] as const;
 
 function detectSection(y: number): Section {
-  const offset = y + window.innerHeight * 0.38;
+  // If scrolled to the very bottom of the page, always activate the last section.
+  if (y + window.innerHeight >= document.documentElement.scrollHeight - 50) {
+    return "contact";
+  }
+
+  // A section becomes active once its top edge scrolls past the navbar (~70 px).
+  // This matches what the user actually sees at the top of the viewport.
+  const triggerY = y + 70;
   let current: Section = "home";
   for (const { id, key } of SECTION_MAP) {
     const el = document.getElementById(id);
-    if (el && el.offsetTop <= offset) current = key;
+    if (el && el.offsetTop <= triggerY) current = key;
   }
   return current;
 }
@@ -43,7 +50,7 @@ export default function Nav() {
     lockTimer.current = setTimeout(() => {
       lockedRef.current = false;
       setActive(detectSection(window.scrollY));
-    }, 800);
+    }, 1200);
   };
 
   useEffect(() => {
