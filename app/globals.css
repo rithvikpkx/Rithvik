@@ -126,6 +126,7 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   display: inline-flex;
   align-items: center;
+  align-self: center; /* prevent stretch-to-fill in the 50px pill */
 }
 
 .nav-pill-item {
@@ -779,6 +780,9 @@ a { color: inherit; text-decoration: none; }
 /* ===== ADMIN NAV BUTTON ===== */
 .nav-admin-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
+  align-self: center;
 }
 
 .nav-admin-btn {
