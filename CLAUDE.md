@@ -21,6 +21,35 @@ Node 22, package manager: npm. `npm run dev` / `npm run build` / `npm run lint`.
 - Develop in **vertical slices** across the full stack — keep work visible and testable end-to-end.
 - Self-test before claiming done. `node_modules/.bin/tsc --noEmit` is the cheapest gate; visual check on Vercel preview is the next.
 
+## CI/CD and branching
+
+Vercel is wired up to the GitHub repo with two long-lived branches:
+
+- **`dev`** — every push triggers a **preview deployment** at a `rithvik-<hash>.vercel.app` URL. This is where all feature work happens and where the user reviews changes before they go live.
+- **`main`** — every push triggers a **production deployment** at [rithvik.ai](https://rithvik.ai). Only fully completed, tested work lands here.
+
+### Workflow for a new feature
+
+1. Work happens on `dev`. Commit each logical step (`feat:`, `fix:`, `chore:`, `revert:` prefixes per the existing log). Push to `origin/dev` and let the Vercel preview build. Iterate until the user is happy with the preview.
+2. When the user explicitly says "merge to main" (or equivalent), integrate with a **descriptive merge commit**:
+   ```
+   git checkout main
+   git pull origin main
+   git merge --no-ff dev -m "chore: merge dev → main (<bundle title>)"
+   git push origin main
+   ```
+   The merge commit body should bullet the bundled feature areas — past examples in `git log` for the format. `--no-ff` is intentional: it preserves a visible "this is when dev landed" boundary instead of fast-forwarding the linear history into main.
+3. Never push directly to `main`. Never merge without explicit user approval — production goes to a real domain.
+4. Hotfixes are extremely rare; if needed, branch off `main`, fix, merge back to BOTH `main` and `dev` so they don't drift.
+
+### Things to verify before suggesting a merge
+
+- `node_modules/.bin/tsc --noEmit` clean
+- `node_modules/.bin/eslint <touched files>` clean
+- `node_modules/.bin/next build` succeeds (catches Vercel-specific bundling issues that don't show up locally)
+- Vercel preview on `dev` is rendering correctly (the **only** way to catch SSR/edge runtime bugs that pass `next build` locally — see Pitfalls > Vercel)
+- DB migrations in `supabase/*.sql` are applied to the linked project (`supabase db query --linked -f ...`) BEFORE the merge, since static state assumptions may break otherwise
+
 ## High-level architecture
 
 ### Page composition
@@ -48,13 +77,15 @@ Surface tokens are **derived in CSS via `color-mix()`**:
 - `--nav-glass` — `color-mix(in srgb, var(--bg) 72%, transparent)`
 - `--panel-glass` — `color-mix(in srgb, var(--bg) 90%, transparent)`
 
-So **adding a new theme is one DB row** — define the 7 primary tokens and every surface adapts automatically. No CSS changes required.
+So **adding a new theme is one DB row** — define the 7 primary tokens and every surface adapts automatically. No CSS changes required. The dial currently fans out **14 themes**: 3 Rithvik-branded (Dark, Light, Terminal) plus 11 popular editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light).
 
 At SSR, `ThemeStyleInjector` renders one `<style id="theme-tokens">` block containing `:root[data-theme="<slug>"] { … }` for every theme. The active theme is set on `<html data-theme="…">` by:
 1. `<html data-theme="rithvik-dark">` hardcoded in JSX (works with JS disabled).
 2. An inline boot script at the top of `<body>` that reads `localStorage[rithvik-theme]` and overwrites the attribute **before first paint** — no FOUC.
 
 `ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip** — it writes `localStorage`, swaps `<html data-theme>`, and updates `currentSlug`. There is no page-wide transition animation.
+
+**Root layout is `force-dynamic`** (`app/layout.tsx`) so new theme rows inserted directly into Supabase appear on the next page load — no redeploy required. The cost is one additional cheap themes-fetch per request, which is negligible at this site's traffic. Previously the layout was statically generated and DB-added themes wouldn't show up until the next build; this was a real foot-gun and the fix is permanent.
 
 ### Theme transition (instant flip + live dial rotation)
 
@@ -66,6 +97,17 @@ Earlier iterations tried two transition animations and we rolled both back:
 - **View Transitions API** with per-pill `view-transition-name` — pulled pills out of the dial's `overflow: hidden` clipping (named groups aren't clipped by their parent's overflow) and interpolated their bounding boxes rather than their transforms, so pills snapped to the new rotation at t=0 and only slid linearly.
 - **`<ThemeWash>` overlay** with delayed `data-theme` swap — a glass wave sweeping from the dial across the viewport, with the `data-theme` flip hidden behind the opaque crest. Looked busy; the instant flip reads cleaner.
 
+### First-visit dial wiggle
+
+A small one-time `translate + rotate` shake on the dormant dial draws attention to the theme picker without being intrusive. Implementation lives entirely in `ThemeDial.tsx` + the `.is-wiggling` rule in `globals.css`:
+
+- Fires 5s after the user lands, if and only if `localStorage[rithvik-theme-wiggle-shown]` is unset.
+- Suppressed early (and the flag set) the moment `currentSlug` changes — if the user already discovered the dial, no nudge needed.
+- Three shake cycles (~1.8s total), pauses on hover/focus, honors `prefers-reduced-motion`.
+- Pure client-side: no DB, no API calls, no props from the layout. The constants live in `ThemeDial.tsx`.
+
+An earlier iteration auto-rotated the dial and selected SynthWave '84 by itself; it was too invasive and was rolled back. See Pitfalls.
+
 ### Inline editing (`feat-inline-editing.md`, completed)
 
 - `EditModeProvider` (client) owns `isEditing`, `panelOpen`, Supabase session, login/logout
@@ -76,9 +118,17 @@ Earlier iterations tried two transition animations and we rolled both back:
 - `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
 - Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session) and `revalidatePath("/")`
 
-### RAG bot (`components/RagBot.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
+### RAG bot (`components/RagBot.tsx`, `components/SimpleMarkdown.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
-A floating "Ask RAG" launcher in the bottom-right (mounted in `app/page.tsx`). Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token. A second launcher to its left — `SecondaryContextPanel` — only appears in edit mode and manages the bot's secondary knowledge.
+A floating **"Ask RAG"** launcher in the bottom-right (mounted in `app/page.tsx`). The button is intentionally attention-grabbing — animated gradient text inside a halo'd pill — to telegraph "this site has an AI bot" at a glance. Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token. A second launcher to its left — `SecondaryContextPanel` — only appears in edit mode and manages the bot's secondary knowledge.
+
+**Chat panel UI specifics:**
+- **Theme-independent palette.** The launcher, panel, bubbles, chips, and input use private `--rag-*` tokens (defined inside `.rag-launcher` in `globals.css`) with hardcoded values. The bot looks identical on Dark, Light, Terminal, and every editor theme — the gradient/shine effects rely on a fixed dark-slate base to read correctly.
+- **Animated shine border** ring around the panel (`.rag-shine`, masked radial gradient).
+- **Resizable** by dragging the top-left corner: clamped to 320×420 min and 720×820 max; size persisted to `localStorage[rag-panel-size]` and hydrated via a lazy `useState` initializer (SSR-safe — the panel only renders post-hydration on user click, so SSR/client size mismatch is invisible).
+- **`SimpleMarkdown` renderer** for bot replies — hand-rolled, dep-free; handles `**bold**`, `*italic*`/`_italic_`, inline `` `code` ``, fenced ``` blocks, `[text](url)` links, headings `# ##`, bullet/numbered lists, paragraphs with soft `<br>` for streaming mid-paragraph newlines. User messages render as plain text. The chat system prompt has a FORMATTING section instructing the model to use sparing markdown (max 2–3 bolded spans, bullets only for 3+ items, backticks for tech names) so the renderer has clean input.
+- **Starter chips** appear only on the welcome screen (`messages.length === 1 && messages[0].role === "bot"`). Each chip has a precomputed Q+A pair (`STARTERS` constant in `RagBot.tsx`). Clicking appends the user message + bot answer instantly — no API call, no latency, no embedding load. Chips disappear the moment any real exchange happens. **Maintenance note:** the answers are static and grounded in current `site_content` seeds; update `STARTERS` if Rithvik changes schools, tech stack, or contact info significantly.
+- **"Talking portfolio" welcome message** explicitly frames RAG so new visitors immediately understand what they're talking to.
 
 > Full architectural deep dive: see `explanations/rag-pipeline.md`. This section is the quick reference.
 
@@ -126,20 +176,23 @@ RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-ro
 - `supabase/stage3_migration.sql` — education table + site_content seed (inline-editing stage 3)
 - `supabase/themes_migration.sql` — themes table + Dark/Light/Terminal seed (idempotent ON CONFLICT)
 - `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
+- `supabase/themes_add_editor_themes.sql` — 11 popular editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light). Idempotent; sort orders 10–31 so it sits after the 3 Rithvik themes.
 - `supabase/rag_pipeline_migration.sql` — pgvector extension + `primary_embeddings` + `secondary_documents` + `secondary_embeddings` + **HNSW** indexes + `match_primary` + `match_secondary` RPCs + RLS lockdown + Storage bucket. Apply once; the rest is UI-driven. (NOTE: an earlier version used IVFFlat with `lists = 100`; that caused silent under-retrieval — see Pitfalls. HNSW is the correct choice and is what the committed migration sets up.)
+
+Apply migrations via the linked CLI: `supabase db query --linked -f supabase/<file>.sql`. The linked project is the `Rithvik` Supabase project (not `rithvikpkx's Project` or `Grind-Catapult26` — there are three under the same org).
 
 ## File layout cheat sheet
 
 ```
 app/
-  layout.tsx          — fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + EditModeProvider
+  layout.tsx          — force-dynamic root layout; fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + EditModeProvider + ThemeDial
   page.tsx            — fetches site_content; passes to Hero/Bento/Contact; renders all sections
-  globals.css         — tokens, dial, all the rest
+  globals.css         — tokens, dial, rag chat (theme-independent), all the rest
   admin/
     actions.ts        — server actions for all tables (used by inline-editing flow)
     rag-actions.ts    — server actions: backfillPrimaryEmbeddings, list/upload/delete secondary docs
     auth-helper.ts    — shared requireAuth (used by actions.ts and rag-actions.ts)
-  api/chat/route.ts   — embed → match_primary + match_secondary → DeepSeek stream
+  api/chat/route.ts   — HyDE expand → match_primary + match_secondary → gpt-4o-mini stream
 
 components/
   Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
@@ -148,7 +201,8 @@ components/
   EditableText.tsx, EditableTagList.tsx
   ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
-  RagBot.tsx          — floating chat launcher + streaming chat panel
+  RagBot.tsx           — floating chat launcher + streaming chat panel (resizable, markdown)
+  SimpleMarkdown.tsx   — hand-rolled markdown renderer used by bot replies
   SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
 
 lib/
@@ -174,6 +228,9 @@ explanations/
 - **Don't add a page-wide transition animation to the theme swap.** Two prior approaches were rolled back: (a) `document.startViewTransition` freezes the live DOM during the transition, so per-pill CSS rotation can't visibly play, and per-element `view-transition-name` pulls children out of their parent's `overflow: hidden` clipping while interpolating bounding boxes rather than transforms; (b) a custom glass-wash overlay with a delayed `data-theme` flip worked mechanically but read as visually busy. The instant flip + live pill rotation is the chosen architecture.
 - **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
 - **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
+- **Auto-rotating the theme dial on first visit was rejected as too invasive.** The original idea was to expand the dial after a delay and cycle it to SynthWave '84 to introduce the picker. Even with a 10s delay and a narrowly-scoped abort, the page-wide color flip felt presumptuous — visitors had not asked for a theme change. The replacement is a subtle one-time wiggle on the dormant pill (3 cycles, ~1.8s, hover-paused), which signals "this is interactive" without forcing a color decision. Lesson: discoverability nudges should affect the affordance, not the underlying state.
+- **Mounting an edit-mode-only component outside `<EditModeProvider>` 500s the entire route.** `useEditMode()` throws if no provider is above it in the tree, which crashes SSR for every visitor (not just authenticated editors). The previously-shipped `ThemeDemoSettings` panel triggered this and was rolled back. If you add a new component that calls `useEditMode()`, mount it INSIDE `<EditModeProvider>` (which wraps `{children}` in `app/layout.tsx`, not the theme dial siblings).
+- **`force-dynamic` on the root layout is required when content can be changed via direct DB writes** (themes added through `supabase db query`). Without it, the homepage is statically generated at build time and stale DB state lingers until the next deploy. The cost is one extra Supabase fetch per request, which is negligible. The inline-editing flow already revalidates via `revalidatePath("/")`, but anything that bypasses server actions (raw SQL, dashboard inserts) needs this safety net.
 
 ### RAG (every one of these cost real debugging time)
 
@@ -191,7 +248,7 @@ explanations/
 - Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
 - Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
-- A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
+- A theme is missing from the dial → run `supabase/themes_migration.sql` (Rithvik themes) or `supabase/themes_add_editor_themes.sql` (editor themes). Verify with `SELECT slug, name, sort_order FROM themes ORDER BY sort_order;`. If the row exists in the DB but the dial doesn't show it, the layout's themes-fetch is probably stale-cached — the layout is `force-dynamic` so this shouldn't happen, but a Vercel preview that pre-dates that change would. Trigger a redeploy.
 - **RAG bot hallucinating wildly** (wrong school, made-up projects) → the empty-context guard hasn't fired but retrieval is missing the relevant chunks. Check the rank: in Supabase SQL editor, embed the question via OpenAI manually and query `match_primary` with `match_count = 17`. If the right chunk is buried at rank 8+, HyDE expansion in `app/api/chat/route.ts` may have malfunctioned (check Vercel logs for `[rag] hyde failed`). Recovery: re-embed primary content from the panel to refresh chunks with the latest prose format.
 - **RAG returns the canned "I don't have that specific detail"** for things you know are in the DB → `[rag] empty-context guard fired` will be in Vercel logs. Means BOTH `match_primary` AND `match_secondary` returned 0 rows. Most common cause is the pgvector index being misconfigured — verify it's HNSW not IVFFlat: `SELECT indexdef FROM pg_indexes WHERE tablename = 'primary_embeddings';`.
 - **RAG returns 500 "Embedding failed"** → `OPENAI_API_KEY` missing or quota-exhausted. The chat-completion model is **`gpt-4o-mini`** (NOT DeepSeek anymore); embeddings, HyDE, image captioning, AND chat all use OpenAI.
