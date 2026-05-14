@@ -53,29 +53,17 @@ At SSR, `ThemeStyleInjector` renders one `<style id="theme-tokens">` block conta
 1. `<html data-theme="rithvik-dark">` hardcoded in JSX (works with JS disabled).
 2. An inline boot script at the top of `<body>` that reads `localStorage[rithvik-theme]` and overwrites the attribute **before first paint** — no FOUC.
 
-`ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` writes `localStorage` and updates `currentSlug` immediately (driving the dial rotation), but **defers** flipping `<html data-theme>` until the wash overlay has fully covered the viewport. A cancelable timer unmounts the wash after ~800ms.
+`ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip** — it writes `localStorage`, swaps `<html data-theme>`, and updates `currentSlug`. There is no page-wide transition animation.
 
-### Theme transition (delayed-swap overlay wash + live-DOM rotation)
+### Theme transition (instant flip + live dial rotation)
 
-Two parallel animations, both in the live DOM. **No View Transitions API** — the spec suppresses live painting of every named element during a transition, which made the physical dial rotation impossible to see. Instead we fake the "old ahead / new behind" effect with a glass overlay that masks the moment of the actual page swap.
+The only animation on a theme change is the dial pill rotation itself. The page-wide colors swap instantly — every CSS-var-driven surface (bg, text, borders, glass tints, etc.) repaints in the new theme on the next frame.
 
-- **Dial rotation** (`.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) }`) — each pill's `transform: translate(0, calc(-50% + Y)) rotate(Xdeg)` recomputes whenever `selectedIdx` changes; CSS interpolates it. Because `currentSlug` updates synchronously on click, the rotation starts immediately in parallel with the wash.
-- **`ThemeWash`** (`components/ThemeWash.tsx` + `.theme-wash` keyframes in `globals.css`) — fixed full-viewport `<div>` with:
-  - **Radial gradient background** sweeping from `circle at 0% 50%` (dial origin). Behind the wave: a translucent tint of the incoming `--wash-bg`. At the wave front: a thin oil-slick rim (accent → white-accent → accent) acting as the glass crest. Ahead of the wave: fully transparent.
-  - **Radial mask** in lockstep with the gradient. Behind = opaque, ahead = transparent. This is what makes the boundary between "swept" and "unswept" regions look like a sharp wave front.
-  - **`backdrop-filter`** stacks an **SVG `feTurbulence` + `feDisplacementMap`** filter (`#wash-glass`, defined inline inside `ThemeWash`) before the CSS chain (`blur(22px) saturate(185%) brightness(1.04) hue-rotate(4deg)`). The SVG filter is what actually warps content beneath like real glass — CSS `blur` alone only softens, doesn't bend.
-- **Timing** (`@keyframes theme-wash`, 720ms total):
-  - 0–8%: opacity fades in while wave is still a dot at the dial.
-  - 8–50%: wave sweeps `--wash-pos` from 0% to 110% (just past the viewport's far corner). Overlay opaque the whole time.
-  - **At ~50% (360ms in)**: `ThemeProvider`'s `setTimeout` flips `<html data-theme>` to the new slug. The swap is invisible because the overlay is fully opaque everywhere by now.
-  - 50–75%: wave keeps expanding (135%) to hold the viewport firmly inside the opaque zone.
-  - 75–100%: opacity fades out. The page underneath is now in the new theme, matching what the overlay was already painting — no flash.
+- **Dial rotation** (`.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) }`) — each pill's `transform: translate(0, calc(-50% + Y)) rotate(Xdeg)` recomputes whenever `selectedIdx` changes; CSS interpolates it. The fan rotates smoothly as one cohesive unit while the rest of the page has already snapped to the new theme.
 
-Layering: `.theme-dial-aside` is at `z-index: 200`, wash at `195`. The dial sits **above** the wash and stays visibly rotating while the wave passes beneath it. The dial's `overflow: hidden` half-pill shape clips the pills throughout — no detachment.
-
-Why we don't literally render two themes simultaneously: it would require either duplicating the entire React tree under a scoped `data-theme` (heavy + breaks interactivity) or a runtime page-snapshot library like html2canvas (slow, fragile). The overlay approach is a perceptual fake — the heavy `backdrop-filter` makes content beneath the wave unrecognizable enough that swapping `data-theme` underneath is imperceptible.
-
-`prefers-reduced-motion`: `ThemeProvider` short-circuits and applies the theme synchronously without mounting the wash. (`.theme-wash` also has a reduced-motion fallback as defense-in-depth.)
+Earlier iterations tried two transition animations and we rolled both back:
+- **View Transitions API** with per-pill `view-transition-name` — pulled pills out of the dial's `overflow: hidden` clipping (named groups aren't clipped by their parent's overflow) and interpolated their bounding boxes rather than their transforms, so pills snapped to the new rotation at t=0 and only slid linearly.
+- **`<ThemeWash>` overlay** with delayed `data-theme` swap — a glass wave sweeping from the dial across the viewport, with the `data-theme` flip hidden behind the opaque crest. Looked busy; the instant flip reads cleaner.
 
 ### Inline editing (`feat-inline-editing.md`, completed)
 
@@ -115,7 +103,7 @@ RLS: all tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key o
 app/
   layout.tsx          — fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + EditModeProvider
   page.tsx            — fetches site_content; passes to Hero/Bento/Contact; renders all sections
-  globals.css         — tokens, dial, .theme-wash keyframes, all the rest
+  globals.css         — tokens, dial, all the rest
   admin/
     actions.ts        — server actions for all tables (still used; the /admin UI pages are deprecated)
     login/, logout/   — legacy pages, replaced by InlineLoginPanel; kept for fallback
@@ -127,7 +115,7 @@ components/
   Projects(.tsx + Client.tsx), Experience(.tsx + Client.tsx), Contact.tsx
   EditModeProvider.tsx, InlineLoginPanel.tsx, EditBar.tsx
   EditableText.tsx, EditableTagList.tsx
-  ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx, ThemeWash.tsx
+  ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
   RagBot.tsx          — chatbot UI (the brain is in app/api/chat)
 
@@ -143,15 +131,9 @@ plans/
 
 ## Pitfalls learned the hard way
 
-- **Don't use `document.startViewTransition` for the theme swap** — it freezes the live DOM behind snapshot pseudo-elements, so CSS transitions on `.theme-strip-option` don't visibly play. Per-pill `view-transition-name` also pulls each pill out of the dial's `overflow: hidden` clipping (named groups are NOT clipped by their parent's overflow), and the API interpolates bounding boxes rather than transforms — pills snap to the new rotation at t=0 and only slide linearly. Use the overlay-wash approach in `ThemeProvider` instead.
-- **CSS `blur()` does not warp content; only soften it.** For real glass-style bending you need an SVG `feDisplacementMap` driven by `feTurbulence`, referenced from CSS via `backdrop-filter: url(#filter-id)`. The SVG filter def must be in the DOM when the CSS runs (we put it inside `ThemeWash` itself so it mounts/unmounts with the wash).
-- **Decouple `currentSlug` from `<html data-theme>` when you need the dial to react before the page does.** `currentSlug` drives the dial's React render (pills rotate via CSS transition). `data-theme` drives every CSS-var-themed style. Updating them on different schedules is what lets the dial rotate live while the page swap is hidden behind the overlay.
+- **Don't add a page-wide transition animation to the theme swap.** Two prior approaches were rolled back: (a) `document.startViewTransition` freezes the live DOM during the transition, so per-pill CSS rotation can't visibly play, and per-element `view-transition-name` pulls children out of their parent's `overflow: hidden` clipping while interpolating bounding boxes rather than transforms; (b) a custom glass-wash overlay with a delayed `data-theme` flip worked mechanically but read as visually busy. The instant flip + live pill rotation is the chosen architecture.
 - **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
 - **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
-- **CSS variables aren't animatable** unless you declare `@property --name { syntax: '<percentage>'; … }`. The wash uses this for `--wash-pos`.
-- **Restart a CSS animation via React `key` bump** — the wash element is keyed on a counter incremented per `setTheme` call so rapid clicks remount it and the keyframes replay from 0%.
-- **Dial z-index must sit above the wash** — wash is at `195`, dial-aside at `200`. Otherwise the wave covers the dial mid-rotation.
-- **Cancel pending timers on every `setTheme` re-entry.** ThemeProvider holds refs to both the `data-theme`-apply timer and the wash-clear timer, and clears them on each new call. Without this, rapid clicks would let an earlier timer fire after the next transition started and overwrite `data-theme`.
 
 ## Dead / legacy code
 
@@ -161,11 +143,7 @@ plans/
 
 - Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
-- Wash overlay missing or doesn't restart on rapid clicks → check that `ThemeProvider` is bumping `washKeyRef.current` and passing it as `<ThemeWash key={...} />`. Verify `--wash-bg` / `--wash-accent` are set inline on the wash element.
-- Wash isn't warping content (just blurs it) → the SVG filter inside `ThemeWash` may not be in the DOM, or `backdrop-filter: url(#wash-glass)` failed. Check devtools for the `<svg className="theme-wash-defs">` element while the wash is mounted. Some browsers also drop the whole `backdrop-filter` chain if any one filter fails to resolve — the `-webkit-backdrop-filter` line is the bare CSS fallback.
-- Page flashes from old → new at the wave's mid-point → the `data-theme` apply timer is firing while the overlay isn't fully opaque yet. Check `THEME_APPLY_DELAY_MS` in `ThemeProvider` matches the keyframe `%` at which the wash is at peak opacity AND `--wash-pos ≥ 110%`.
 - Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
-- Wave covers the dial mid-transition → `.theme-dial-aside` `z-index` must be above `.theme-wash` (200 vs 195).
 - A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
 
 ## What's still open
