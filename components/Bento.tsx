@@ -17,9 +17,9 @@ const DEF_BUILDING: Building = {
   tags: ["Next.js", "Supabase", "RAG", "Claude API"],
 };
 const GROWTH: GrowthItem[] = [
-  { was: "Gave up easily",  now: "Determination",  desc: "I don't stop until the bug is fixed — even when the stack trace looks like a war zone." },
-  { was: "Tongue-tied",     now: "Communication",  desc: "I translate technical depth into language anyone can act on, from engineers to execs." },
-  { was: "Slow to adapt",   now: "Quick Learner",  desc: "I catch on fast and go deep — new stacks, new domains, new tools click into place quickly." },
+  { was: "Gave up easily", now: "Determination", desc: "Bugs don't get to win. I'll chase a stack trace at 2am with the same energy I had at 2pm." },
+  { was: "Unclear",       now: "Communication",  desc: "I can make complicated things sound simple and simple things sound interesting, whether I'm talking to engineers, designers, or execs." },
+  { was: "Slow to adapt", now: "Quick Learner",  desc: "Show me a new framework on Monday and I'll be answering Stack Overflow questions about it by Friday." },
 ];
 const DEF_STACK = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
