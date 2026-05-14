@@ -646,6 +646,12 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--mono);
 }
 
+.growth-subline {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
 .growth-list {
   list-style: none;
   padding: 0;

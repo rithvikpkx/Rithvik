@@ -112,6 +112,7 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
         {/* ── Growth ──────────────────────────────────────────────────── */}
         <motion.div className="bento-card bento-growth" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
           <p className="card-eyebrow">Growth</p>
+          <p className="growth-subline">Previous weaknesses that grew into my 3 greatest strengths.</p>
           <ul className="growth-list">
             {GROWTH.map((g) => (
               <li key={g.now} className="growth-item">
