@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef, useTransition } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   listSecondaryDocuments,
@@ -27,14 +27,23 @@ export default function SecondaryContextPanel() {
   const [busy, setBusy] = useState<string | null>(null);          // upload status text
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const busyClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isEditing) return;
     refresh();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
+
+  useEffect(() => {
+    return () => {
+      if (busyClearTimerRef.current !== null) {
+        clearTimeout(busyClearTimerRef.current);
+        busyClearTimerRef.current = null;
+      }
+    };
+  }, []);
 
   async function refresh() {
     try { setDocs(await listSecondaryDocuments()); }
@@ -77,7 +86,11 @@ export default function SecondaryContextPanel() {
       const total = report.projects + report.experience + report.education + report.site_content;
       const summary = `Re-embedded ${total} primary rows (${report.projects}p / ${report.experience}e / ${report.education}ed / ${report.site_content}s).`;
       setBusy(report.errors.length ? `${summary} ${report.errors.length} error(s).` : summary);
-      setTimeout(() => setBusy(null), 4000);
+      if (busyClearTimerRef.current !== null) clearTimeout(busyClearTimerRef.current);
+      busyClearTimerRef.current = setTimeout(() => {
+        setBusy(null);
+        busyClearTimerRef.current = null;
+      }, 4000);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(null);
@@ -87,7 +100,7 @@ export default function SecondaryContextPanel() {
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    if (e.dataTransfer?.files?.length) startTransition(() => { handleFiles(e.dataTransfer.files); });
+    if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
   }
 
   if (!isEditing) return null;
