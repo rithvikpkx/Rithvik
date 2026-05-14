@@ -132,7 +132,6 @@ export function Globe({ markers, className }: GlobeProps) {
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const widthRef = useRef(0);
-  const phiRef = useRef(0);
   const pointerInteracting = useRef<number | null>(null);
   const hoverIdxRef = useRef<number | null>(null);
 
@@ -183,8 +182,15 @@ export function Globe({ markers, className }: GlobeProps) {
 
     let raf = 0;
     const tick = () => {
-      if (pointerInteracting.current === null) phiRef.current += 0.005;
-      const phi = phiRef.current + rs.get();
+      // Idle: ease the drag spring toward 0 so the globe drifts back to the
+      // US-centered rest pose (phi = 0). ~0.96 per frame at 60fps = ~3s settle
+      // time, which reads as "gentle" without feeling sluggish.
+      if (pointerInteracting.current === null) {
+        const cur = r.get();
+        if (Math.abs(cur) > 0.0005) r.set(cur * 0.96);
+        else if (cur !== 0) r.set(0);
+      }
+      const phi = rs.get();
       globeRef.current.update({
         phi,
         width: widthRef.current * 2,
