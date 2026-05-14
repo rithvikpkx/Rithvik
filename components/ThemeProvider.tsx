@@ -23,61 +23,92 @@ interface Props {
   children: React.ReactNode;
 }
 
-const WASH_DURATION_MS = 500;
-const WASH_CLEANUP_BUFFER_MS = 120;
+// Must stay in sync with the @keyframes theme-wash timeline in globals.css.
+const WASH_DURATION_MS = 720;
+// Fires at ~50% of the wash timeline — the moment the wave's mask radius
+// fully covers the viewport. Doing the data-theme swap behind a fully opaque
+// overlay is what lets the user perceive "old ahead / new behind" without
+// the page actually being rendered in two themes simultaneously.
+const THEME_APPLY_DELAY_MS = 360;
+const WASH_CLEANUP_BUFFER_MS = 80;
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 /**
- * Owns the active theme slug. Theme changes swap CSS vars synchronously and
- * mount a liquid-glass wash overlay (ThemeWash) that sweeps across the
- * viewport from the dial position. The dial itself remains in the live DOM
- * during the wash — its CSS transform-transitions handle the physical
- * rotation independently, and a higher z-index keeps it above the wash.
+ * Theme transitions are two parallel animations, both in the live DOM:
+ *
+ *   1. The dial pills rotate via their CSS transform-transition (420ms)
+ *      because `currentSlug` updates synchronously on click — the dial
+ *      reads currentSlug and recomputes each pill's transform.
+ *   2. A <ThemeWash> overlay sweeps a radial-mask glass wave from the dial
+ *      across the viewport (~720ms). Ahead of the wave you see the OLD
+ *      theme directly; behind the wave you see a translucent tint of the
+ *      NEW theme + backdrop-filtered (warped + blurred) view of the page.
+ *
+ * `data-theme` on <html> is NOT flipped on click. We hold it on the OLD
+ * theme until ~360ms in — the point at which the wave's mask fully covers
+ * the viewport and the overlay is at opacity 1 everywhere. We swap behind
+ * that fully-opaque cover, then the overlay fades out and the now-NEW page
+ * underneath matches what the overlay was already showing.
+ *
+ * Rapid clicks: every timer is cancelable so re-entering setTheme tears the
+ * previous in-flight transition down before starting the new one.
  */
 export default function ThemeProvider({ themes, children }: Props) {
   const [currentSlug, setCurrentSlug] = useState<string>(DEFAULT_THEME_SLUG);
-  // Single wash element with a bumped key on each setTheme call so React
-  // remounts it and the CSS animation restarts cleanly on rapid clicks.
   const [wash, setWash] = useState<{ theme: Theme; key: number } | null>(null);
   const washKeyRef = useRef(0);
-  const washTimerRef = useRef<number | null>(null);
+  const applyTimerRef = useRef<number | null>(null);
+  const clearTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const fromDom = document.documentElement.dataset.theme;
     if (fromDom && themes.some((t) => t.slug === fromDom)) setCurrentSlug(fromDom);
   }, [themes]);
 
-  // Clear any pending wash teardown if the provider unmounts mid-animation.
-  useEffect(() => {
-    return () => {
-      if (washTimerRef.current !== null) window.clearTimeout(washTimerRef.current);
-    };
+  useEffect(() => () => {
+    if (applyTimerRef.current !== null) window.clearTimeout(applyTimerRef.current);
+    if (clearTimerRef.current !== null) window.clearTimeout(clearTimerRef.current);
   }, []);
-
-  const applyTheme = (slug: string) => {
-    document.documentElement.dataset.theme = slug;
-    try { localStorage.setItem(THEME_STORAGE_KEY, slug); } catch {}
-  };
 
   const setTheme = (slug: string) => {
     if (slug === currentSlug) return;
     const next = themes.find((t) => t.slug === slug);
     if (!next) return;
 
-    // Restart the wash animation: bumping the key forces React to remount
-    // <ThemeWash>, so its 500ms keyframes replay from 0% even on rapid clicks.
+    // Persist immediately so a reload (or a parallel tab) reflects the choice
+    // even if the wash animation gets interrupted mid-flight.
+    try { localStorage.setItem(THEME_STORAGE_KEY, slug); } catch {}
+
+    if (prefersReducedMotion()) {
+      // No wash, no delay — straight swap. Reduced-motion users get the
+      // instant theme change without any sweep animation.
+      setCurrentSlug(slug);
+      document.documentElement.dataset.theme = slug;
+      return;
+    }
+
+    if (applyTimerRef.current !== null) window.clearTimeout(applyTimerRef.current);
+    if (clearTimerRef.current !== null) window.clearTimeout(clearTimerRef.current);
+
+    // Restart the wash animation by bumping the key (forces remount). The
+    // dial selection updates in the same render so its CSS transition fires
+    // simultaneously with the wave.
     washKeyRef.current += 1;
     setWash({ theme: next, key: washKeyRef.current });
-
-    // Swap the theme synchronously. The wash overlay covers the dial-origin
-    // region while the rest of the page repaints under the wave front.
     setCurrentSlug(slug);
-    applyTheme(slug);
 
-    // Tear down the wash element shortly after its animation finishes.
-    if (washTimerRef.current !== null) window.clearTimeout(washTimerRef.current);
-    washTimerRef.current = window.setTimeout(() => {
+    applyTimerRef.current = window.setTimeout(() => {
+      document.documentElement.dataset.theme = slug;
+      applyTimerRef.current = null;
+    }, THEME_APPLY_DELAY_MS);
+
+    clearTimerRef.current = window.setTimeout(() => {
       setWash(null);
-      washTimerRef.current = null;
+      clearTimerRef.current = null;
     }, WASH_DURATION_MS + WASH_CLEANUP_BUFFER_MS);
   };
 
