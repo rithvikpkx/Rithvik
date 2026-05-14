@@ -31,6 +31,8 @@ export type ExtractResult =
   | { kind: "image"; bytes: Buffer; mime: string }
   | { kind: "unsupported"; reason: string };
 
+/** Dispatch by MIME type: returns text for readable formats, raw bytes for
+ *  images (caller can caption later), or an unsupported tag with a reason. */
 export async function extractText(bytes: Buffer, mime: string): Promise<ExtractResult> {
   if (TEXT_MIMES.has(mime)) return { kind: "text", text: bytes.toString("utf8") };
   if (mime === PDF_MIME)    return { kind: "text", text: await extractPdf(bytes) };
@@ -39,25 +41,31 @@ export async function extractText(bytes: Buffer, mime: string): Promise<ExtractR
   return { kind: "unsupported", reason: `MIME type "${mime}" is not supported.` };
 }
 
+/** Extract plain text from a PDF buffer using pdf-parse v2's class API. */
 async function extractPdf(bytes: Buffer): Promise<string> {
-  // pdf-parse v2 is class-based and consumes a Uint8Array. Buffer extends
-  // Uint8Array in Node, but the v2 types want a plain Uint8Array, so we
-  // wrap explicitly. destroy() releases the worker after extraction.
-  const parser = new PDFParse({ data: new Uint8Array(bytes) });
+  // pdf-parse v2 is class-based and consumes a Uint8Array. We wrap inside
+  // the try so a malformed-PDF throw during construction still routes
+  // through the caller; the parser handle is only destroyed if it was
+  // successfully constructed.
+  let parser: PDFParse | null = null;
   try {
+    parser = new PDFParse({ data: new Uint8Array(bytes) });
     const result = await parser.getText();
     return result.text.trim();
   } finally {
-    await parser.destroy();
+    await parser?.destroy();
   }
 }
 
+/** Extract plain text from a DOCX buffer via mammoth. No teardown — mammoth's
+ *  extractRawText is fully buffered and returns a plain result object. */
 async function extractDocx(bytes: Buffer): Promise<string> {
   const { value } = await mammoth.extractRawText({ buffer: bytes });
   return value.trim();
 }
 
 const CAPTION_MODEL = "gpt-4o-mini";
+const CAPTION_MAX_TOKENS = 400;
 
 const CAPTION_PROMPT = `You are helping build a searchable knowledge base about a person named Rithvik.
 Describe this image in detail in 2–4 sentences. Cover:
@@ -81,7 +89,7 @@ export async function captionImage(bytes: Buffer, mime: string): Promise<string>
     },
     body: JSON.stringify({
       model: CAPTION_MODEL,
-      max_tokens: 400,
+      max_tokens: CAPTION_MAX_TOKENS,
       messages: [
         {
           role: "user",
