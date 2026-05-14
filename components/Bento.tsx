@@ -9,17 +9,17 @@ import { upsertSiteContent, updateGlobeMarkers } from "@/app/admin/actions";
 import type { GlobeMarker } from "@/lib/types";
 
 interface Building { title: string; description: string; tags: string[] }
-interface Stat { num: string; label: string }
+interface GrowthItem { was: string; now: string }
 
 const DEF_BUILDING: Building = {
   title: "Rithvik.ai",
   description: "A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and project dashboard. Built with Next.js, Supabase, and Claude.",
   tags: ["Next.js", "Supabase", "RAG", "Claude API"],
 };
-const DEF_STATS: Stat[] = [
-  { num: "4+", label: "Projects" },
-  { num: "2+", label: "Years coding" },
-  { num: "6+", label: "Languages" },
+const GROWTH: GrowthItem[] = [
+  { was: "Gave up easily", now: "Determination" },
+  { was: "Unclear",        now: "Communication" },
+  { was: "Slow to adapt",  now: "Quick Learner" },
 ];
 const DEF_STACK = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
@@ -34,7 +34,6 @@ const DEF_MARKERS: GlobeMarker[] = [];
 
 interface Props {
   building?: Building;
-  stats?: Stat[];
   stack?: string[];
   interests?: string[];
   markers?: GlobeMarker[];
@@ -49,10 +48,9 @@ const card = {
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
-export default function Bento({ building: bp, stats: sp, stack: skp, interests: ip, markers: mp }: Props) {
+export default function Bento({ building: bp, stack: skp, interests: ip, markers: mp }: Props) {
   const { isEditing } = useEditMode();
   const [bld, setBld]           = useState(bp ?? DEF_BUILDING);
-  const [stats, setStats]       = useState(sp ?? DEF_STATS);
   const [stack, setStack]       = useState(skp ?? DEF_STACK);
   const [interests, setInterests] = useState(ip ?? DEF_INTERESTS);
   const [markers, setMarkers]   = useState(mp ?? DEF_MARKERS);
@@ -60,23 +58,16 @@ export default function Bento({ building: bp, stats: sp, stack: skp, interests: 
   useEffect(() => {
     if (!isEditing) {
       setBld(bp ?? DEF_BUILDING);
-      setStats(sp ?? DEF_STATS);
       setStack(skp ?? DEF_STACK);
       setInterests(ip ?? DEF_INTERESTS);
       setMarkers(mp ?? DEF_MARKERS);
     }
-  }, [bp, sp, skp, ip, mp, isEditing]);
+  }, [bp, skp, ip, mp, isEditing]);
 
   const saveBld = async (patch: Partial<Building>) => {
     const u = { ...bld, ...patch };
     setBld(u);
     await upsertSiteContent("bento.building", JSON.stringify(u));
-  };
-
-  const saveStat = async (i: number, patch: Partial<Stat>) => {
-    const u = stats.map((s, j) => j === i ? { ...s, ...patch } : s);
-    setStats(u);
-    await upsertSiteContent("bento.stats", JSON.stringify(u));
   };
 
   return (
@@ -118,23 +109,19 @@ export default function Bento({ building: bp, stats: sp, stack: skp, interests: 
           )}
         </motion.div>
 
-        {/* ── Stats ───────────────────────────────────────────────────── */}
-        <motion.div className="bento-card bento-stats" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
-          <p className="card-eyebrow">By the numbers</p>
-          <div className="stats-grid">
-            {stats.map(({ num, label }, i) => (
-              <div className="stat" key={i}>
-                <EditableText
-                  tag="span" className="stat-num" value={num}
-                  onSave={(v) => saveStat(i, { num: v })}
-                />
-                <EditableText
-                  tag="span" className="stat-label" value={label}
-                  onSave={(v) => saveStat(i, { label: v })}
-                />
-              </div>
+        {/* ── Growth ──────────────────────────────────────────────────── */}
+        <motion.div className="bento-card bento-growth" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
+          <p className="card-eyebrow">Growth</p>
+          <p className="growth-subline">Previous weaknesses that grew into my 3 greatest strengths.</p>
+          <ul className="growth-list">
+            {GROWTH.map((g) => (
+              <li key={g.now} className="growth-item">
+                <span className="growth-was">{g.was}</span>
+                <span className="growth-arrow" aria-hidden="true">→</span>
+                <span className="growth-is">{g.now}</span>
+              </li>
             ))}
-          </div>
+          </ul>
         </motion.div>
 
         {/* ── Stack ───────────────────────────────────────────────────── */}
