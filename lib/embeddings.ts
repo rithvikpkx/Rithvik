@@ -4,16 +4,20 @@
  * Supabase client and OPENAI_API_KEY).
  */
 import { adminClient } from "@/lib/supabase";
+import type { Project, Experience, Education } from "@/lib/types";
 
 const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIM = 1536;
 
 /** Single-shot embed. Throws on non-2xx. */
 export async function embedText(text: string): Promise<number[]> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
   const res = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY!}`,
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ model: EMBED_MODEL, input: text }),
@@ -51,10 +55,8 @@ export function chunkText(text: string, maxChars = 1500): string[] {
     }
   }
   if (buf) chunks.push(buf);
-  return chunks.length ? chunks : [text.slice(0, maxChars)];
+  return chunks.length ? chunks : (text.trim() ? [text.slice(0, maxChars)] : []);
 }
-
-import type { Project, Experience, Education } from "@/lib/types";
 
 /** Builds the embed text for a project row. Order matters: most distinctive
  *  fields first so similarity ranks them strongly. */
