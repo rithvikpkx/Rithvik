@@ -2,10 +2,13 @@
 
 import { motion } from "motion/react";
 import type { GlobeMarker } from "@/lib/types";
+import { useEditMode } from "./EditModeProvider";
 import { Globe } from "./Globe";
+import MarkerEditorPanel from "./MarkerEditorPanel";
 
 interface Props {
   markers: GlobeMarker[];
+  onSave: (next: GlobeMarker[]) => Promise<void>;
 }
 
 const card = {
@@ -13,9 +16,8 @@ const card = {
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
-/** Bento tile that hosts the interactive globe. View-only for now; Task 11
- *  layers in the edit-mode marker editor. */
-export default function BentoGlobeCard({ markers }: Props) {
+export default function BentoGlobeCard({ markers, onSave }: Props) {
+  const { isEditing } = useEditMode();
   return (
     <motion.div
       className="bento-card bento-location bento-globe"
@@ -23,6 +25,7 @@ export default function BentoGlobeCard({ markers }: Props) {
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
     >
       <Globe markers={markers} />
+      {isEditing && <MarkerEditorPanel markers={markers} onSave={onSave} />}
     </motion.div>
   );
 }

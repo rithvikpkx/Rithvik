@@ -5,7 +5,7 @@ import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
 import BentoGlobeCard from "./BentoGlobeCard";
-import { upsertSiteContent } from "@/app/admin/actions";
+import { upsertSiteContent, updateGlobeMarkers } from "@/app/admin/actions";
 import type { GlobeMarker } from "@/lib/types";
 
 interface Building { title: string; description: string; tags: string[] }
@@ -90,7 +90,13 @@ export default function Bento({ building: bp, stats: sp, stack: skp, interests: 
       >
 
         {/* ── Location (Globe) ─────────────────────────────────────────── */}
-        <BentoGlobeCard markers={markers} />
+        <BentoGlobeCard
+          markers={markers}
+          onSave={async (next) => {
+            setMarkers(next);
+            await updateGlobeMarkers(next);
+          }}
+        />
 
         {/* ── Currently Building ──────────────────────────────────────── */}
         <motion.div className="bento-card bento-building" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
