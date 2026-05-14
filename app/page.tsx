@@ -40,7 +40,6 @@ export default async function Home() {
           nameLine2={content["hero.name.line2"]}
         />
         <Bento
-          location={content["bento.location"]}
           building={bentoBuilding}
           stats={bentoStats}
           stack={bentoStack}
