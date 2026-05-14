@@ -23,8 +23,8 @@ const STARTERS: { q: string; a: string }[] = [
     a: "Rithvik is studying **Computer Science and Math at Purdue University** in West Lafayette, IN. He's building at the intersection of AI, systems, and real-world problems.",
   },
   {
-    q: "What's his tech stack?",
-    a: "Rithvik works across the stack with:\n- `TypeScript`, `JavaScript`, `Python`, `Java`, `C`\n- `React`, `Next.js`, `Node.js`\n- `Supabase`, `SQL`, `AWS`, `Vercel`\n- `NumPy`, `Pandas`, `scikit-learn`, `OpenAI API` for ML/AI work",
+    q: "Why does Rithvik love CS?",
+    a: "Rithvik loves CS because it sits at the **intersection of AI, systems, and real-world problems** — the place where an idea becomes something you can actually ship. His interests span full-stack engineering, applied ML, computer systems, startups, and research, so CS keeps giving him new corners to explore.",
   },
   {
     q: "What is rithvik.ai?",
