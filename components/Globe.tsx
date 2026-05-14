@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import createGlobe, { type COBEOptions, type Globe as CobeGlobe } from "cobe";
 import { useMotionValue, useSpring } from "motion/react";
 import type { GlobeMarker } from "@/lib/types";
@@ -62,6 +62,27 @@ function project(
 
 const THETA = 0.3;
 
+function formatLocalTime(date: Date, timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone, hour: "numeric", minute: "2-digit", hour12: true,
+    }).format(date);
+  } catch {
+    return "—";
+  }
+}
+
+function formatTzShort(date: Date, timezone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone, timeZoneName: "short",
+    }).formatToParts(date);
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function readPalette() {
   const root = document.documentElement;
   const css = getComputedStyle(root);
@@ -112,9 +133,24 @@ export function Globe({ markers, className }: GlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const widthRef = useRef(0);
   const phiRef = useRef(0);
   const pointerInteracting = useRef<number | null>(null);
+  const hoverIdxRef = useRef<number | null>(null);
+
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  // Mirror hoverIdx to a ref so the rAF tick can read it without re-running.
+  useEffect(() => { hoverIdxRef.current = hoverIdx; }, [hoverIdx]);
+
+  // Tick `now` every 30s only while a tooltip is open, so the displayed time stays fresh.
+  useEffect(() => {
+    if (hoverIdx === null) return;
+    const interval = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(interval);
+  }, [hoverIdx]);
 
   const r = useMotionValue(0);
   const rs = useSpring(r, { mass: 1, damping: 30, stiffness: 100 });
@@ -174,6 +210,17 @@ export function Globe({ markers, className }: GlobeProps) {
         btn.style.pointerEvents = p.visible ? "auto" : "none";
       }
 
+      // Drag the tooltip alongside its marker so it tracks rotation in real time.
+      const hover = hoverIdxRef.current;
+      const tooltip = tooltipRef.current;
+      if (hover !== null && tooltip && markers[hover]) {
+        const p = project(markers[hover].lat, markers[hover].lng, phi, THETA);
+        const sx = cx + p.x * radius;
+        const sy = cy - p.y * radius;
+        tooltip.style.transform = `translate3d(${sx}px, ${sy}px, 0) translate(-50%, calc(-100% - 14px))`;
+        tooltip.style.opacity = p.visible ? "1" : "0";
+      }
+
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -221,8 +268,25 @@ export function Globe({ markers, className }: GlobeProps) {
             type="button"
             className={`globe-marker globe-marker-${m.kind}`}
             aria-label={`${m.city}${m.region ? ", " + m.region : ""}, ${m.country}`}
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
+            onFocus={() => setHoverIdx(i)}
+            onBlur={() => setHoverIdx((cur) => (cur === i ? null : cur))}
           />
         ))}
+        {hoverIdx !== null && markers[hoverIdx] && (
+          <div ref={tooltipRef} className="globe-tooltip" role="tooltip">
+            <strong>
+              {markers[hoverIdx].city}
+              {markers[hoverIdx].region ? `, ${markers[hoverIdx].region}` : ""}
+            </strong>
+            <span className="globe-tooltip-country">{markers[hoverIdx].country}</span>
+            <span className="globe-tooltip-time">
+              {formatLocalTime(now, markers[hoverIdx].timezone)}{" "}
+              <span className="globe-tooltip-tz">{formatTzShort(now, markers[hoverIdx].timezone)}</span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
