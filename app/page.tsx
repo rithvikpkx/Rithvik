@@ -24,7 +24,6 @@ export default async function Home() {
   const content = Object.fromEntries((rows ?? []).map((r) => [r.key, r.value]));
 
   const bentoBuilding = parseSafe(content["bento.building"], undefined);
-  const bentoStats    = parseSafe(content["bento.stats"], undefined);
   const bentoStack    = parseSafe(content["bento.stack"], undefined);
   const bentoInterests = parseSafe(content["bento.interests"], undefined);
   const bentoGlobeMarkers = parseSafe<GlobeMarker[]>(content["bento.globe_markers"], []);
@@ -41,7 +40,6 @@ export default async function Home() {
         />
         <Bento
           building={bentoBuilding}
-          stats={bentoStats}
           stack={bentoStack}
           interests={bentoInterests}
           markers={bentoGlobeMarkers}
