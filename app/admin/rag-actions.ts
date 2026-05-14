@@ -22,6 +22,8 @@ export async function backfillPrimaryEmbeddings(): Promise<{
   const db = adminClient();
   const errors: string[] = [];
 
+  // PostgREST forbids unqualified DELETE for safety. The zero UUID never
+  // collides with a real row, so .neq(...) matches everything cleanly.
   await db.from("primary_embeddings").delete().neq("id", "00000000-0000-0000-0000-000000000000");
 
   const counts = { projects: 0, experience: 0, education: 0, site_content: 0 };

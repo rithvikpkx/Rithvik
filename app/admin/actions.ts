@@ -7,6 +7,24 @@ import {
 } from "@/lib/embeddings";
 import { requireAuth } from "./auth-helper";
 
+type PublishableRow = { id: string; published: boolean };
+
+/** Embed-or-delete per the row's published flag. Mirrors the published=true
+ *  filter that backfillPrimaryEmbeddings applies, so a single row never
+ *  ends up RAG-visible from one path and hidden from the other. */
+async function syncPrimary(
+  source_table: "projects" | "experience" | "education",
+  row: PublishableRow,
+  buildContent: () => string,
+  metadata: Record<string, unknown>,
+): Promise<void> {
+  if (row.published) {
+    await embedPrimary(source_table, row.id, buildContent(), metadata);
+  } else {
+    await deletePrimary(source_table, row.id);
+  }
+}
+
 /**
  * Wraps an embedding call so it never throws into the caller. The DB write
  * has already succeeded by the time we call this; if embedding fails we log
@@ -15,7 +33,13 @@ import { requireAuth } from "./auth-helper";
  */
 async function safeEmbed(label: string, fn: () => Promise<void>): Promise<void> {
   try { await fn(); }
-  catch (e) { console.error(`[rag] ${label} embed failed:`, e instanceof Error ? e.message : e); }
+  catch (e) {
+    // The row is persisted; embedding is best-effort. Warn (don't error)
+    // so OpenAI 429s and similar transient failures don't flood Vercel's
+    // error stream with non-actionable noise. Recovery: run
+    // backfillPrimaryEmbeddings from the SecondaryContextPanel UI.
+    console.warn(`[rag] ${label} embed skipped:`, e instanceof Error ? e.message : e);
+  }
 }
 
 function revalidate() {
@@ -45,8 +69,8 @@ export async function createProject(data: ProjectInput) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`project ${created.id}`, () =>
-    embedPrimary("projects", created.id, buildProjectText(created),
-                 { slug: created.slug, title: created.title }));
+    syncPrimary("projects", created, () => buildProjectText(created),
+                { slug: created.slug, title: created.title }));
   return created;
 }
 
@@ -57,8 +81,8 @@ export async function updateProject(id: string, data: ProjectInput) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`project ${id}`, () =>
-    embedPrimary("projects", id, buildProjectText(updated),
-                 { slug: updated.slug, title: updated.title }));
+    syncPrimary("projects", updated, () => buildProjectText(updated),
+                { slug: updated.slug, title: updated.title }));
 }
 
 export async function deleteProject(id: string) {
@@ -96,8 +120,8 @@ export async function createExperience(data: ExperienceInput) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`experience ${created.id}`, () =>
-    embedPrimary("experience", created.id, buildExperienceText(created),
-                 { slug: created.slug, org: created.org }));
+    syncPrimary("experience", created, () => buildExperienceText(created),
+                { slug: created.slug, org: created.org }));
   return created;
 }
 
@@ -108,8 +132,8 @@ export async function updateExperience(id: string, data: ExperienceInput) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`experience ${id}`, () =>
-    embedPrimary("experience", id, buildExperienceText(updated),
-                 { slug: updated.slug, org: updated.org }));
+    syncPrimary("experience", updated, () => buildExperienceText(updated),
+                { slug: updated.slug, org: updated.org }));
 }
 
 export async function deleteExperience(id: string) {
@@ -149,8 +173,8 @@ export async function createEducation(data: EducationInput) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`education ${created.id}`, () =>
-    embedPrimary("education", created.id, buildEducationText(created),
-                 { school: created.school }));
+    syncPrimary("education", created, () => buildEducationText(created),
+                { school: created.school }));
 }
 
 export async function updateEducation(id: string, data: Partial<EducationInput>) {
@@ -160,8 +184,8 @@ export async function updateEducation(id: string, data: Partial<EducationInput>)
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`education ${id}`, () =>
-    embedPrimary("education", id, buildEducationText(updated),
-                 { school: updated.school }));
+    syncPrimary("education", updated, () => buildEducationText(updated),
+                { school: updated.school }));
 }
 
 export async function deleteEducation(id: string) {

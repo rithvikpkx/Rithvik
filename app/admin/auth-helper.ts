@@ -1,3 +1,4 @@
+import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -10,7 +11,15 @@ export async function requireAuth() {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } },
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        // requireAuth is read-only — mutating cookies here is disallowed by
+        // Next.js in server components and we never need to refresh a session
+        // from inside an auth check.
+        setAll() {},
+      },
+    },
   );
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/");
