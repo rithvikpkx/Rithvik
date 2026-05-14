@@ -7,7 +7,7 @@ Guidance for Claude Code when working in this repo. Project: a personal portfoli
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
 - **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie-based sessions, `@supabase/supabase-js` server admin client
 - **Motion** (`motion/react`) for animation
-- **LangChain** (`@langchain/openai`) for the planned RAG bot in `app/api/chat`
+- **LangChain** (`@langchain/openai`) wrapping **DeepSeek** for chat completions + **OpenAI** for embeddings in the RAG bot (`app/api/chat`)
 - Deployed on **Vercel** (`dev` branch deploys preview, `main` deploys production)
 
 Node 22, package manager: npm. `npm run dev` / `npm run build` / `npm run lint`.
@@ -75,6 +75,15 @@ Earlier iterations tried two transition animations and we rolled both back:
 - `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
 - Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session) and `revalidatePath("/")`
 
+### RAG bot (`components/RagBot.tsx`, `app/api/chat/route.ts`)
+
+A floating "Ask RAG" launcher in the bottom-right (mounted in `app/page.tsx`). Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token.
+
+- **Embeddings store** — `embeddings` table in Supabase with pgvector. Schema is one row per hand-curated chunk: `content` (text), `metadata` (jsonb), `embedding` (`vector(1536)`). The `match_embeddings(query_embedding, match_count)` RPC returns top-N rows by cosine similarity. Created by `supabase/embeddings_migration.sql`. RLS locks the table to service-role only — the chat route uses `adminClient()` which bypasses RLS.
+- **Ingestion** — `scripts/embed.ts` holds ~10 hand-written paragraph chunks about Rithvik (bio, projects, education, skills, contact). Run with `OPENAI_API_KEY=… SUPABASE_SERVICE_ROLE_KEY=… npx tsx scripts/embed.ts` whenever those chunks change. The script wipes + re-inserts. Note: chunks are static text, NOT derived from the live `projects`/`experience`/`site_content` rows — inline edits to those tables don't propagate to RAG until someone re-runs the script.
+- **Chat route** — `app/api/chat/route.ts`. Takes `{ message, messages? }`, embeds the message with OpenAI `text-embedding-3-small`, pulls top-5 chunks via `match_embeddings`, builds a tightly-scoped system prompt (identity = RAG, scope = Rithvik only, persona-integrity guards against jailbreaks), then streams completions from DeepSeek (`deepseek-chat`, `maxTokens: 512`) back as `text/plain`. History is clamped to the last 6 turns. Input is rejected if missing or longer than 500 chars.
+- **Env vars** (in `.env.local`) — `OPENAI_API_KEY` (embeddings), `DEEPSEEK_API_KEY` (chat completions), `SUPABASE_SERVICE_ROLE_KEY` (adminClient + ingestion), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+
 ### Important Supabase gotcha
 
 The browser client in `lib/supabase.ts` MUST be `createBrowserClient` from `@supabase/ssr` (NOT `createClient` from `@supabase/supabase-js`). Only the SSR version stores sessions in cookies — the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save call to `/admin/login`. This was a real bug.
@@ -88,14 +97,16 @@ Tables (all in Supabase public schema):
 - `education` — schools (single-row Purdue today)
 - `site_content` — key/value JSONB store for hardcoded text that became editable (`hero.tagline`, `hero.sub_line`, `bento.location`, `bento.building`, `bento.stats`, `bento.stack`, `bento.interests`, `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`)
 - `themes` — `{ slug, name, tokens (JSONB), sort_order, published }`. Currently seeded: Rithvik Dark, Rithvik Light, Rithvik Terminal
+- `embeddings` — pgvector store for RAG. `{ id, content, metadata, embedding vector(1536) }`. Service-role only (RLS denies all). Populated by `scripts/embed.ts`.
 
-RLS: all tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions.
+RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions. `embeddings` is service-role for both read and write — the chat route reaches it via `adminClient()`.
 
 ### Migration files (apply via Supabase SQL editor)
 
 - `supabase/stage3_migration.sql` — education table + site_content seed (inline-editing stage 3)
 - `supabase/themes_migration.sql` — themes table + Dark/Light/Terminal seed (idempotent ON CONFLICT)
 - `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
+- `supabase/embeddings_migration.sql` — pgvector extension + `embeddings` table + `match_embeddings` RPC for RAG. Apply once, then run `npx tsx scripts/embed.ts` to populate.
 
 ## File layout cheat sheet
 
@@ -106,7 +117,7 @@ app/
   globals.css         — tokens, dial, all the rest
   admin/
     actions.ts        — server actions for all tables (used by inline-editing flow)
-  api/chat/           — RAG bot endpoint (in progress)
+  api/chat/route.ts   — RAG endpoint: embed → match_embeddings → DeepSeek stream
 
 components/
   Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
@@ -115,16 +126,20 @@ components/
   EditableText.tsx, EditableTagList.tsx
   ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
-  RagBot.tsx          — chatbot UI (the brain is in app/api/chat)
+  RagBot.tsx          — floating chat launcher + streaming chat panel
 
 lib/
   supabase.ts         — clients (browser uses createBrowserClient)
   themes.ts           — token list, fallback tokens, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
 
+scripts/
+  embed.ts            — re-embed all hand-curated RAG chunks into the embeddings table
+  seed.ts             — initial projects/experience seed (legacy; inline editing handles updates now)
+
 plans/
   feat-inline-editing.md  — done (stages 1–8 shipped, merged to main as v1.1)
-  feat-theme.md           — stages 1–7 done; stage 8 (mobile polish + cleanup) remains
+  feat-theme.md           — done (theme stage 8 polish + a11y complete)
 ```
 
 ## Pitfalls learned the hard way
@@ -139,8 +154,6 @@ plans/
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
 - Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
 - A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
-
-## What's still open
-
-- Feat-theme **stage 8** — mobile polish, accessibility verification.
-- RAG bot — `api/chat` route + `RagBot.tsx` UI; not yet integrated end-to-end.
+- RAG bot replies with "Something went wrong" → most likely the `embeddings` table or `match_embeddings` RPC isn't created yet (apply `supabase/embeddings_migration.sql`), or the table is empty (run `npx tsx scripts/embed.ts`). Check the server logs for the actual error.
+- RAG bot answers seem stale or missing recent edits → `scripts/embed.ts` uses static hand-curated chunks, not live DB rows. Update those chunks and re-run the script.
+- RAG returns 500 with "Embedding failed" → `OPENAI_API_KEY` missing or quota-exhausted. The chat completion model is DeepSeek; only embeddings use OpenAI.
