@@ -104,6 +104,16 @@ function buildConfig(
   // markerColor and ignores per-marker color metadata. Passing an empty list
   // here removes the redundant accent-only canvas dots that would otherwise
   // sit underneath every DOM marker.
+  // Cobe shades the sphere as `baseColor * mix((1-q)*pow(i,.4), q, dark) + glowColor * fresnel`.
+  // So `baseColor` is the bright pole of the gradient: in dark mode it tints the wireframe
+  // dots; in light mode it tints the ocean. Using `palette.text` for both modes paints the
+  // sphere with the foreground color, which in light mode is near-black and crushes the
+  // continents into a featureless dark blob (no contrast on a white card). Swap so light
+  // mode gets bright `bg` as the sphere body and dark `text` as the silhouette glow,
+  // mirroring dark mode's "bright material / dark edge" recipe.
+  const baseColor = palette.dark ? palette.text : palette.bg;
+  const glowColor = palette.dark ? palette.bg : palette.text;
+
   return {
     width: size,
     height: size,
@@ -114,9 +124,9 @@ function buildConfig(
     diffuse: 1.0,
     mapSamples: 16000,
     mapBrightness: palette.dark ? 4 : 1.2,
-    baseColor: palette.text,
+    baseColor,
     markerColor: palette.accent,
-    glowColor: palette.bg,
+    glowColor,
     markers: [],
   };
 }
