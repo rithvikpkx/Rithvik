@@ -18,6 +18,12 @@ const siteUrl = "https://rithvik.ai";
 const description =
   "CS + Math student at Purdue University building AI systems, full-stack apps, and ambitious technical projects.";
 
+// Themes can be added/updated directly in Supabase (outside the inline-edit
+// flow that calls revalidatePath). Marking the root layout dynamic ensures
+// new theme rows appear immediately without requiring a redeploy. The cost
+// is one extra Supabase fetch per request, which is negligible.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
