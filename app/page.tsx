@@ -7,6 +7,7 @@ import Experience from "@/components/Experience";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import RagBot from "@/components/RagBot";
+import SecondaryContextPanel from "@/components/SecondaryContextPanel";
 import { serverClient } from "@/lib/supabase";
 
 function parseSafe<T>(json: string | undefined, fallback: T): T {
@@ -55,6 +56,7 @@ export default async function Home() {
         />
       </main>
       <Footer />
+      <SecondaryContextPanel />
       <RagBot />
     </>
   );

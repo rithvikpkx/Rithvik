@@ -7,7 +7,8 @@ Guidance for Claude Code when working in this repo. Project: a personal portfoli
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
 - **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie-based sessions, `@supabase/supabase-js` server admin client
 - **Motion** (`motion/react`) for animation
-- **LangChain** (`@langchain/openai`) for the planned RAG bot in `app/api/chat`
+- **LangChain** (`@langchain/openai`) wrapping **OpenAI** `gpt-4o-mini` for chat completions, HyDE expansion, and image captioning; OpenAI `text-embedding-3-small` for embeddings in the RAG bot (`app/api/chat`). DeepSeek was tried earlier and rolled back — see Pitfalls.
+- **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2` which crashed on Vercel due to a `DOMMatrix` reference at module evaluation).
 - Deployed on **Vercel** (`dev` branch deploys preview, `main` deploys production)
 
 Node 22, package manager: npm. `npm run dev` / `npm run build` / `npm run lint`.
@@ -75,6 +76,32 @@ Earlier iterations tried two transition animations and we rolled both back:
 - `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
 - Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session) and `revalidatePath("/")`
 
+### RAG bot (`components/RagBot.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
+
+A floating "Ask RAG" launcher in the bottom-right (mounted in `app/page.tsx`). Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token. A second launcher to its left — `SecondaryContextPanel` — only appears in edit mode and manages the bot's secondary knowledge.
+
+> Full architectural deep dive: see `explanations/rag-pipeline.md`. This section is the quick reference.
+
+Two parallel pgvector stores in Supabase, both indexed with **HNSW** (NOT IVFFlat — see Pitfalls):
+
+- `primary_embeddings` — one row per `projects` / `experience` / `education` / `site_content` record. Auto-upserted by `app/admin/actions.ts` on every inline edit, wrapped in `safeEmbed` (save first, then embed; OpenAI failures don't undo saves). For `projects` / `experience` / `education` the upsert goes through `syncPrimary(...)`, which respects each row's `published` flag — `false` rows have their embedding deleted, matching backfill's `published = true` filter. `site_content` has no `published` column and always embeds via `embedPrimary` directly. `match_primary(query_embedding, match_count)` RPC returns top-N by cosine similarity. Chunk text is **statement-form natural prose with a Rithvik name anchor** (e.g. "Rithvik Praveen Kumar studies at Purdue University…") — labels like `[bento.stack]` are mapped to readable phrases ("Rithvik's tech stack and technologies he works with") so the embedded text actually carries semantic meaning instead of opaque dotted keys.
+- `secondary_embeddings` — chunks from files Rithvik uploads via `SecondaryContextPanel`. Tied to `secondary_documents` rows that track filename / mime / storage path. PDFs use **`unpdf`** (a serverless-friendly wrapper around pdfjs-dist), DOCX uses `mammoth`, plain text reads UTF-8 directly, images get captioned by `gpt-4o-mini` and the caption is embedded. Per-file chunk cap = 200 to bound embedding cost per upload. `match_secondary(query_embedding, match_count)` mirrors the primary RPC.
+
+`app/api/chat/route.ts` runs the following on every turn:
+1. **HyDE expansion** — `generateHypotheticalAnswer(question)` calls `gpt-4o-mini` for a 1–2 sentence statement-form answer. The question + hypothetical are concatenated and embedded together. This is what makes question-form queries (like "where did rithvik study?") retrieve the right statement-form chunks.
+2. **Parallel retrieval** — `Promise.allSettled` over `match_primary` + `match_secondary`, **top 10 each**. A failed source falls back to `[]` so one regression doesn't 500 the request.
+3. **Empty-context guard** — if BOTH retrievals return zero rows, short-circuit the LLM entirely and stream the canned "I don't have that specific detail" refusal. Loud `[rag] empty-context guard fired` warning so a regression surfaces immediately.
+4. **Context block** — three labeled sections: `## Recent conversation` (last 5 turns, for continuity), `## What's on the website` (primary chunks), `## Background materials` (secondary chunks).
+5. **Chat completion** — streams from **OpenAI `gpt-4o-mini`** (NOT DeepSeek — see Pitfalls). System prompt has a top-of-prompt CRITICAL GROUNDING RULES section that's explicit about never inventing facts and only treating Recent conversation as continuity, not as a fact source. Recent turns are also passed as actual `Human`/`AI` message turns so the model sees a real conversation, not a transcript dump.
+
+Originals of secondary uploads live in the private `secondary` Supabase Storage bucket. RLS denies anon access to all three RAG tables; the chat route and server actions reach them via `adminClient()` (service-role).
+
+Env vars in `.env.local` (see `.env.local.example`): `OPENAI_API_KEY` (used for embeddings, HyDE, image captioning, and chat), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `DEEPSEEK_API_KEY` is dead code now — left in the example for future reference but not consumed anywhere.
+
+**One-time setup:** apply `supabase/rag_pipeline_migration.sql` in the Supabase SQL editor (or via `supabase db query --linked -f ...` with the CLI), then enter edit mode and hit "Re-embed all primary content" in `SecondaryContextPanel`. After that, every inline edit keeps primary in sync automatically, and the same panel handles secondary uploads + deletions. No terminal scripts needed.
+
+**Cost** roughly $0.0008 per chat turn end-to-end (1 HyDE call + 1 embed + 1 chat completion, all on gpt-4o-mini / text-embedding-3-small). A few hundred queries/month is well under $1.
+
 ### Important Supabase gotcha
 
 The browser client in `lib/supabase.ts` MUST be `createBrowserClient` from `@supabase/ssr` (NOT `createClient` from `@supabase/supabase-js`). Only the SSR version stores sessions in cookies — the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save call to `/admin/login`. This was a real bug.
@@ -88,14 +115,18 @@ Tables (all in Supabase public schema):
 - `education` — schools (single-row Purdue today)
 - `site_content` — key/value JSONB store for hardcoded text that became editable (`hero.tagline`, `hero.sub_line`, `bento.location`, `bento.building`, `bento.stats`, `bento.stack`, `bento.interests`, `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`)
 - `themes` — `{ slug, name, tokens (JSONB), sort_order, published }`. Currently seeded: Rithvik Dark, Rithvik Light, Rithvik Terminal
+- `primary_embeddings` — pgvector store for live website content. One row per projects/experience/education/site_content record; auto-upserted on inline edits. projects/experience/education respect `published` (rows flip to `false` are deleted from the store); site_content has no published column and always embeds. Service-role only.
+- `secondary_documents` — file metadata for user-uploaded RAG materials (filename, mime, storage path, byte size).
+- `secondary_embeddings` — pgvector store for chunks extracted from secondary documents. Linked to `secondary_documents` via FK with `on delete cascade`.
 
-RLS: all tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions.
+RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions. The three RAG tables are service-role for both read and write — the chat route reaches them via `adminClient()`.
 
 ### Migration files (apply via Supabase SQL editor)
 
 - `supabase/stage3_migration.sql` — education table + site_content seed (inline-editing stage 3)
 - `supabase/themes_migration.sql` — themes table + Dark/Light/Terminal seed (idempotent ON CONFLICT)
 - `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
+- `supabase/rag_pipeline_migration.sql` — pgvector extension + `primary_embeddings` + `secondary_documents` + `secondary_embeddings` + **HNSW** indexes + `match_primary` + `match_secondary` RPCs + RLS lockdown + Storage bucket. Apply once; the rest is UI-driven. (NOTE: an earlier version used IVFFlat with `lists = 100`; that caused silent under-retrieval — see Pitfalls. HNSW is the correct choice and is what the committed migration sets up.)
 
 ## File layout cheat sheet
 
@@ -106,7 +137,9 @@ app/
   globals.css         — tokens, dial, all the rest
   admin/
     actions.ts        — server actions for all tables (used by inline-editing flow)
-  api/chat/           — RAG bot endpoint (in progress)
+    rag-actions.ts    — server actions: backfillPrimaryEmbeddings, list/upload/delete secondary docs
+    auth-helper.ts    — shared requireAuth (used by actions.ts and rag-actions.ts)
+  api/chat/route.ts   — embed → match_primary + match_secondary → DeepSeek stream
 
 components/
   Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
@@ -115,23 +148,43 @@ components/
   EditableText.tsx, EditableTagList.tsx
   ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
-  RagBot.tsx          — chatbot UI (the brain is in app/api/chat)
+  RagBot.tsx          — floating chat launcher + streaming chat panel
+  SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
 
 lib/
   supabase.ts         — clients (browser uses createBrowserClient)
   themes.ts           — token list, fallback tokens, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
+  embeddings.ts       — OpenAI embed wrapper, chunker, row→text builders, upsert helpers
+  file-extractors.ts  — PDF/DOCX/TXT/MD readers + gpt-4o-mini image captioner
 
 plans/
   feat-inline-editing.md  — done (stages 1–8 shipped, merged to main as v1.1)
-  feat-theme.md           — stages 1–7 done; stage 8 (mobile polish + cleanup) remains
+  feat-theme.md           — done (theme stage 8 polish + a11y complete)
+  feat-rag-pipeline.md    — done (RAG pipeline shipped + IVFFlat/DOMMatrix/HyDE rescues)
+
+explanations/
+  rag-pipeline.md         — deep architectural reference for the RAG bot
 ```
 
 ## Pitfalls learned the hard way
 
+### Theme / UI
+
 - **Don't add a page-wide transition animation to the theme swap.** Two prior approaches were rolled back: (a) `document.startViewTransition` freezes the live DOM during the transition, so per-pill CSS rotation can't visibly play, and per-element `view-transition-name` pulls children out of their parent's `overflow: hidden` clipping while interpolating bounding boxes rather than transforms; (b) a custom glass-wash overlay with a delayed `data-theme` flip worked mechanically but read as visually busy. The instant flip + live pill rotation is the chosen architecture.
 - **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
 - **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
+
+### RAG (every one of these cost real debugging time)
+
+- **`pgvector` IVFFlat with `lists` ≫ rows silently returns 0–1 chunks per query.** The initial migration used the published `lists = sqrt(rows)` heuristic and shipped with `lists = 100` — fine for ten thousand rows, catastrophic for the seventeen we had on day one. Each cluster ended up nearly empty; the default `ivfflat.probes = 1` searched a single cluster and almost always returned the seed row only. Symptom: empty `contextBlock`, then the chat model hallucinates wildly (Penn State / Michigan / fictional projects) because the system prompt's "refuse if not in context" rule wasn't enough to overcome a cost-optimized model's tendency to fill blanks. **Use HNSW** — no row-count-dependent parameter to tune, works correctly at any scale.
+- **`pdf-parse@2.x` crashes on Vercel** at module evaluation: `ReferenceError: DOMMatrix is not defined`. The library transitively loads `pdfjs-dist`, which references the browser-only `DOMMatrix` global at the top of its module. Vercel's Node functions runtime doesn't expose it; local Node 24/25 does, so the issue only manifests in production. **Use `unpdf`** — same `pdfjs-dist` under the hood but ships the polyfills serverless needs.
+- **Cost-optimized LLMs (DeepSeek, etc.) treat "don't fabricate" as a suggestion, not a rule.** Even with explicit "if not in context, refuse" wording at the top of the system prompt, DeepSeek would routinely invent plausible-sounding facts about Rithvik (wrong university, wrong GitHub handle, wrong projects). `gpt-4o-mini` follows the rule reliably for ~5x the cost (still pennies per month at our traffic). Lesson: model instruction adherence is a hard requirement for RAG; don't trade it away for a 5x cost saving on what's already a cheap workload.
+- **Embedding similarity is not search.** A question like "where did rithvik study?" doesn't naturally embed close to a chunk that begins `Education: B.S. ...` — question form and statement form live in different parts of embedding space. Two fixes layered together: (1) rewrite chunk text as natural prose with the subject name visible (`Rithvik Praveen Kumar studies at Purdue...`); (2) **HyDE** — generate a 1–2 sentence hypothetical answer with `gpt-4o-mini`, concat with the question, embed the combo. Statement-form input embeds close to statement-form chunks. Both are required; either alone is insufficient.
+- **Decouple "RPC succeeded" from "RPC returned data."** Supabase's JS client distinguishes thrown rejections from in-band `{ data: null, error }` responses. Our `unpack(label, res)` helper handles both, logging `[rag] ... rpc error:` so a missing function or RLS regression doesn't silently degrade to empty context. **Also**: even a successful RPC can return `[]` — the empty-context guard in `route.ts` short-circuits the LLM entirely in that case so the bot returns the canned refusal instead of hallucinating from training data.
+- **`Promise.all` is wrong here; use `Promise.allSettled`.** Two parallel retrievals (primary + secondary) — if either rejects, `Promise.all` 500s the whole request. With `Promise.allSettled` + the unpack helper, one source can fail and the bot still answers from the other.
+- **`safeEmbed` swallows embedding errors on inline-edit actions** so a transient OpenAI hiccup never undoes a user's save. The row is in the DB; if the embedding fails, the worst case is RAG sees a stale version of that one row until the next edit or the "Re-embed all primary content" backfill. `console.warn` (not `error`) so transient OpenAI 429s don't flood Vercel's error stream.
+- **Vercel deployments are bundled separately per route.** During the `pdf-parse` DOMMatrix crash, the `/api/chat` endpoint kept working because it doesn't import `lib/file-extractors.ts`; only the server-actions bundle (which `app/admin/rag-actions.ts` loads into) was broken. So "the chat bot is alive" doesn't mean "all server actions work."
 
 ## Where to look first when something breaks
 
@@ -139,8 +192,14 @@ plans/
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
 - Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
 - A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
-
-## What's still open
-
-- Feat-theme **stage 8** — mobile polish, accessibility verification.
-- RAG bot — `api/chat` route + `RagBot.tsx` UI; not yet integrated end-to-end.
+- **RAG bot hallucinating wildly** (wrong school, made-up projects) → the empty-context guard hasn't fired but retrieval is missing the relevant chunks. Check the rank: in Supabase SQL editor, embed the question via OpenAI manually and query `match_primary` with `match_count = 17`. If the right chunk is buried at rank 8+, HyDE expansion in `app/api/chat/route.ts` may have malfunctioned (check Vercel logs for `[rag] hyde failed`). Recovery: re-embed primary content from the panel to refresh chunks with the latest prose format.
+- **RAG returns the canned "I don't have that specific detail"** for things you know are in the DB → `[rag] empty-context guard fired` will be in Vercel logs. Means BOTH `match_primary` AND `match_secondary` returned 0 rows. Most common cause is the pgvector index being misconfigured — verify it's HNSW not IVFFlat: `SELECT indexdef FROM pg_indexes WHERE tablename = 'primary_embeddings';`.
+- **RAG returns 500 "Embedding failed"** → `OPENAI_API_KEY` missing or quota-exhausted. The chat-completion model is **`gpt-4o-mini`** (NOT DeepSeek anymore); embeddings, HyDE, image captioning, AND chat all use OpenAI.
+- **RAG answers feel stale after inline edits** → confirm `safeEmbed` isn't silently failing — Vercel logs would show `[rag] ... embed skipped:` warnings. Recovery: open edit mode → SecondaryContextPanel → "Re-embed all primary content".
+- **PDF upload fails on Vercel with a server-bundle crash** → `pdf-parse` crept back in somewhere via a dependency. We use `unpdf` because `pdf-parse@2`'s pdfjs-dist refers to `DOMMatrix` at module evaluation, which Vercel's Node runtime doesn't expose. `pdf-parse` MUST NOT be in `package.json`.
+- **Secondary upload fails with "MIME type … not supported"** → add the type to `TEXT_MIMES`/`IMAGE_MIMES` or write a new extractor branch in `lib/file-extractors.ts`.
+- **Secondary upload fails with "File produces N chunks (cap is 200)"** → the file is too long. Split it into smaller documents before uploading.
+- **`match_primary` / `match_secondary` not found** → `supabase/rag_pipeline_migration.sql` wasn't applied, or was applied to a different Supabase project than the one in `.env.local`. Use `supabase db query --linked -f supabase/rag_pipeline_migration.sql` to re-apply (idempotent).
+- **Secondary panel doesn't appear** → check `useEditMode().isEditing`. The panel self-gates; if you're not logged in via `InlineLoginPanel` it won't render.
+- **Chat route logs `[rag] match_secondary rpc error:`** → the table or RPC is missing; reapply the migration. Note the chat route gracefully degrades (returns answers using only the source that worked) so the bot still responds.
+- **Chat route logs `[rag] hyde failed`** → HyDE expansion errored (likely an OpenAI 429 or 401). Retrieval falls back to embedding the raw question — still works, just retrieval quality on question-form queries drops. Check `OPENAI_API_KEY` and quota.
