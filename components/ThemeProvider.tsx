@@ -1,8 +1,8 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
-import { flushSync } from "react-dom";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
 import type { Theme } from "@/lib/types";
+import ThemeWash from "./ThemeWash";
 
 interface ThemeCtx {
   themes: Theme[];
@@ -23,33 +23,35 @@ interface Props {
   children: React.ReactNode;
 }
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-// `document.startViewTransition` is in baseline-modern browsers (Chrome 111+,
-// Safari 18+, Firefox 129+) but TypeScript's lib.dom may still lag in this
-// project's TS version, so we type it here.
-type ViewTransitionDoc = Document & {
-  startViewTransition?: (callback: () => void | Promise<void>) => unknown;
-};
+const WASH_DURATION_MS = 500;
+const WASH_CLEANUP_BUFFER_MS = 120;
 
 /**
- * Owns the active theme slug. Theme changes go through the View Transitions
- * API so the browser snapshots OLD and NEW pages and animates between them
- * with a radial mask sweeping from the dial — see globals.css for the
- * ::view-transition-new(root) keyframes. flushSync forces React to commit
- * the state change synchronously so the new snapshot includes the updated
- * dial selection.
+ * Owns the active theme slug. Theme changes swap CSS vars synchronously and
+ * mount a liquid-glass wash overlay (ThemeWash) that sweeps across the
+ * viewport from the dial position. The dial itself remains in the live DOM
+ * during the wash — its CSS transform-transitions handle the physical
+ * rotation independently, and a higher z-index keeps it above the wash.
  */
 export default function ThemeProvider({ themes, children }: Props) {
   const [currentSlug, setCurrentSlug] = useState<string>(DEFAULT_THEME_SLUG);
+  // Single wash element with a bumped key on each setTheme call so React
+  // remounts it and the CSS animation restarts cleanly on rapid clicks.
+  const [wash, setWash] = useState<{ theme: Theme; key: number } | null>(null);
+  const washKeyRef = useRef(0);
+  const washTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const fromDom = document.documentElement.dataset.theme;
     if (fromDom && themes.some((t) => t.slug === fromDom)) setCurrentSlug(fromDom);
   }, [themes]);
+
+  // Clear any pending wash teardown if the provider unmounts mid-animation.
+  useEffect(() => {
+    return () => {
+      if (washTimerRef.current !== null) window.clearTimeout(washTimerRef.current);
+    };
+  }, []);
 
   const applyTheme = (slug: string) => {
     document.documentElement.dataset.theme = slug;
@@ -57,30 +59,32 @@ export default function ThemeProvider({ themes, children }: Props) {
   };
 
   const setTheme = (slug: string) => {
-    if (!themes.some((t) => t.slug === slug) || slug === currentSlug) return;
+    if (slug === currentSlug) return;
+    const next = themes.find((t) => t.slug === slug);
+    if (!next) return;
 
-    const doc = document as ViewTransitionDoc;
-    const canTransition = typeof doc.startViewTransition === "function" && !prefersReducedMotion();
+    // Restart the wash animation: bumping the key forces React to remount
+    // <ThemeWash>, so its 500ms keyframes replay from 0% even on rapid clicks.
+    washKeyRef.current += 1;
+    setWash({ theme: next, key: washKeyRef.current });
 
-    const commit = () => {
-      // flushSync so the dial state lands in the NEW snapshot the browser
-      // is about to take (otherwise React would commit on the next tick,
-      // after the snapshot, and the OLD selection would briefly persist).
-      flushSync(() => setCurrentSlug(slug));
-      applyTheme(slug);
-    };
+    // Swap the theme synchronously. The wash overlay covers the dial-origin
+    // region while the rest of the page repaints under the wave front.
+    setCurrentSlug(slug);
+    applyTheme(slug);
 
-    if (!canTransition) {
-      commit();
-      return;
-    }
-
-    doc.startViewTransition!(commit);
+    // Tear down the wash element shortly after its animation finishes.
+    if (washTimerRef.current !== null) window.clearTimeout(washTimerRef.current);
+    washTimerRef.current = window.setTimeout(() => {
+      setWash(null);
+      washTimerRef.current = null;
+    }, WASH_DURATION_MS + WASH_CLEANUP_BUFFER_MS);
   };
 
   return (
     <ThemeContext.Provider value={{ themes, currentSlug, setTheme }}>
       {children}
+      {wash && <ThemeWash key={wash.key} theme={wash.theme} />}
     </ThemeContext.Provider>
   );
 }

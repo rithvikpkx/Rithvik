@@ -53,19 +53,18 @@ At SSR, `ThemeStyleInjector` renders one `<style id="theme-tokens">` block conta
 1. `<html data-theme="rithvik-dark">` hardcoded in JSX (works with JS disabled).
 2. An inline boot script at the top of `<body>` that reads `localStorage[rithvik-theme]` and overwrites the attribute **before first paint** — no FOUC.
 
-`ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` writes `data-theme`, mirrors to `localStorage`, and **wraps the change in `document.startViewTransition`** so the swap animates via the View Transitions API. `flushSync(setCurrentSlug)` inside the callback so React commits the dial state synchronously and lands in the NEW snapshot.
+`ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` swaps `currentSlug` + `data-theme` + `localStorage` synchronously and mounts a `<ThemeWash>` overlay (keyed for restart on rapid clicks). A cancelable timer unmounts the wash ~620ms later.
 
-### Theme transition (View Transitions API)
+### Theme transition (overlay wash, live-DOM rotation)
 
-The transition is implemented entirely in CSS on view-transition pseudo-elements (`app/globals.css` — section "THEME VIEW TRANSITION"):
+There are two independent animations playing simultaneously, both in the live DOM — **no View Transitions API**. Earlier versions used `document.startViewTransition`; it broke the dial (per-element groups got pulled out of the dial's `overflow: hidden` clipping, and the API interpolates bounding boxes rather than transforms, so the pill rotation didn't visibly play).
 
-- `::view-transition-old(root)` stays fully opaque underneath
-- `::view-transition-new(root)` reveals with a radial mask sweeping from the dial position (`circle at 0% 50%`), animated via a `@property --vt-reveal: <percentage>` so the mask radius interpolates smoothly
-- Filter (blur/saturate/brightness/hue-rotate) decays to identity by 50% of the 900ms timeline so there's no lingering blur at the handoff
-- Each theme pill carries `viewTransitionName: theme-pill-<slug>` so the browser interpolates each pill's position/rotation from OLD to NEW (the "fan re-arrangement" plays on screen during the transition)
-- `.theme-dial-content` has `view-transition-name: theme-dial-shell` so the glass shell stays visible — without this the shell is inside the root snapshot and gets hidden behind the wave mask at the start, leaving pills floating
-- A default `::view-transition-old(*) / new(*)` rule kills the pseudo-element crossfade for all groups (show new immediately, hide old) so pills don't ghost as two stacked images
-- `prefers-reduced-motion` skips the transition entirely (`document.startViewTransition` check + CSS reset)
+- **`ThemeWash`** (`components/ThemeWash.tsx` + `.theme-wash` keyframes in `globals.css`) — fixed full-viewport `<div>` with a radial-mask wave sweeping from `circle at 0% 50%` (the dial origin) over 500ms. Wave fill uses the incoming theme's `bg`/`accent` set inline as `--wash-bg` / `--wash-accent`. `z-index: 195`. Remounted via React `key` so the animation restarts cleanly on rapid clicks.
+- **Dial rotation** (`.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) }`) — each pill's `transform: translate(0, calc(-50% + Y)) rotate(Xdeg)` recomputes when `selectedIdx` changes; CSS interpolates it. The whole fan rotates as one cohesive unit.
+
+Layering: `.theme-dial-aside` is at `z-index: 200` so the dial sits **above** the wash and stays visibly rotating while the wave passes under it. The dial's `overflow: hidden` half-pill shape clips the pills throughout — no detachment.
+
+`prefers-reduced-motion` swaps the wash for a quick fade (`@keyframes theme-wash-fade`) and zeros the pill transition durations (existing rule at the bottom of the dial CSS block).
 
 ### Inline editing (`feat-inline-editing.md`, completed)
 
@@ -105,7 +104,7 @@ RLS: all tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key o
 app/
   layout.tsx          — fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + EditModeProvider
   page.tsx            — fetches site_content; passes to Hero/Bento/Contact; renders all sections
-  globals.css         — tokens, dial, view-transition pseudo-element styling, all the rest
+  globals.css         — tokens, dial, .theme-wash keyframes, all the rest
   admin/
     actions.ts        — server actions for all tables (still used; the /admin UI pages are deprecated)
     login/, logout/   — legacy pages, replaced by InlineLoginPanel; kept for fallback
@@ -117,7 +116,7 @@ components/
   Projects(.tsx + Client.tsx), Experience(.tsx + Client.tsx), Contact.tsx
   EditModeProvider.tsx, InlineLoginPanel.tsx, EditBar.tsx
   EditableText.tsx, EditableTagList.tsx
-  ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
+  ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx, ThemeWash.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
   RagBot.tsx          — chatbot UI (the brain is in app/api/chat)
 
@@ -133,23 +132,24 @@ plans/
 
 ## Pitfalls learned the hard way
 
-- **View Transitions + per-element `view-transition-name`**: each element with a name gets pulled out of its parent's snapshot. It is **not** clipped by the parent's `overflow: hidden`. If you don't want pills floating outside the dial container, the container also needs its own `view-transition-name`.
-- **View Transitions default crossfade**: `::view-transition-old/new` fade over 250ms by default. With per-element groups, this stacks two ghostly images at the same interpolated position. Kill it with `::view-transition-old(*) { animation: none; opacity: 0 } / ::view-transition-new(*) { animation: none; opacity: 1 }`.
+- **Don't use `document.startViewTransition` for the theme swap** — it freezes the live DOM behind snapshot pseudo-elements, so CSS transitions on `.theme-strip-option` don't visibly play. Per-pill `view-transition-name` also pulls each pill out of the dial's `overflow: hidden` clipping (named groups are NOT clipped by their parent's overflow), and the API interpolates bounding boxes rather than transforms — pills snap to the new rotation at t=0 and only slide linearly. Use the overlay-wash approach in `ThemeProvider` instead.
 - **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
-- **`flushSync` inside `startViewTransition` callback** — without it React commits state on the next tick, AFTER the NEW snapshot is taken, so the new selection doesn't appear in the transition.
 - **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
-- **CSS variables aren't animatable** unless you declare `@property --name { syntax: '<percentage>'; … }`. The theme transition uses this for `--vt-reveal`.
+- **CSS variables aren't animatable** unless you declare `@property --name { syntax: '<percentage>'; … }`. The wash uses this for `--wash-pos`.
+- **Restart a CSS animation via React `key` bump** — the wash element is keyed on a counter incremented per `setTheme` call so rapid clicks remount it and the 500ms keyframes replay from 0%.
+- **Dial z-index must sit above the wash** — wash is at `195`, dial-aside at `200`. Otherwise the wave covers the dial mid-rotation.
 
 ## Dead / legacy code
 
-- `components/ThemeWash.tsx` — leftover from an earlier overlay-based theme transition that was abandoned for the View Transitions API approach. Not imported anywhere; safe to delete.
 - `app/admin/{login,logout,page.tsx,ExperienceManager.tsx,ProjectManager.tsx}` — pre-inline-editing dashboard. Kept as fallback while the inline flow stabilizes; safe to delete once happy.
 
 ## Where to look first when something breaks
 
-- Theme not switching → check the browser console: is `document.startViewTransition` defined? Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
+- Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
-- Theme dial pills look "broken" mid-transition → check that `.theme-dial-content` has `view-transition-name: theme-dial-shell` and that the `::view-transition-old(*) / new(*)` no-crossfade defaults are in `globals.css`.
+- Wash overlay missing or doesn't restart on rapid clicks → check that `ThemeProvider` is bumping `washKeyRef.current` and passing it as `<ThemeWash key={...} />`. Verify `--wash-bg` / `--wash-accent` are set inline on the wash element.
+- Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
+- Wave covers the dial mid-transition → `.theme-dial-aside` `z-index` must be above `.theme-wash` (200 vs 195).
 - A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
 
 ## What's still open
