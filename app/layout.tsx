@@ -4,6 +4,12 @@ import "./globals.css";
 import EditModeProvider from "@/components/EditModeProvider";
 import InlineLoginPanel from "@/components/InlineLoginPanel";
 import EditBar from "@/components/EditBar";
+import ThemeStyleInjector from "@/components/ThemeStyleInjector";
+import ThemeProvider from "@/components/ThemeProvider";
+import ThemeDial from "@/components/ThemeDial";
+import { serverClient } from "@/lib/supabase";
+import type { Theme } from "@/lib/types";
+import { FALLBACK_THEMES, DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -36,15 +42,35 @@ export const metadata: Metadata = {
   alternates: { canonical: siteUrl },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// FOUC prevention — runs synchronously before paint so the saved theme is
+// applied to <html> before any content renders.
+const themeBootScript = `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||${JSON.stringify(DEFAULT_THEME_SLUG)};document.documentElement.dataset.theme=t;}catch(_){}`;
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { data } = await serverClient().from("themes").select("*").order("sort_order");
+  const themes = ((data ?? []) as Theme[]).filter((t) => t.published);
+  const safeThemes = themes.length > 0 ? themes : FALLBACK_THEMES;
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      data-theme={DEFAULT_THEME_SLUG}
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
-        <EditModeProvider>
-          {children}
-          <InlineLoginPanel />
-          <EditBar />
-        </EditModeProvider>
+        {/* Theme variable definitions for every slug */}
+        <ThemeStyleInjector themes={safeThemes} />
+        {/* Boot script must run before the first paint */}
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <ThemeProvider themes={safeThemes}>
+          <EditModeProvider>
+            {children}
+            <InlineLoginPanel />
+            <EditBar />
+          </EditModeProvider>
+          <ThemeDial />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -32,13 +32,12 @@ async function requireAuth() {
     }
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
+  if (!user) redirect("/");
   return user;
 }
 
 function revalidate() {
   revalidatePath("/");
-  revalidatePath("/admin");
 }
 
 export async function createProject(data: ProjectInput) {
