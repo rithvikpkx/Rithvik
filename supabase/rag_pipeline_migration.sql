@@ -25,9 +25,13 @@ create table if not exists primary_embeddings (
   unique (source_table, source_id)
 );
 
+-- HNSW (not IVFFlat). IVFFlat needs `lists` tuned to row count: with the
+-- previous lists=100 against ~17 rows, each query only probed one mostly-empty
+-- cluster and retrieval returned at most one chunk, silently starving the bot
+-- of context. HNSW has no `lists` parameter, works well at tiny scale, and
+-- scales without retuning.
 create index if not exists primary_embeddings_embedding_idx
-  on primary_embeddings using ivfflat (embedding vector_cosine_ops)
-  with (lists = 100);
+  on primary_embeddings using hnsw (embedding vector_cosine_ops);
 
 create or replace function match_primary (
   query_embedding vector(1536),
@@ -71,8 +75,7 @@ create table if not exists secondary_embeddings (
 );
 
 create index if not exists secondary_embeddings_embedding_idx
-  on secondary_embeddings using ivfflat (embedding vector_cosine_ops)
-  with (lists = 100);
+  on secondary_embeddings using hnsw (embedding vector_cosine_ops);
 
 create or replace function match_secondary (
   query_embedding vector(1536),
