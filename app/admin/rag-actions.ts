@@ -3,7 +3,9 @@ import { adminClient } from "@/lib/supabase";
 import {
   embedPrimary, buildProjectText, buildExperienceText,
   buildEducationText, buildSiteContentText,
+  chunkText, embedText,
 } from "@/lib/embeddings";
+import { extractText, captionImage } from "@/lib/file-extractors";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "./auth-helper";
 
@@ -62,4 +64,149 @@ export async function backfillPrimaryEmbeddings(): Promise<{
 
   revalidatePath("/");
   return { ...counts, errors };
+}
+
+export interface SecondaryDocRow {
+  id: string;
+  filename: string;
+  mime_type: string;
+  byte_size: number;
+  uploaded_at: string;
+  chunk_count: number;
+}
+
+/** Returns every secondary document with its chunk count for the UI list. */
+export async function listSecondaryDocuments(): Promise<SecondaryDocRow[]> {
+  await requireAuth();
+  const db = adminClient();
+
+  const { data: docs, error } = await db
+    .from("secondary_documents")
+    .select("id, filename, mime_type, byte_size, uploaded_at")
+    .order("uploaded_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  // Count chunks per doc. One extra round-trip but avoids a view.
+  const ids = (docs ?? []).map((d) => d.id);
+  const countMap = new Map<string, number>();
+  if (ids.length) {
+    const { data: chunks } = await db
+      .from("secondary_embeddings")
+      .select("document_id")
+      .in("document_id", ids);
+    for (const c of chunks ?? []) {
+      countMap.set(c.document_id, (countMap.get(c.document_id) ?? 0) + 1);
+    }
+  }
+  return (docs ?? []).map((d) => ({ ...d, chunk_count: countMap.get(d.id) ?? 0 }));
+}
+
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
+
+/**
+ * Accepts a single file from a <form action={uploadSecondaryDocument}>.
+ * Steps:
+ *  1. Validate (size, mime supported).
+ *  2. Upload original bytes to the 'secondary' Storage bucket.
+ *  3. Insert the secondary_documents row.
+ *  4. Extract text (or caption if image), chunk it, embed each chunk.
+ *  5. Insert secondary_embeddings rows.
+ * If any step after the doc row insert fails, we delete the doc row (and the
+ * cascade clears any embeddings already written). The Storage object is also
+ * cleaned up on failure.
+ */
+export async function uploadSecondaryDocument(formData: FormData): Promise<SecondaryDocRow> {
+  await requireAuth();
+  const file = formData.get("file");
+  if (!(file instanceof File)) throw new Error("No file provided.");
+  if (file.size === 0) throw new Error("File is empty.");
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(`File exceeds ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB limit.`);
+  }
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const mime = file.type || "application/octet-stream";
+  const extracted = await extractText(bytes, mime);
+  if (extracted.kind === "unsupported") throw new Error(extracted.reason);
+
+  const db = adminClient();
+  const storagePath = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+  // 1) Upload original to Storage
+  const { error: upErr } = await db.storage
+    .from("secondary")
+    .upload(storagePath, bytes, { contentType: mime, upsert: false });
+  if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
+
+  // 2) Insert doc row
+  const { data: doc, error: docErr } = await db
+    .from("secondary_documents")
+    .insert({ filename: file.name, mime_type: mime, storage_path: storagePath, byte_size: file.size })
+    .select()
+    .single();
+  if (docErr) {
+    await db.storage.from("secondary").remove([storagePath]);
+    throw new Error(`Document insert failed: ${docErr.message}`);
+  }
+
+  // 3) Convert to embeddable text
+  try {
+    let chunks: string[];
+    if (extracted.kind === "image") {
+      const caption = await captionImage(extracted.bytes, extracted.mime);
+      chunks = [caption]; // captions are short — no further splitting
+    } else {
+      chunks = chunkText(extracted.text);
+      if (chunks.length === 0) throw new Error("No extractable text found in file.");
+    }
+
+    // 4) Embed + insert each chunk
+    for (let i = 0; i < chunks.length; i++) {
+      const embedding = await embedText(chunks[i]);
+      const { error: embErr } = await db.from("secondary_embeddings").insert({
+        document_id: doc.id,
+        chunk_index: i,
+        content: chunks[i],
+        metadata: { filename: file.name, mime_type: mime },
+        embedding,
+      });
+      if (embErr) throw new Error(`Embedding insert failed: ${embErr.message}`);
+    }
+  } catch (e) {
+    // Roll back the doc row (cascade deletes any partial embeddings) + storage
+    await db.from("secondary_documents").delete().eq("id", doc.id);
+    await db.storage.from("secondary").remove([storagePath]);
+    throw e;
+  }
+
+  revalidatePath("/");
+  return {
+    id: doc.id,
+    filename: doc.filename,
+    mime_type: doc.mime_type,
+    byte_size: doc.byte_size,
+    uploaded_at: doc.uploaded_at,
+    chunk_count: 0, // UI re-fetches via listSecondaryDocuments after upload
+  };
+}
+
+/** Removes the document, all its embeddings (via FK cascade), and the
+ *  underlying Storage object. */
+export async function deleteSecondaryDocument(id: string): Promise<void> {
+  await requireAuth();
+  const db = adminClient();
+  const { data: doc, error: getErr } = await db
+    .from("secondary_documents")
+    .select("storage_path")
+    .eq("id", id)
+    .single();
+  if (getErr) throw new Error(getErr.message);
+
+  const { error: delErr } = await db.from("secondary_documents").delete().eq("id", id);
+  if (delErr) throw new Error(delErr.message);
+
+  // Best-effort storage delete — if it fails we've already lost the DB row;
+  // the orphaned object is harmless.
+  await db.storage.from("secondary").remove([doc.storage_path]);
+  revalidatePath("/");
 }
