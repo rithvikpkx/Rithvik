@@ -156,22 +156,6 @@ export async function upsertSiteContent(key: string, value: string) {
     embedPrimary("site_content", key, buildSiteContentText(key, value), { key }));
 }
 
-/** Update how long first-time visitors wait before the theme dial auto-demos
- *  itself. Stored in site_content as a stringified integer (ms). 0 disables
- *  the demo. Bypasses the RAG embedding step — this is a UI setting, not
- *  factual content that the chat bot should know about. */
-export async function setThemeDemoDelay(ms: number) {
-  await requireAuth();
-  if (!Number.isFinite(ms)) throw new Error("Delay must be a number");
-  const clamped = Math.max(0, Math.min(120000, Math.round(ms))); // 0–120 s
-  const { error } = await adminClient()
-    .from("site_content")
-    .upsert({ key: "theme_demo.delay_ms", value: String(clamped) }, { onConflict: "key" });
-  if (error) throw new Error(error.message);
-  revalidate();
-  return clamped;
-}
-
 export interface EducationInput {
   school: string;
   school_url: string | null;

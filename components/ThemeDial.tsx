@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
-import { THEME_STORAGE_KEY } from "@/lib/themes";
 import type { CSSProperties } from "react";
 
 /**
@@ -29,15 +28,15 @@ const DRAG_STEP_PX = 38;         // px of vertical drag per theme step;
                                  //   also the minimum movement before we
                                  //   commit to "this is a drag, not a click"
 
-// First-visit auto-demo: gently introduces the theme picker by expanding
-// the dial and rotating it to SynthWave '84 on its own. Runs once per browser.
-const DEMO_SHOWN_KEY        = "rithvik-theme-demo-shown";
-const DEMO_TARGET_SLUG      = "synthwave-84";
-const DEMO_DEFAULT_DELAY_MS = 10000; // fallback if no DB setting provided
-const DEMO_STEP_MS          = 260;   // ms per theme step (overlaps the 0.42s CSS transition)
-const DEMO_SETTLE_MS        = 1400;  // how long to linger on the target before collapsing
+// First-visit wiggle: a small one-time nudge so visitors notice the picker.
+// Pure client-side, single localStorage flag, no DB or network.
+const WIGGLE_SHOWN_KEY = "rithvik-theme-wiggle-shown";
+const WIGGLE_DELAY_MS  = 5000;  // wait after first paint
+// Animation duration is owned by CSS (.is-wiggling animation). Keep this in
+// sync so we can clear the class once the animation finishes.
+const WIGGLE_DURATION_MS = 1800;
 
-export default function ThemeDial({ demoDelayMs }: { demoDelayMs?: number } = {}) {
+export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
   const selectedIdx = Math.max(0, sorted.findIndex((t) => t.slug === currentSlug));
@@ -54,94 +53,50 @@ export default function ThemeDial({ demoDelayMs }: { demoDelayMs?: number } = {}
     stateRef.current.setTheme = setTheme;
   }, [selectedIdx, sorted, setTheme]);
 
-  // ── First-visit auto-demo ────────────────────────────────────────────────
-  // Three conditions to play: (1) we're in the browser, (2) the user has
-  // never stored a theme preference, (3) the demo hasn't already run.
-  //
-  // Cancellation is intentionally narrow: only an actual theme switch by
-  // the user aborts the demo (not arbitrary clicks). We detect this by
-  // comparing currentSlug to the slug we last set ourselves — if they
-  // diverge, the change came from somewhere else.
-  const [isDemoing, setIsDemoing] = useState(false);
-  const demoExpectedSlugRef = useRef<string>(currentSlug);
-  const demoAbortRef = useRef<(() => void) | null>(null);
-  // A delay of 0 explicitly disables the demo (escape hatch from the edit UI).
-  const effectiveDelayMs = demoDelayMs ?? DEMO_DEFAULT_DELAY_MS;
+  // ── First-visit wiggle ───────────────────────────────────────────────────
+  // After 5s of being on the site, if the user hasn't switched themes yet
+  // AND has never seen the wiggle before, nudge the dormant pill once. The
+  // moment they change themes (or have done so before), the wiggle is
+  // permanently suppressed.
+  const [isWiggling, setIsWiggling] = useState(false);
+  const wiggleAbortedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (effectiveDelayMs <= 0) return;
     try {
-      if (localStorage.getItem(THEME_STORAGE_KEY)) return;
-      if (localStorage.getItem(DEMO_SHOWN_KEY)) return;
-    } catch {
-      return;
-    }
+      if (localStorage.getItem(WIGGLE_SHOWN_KEY)) return;
+    } catch { return; }
 
-    // Snapshot the theme list at mount; refetches during demo would be racy.
-    const snapshot = stateRef.current.sorted;
-    const targetIdx = snapshot.findIndex((t) => t.slug === DEMO_TARGET_SLUG);
-    const startIdx  = stateRef.current.selectedIdx;
-    if (targetIdx < 0 || targetIdx === startIdx) return; // nothing to demo
+    const initialSlug = currentSlug;
+    let kickoff: ReturnType<typeof setTimeout> | null = null;
+    let endTimer: ReturnType<typeof setTimeout> | null = null;
 
-    let aborted = false;
-    let stepTimer: ReturnType<typeof setTimeout> | null = null;
-    let settleTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const abort = () => {
-      if (aborted) return;
-      aborted = true;
-      if (stepTimer) clearTimeout(stepTimer);
-      if (settleTimer) clearTimeout(settleTimer);
-      setIsDemoing(false);
-    };
-    demoAbortRef.current = abort;
-
-    const kickoffTimer = setTimeout(() => {
-      if (aborted) return;
-      // Mark as shown up-front so even a refresh mid-demo doesn't replay it.
-      try { localStorage.setItem(DEMO_SHOWN_KEY, "1"); } catch {}
-
-      setIsDemoing(true);
-
-      // Step toward the target one theme at a time. Each setTheme call lets
-      // the existing CSS transition (0.42s) carry the rotation; spacing the
-      // steps at 260ms gives a fluid, continuous rotation rather than a hop.
-      let i = startIdx;
-      const step = () => {
-        if (aborted) return;
-        if (i === targetIdx) {
-          settleTimer = setTimeout(() => {
-            if (!aborted) setIsDemoing(false);
-          }, DEMO_SETTLE_MS);
-          return;
-        }
-        i += i < targetIdx ? 1 : -1;
-        const nextSlug = snapshot[i].slug;
-        demoExpectedSlugRef.current = nextSlug;
-        stateRef.current.setTheme(nextSlug);
-        stepTimer = setTimeout(step, DEMO_STEP_MS);
-      };
-      step();
-    }, effectiveDelayMs);
+    kickoff = setTimeout(() => {
+      // If the user switched themes during the wait, suppress and remember.
+      if (wiggleAbortedRef.current || stateRef.current.sorted[stateRef.current.selectedIdx]?.slug !== initialSlug) {
+        try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
+        return;
+      }
+      try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
+      setIsWiggling(true);
+      endTimer = setTimeout(() => setIsWiggling(false), WIGGLE_DURATION_MS);
+    }, WIGGLE_DELAY_MS);
 
     return () => {
-      clearTimeout(kickoffTimer);
-      if (stepTimer) clearTimeout(stepTimer);
-      if (settleTimer) clearTimeout(settleTimer);
-      demoAbortRef.current = null;
+      if (kickoff) clearTimeout(kickoff);
+      if (endTimer) clearTimeout(endTimer);
     };
-  }, [effectiveDelayMs]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional one-shot
 
-  // Cancel the demo (or its waiting window) the moment currentSlug diverges
-  // from what we last set ourselves — that means the user actively switched
-  // themes. Arbitrary clicks elsewhere on the page don't trigger this.
+  // Mark wiggle as shown the instant the user actually changes themes — both
+  // pre-wiggle (suppress entirely) and during (stop early). Pure local check.
+  const lastSeenSlugRef = useRef(currentSlug);
   useEffect(() => {
-    if (currentSlug !== demoExpectedSlugRef.current) {
-      demoAbortRef.current?.();
-      // Also mark the demo as "shown" so a manual switch during the wait
-      // window doesn't leave the flag unset for the next page load.
-      try { localStorage.setItem(DEMO_SHOWN_KEY, "1"); } catch {}
+    if (currentSlug !== lastSeenSlugRef.current) {
+      lastSeenSlugRef.current = currentSlug;
+      wiggleAbortedRef.current = true;
+      setIsWiggling(false);
+      try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
     }
   }, [currentSlug]);
 
@@ -232,7 +187,7 @@ export default function ThemeDial({ demoDelayMs }: { demoDelayMs?: number } = {}
 
   return (
     <aside
-      className={`theme-dial-aside${isDemoing ? " is-demoing" : ""}`}
+      className={`theme-dial-aside${isWiggling ? " is-wiggling" : ""}`}
       role="radiogroup"
       aria-label="Theme selector"
     >

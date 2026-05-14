@@ -7,7 +7,6 @@ import EditBar from "@/components/EditBar";
 import ThemeStyleInjector from "@/components/ThemeStyleInjector";
 import ThemeProvider from "@/components/ThemeProvider";
 import ThemeDial from "@/components/ThemeDial";
-import ThemeDemoSettings from "@/components/ThemeDemoSettings";
 import { serverClient } from "@/lib/supabase";
 import type { Theme } from "@/lib/types";
 import { FALLBACK_THEMES, DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
@@ -53,25 +52,10 @@ export const metadata: Metadata = {
 // applied to <html> before any content renders.
 const themeBootScript = `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})||${JSON.stringify(DEFAULT_THEME_SLUG)};document.documentElement.dataset.theme=t;}catch(_){}`;
 
-const DEFAULT_THEME_DEMO_DELAY_MS = 10000;
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Fetch themes + the (optional) theme-demo delay setting in parallel.
-  const sb = serverClient();
-  const [themesRes, demoSettingRes] = await Promise.all([
-    sb.from("themes").select("*").order("sort_order"),
-    sb.from("site_content").select("value").eq("key", "theme_demo.delay_ms").maybeSingle(),
-  ]);
-
-  const themes = ((themesRes.data ?? []) as Theme[]).filter((t) => t.published);
+  const { data } = await serverClient().from("themes").select("*").order("sort_order");
+  const themes = ((data ?? []) as Theme[]).filter((t) => t.published);
   const safeThemes = themes.length > 0 ? themes : FALLBACK_THEMES;
-
-  // Parse the delay; clamp to [0, 120000]. 0 disables the demo entirely.
-  const rawDelay = (demoSettingRes.data as { value?: string } | null)?.value;
-  const parsedDelay = rawDelay != null ? Number(rawDelay) : NaN;
-  const themeDemoDelayMs = Number.isFinite(parsedDelay)
-    ? Math.max(0, Math.min(120000, parsedDelay))
-    : DEFAULT_THEME_DEMO_DELAY_MS;
 
   return (
     <html
@@ -91,8 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <InlineLoginPanel />
             <EditBar />
           </EditModeProvider>
-          <ThemeDial demoDelayMs={themeDemoDelayMs} />
-          <ThemeDemoSettings initialDelayMs={themeDemoDelayMs} />
+          <ThemeDial />
         </ThemeProvider>
       </body>
     </html>
