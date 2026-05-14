@@ -655,28 +655,19 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
 }
 .growth-item {
-  position: relative;
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 12px;
   padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: color-mix(in srgb, var(--text) 3%, transparent);
-  cursor: default;
   transition: background 220ms ease, border-color 220ms ease, transform 220ms ease;
-  outline: none;
 }
-.growth-item:hover,
-.growth-item:focus-visible {
+.growth-item:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   transform: translateY(-1px);
-}
-.growth-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  min-width: 0;
 }
 .growth-was {
   font-family: var(--mono);
@@ -695,8 +686,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.85;
   transition: transform 240ms ease, opacity 240ms ease;
 }
-.growth-item:hover .growth-arrow,
-.growth-item:focus-visible .growth-arrow {
+.growth-item:hover .growth-arrow {
   transform: translateX(3px);
   opacity: 1;
 }
@@ -705,22 +695,6 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
-}
-.growth-desc {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--muted);
-  line-height: 1.45;
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height 280ms ease, opacity 220ms ease, margin-top 220ms ease;
-}
-.growth-item:hover .growth-desc,
-.growth-item:focus-visible .growth-desc {
-  max-height: 80px;
-  opacity: 1;
-  margin-top: 8px;
 }
 
 .bento-marquee { padding-bottom: 18px; }

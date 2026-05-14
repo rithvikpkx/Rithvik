@@ -9,7 +9,7 @@ import { upsertSiteContent, updateGlobeMarkers } from "@/app/admin/actions";
 import type { GlobeMarker } from "@/lib/types";
 
 interface Building { title: string; description: string; tags: string[] }
-interface GrowthItem { was: string; now: string; desc: string }
+interface GrowthItem { was: string; now: string }
 
 const DEF_BUILDING: Building = {
   title: "Rithvik.ai",
@@ -17,9 +17,9 @@ const DEF_BUILDING: Building = {
   tags: ["Next.js", "Supabase", "RAG", "Claude API"],
 };
 const GROWTH: GrowthItem[] = [
-  { was: "Gave up easily", now: "Determination", desc: "Bugs don't get to win. I'll chase a stack trace at 2am with the same energy I had at 2pm." },
-  { was: "Unclear",       now: "Communication",  desc: "I can make complicated things sound simple and simple things sound interesting, whether I'm talking to engineers, designers, or execs." },
-  { was: "Slow to adapt", now: "Quick Learner",  desc: "Show me a new framework on Monday and I'll be answering Stack Overflow questions about it by Friday." },
+  { was: "Gave up easily", now: "Determination" },
+  { was: "Unclear",        now: "Communication" },
+  { was: "Slow to adapt",  now: "Quick Learner" },
 ];
 const DEF_STACK = [
   "Python","TypeScript","JavaScript","React","Next.js","Node.js",
@@ -114,13 +114,10 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
           <p className="card-eyebrow">Growth</p>
           <ul className="growth-list">
             {GROWTH.map((g) => (
-              <li key={g.now} className="growth-item" tabIndex={0}>
-                <div className="growth-row">
-                  <span className="growth-was">{g.was}</span>
-                  <span className="growth-arrow" aria-hidden="true">→</span>
-                  <span className="growth-is">{g.now}</span>
-                </div>
-                <p className="growth-desc">{g.desc}</p>
+              <li key={g.now} className="growth-item">
+                <span className="growth-was">{g.was}</span>
+                <span className="growth-arrow" aria-hidden="true">→</span>
+                <span className="growth-is">{g.now}</span>
               </li>
             ))}
           </ul>
