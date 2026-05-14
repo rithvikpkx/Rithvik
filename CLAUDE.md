@@ -75,14 +75,21 @@ Earlier iterations tried two transition animations and we rolled both back:
 - `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
 - Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session) and `revalidatePath("/")`
 
-### RAG bot (`components/RagBot.tsx`, `app/api/chat/route.ts`)
+### RAG bot (`components/RagBot.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
-A floating "Ask RAG" launcher in the bottom-right (mounted in `app/page.tsx`). Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token.
+A floating "Ask RAG" launcher in the bottom-right (mounted in `app/page.tsx`). Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token. A second launcher to its left — `SecondaryContextPanel` — only appears in edit mode and manages the bot's secondary knowledge.
 
-- **Embeddings store** — `embeddings` table in Supabase with pgvector. Schema is one row per hand-curated chunk: `content` (text), `metadata` (jsonb), `embedding` (`vector(1536)`). The `match_embeddings(query_embedding, match_count)` RPC returns top-N rows by cosine similarity. Created by `supabase/embeddings_migration.sql`. RLS locks the table to service-role only — the chat route uses `adminClient()` which bypasses RLS.
-- **Ingestion** — `scripts/embed.ts` holds ~10 hand-written paragraph chunks about Rithvik (bio, projects, education, skills, contact). Run with `OPENAI_API_KEY=… SUPABASE_SERVICE_ROLE_KEY=… npx tsx scripts/embed.ts` whenever those chunks change. The script wipes + re-inserts. Note: chunks are static text, NOT derived from the live `projects`/`experience`/`site_content` rows — inline edits to those tables don't propagate to RAG until someone re-runs the script.
-- **Chat route** — `app/api/chat/route.ts`. Takes `{ message, messages? }`, embeds the message with OpenAI `text-embedding-3-small`, pulls top-5 chunks via `match_embeddings`, builds a tightly-scoped system prompt (identity = RAG, scope = Rithvik only, persona-integrity guards against jailbreaks), then streams completions from DeepSeek (`deepseek-chat`, `maxTokens: 512`) back as `text/plain`. History is clamped to the last 6 turns. Input is rejected if missing or longer than 500 chars.
-- **Env vars** (in `.env.local`) — `OPENAI_API_KEY` (embeddings), `DEEPSEEK_API_KEY` (chat completions), `SUPABASE_SERVICE_ROLE_KEY` (adminClient + ingestion), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+Two parallel pgvector stores in Supabase:
+- `primary_embeddings` — one row per `projects` / `experience` / `education` / `site_content` record. Auto-upserted by `app/admin/actions.ts` on every inline edit via a `syncPrimary(...)` helper wrapped in `safeEmbed` (save first, then embed; OpenAI failures don't undo saves). Unpublished rows get their embedding deleted, matching the `published = true` filter in backfill. `match_primary(query_embedding, match_count)` RPC returns top-N by cosine similarity.
+- `secondary_embeddings` — chunks from files Rithvik uploads via `SecondaryContextPanel`. Tied to `secondary_documents` rows that track filename / mime / storage path. PDFs use `pdf-parse` v2 (class API with `destroy()` cleanup), DOCX uses `mammoth`, plain text reads UTF-8 directly, images get captioned by `gpt-4o-mini` and the caption is embedded. Per-file chunk cap = 200 to bound the upload duration. `match_secondary(query_embedding, match_count)` mirrors the primary RPC.
+
+`app/api/chat/route.ts` embeds the user query (`text-embedding-3-small`), calls both `match_primary` and `match_secondary` in parallel (top 3 each) via `Promise.allSettled` so one source failing doesn't 500 the request, builds a labeled context block ("What's on the website" / "Background materials"), and streams completions from DeepSeek (`deepseek-chat`). Supabase in-band `error` fields are logged but never thrown.
+
+Originals of secondary uploads live in the private `secondary` Supabase Storage bucket. RLS denies anon access to all three RAG tables; the chat route and server actions reach them via `adminClient()` (service-role).
+
+Env vars in `.env.local` (see `.env.local.example`): `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+
+**One-time setup:** apply `supabase/rag_pipeline_migration.sql` in the Supabase SQL editor (or via `supabase db query --linked -f ...` with the CLI), then enter edit mode and hit "Re-embed all primary content" in `SecondaryContextPanel`. After that, every inline edit keeps primary in sync automatically, and the same panel handles secondary uploads + deletions. No terminal scripts needed.
 
 ### Important Supabase gotcha
 
@@ -97,16 +104,18 @@ Tables (all in Supabase public schema):
 - `education` — schools (single-row Purdue today)
 - `site_content` — key/value JSONB store for hardcoded text that became editable (`hero.tagline`, `hero.sub_line`, `bento.location`, `bento.building`, `bento.stats`, `bento.stack`, `bento.interests`, `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`)
 - `themes` — `{ slug, name, tokens (JSONB), sort_order, published }`. Currently seeded: Rithvik Dark, Rithvik Light, Rithvik Terminal
-- `embeddings` — pgvector store for RAG. `{ id, content, metadata, embedding vector(1536) }`. Service-role only (RLS denies all). Populated by `scripts/embed.ts`.
+- `primary_embeddings` — pgvector store for live website content. One row per projects/experience/education/site_content record; auto-upserted on inline edits when `published = true`, deleted when `published = false`. Service-role only.
+- `secondary_documents` — file metadata for user-uploaded RAG materials (filename, mime, storage path, byte size).
+- `secondary_embeddings` — pgvector store for chunks extracted from secondary documents. Linked to `secondary_documents` via FK with `on delete cascade`.
 
-RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions. `embeddings` is service-role for both read and write — the chat route reaches it via `adminClient()`.
+RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions. The three RAG tables are service-role for both read and write — the chat route reaches them via `adminClient()`.
 
 ### Migration files (apply via Supabase SQL editor)
 
 - `supabase/stage3_migration.sql` — education table + site_content seed (inline-editing stage 3)
 - `supabase/themes_migration.sql` — themes table + Dark/Light/Terminal seed (idempotent ON CONFLICT)
 - `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
-- `supabase/embeddings_migration.sql` — pgvector extension + `embeddings` table + `match_embeddings` RPC for RAG. Apply once, then run `npx tsx scripts/embed.ts` to populate.
+- `supabase/rag_pipeline_migration.sql` — pgvector extension + `primary_embeddings` + `secondary_documents` + `secondary_embeddings` + `match_primary` + `match_secondary` RPCs + RLS lockdown + Storage bucket. Apply once; the rest is UI-driven.
 
 ## File layout cheat sheet
 
@@ -117,7 +126,9 @@ app/
   globals.css         — tokens, dial, all the rest
   admin/
     actions.ts        — server actions for all tables (used by inline-editing flow)
-  api/chat/route.ts   — RAG endpoint: embed → match_embeddings → DeepSeek stream
+    rag-actions.ts    — server actions: backfillPrimaryEmbeddings, list/upload/delete secondary docs
+    auth-helper.ts    — shared requireAuth (used by actions.ts and rag-actions.ts)
+  api/chat/route.ts   — embed → match_primary + match_secondary → DeepSeek stream
 
 components/
   Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
@@ -127,15 +138,14 @@ components/
   ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
   RagBot.tsx          — floating chat launcher + streaming chat panel
+  SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
 
 lib/
   supabase.ts         — clients (browser uses createBrowserClient)
   themes.ts           — token list, fallback tokens, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
-
-scripts/
-  embed.ts            — re-embed all hand-curated RAG chunks into the embeddings table
-  seed.ts             — initial projects/experience seed (legacy; inline editing handles updates now)
+  embeddings.ts       — OpenAI embed wrapper, chunker, row→text builders, upsert helpers
+  file-extractors.ts  — PDF/DOCX/TXT/MD readers + gpt-4o-mini image captioner
 
 plans/
   feat-inline-editing.md  — done (stages 1–8 shipped, merged to main as v1.1)
@@ -154,6 +164,10 @@ plans/
 - Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
 - Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
 - A theme is missing from the dial → run `supabase/themes_migration.sql` (or `themes_add_terminal.sql` for just Terminal). Verify with `SELECT slug FROM themes;`.
-- RAG bot replies with "Something went wrong" → most likely the `embeddings` table or `match_embeddings` RPC isn't created yet (apply `supabase/embeddings_migration.sql`), or the table is empty (run `npx tsx scripts/embed.ts`). Check the server logs for the actual error.
-- RAG bot answers seem stale or missing recent edits → `scripts/embed.ts` uses static hand-curated chunks, not live DB rows. Update those chunks and re-run the script.
-- RAG returns 500 with "Embedding failed" → `OPENAI_API_KEY` missing or quota-exhausted. The chat completion model is DeepSeek; only embeddings use OpenAI.
+- RAG returns 500 "Embedding failed" → `OPENAI_API_KEY` missing or quota-exhausted. The chat-completion model is DeepSeek; only embeddings + image captioning use OpenAI.
+- RAG answers feel stale → confirm `safeEmbed` isn't silently failing — Vercel logs would show `[rag] ... embed skipped:` warnings. Recovery: open edit mode → SecondaryContextPanel → "Re-embed all primary content".
+- Secondary upload fails with "MIME type … not supported" → add the type to `TEXT_MIMES`/`IMAGE_MIMES` or write a new extractor branch in `lib/file-extractors.ts`.
+- Secondary upload fails with "File produces N chunks (cap is 200)" → the file is too long. Split it into smaller documents before uploading.
+- `match_primary` / `match_secondary` not found → `supabase/rag_pipeline_migration.sql` wasn't applied, or was applied to a different Supabase project than the one in `.env.local`. Use `supabase db query --linked -f supabase/rag_pipeline_migration.sql` to re-apply (idempotent).
+- Secondary panel doesn't appear → check `useEditMode().isEditing`. The panel self-gates; if you're not logged in via `InlineLoginPanel` it won't render.
+- Chat route logs `[rag] match_secondary rpc error:` → the table or RPC is missing; reapply the migration. Note the chat route gracefully degrades (returns answers using only the source that worked) so the bot still responds.
