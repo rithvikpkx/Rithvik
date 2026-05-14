@@ -165,6 +165,11 @@ export default function ThemeDial() {
               background: t.tokens.bg,
               color: t.tokens.text,
               fontFamily: t.tokens.font ?? undefined,
+              // Each pill gets its own view-transition group so the browser
+              // animates it from its old position/rotation to its new one
+              // during a theme change — the rotation is visible on screen
+              // instead of being frozen inside the root snapshot.
+              viewTransitionName: `theme-pill-${t.slug}`,
             };
 
             return (
