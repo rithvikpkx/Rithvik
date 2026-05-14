@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
+import { THEME_STORAGE_KEY } from "@/lib/themes";
 import type { CSSProperties } from "react";
 
 /**
@@ -28,6 +29,14 @@ const DRAG_STEP_PX = 38;         // px of vertical drag per theme step;
                                  //   also the minimum movement before we
                                  //   commit to "this is a drag, not a click"
 
+// First-visit auto-demo: gently introduces the theme picker by expanding
+// the dial and rotating it to SynthWave '84 on its own. Runs once per browser.
+const DEMO_SHOWN_KEY    = "rithvik-theme-demo-shown";
+const DEMO_TARGET_SLUG  = "synthwave-84";
+const DEMO_START_DELAY  = 3000;  // wait after first paint before kicking off
+const DEMO_STEP_MS      = 260;   // ms per theme step (overlaps the 0.42s CSS transition)
+const DEMO_SETTLE_MS    = 1400;  // how long to linger on the target before collapsing
+
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
@@ -44,6 +53,76 @@ export default function ThemeDial() {
     stateRef.current.sorted = sorted;
     stateRef.current.setTheme = setTheme;
   }, [selectedIdx, sorted, setTheme]);
+
+  // ── First-visit auto-demo ────────────────────────────────────────────────
+  // Three conditions to play: (1) we're in the browser, (2) the user has
+  // never stored a theme preference, (3) the demo hasn't already run. Any
+  // pointer/key interaction during the wait or mid-demo aborts cleanly.
+  const [isDemoing, setIsDemoing] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (localStorage.getItem(THEME_STORAGE_KEY)) return;
+      if (localStorage.getItem(DEMO_SHOWN_KEY)) return;
+    } catch {
+      return;
+    }
+
+    // Snapshot the theme list at mount; refetches during demo would be racy.
+    const snapshot = stateRef.current.sorted;
+    const targetIdx = snapshot.findIndex((t) => t.slug === DEMO_TARGET_SLUG);
+    const startIdx  = stateRef.current.selectedIdx;
+    if (targetIdx < 0 || targetIdx === startIdx) return; // nothing to demo
+
+    let aborted = false;
+    let stepTimer: ReturnType<typeof setTimeout> | null = null;
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const abort = () => {
+      aborted = true;
+      if (stepTimer) clearTimeout(stepTimer);
+      if (settleTimer) clearTimeout(settleTimer);
+      setIsDemoing(false);
+    };
+
+    // Any real user interaction cancels the demo and lets them drive.
+    window.addEventListener("pointerdown", abort, { capture: true, once: true });
+    window.addEventListener("keydown",     abort, { capture: true, once: true });
+
+    const kickoffTimer = setTimeout(() => {
+      if (aborted) return;
+      // Mark as shown up-front so even a refresh mid-demo doesn't replay it.
+      try { localStorage.setItem(DEMO_SHOWN_KEY, "1"); } catch {}
+
+      setIsDemoing(true);
+
+      // Step toward the target one theme at a time. Each setTheme call lets
+      // the existing CSS transition (0.42s) carry the rotation; spacing the
+      // steps at 260ms gives a fluid, continuous rotation rather than a hop.
+      let i = startIdx;
+      const step = () => {
+        if (aborted) return;
+        if (i === targetIdx) {
+          settleTimer = setTimeout(() => {
+            if (!aborted) setIsDemoing(false);
+          }, DEMO_SETTLE_MS);
+          return;
+        }
+        i += i < targetIdx ? 1 : -1;
+        stateRef.current.setTheme(snapshot[i].slug);
+        stepTimer = setTimeout(step, DEMO_STEP_MS);
+      };
+      step();
+    }, DEMO_START_DELAY);
+
+    return () => {
+      clearTimeout(kickoffTimer);
+      if (stepTimer) clearTimeout(stepTimer);
+      if (settleTimer) clearTimeout(settleTimer);
+      window.removeEventListener("pointerdown", abort, { capture: true } as EventListenerOptions);
+      window.removeEventListener("keydown",     abort, { capture: true } as EventListenerOptions);
+    };
+  }, []);
 
   // ── Wheel: React's onWheel is passive in React 17+, so attach manually
   //   with { passive: false } to be able to preventDefault on the page scroll.
@@ -132,7 +211,7 @@ export default function ThemeDial() {
 
   return (
     <aside
-      className="theme-dial-aside"
+      className={`theme-dial-aside${isDemoing ? " is-demoing" : ""}`}
       role="radiogroup"
       aria-label="Theme selector"
     >

@@ -147,23 +147,6 @@ VALUES (
 )
 ON CONFLICT (slug) DO NOTHING;
 
-INSERT INTO themes (slug, name, tokens, sort_order)
-VALUES (
-  'nord',
-  'Nord',
-  '{
-    "bg":           "#2e3440",
-    "bg-soft":      "#3b4252",
-    "text":         "#d8dee9",
-    "muted":        "#4c566a",
-    "accent":       "#88c0d0",
-    "accent-glow":  "rgba(136,192,208,0.25)",
-    "green":        "#a3be8c"
-  }'::jsonb,
-  23
-)
-ON CONFLICT (slug) DO NOTHING;
-
 -- ── Light themes ────────────────────────────────────────────────────────────
 
 INSERT INTO themes (slug, name, tokens, sort_order)
