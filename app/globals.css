@@ -243,6 +243,19 @@ a { color: inherit; text-decoration: none; }
   animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* Dial shell — render fully visible from t=0 so the glass container is
+   behind the pills throughout the transition. Default 250ms crossfade
+   would leave the dial-content partially transparent at the start; we
+   want it solid the whole time so the pill rotation has a backdrop. */
+::view-transition-old(theme-dial-shell) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(theme-dial-shell) {
+  animation: none;
+  opacity: 1;
+}
+
 @keyframes theme-reveal {
   0% {
     --vt-reveal: 0%;
@@ -354,6 +367,13 @@ a { color: inherit; text-decoration: none; }
 
 .theme-dial-content {
   position: relative;
+  /* Pull the dial shell out of the root view-transition snapshot. Without
+     this, the dial-content lives inside the root snapshot and gets hidden
+     by the wave mask at the start of a theme change — so the pills (which
+     are in their own view-transition groups) end up floating without the
+     glass shell behind them. With its own name, the shell renders in its
+     own pseudo-element overlay and stays visible the whole transition. */
+  view-transition-name: theme-dial-shell;
   /* Dormant size — just enough for the three dots */
   width: 58px;
   height: 32px;
