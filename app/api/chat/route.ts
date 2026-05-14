@@ -49,20 +49,34 @@ export async function POST(req: Request) {
   // primary_embeddings: live website content (auto-synced from inline edits).
   // secondary_embeddings: user-uploaded materials (essays, docs, image captions).
   const embedding = await embedQuery(message);
-  const [
-    { data: primaryChunks },
-    { data: secondaryChunks },
-  ] = await Promise.all([
-    adminClient().rpc("match_primary",   { query_embedding: embedding, match_count: 3 }),
-    adminClient().rpc("match_secondary", { query_embedding: embedding, match_count: 3 }),
+  const db = adminClient();
+  const [primaryRes, secondaryRes] = await Promise.allSettled([
+    db.rpc("match_primary",   { query_embedding: embedding, match_count: 3 }),
+    db.rpc("match_secondary", { query_embedding: embedding, match_count: 3 }),
   ]);
 
-  const primaryText = (primaryChunks as { content: string }[] ?? [])
-    .map((c) => c.content)
-    .join("\n\n");
-  const secondaryText = (secondaryChunks as { content: string }[] ?? [])
-    .map((c) => c.content)
-    .join("\n\n");
+  // Pull rows from each settled result. A rejected promise (network / thrown)
+  // or a fulfilled response with a Supabase in-band `error` both fall back to
+  // an empty array — we'd rather answer from one source than 500 the request.
+  // Both failure modes are logged so a missing match_* RPC or RLS regression
+  // doesn't go silent.
+  function unpack(label: string, res: PromiseSettledResult<{ data: unknown; error: { message: string } | null }>): { content: string }[] {
+    if (res.status === "rejected") {
+      console.error(`[rag] ${label} rpc threw:`, res.reason instanceof Error ? res.reason.message : res.reason);
+      return [];
+    }
+    if (res.value.error) {
+      console.error(`[rag] ${label} rpc error:`, res.value.error.message);
+      return [];
+    }
+    return (res.value.data as { content: string }[] | null) ?? [];
+  }
+
+  const primaryChunks   = unpack("match_primary",   primaryRes);
+  const secondaryChunks = unpack("match_secondary", secondaryRes);
+
+  const primaryText   = primaryChunks.map((c) => c.content).join("\n\n");
+  const secondaryText = secondaryChunks.map((c) => c.content).join("\n\n");
 
   const contextBlock = [
     primaryText   && `## What's on the website:\n${primaryText}`,
