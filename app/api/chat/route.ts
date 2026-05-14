@@ -1,36 +1,23 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { adminClient } from "@/lib/supabase";
+import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 
+// gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
+// the previous deepseek-chat which routinely fabricated facts (Penn State,
+// Michigan, fictional GitHub handles). Cost is comparable for our traffic.
 const model = new ChatOpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY!,
-  modelName: "deepseek-chat",
+  apiKey: process.env.OPENAI_API_KEY!,
+  modelName: "gpt-4o-mini",
   maxTokens: 512,
   streaming: true,
-  configuration: { baseURL: "https://api.deepseek.com/v1" },
 });
 
 const MAX_INPUT_LENGTH = 500;
-const MAX_HISTORY_MESSAGES = 5;        // last 5 turns, matches the RagBot client slice
-const MATCH_COUNT_PER_SOURCE = 5;      // top-N chunks pulled per store
+const MAX_HISTORY_MESSAGES = 5;         // last 5 turns, matches the RagBot client slice
+const MATCH_COUNT_PER_SOURCE = 10;      // top-N chunks pulled per store
 const CANNED_NO_CONTEXT_REPLY =
   "I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
-
-/** Embeds a query string using OpenAI text-embedding-3-small. */
-async function embedQuery(text: string): Promise<number[]> {
-  const res = await fetch("https://api.openai.com/v1/embeddings", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY!}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
-  });
-
-  if (!res.ok) throw new Error(`Embedding failed: ${await res.text()}`);
-  const json = await res.json() as { data: { embedding: number[] }[] };
-  return json.data[0].embedding;
-}
 
 /** Wraps a string in a ReadableStream so we can return canned replies via the
  *  same text/plain streaming protocol the bot's UI already consumes. */
@@ -62,10 +49,21 @@ export async function POST(req: Request) {
     return new Response(`Message must be ${MAX_INPUT_LENGTH} characters or fewer.`, { status: 400 });
   }
 
-  // Embed the current user message and retrieve top-N from each source in parallel.
+  // HyDE (Hypothetical Document Embeddings): generate a plausible 1-2 sentence
+  // statement-form answer to the user's question, then embed BOTH the question
+  // and the hypothetical answer concatenated. Embedding statement-form text
+  // hits much closer to the actual chunks (which are also in statement form)
+  // than embedding a bare question does — a "where did rithvik study?" alone
+  // doesn't retrieve the Purdue chunks, but combined with "Rithvik studies at
+  // a university where he pursues a CS degree" it does. HyDE falls back to
+  // the raw question if OpenAI fails, so a hiccup never breaks retrieval.
+  const hypothetical = await generateHypotheticalAnswer(message);
+  const queryForEmbedding = `${message}\n\n${hypothetical}`;
+  const embedding = await embedText(queryForEmbedding);
+
+  // Retrieve top-N from each source in parallel.
   // primary_embeddings: live website content (auto-synced from inline edits).
   // secondary_embeddings: user-uploaded materials (essays, docs, image captions).
-  const embedding = await embedQuery(message);
   const db = adminClient();
   const [primaryRes, secondaryRes] = await Promise.allSettled([
     db.rpc("match_primary",   { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
