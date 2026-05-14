@@ -57,7 +57,7 @@ export async function backfillPrimaryEmbeddings(): Promise<{
   const { data: site } = await db.from("site_content").select("*");
   for (const row of site ?? []) {
     try {
-      await embedPrimary("site_content", row.key, buildSiteContentText(row.key, row.value), { key: row.key });
+      await embedPrimary("site_content", row.key, await buildSiteContentText(row.key, row.value), { key: row.key });
       counts.site_content++;
     } catch (err) { errors.push(`site_content ${row.key}: ${err instanceof Error ? err.message : err}`); }
   }

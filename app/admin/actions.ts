@@ -153,8 +153,8 @@ export async function upsertSiteContent(key: string, value: string) {
     .upsert({ key, value }, { onConflict: "key" });
   if (error) throw new Error(error.message);
   revalidate();
-  await safeEmbed(`site_content ${key}`, () =>
-    embedPrimary("site_content", key, buildSiteContentText(key, value), { key }));
+  await safeEmbed(`site_content ${key}`, async () =>
+    embedPrimary("site_content", key, await buildSiteContentText(key, value), { key }));
 }
 
 export interface EducationInput {
