@@ -31,13 +31,13 @@ const DRAG_STEP_PX = 38;         // px of vertical drag per theme step;
 
 // First-visit auto-demo: gently introduces the theme picker by expanding
 // the dial and rotating it to SynthWave '84 on its own. Runs once per browser.
-const DEMO_SHOWN_KEY    = "rithvik-theme-demo-shown";
-const DEMO_TARGET_SLUG  = "synthwave-84";
-const DEMO_START_DELAY  = 3000;  // wait after first paint before kicking off
-const DEMO_STEP_MS      = 260;   // ms per theme step (overlaps the 0.42s CSS transition)
-const DEMO_SETTLE_MS    = 1400;  // how long to linger on the target before collapsing
+const DEMO_SHOWN_KEY        = "rithvik-theme-demo-shown";
+const DEMO_TARGET_SLUG      = "synthwave-84";
+const DEMO_DEFAULT_DELAY_MS = 10000; // fallback if no DB setting provided
+const DEMO_STEP_MS          = 260;   // ms per theme step (overlaps the 0.42s CSS transition)
+const DEMO_SETTLE_MS        = 1400;  // how long to linger on the target before collapsing
 
-export default function ThemeDial() {
+export default function ThemeDial({ demoDelayMs }: { demoDelayMs?: number } = {}) {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
   const selectedIdx = Math.max(0, sorted.findIndex((t) => t.slug === currentSlug));
@@ -56,11 +56,21 @@ export default function ThemeDial() {
 
   // ── First-visit auto-demo ────────────────────────────────────────────────
   // Three conditions to play: (1) we're in the browser, (2) the user has
-  // never stored a theme preference, (3) the demo hasn't already run. Any
-  // pointer/key interaction during the wait or mid-demo aborts cleanly.
+  // never stored a theme preference, (3) the demo hasn't already run.
+  //
+  // Cancellation is intentionally narrow: only an actual theme switch by
+  // the user aborts the demo (not arbitrary clicks). We detect this by
+  // comparing currentSlug to the slug we last set ourselves — if they
+  // diverge, the change came from somewhere else.
   const [isDemoing, setIsDemoing] = useState(false);
+  const demoExpectedSlugRef = useRef<string>(currentSlug);
+  const demoAbortRef = useRef<(() => void) | null>(null);
+  // A delay of 0 explicitly disables the demo (escape hatch from the edit UI).
+  const effectiveDelayMs = demoDelayMs ?? DEMO_DEFAULT_DELAY_MS;
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (effectiveDelayMs <= 0) return;
     try {
       if (localStorage.getItem(THEME_STORAGE_KEY)) return;
       if (localStorage.getItem(DEMO_SHOWN_KEY)) return;
@@ -79,15 +89,13 @@ export default function ThemeDial() {
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const abort = () => {
+      if (aborted) return;
       aborted = true;
       if (stepTimer) clearTimeout(stepTimer);
       if (settleTimer) clearTimeout(settleTimer);
       setIsDemoing(false);
     };
-
-    // Any real user interaction cancels the demo and lets them drive.
-    window.addEventListener("pointerdown", abort, { capture: true, once: true });
-    window.addEventListener("keydown",     abort, { capture: true, once: true });
+    demoAbortRef.current = abort;
 
     const kickoffTimer = setTimeout(() => {
       if (aborted) return;
@@ -109,20 +117,33 @@ export default function ThemeDial() {
           return;
         }
         i += i < targetIdx ? 1 : -1;
-        stateRef.current.setTheme(snapshot[i].slug);
+        const nextSlug = snapshot[i].slug;
+        demoExpectedSlugRef.current = nextSlug;
+        stateRef.current.setTheme(nextSlug);
         stepTimer = setTimeout(step, DEMO_STEP_MS);
       };
       step();
-    }, DEMO_START_DELAY);
+    }, effectiveDelayMs);
 
     return () => {
       clearTimeout(kickoffTimer);
       if (stepTimer) clearTimeout(stepTimer);
       if (settleTimer) clearTimeout(settleTimer);
-      window.removeEventListener("pointerdown", abort, { capture: true } as EventListenerOptions);
-      window.removeEventListener("keydown",     abort, { capture: true } as EventListenerOptions);
+      demoAbortRef.current = null;
     };
-  }, []);
+  }, [effectiveDelayMs]);
+
+  // Cancel the demo (or its waiting window) the moment currentSlug diverges
+  // from what we last set ourselves — that means the user actively switched
+  // themes. Arbitrary clicks elsewhere on the page don't trigger this.
+  useEffect(() => {
+    if (currentSlug !== demoExpectedSlugRef.current) {
+      demoAbortRef.current?.();
+      // Also mark the demo as "shown" so a manual switch during the wait
+      // window doesn't leave the flag unset for the next page load.
+      try { localStorage.setItem(DEMO_SHOWN_KEY, "1"); } catch {}
+    }
+  }, [currentSlug]);
 
   // ── Wheel: React's onWheel is passive in React 17+, so attach manually
   //   with { passive: false } to be able to preventDefault on the page scroll.
