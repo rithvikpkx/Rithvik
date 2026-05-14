@@ -1,306 +1,370 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rithvik Praveen Kumar</title>
-    <meta name="description" content="Rithvik Praveen Kumar — CS + Mathematics student at Purdue University building software, AI systems, and full-stack projects." />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.css" />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Rithvik Praveen Kumar</title>
+		<meta
+			name="description"
+			content="Rithvik Praveen Kumar — CS + Mathematics student at Purdue University building software, AI systems, and full-stack projects."
+		/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/style.css" />
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-mono/style.css" />
+		<link rel="stylesheet" href="style.css" />
+		<link rel="icon" href="app/favicon.ico" />
+	</head>
+	<body>
+		<!-- NAV -->
+		<header class="nav-wrapper" id="nav">
+			<nav class="nav">
+				<a href="#" class="nav-logo">R.</a>
+				<div class="nav-links">
+					<a href="#about">About</a>
+					<a href="#projects">Projects</a>
+					<a href="#experience">Experience</a>
+					<a href="#contact">Contact</a>
+				</div>
+			</nav>
+		</header>
 
-    <!-- NAV -->
-    <header class="nav-wrapper" id="nav">
-      <nav class="nav">
-        <a href="#" class="nav-logo">R.</a>
-        <div class="nav-links">
-          <a href="#about">About</a>
-          <a href="#projects">Projects</a>
-          <a href="#experience">Experience</a>
-          <a href="#contact">Contact</a>
-        </div>
-      </nav>
-    </header>
+		<main>
+			<!-- HERO -->
+			<section class="hero" id="about">
+				<div class="dot-grid"></div>
+				<div class="hero-content">
+					<h1 class="hero-title blur-fade" style="--delay: 0s">
+						Rithvik<br />
+						<span class="gradient-text">Praveen Kumar</span>
+					</h1>
+					<div class="hero-sub blur-fade" style="--delay: 0.15s">
+						<p class="hero-tagline">
+							CS + Math @
+							<a href="https://www.cs.purdue.edu/" target="_blank" rel="noreferrer" class="purdue-link"
+								>Purdue</a
+							>
+						</p>
+						<p class="hero-sub-line">
+							Building at the intersection of AI, systems, and real-world problems.
+						</p>
+					</div>
+					<div class="hero-actions blur-fade" style="--delay: 0.28s">
+						<a href="#projects" class="btn-shimmer">View Projects</a>
+						<a href="#contact" class="btn-outline">Get in Touch</a>
+					</div>
+				</div>
+				<div class="scroll-indicator"><span></span></div>
+			</section>
 
-    <main>
+			<!-- BENTO GRID -->
+			<section class="bento-section">
+				<div class="bento-grid">
+					<div class="bento-card bento-location blur-fade" style="--delay: 0.05s">
+						<p class="card-eyebrow">Location</p>
+						<h3 class="card-title">West Lafayette, IN</h3>
+						<p class="card-sub">Purdue University</p>
+						<p class="location-time" id="local-time">--:-- --</p>
+					</div>
 
-      <!-- HERO -->
-      <section class="hero" id="about">
-        <div class="dot-grid"></div>
-        <div class="hero-content">
-          <h1 class="hero-title blur-fade" style="--delay:0s">
-            Rithvik<br />
-            <span class="gradient-text">Praveen Kumar</span>
-          </h1>
-          <div class="hero-sub blur-fade" style="--delay:0.15s">
-            <p class="hero-tagline">CS + Math @ <a href="https://www.cs.purdue.edu/" target="_blank" rel="noreferrer" class="purdue-link">Purdue</a></p>
-            <p class="hero-sub-line">Building at the intersection of AI, systems, and real-world problems.</p>
-          </div>
-          <div class="hero-actions blur-fade" style="--delay:0.28s">
-            <a href="#projects" class="btn-shimmer">View Projects</a>
-            <a href="#contact" class="btn-outline">Get in Touch</a>
-          </div>
-        </div>
-        <div class="scroll-indicator"><span></span></div>
-      </section>
+					<div class="bento-card bento-building blur-fade" style="--delay: 0.15s">
+						<p class="card-eyebrow">Currently Building</p>
+						<h3 class="card-title">Rithvik.ai</h3>
+						<p class="card-sub">
+							A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and project
+							dashboard. Built with Next.js, Supabase, and Claude.
+						</p>
+						<div class="building-tags">
+							<span>Next.js</span>
+							<span>Supabase</span>
+							<span>RAG</span>
+							<span>Claude API</span>
+						</div>
+					</div>
 
-      <!-- BENTO GRID -->
-      <section class="bento-section">
-        <div class="bento-grid">
+					<div class="bento-card bento-stats blur-fade" style="--delay: 0.25s">
+						<p class="card-eyebrow">By the numbers</p>
+						<div class="stats-grid">
+							<div class="stat">
+								<span class="stat-num">4+</span>
+								<span class="stat-label">Projects</span>
+							</div>
+							<div class="stat">
+								<span class="stat-num">2+</span>
+								<span class="stat-label">Years coding</span>
+							</div>
+							<div class="stat">
+								<span class="stat-num">6+</span>
+								<span class="stat-label">Languages</span>
+							</div>
+						</div>
+					</div>
 
-          <div class="bento-card bento-location blur-fade" style="--delay:0.05s">
-            <p class="card-eyebrow">Location</p>
-            <h3 class="card-title">West Lafayette, IN</h3>
-            <p class="card-sub">Purdue University</p>
-            <p class="location-time" id="local-time">--:-- --</p>
-          </div>
+					<div class="bento-card bento-marquee blur-fade" style="--delay: 0.35s">
+						<p class="card-eyebrow">Stack</p>
+						<div class="marquee-wrapper">
+							<div class="marquee-track">
+								<span>Python</span><span>TypeScript</span><span>JavaScript</span><span>React</span
+								><span>Next.js</span><span>Node.js</span><span>Supabase</span><span>AWS</span
+								><span>Playwright</span><span>Vercel</span><span>Git</span><span>SQL</span><span>C</span
+								><span>Java</span><span>NumPy</span><span>Pandas</span><span>scikit-learn</span
+								><span>OpenAI API</span> <span>Python</span><span>TypeScript</span
+								><span>JavaScript</span><span>React</span><span>Next.js</span><span>Node.js</span
+								><span>Supabase</span><span>AWS</span><span>Playwright</span><span>Vercel</span
+								><span>Git</span><span>SQL</span><span>C</span><span>Java</span><span>NumPy</span
+								><span>Pandas</span><span>scikit-learn</span><span>OpenAI API</span>
+							</div>
+						</div>
+					</div>
 
-          <div class="bento-card bento-building blur-fade" style="--delay:0.15s">
-            <p class="card-eyebrow">Currently Building</p>
-            <h3 class="card-title">Rithvik.ai</h3>
-            <p class="card-sub">A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and project dashboard. Built with Next.js, Supabase, and Claude.</p>
-            <div class="building-tags">
-              <span>Next.js</span>
-              <span>Supabase</span>
-              <span>RAG</span>
-              <span>Claude API</span>
-            </div>
-          </div>
+					<div class="bento-card bento-interests blur-fade" style="--delay: 0.45s">
+						<p class="card-eyebrow">Interests</p>
+						<div class="interests-list">
+							<span>Full-Stack Engineering</span>
+							<span>AI Systems</span>
+							<span>Applied ML</span>
+							<span>Computer Systems</span>
+							<span>Startups</span>
+							<span>Research</span>
+							<span>Open Source</span>
+						</div>
+					</div>
+				</div>
+			</section>
 
-          <div class="bento-card bento-stats blur-fade" style="--delay:0.25s">
-            <p class="card-eyebrow">By the numbers</p>
-            <div class="stats-grid">
-              <div class="stat">
-                <span class="stat-num">4+</span>
-                <span class="stat-label">Projects</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num">2+</span>
-                <span class="stat-label">Years coding</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num">6+</span>
-                <span class="stat-label">Languages</span>
-              </div>
-            </div>
-          </div>
+			<!-- EDUCATION -->
+			<section class="education-section" id="education">
+				<div class="section-header blur-fade">
+					<p class="eyebrow">Education</p>
+					<h2>Academic background.</h2>
+				</div>
+				<div class="edu-card blur-fade" style="--delay: 0.1s">
+					<div class="edu-left">
+						<div class="edu-logo-wrap">
+							<img
+								src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Purdue_University_seal.svg/240px-Purdue_University_seal.svg.png"
+								alt="Purdue University"
+								class="edu-logo-img"
+								onerror="
+									this.style.display = 'none';
+									this.nextElementSibling.style.display = 'flex';
+								"
+							/>
+							<span class="edu-logo-fallback">P</span>
+						</div>
+					</div>
+					<div class="edu-body">
+						<div class="edu-header">
+							<a href="https://www.cs.purdue.edu/" target="_blank" rel="noreferrer" class="edu-school"
+								>Purdue University</a
+							>
+						</div>
+						<p class="edu-description">
+							B.S. in <span class="edu-highlight" style="--gd: 0s">Computer Science</span> +
+							<span class="edu-highlight" style="--gd: 1.4s">Mathematics</span> with concentrations in
+							<span class="edu-highlight" style="--gd: 2.8s">Software Engineering</span> and
+							<span class="edu-highlight" style="--gd: 4.2s">AI / ML</span>
+						</p>
+					</div>
+				</div>
+			</section>
 
-          <div class="bento-card bento-marquee blur-fade" style="--delay:0.35s">
-            <p class="card-eyebrow">Stack</p>
-            <div class="marquee-wrapper">
-              <div class="marquee-track">
-                <span>Python</span><span>TypeScript</span><span>JavaScript</span><span>React</span><span>Next.js</span><span>Node.js</span><span>Supabase</span><span>AWS</span><span>Playwright</span><span>Vercel</span><span>Git</span><span>SQL</span><span>C</span><span>Java</span><span>NumPy</span><span>Pandas</span><span>scikit-learn</span><span>OpenAI API</span>
-                <span>Python</span><span>TypeScript</span><span>JavaScript</span><span>React</span><span>Next.js</span><span>Node.js</span><span>Supabase</span><span>AWS</span><span>Playwright</span><span>Vercel</span><span>Git</span><span>SQL</span><span>C</span><span>Java</span><span>NumPy</span><span>Pandas</span><span>scikit-learn</span><span>OpenAI API</span>
-              </div>
-            </div>
-          </div>
+			<!-- PROJECTS -->
+			<section class="projects-section" id="projects">
+				<div class="section-header blur-fade">
+					<p class="eyebrow">Projects</p>
+					<h2>Selected work.</h2>
+				</div>
+				<div class="projects-grid">
+					<article class="project-card blur-fade" style="--delay: 0.05s">
+						<div class="project-header">
+							<span class="project-badge">In Progress</span>
+						</div>
+						<h3>Rithvik.ai Portfolio</h3>
+						<p>
+							Personal portfolio website being built from the ground up — starting with static HTML/CSS
+							and evolving into a full-stack AI-powered platform with a RAG chatbot and live admin UI.
+						</p>
+						<div class="project-tags">
+							<span>HTML</span><span>CSS</span><span>Next.js</span><span>Supabase</span><span>RAG</span>
+						</div>
+					</article>
 
-          <div class="bento-card bento-interests blur-fade" style="--delay:0.45s">
-            <p class="card-eyebrow">Interests</p>
-            <div class="interests-list">
-              <span>Full-Stack Engineering</span>
-              <span>AI Systems</span>
-              <span>Applied ML</span>
-              <span>Computer Systems</span>
-              <span>Startups</span>
-              <span>Research</span>
-              <span>Open Source</span>
-            </div>
-          </div>
+					<article class="project-card blur-fade" style="--delay: 0.15s">
+						<div class="project-header">
+							<span class="project-badge">Browser Monitor</span>
+						</div>
+						<h3>WatchDawg</h3>
+						<p>
+							Cloud-running browser monitor that checks dynamic webpages, compares values against a
+							baseline, and sends notifications when changes are detected.
+						</p>
+						<div class="project-tags">
+							<span>TypeScript</span><span>Playwright</span><span>Automation</span>
+						</div>
+					</article>
 
-        </div>
-      </section>
+					<article class="project-card blur-fade" style="--delay: 0.25s">
+						<div class="project-header">
+							<span class="project-badge">Full Stack</span>
+						</div>
+						<h3>BoilerFrame</h3>
+						<p>
+							Web app that uses AWS Rekognition to identify where a target person appears in uploaded
+							video content.
+						</p>
+						<div class="project-tags">
+							<span>JavaScript</span><span>AWS</span><span>Computer Vision</span>
+						</div>
+					</article>
 
-      <!-- EDUCATION -->
-      <section class="education-section" id="education">
-        <div class="section-header blur-fade">
-          <p class="eyebrow">Education</p>
-          <h2>Academic background.</h2>
-        </div>
-        <div class="edu-card blur-fade" style="--delay:0.1s">
-          <div class="edu-left">
-            <div class="edu-logo-wrap">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Purdue_University_seal.svg/240px-Purdue_University_seal.svg.png"
-                alt="Purdue University"
-                class="edu-logo-img"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-              />
-              <span class="edu-logo-fallback">P</span>
-            </div>
-          </div>
-          <div class="edu-body">
-            <div class="edu-header">
-              <a href="https://www.cs.purdue.edu/" target="_blank" rel="noreferrer" class="edu-school">Purdue University</a>
-            </div>
-            <p class="edu-description">
-              B.S. in <span class="edu-highlight" style="--gd:0s">Computer Science</span> + <span class="edu-highlight" style="--gd:1.4s">Mathematics</span> with concentrations in <span class="edu-highlight" style="--gd:2.8s">Software Engineering</span> and <span class="edu-highlight" style="--gd:4.2s">AI / ML</span>
-            </p>
-          </div>
-        </div>
-      </section>
+					<article class="project-card blur-fade" style="--delay: 0.35s">
+						<div class="project-header">
+							<span class="project-badge">AI Education</span>
+						</div>
+						<h3>Pratigya Learning Platform</h3>
+						<p>
+							AI-powered learning platform for rural learners, including lessons, quizzes, assignments,
+							and a context-aware chatbot grounded in course content.
+						</p>
+						<div class="project-tags"><span>RAG</span><span>Full Stack</span><span>Education</span></div>
+					</article>
+				</div>
+			</section>
 
-      <!-- PROJECTS -->
-      <section class="projects-section" id="projects">
-        <div class="section-header blur-fade">
-          <p class="eyebrow">Projects</p>
-          <h2>Selected work.</h2>
-        </div>
-        <div class="projects-grid">
+			<!-- EXPERIENCE / TIMELINE -->
+			<section class="experience-section" id="experience">
+				<div class="section-header blur-fade">
+					<p class="eyebrow">Experience</p>
+					<h2>Where I've been.</h2>
+				</div>
+				<div class="timeline">
+					<div class="timeline-beam"></div>
 
-          <article class="project-card blur-fade" style="--delay:0.05s">
-            <div class="project-header">
-              <span class="project-badge">In Progress</span>
-            </div>
-            <h3>Rithvik.ai Portfolio</h3>
-            <p>Personal portfolio website being built from the ground up — starting with static HTML/CSS and evolving into a full-stack AI-powered platform with a RAG chatbot and live admin UI.</p>
-            <div class="project-tags">
-              <span>HTML</span><span>CSS</span><span>Next.js</span><span>Supabase</span><span>RAG</span>
-            </div>
-          </article>
+					<div class="timeline-entry blur-fade" style="--delay: 0.1s">
+						<div class="timeline-dot"></div>
+						<div class="timeline-content">
+							<div class="timeline-header">
+								<h3>Purdue University</h3>
+								<span class="timeline-date">Aug 2023 — Present</span>
+							</div>
+							<p class="timeline-role">B.S. Computer Science + Mathematics</p>
+							<p class="timeline-desc">
+								Studying CS and Math with a focus on software engineering, AI systems, and applied
+								mathematics. Building end-to-end projects alongside coursework.
+							</p>
+							<div class="timeline-tags"><span>CS</span><span>Mathematics</span><span>AI</span></div>
+						</div>
+					</div>
 
-          <article class="project-card blur-fade" style="--delay:0.15s">
-            <div class="project-header">
-              <span class="project-badge">Browser Monitor</span>
-            </div>
-            <h3>WatchDawg</h3>
-            <p>Cloud-running browser monitor that checks dynamic webpages, compares values against a baseline, and sends notifications when changes are detected.</p>
-            <div class="project-tags">
-              <span>TypeScript</span><span>Playwright</span><span>Automation</span>
-            </div>
-          </article>
+					<div class="timeline-entry blur-fade" style="--delay: 0.2s">
+						<div class="timeline-dot"></div>
+						<div class="timeline-content">
+							<div class="timeline-header">
+								<h3>Independent Projects</h3>
+								<span class="timeline-date">2023 — Present</span>
+							</div>
+							<p class="timeline-role">Builder</p>
+							<p class="timeline-desc">
+								Shipping full-stack and AI projects across web development, computer vision, browser
+								automation, and education technology.
+							</p>
+							<div class="timeline-tags">
+								<span>Full Stack</span><span>AI</span><span>Open Source</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
 
-          <article class="project-card blur-fade" style="--delay:0.25s">
-            <div class="project-header">
-              <span class="project-badge">Full Stack</span>
-            </div>
-            <h3>BoilerFrame</h3>
-            <p>Web app that uses AWS Rekognition to identify where a target person appears in uploaded video content.</p>
-            <div class="project-tags">
-              <span>JavaScript</span><span>AWS</span><span>Computer Vision</span>
-            </div>
-          </article>
+			<!-- CONTACT -->
+			<section class="contact-section" id="contact">
+				<div class="contact-left blur-fade">
+					<p class="eyebrow">Contact</p>
+					<h2>Let's connect.</h2>
+					<p class="contact-sub">
+						I'm always interested in software engineering, AI, startups, research, and ambitious technical
+						projects.
+					</p>
+				</div>
+				<div class="contact-links blur-fade" style="--delay: 0.15s">
+					<a href="https://github.com/rithvikpkx" target="_blank" rel="noreferrer" class="contact-link">
+						<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+							<path
+								d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
+							/>
+						</svg>
+						GitHub
+					</a>
+					<a href="#" target="_blank" rel="noreferrer" class="contact-link">
+						<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+							<path
+								d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+							/>
+						</svg>
+						LinkedIn
+					</a>
+					<a href="mailto:rithvikpkx@gmail.com" class="contact-link">
+						<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+							<path
+								d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"
+							/>
+						</svg>
+						Email
+					</a>
+				</div>
+			</section>
+		</main>
 
-          <article class="project-card blur-fade" style="--delay:0.35s">
-            <div class="project-header">
-              <span class="project-badge">AI Education</span>
-            </div>
-            <h3>Pratigya Learning Platform</h3>
-            <p>AI-powered learning platform for rural learners, including lessons, quizzes, assignments, and a context-aware chatbot grounded in course content.</p>
-            <div class="project-tags">
-              <span>RAG</span><span>Full Stack</span><span>Education</span>
-            </div>
-          </article>
+		<footer class="footer">
+			<p>© 2026 Rithvik Praveen Kumar.</p>
+			<p class="footer-sub">Next.js + Supabase + AI — coming soon.</p>
+		</footer>
 
-        </div>
-      </section>
+		<!-- RAG CHATBOT -->
+		<div class="rag-launcher">
+			<div class="rag-panel" id="rag-panel">
+				<div class="rag-header">
+					<div class="rag-title-group">
+						<span class="pulse-dot"></span>
+						<span class="rag-title">RAG</span>
+						<span class="rag-subtitle">Rithvik Augmented Generation</span>
+					</div>
+					<button class="rag-close" id="rag-close" aria-label="Close">✕</button>
+				</div>
+				<div class="rag-messages">
+					<div class="rag-message">
+						<p>
+							Hey! I'm RAG — I know everything about Rithvik. Ask me about his projects, skills, or
+							background.
+						</p>
+					</div>
+					<div class="rag-message">
+						<p><em>Full AI functionality coming soon. This is a preview UI.</em></p>
+					</div>
+				</div>
+				<div class="rag-input-row">
+					<input type="text" class="rag-input" placeholder="Ask me anything about Rithvik..." disabled />
+					<button class="rag-send" disabled aria-label="Send">
+						<svg
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							width="16"
+							height="16"
+						>
+							<path d="M5 12h14M12 5l7 7-7 7" />
+						</svg>
+					</button>
+				</div>
+			</div>
+			<button class="rag-btn" id="rag-toggle" aria-label="Chat with RAG">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+				</svg>
+				<span>Ask RAG</span>
+			</button>
+		</div>
 
-      <!-- EXPERIENCE / TIMELINE -->
-      <section class="experience-section" id="experience">
-        <div class="section-header blur-fade">
-          <p class="eyebrow">Experience</p>
-          <h2>Where I've been.</h2>
-        </div>
-        <div class="timeline">
-          <div class="timeline-beam"></div>
-
-          <div class="timeline-entry blur-fade" style="--delay:0.1s">
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <h3>Purdue University</h3>
-                <span class="timeline-date">Aug 2023 — Present</span>
-              </div>
-              <p class="timeline-role">B.S. Computer Science + Mathematics</p>
-              <p class="timeline-desc">Studying CS and Math with a focus on software engineering, AI systems, and applied mathematics. Building end-to-end projects alongside coursework.</p>
-              <div class="timeline-tags">
-                <span>CS</span><span>Mathematics</span><span>AI</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="timeline-entry blur-fade" style="--delay:0.2s">
-            <div class="timeline-dot"></div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <h3>Independent Projects</h3>
-                <span class="timeline-date">2023 — Present</span>
-              </div>
-              <p class="timeline-role">Builder</p>
-              <p class="timeline-desc">Shipping full-stack and AI projects across web development, computer vision, browser automation, and education technology.</p>
-              <div class="timeline-tags">
-                <span>Full Stack</span><span>AI</span><span>Open Source</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- CONTACT -->
-      <section class="contact-section" id="contact">
-        <div class="contact-left blur-fade">
-          <p class="eyebrow">Contact</p>
-          <h2>Let's connect.</h2>
-          <p class="contact-sub">I'm always interested in software engineering, AI, startups, research, and ambitious technical projects.</p>
-        </div>
-        <div class="contact-links blur-fade" style="--delay:0.15s">
-          <a href="https://github.com/rithvikpkx" target="_blank" rel="noreferrer" class="contact-link">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-            GitHub
-          </a>
-          <a href="#" target="_blank" rel="noreferrer" class="contact-link">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-            LinkedIn
-          </a>
-          <a href="mailto:rithvikpkx@gmail.com" class="contact-link">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>
-            Email
-          </a>
-        </div>
-      </section>
-
-    </main>
-
-    <footer class="footer">
-      <p>© 2026 Rithvik Praveen Kumar.</p>
-      <p class="footer-sub">Next.js + Supabase + AI — coming soon.</p>
-    </footer>
-
-    <!-- RAG CHATBOT -->
-    <div class="rag-launcher">
-      <div class="rag-panel" id="rag-panel">
-        <div class="rag-header">
-          <div class="rag-title-group">
-            <span class="pulse-dot"></span>
-            <span class="rag-title">RAG</span>
-            <span class="rag-subtitle">Rithvik Augmented Generation</span>
-          </div>
-          <button class="rag-close" id="rag-close" aria-label="Close">✕</button>
-        </div>
-        <div class="rag-messages">
-          <div class="rag-message">
-            <p>Hey! I'm RAG — I know everything about Rithvik. Ask me about his projects, skills, or background.</p>
-          </div>
-          <div class="rag-message">
-            <p><em>Full AI functionality coming soon. This is a preview UI.</em></p>
-          </div>
-        </div>
-        <div class="rag-input-row">
-          <input type="text" class="rag-input" placeholder="Ask me anything about Rithvik..." disabled />
-          <button class="rag-send" disabled aria-label="Send">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-      </div>
-      <button class="rag-btn" id="rag-toggle" aria-label="Chat with RAG">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span>Ask RAG</span>
-      </button>
-    </div>
-
-    <script src="main.js"></script>
-  </body>
+		<script src="main.js"></script>
+	</body>
 </html>

@@ -23,6 +23,3 @@ ON CONFLICT (slug) DO UPDATE SET
   tokens     = EXCLUDED.tokens,
   sort_order = EXCLUDED.sort_order,
   published  = EXCLUDED.published;
-
--- Verify (run this after — you should see 3 rows including rithvik-terminal):
-SELECT slug, name, sort_order, published FROM themes ORDER BY sort_order;

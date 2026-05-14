@@ -105,9 +105,7 @@ app/
   page.tsx            — fetches site_content; passes to Hero/Bento/Contact; renders all sections
   globals.css         — tokens, dial, all the rest
   admin/
-    actions.ts        — server actions for all tables (still used; the /admin UI pages are deprecated)
-    login/, logout/   — legacy pages, replaced by InlineLoginPanel; kept for fallback
-    page.tsx          — legacy dashboard, deprecated
+    actions.ts        — server actions for all tables (used by inline-editing flow)
   api/chat/           — RAG bot endpoint (in progress)
 
 components/
@@ -135,10 +133,6 @@ plans/
 - **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
 - **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
 
-## Dead / legacy code
-
-- `app/admin/{login,logout,page.tsx,ExperienceManager.tsx,ProjectManager.tsx}` — pre-inline-editing dashboard. Kept as fallback while the inline flow stabilizes; safe to delete once happy.
-
 ## Where to look first when something breaks
 
 - Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
@@ -148,6 +142,5 @@ plans/
 
 ## What's still open
 
-- Feat-theme **stage 8** — mobile polish, accessibility verification, cleanup of any remaining dead code.
+- Feat-theme **stage 8** — mobile polish, accessibility verification.
 - RAG bot — `api/chat` route + `RagBot.tsx` UI; not yet integrated end-to-end.
-- Decision pending on whether to remove the legacy `/admin/*` pages entirely.
