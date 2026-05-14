@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import RagBot from "@/components/RagBot";
 import SecondaryContextPanel from "@/components/SecondaryContextPanel";
 import { serverClient } from "@/lib/supabase";
+import type { GlobeMarker } from "@/lib/types";
 
 function parseSafe<T>(json: string | undefined, fallback: T): T {
   if (!json) return fallback;
@@ -26,6 +27,7 @@ export default async function Home() {
   const bentoStats    = parseSafe(content["bento.stats"], undefined);
   const bentoStack    = parseSafe(content["bento.stack"], undefined);
   const bentoInterests = parseSafe(content["bento.interests"], undefined);
+  const bentoGlobeMarkers = parseSafe<GlobeMarker[]>(content["bento.globe_markers"], []);
 
   return (
     <>
@@ -43,6 +45,7 @@ export default async function Home() {
           stats={bentoStats}
           stack={bentoStack}
           interests={bentoInterests}
+          markers={bentoGlobeMarkers}
         />
         <Education />
         <Projects />

@@ -6,6 +6,7 @@ import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
 import LocalTime from "./LocalTime";
 import { upsertSiteContent } from "@/app/admin/actions";
+import type { GlobeMarker } from "@/lib/types";
 
 interface Building { title: string; description: string; tags: string[] }
 interface Stat { num: string; label: string }
@@ -30,6 +31,7 @@ const DEF_INTERESTS = [
   "Full-Stack Engineering","AI Systems","Applied ML",
   "Computer Systems","Startups","Research","Open Source",
 ];
+const DEF_MARKERS: GlobeMarker[] = [];
 
 interface Props {
   location?: string;
@@ -37,6 +39,7 @@ interface Props {
   stats?: Stat[];
   stack?: string[];
   interests?: string[];
+  markers?: GlobeMarker[];
 }
 
 const grid = {
@@ -48,13 +51,14 @@ const card = {
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
-export default function Bento({ location: lp, building: bp, stats: sp, stack: skp, interests: ip }: Props) {
+export default function Bento({ location: lp, building: bp, stats: sp, stack: skp, interests: ip, markers: mp }: Props) {
   const { isEditing } = useEditMode();
   const [loc, setLoc]           = useState(lp ?? DEF_LOCATION);
   const [bld, setBld]           = useState(bp ?? DEF_BUILDING);
   const [stats, setStats]       = useState(sp ?? DEF_STATS);
   const [stack, setStack]       = useState(skp ?? DEF_STACK);
   const [interests, setInterests] = useState(ip ?? DEF_INTERESTS);
+  const [_markers, _setMarkers] = useState(mp ?? DEF_MARKERS);
 
   useEffect(() => {
     if (!isEditing) {
@@ -63,8 +67,9 @@ export default function Bento({ location: lp, building: bp, stats: sp, stack: sk
       setStats(sp ?? DEF_STATS);
       setStack(skp ?? DEF_STACK);
       setInterests(ip ?? DEF_INTERESTS);
+      _setMarkers(mp ?? DEF_MARKERS);
     }
-  }, [lp, bp, sp, skp, ip, isEditing]);
+  }, [lp, bp, sp, skp, ip, mp, isEditing]);
 
   const saveBld = async (patch: Partial<Building>) => {
     const u = { ...bld, ...patch };
