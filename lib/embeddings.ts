@@ -4,7 +4,7 @@
  * Supabase client and OPENAI_API_KEY).
  */
 import { adminClient } from "@/lib/supabase";
-import type { Project, Experience, Education } from "@/lib/types";
+import type { Project, Experience, Education, GlobeMarker } from "@/lib/types";
 
 const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIM = 1536;
@@ -156,6 +156,7 @@ const SITE_CONTENT_LABELS: Record<string, string> = {
   "bento.stats":          "Rithvik's stats — projects, years coding, languages",
   "bento.stack":          "Rithvik's tech stack and technologies he works with",
   "bento.interests":      "Rithvik's interests and topics he is passionate about",
+  "bento.globe_markers":  "Places Rithvik has ties to around the world",
   "contact.headline":     "Contact section headline on Rithvik's portfolio",
   "contact.sub":          "Contact section description on Rithvik's portfolio",
   "contact.link.github":  "Rithvik's GitHub link",
@@ -163,11 +164,19 @@ const SITE_CONTENT_LABELS: Record<string, string> = {
   "contact.link.email":   "Rithvik's email address",
 };
 
-/** Render a site_content key/value pair as natural prose. JSON values are
- *  unwrapped into a comma-joined list so semantic content (stack items,
- *  interests, building description) ends up in the embedded text instead of
- *  being hidden behind JSON braces. */
-export function buildSiteContentText(key: string, value: string): string {
+/** Render a site_content key/value pair as natural prose. Async because some
+ *  keys (bento.globe_markers) need DB joins to produce rich text. Most keys
+ *  return synchronously through the JSON-flatten fallback. */
+export async function buildSiteContentText(key: string, value: string): Promise<string> {
+  if (key === "bento.globe_markers") {
+    try {
+      const markers = JSON.parse(value) as GlobeMarker[];
+      return await buildGlobeMarkersText(markers);
+    } catch (e) {
+      console.warn("[rag] globe markers parse failed; using generic fallback:", e instanceof Error ? e.message : e);
+    }
+  }
+
   const label = SITE_CONTENT_LABELS[key] ?? `Site content (${key})`;
   let prose: string = value;
   try {
@@ -181,10 +190,83 @@ export function buildSiteContentText(key: string, value: string): string {
         .map(([k, v]) => `${k}: ${typeof v === "string" ? v : JSON.stringify(v)}`)
         .join(". ");
     }
-  } catch {
-    // value was a plain string already; use it verbatim
-  }
+  } catch (e) { /* value was a plain string */ void e; }
   return `${label}: ${prose}`;
+}
+
+/** IANA-id → human-readable timezone display name, for embedded prose only.
+ *  Falls back to the IANA id verbatim for entries not in the map — the id
+ *  itself is informative enough that retrieval still works. Add cities as
+ *  needed, but the fallback keeps this list low-maintenance. */
+const TZ_DISPLAY: Record<string, string> = {
+  "America/New_York":              "Eastern Time",
+  "America/Chicago":               "Central Time",
+  "America/Denver":                "Mountain Time",
+  "America/Los_Angeles":           "Pacific Time",
+  "America/Indiana/Indianapolis":  "Eastern Time",
+  "Europe/London":                 "Greenwich Mean Time",
+  "Europe/Paris":                  "Central European Time",
+  "Asia/Tokyo":                    "Japan Standard Time",
+  "Asia/Kolkata":                  "India Standard Time",
+  "Asia/Shanghai":                 "China Standard Time",
+  "Australia/Sydney":              "Australian Eastern Time",
+};
+
+function tzDisplay(iana: string): string {
+  return TZ_DISPLAY[iana] ?? iana;
+}
+
+function placeFragment(m: GlobeMarker): string {
+  const region = m.region ? `, ${m.region}` : "";
+  return `${m.city}${region}, ${m.country} (${tzDisplay(m.timezone)}, ${m.timezone})`;
+}
+
+/** Build embed prose for the globe markers array. Looks up each default
+ *  marker's city against the education table; matches let us say "this is
+ *  where he attends X" instead of a generic "ties to" line. Async because of
+ *  that join. */
+export async function buildGlobeMarkersText(markers: GlobeMarker[]): Promise<string> {
+  const label = SITE_CONTENT_LABELS["bento.globe_markers"];
+  if (!markers.length) {
+    return `${label}: Rithvik Praveen Kumar has no specific places listed on his portfolio globe.`;
+  }
+
+  const { data: schools } = await adminClient()
+    .from("education")
+    .select("school")
+    .eq("published", true);
+  const schoolNames: string[] = (schools ?? []).map((s) => s.school);
+
+  const matchSchool = (city: string): string | null => {
+    const cityLower = city.toLowerCase();
+    for (const name of schoolNames) {
+      const nameLower = name.toLowerCase();
+      if (nameLower.includes(cityLower) || cityLower.includes(nameLower)) return name;
+    }
+    return null;
+  };
+
+  const lines: string[] = ["Rithvik Praveen Kumar has ties to several places around the world."];
+  const home = markers.find((m) => m.kind === "home");
+  const current = markers.find((m) => m.kind === "current");
+  const defaults = markers.filter((m) => m.kind === "default");
+
+  if (home) {
+    lines.push(`His home is ${placeFragment(home)}.`);
+  }
+  if (current) {
+    lines.push(`He currently lives in ${placeFragment(current)} — this is where he is right now.`);
+  }
+  for (const m of defaults) {
+    const school = matchSchool(m.city);
+    if (school) {
+      lines.push(`He has ties to ${placeFragment(m)} — this is where he attends ${school}.`);
+    } else {
+      lines.push(`He also has ties to ${placeFragment(m)}.`);
+    }
+  }
+
+  return `${label}. ${lines.join(" ")}`;
 }
 
 type PrimaryTable = "projects" | "experience" | "education" | "site_content";

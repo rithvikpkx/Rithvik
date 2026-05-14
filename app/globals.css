@@ -584,11 +584,19 @@ a { color: inherit; text-decoration: none; }
 }
 .bento-card:hover::after { opacity: 1; }
 
-.bento-location  { grid-column: span 3; }
-.bento-building  { grid-column: span 5; }
-.bento-stats     { grid-column: span 4; }
+.bento-location  { grid-column: span 4; grid-row: span 2; }
+.bento-building  { grid-column: span 8; }
+.bento-stats     { grid-column: span 8; }
 .bento-marquee   { grid-column: span 8; }
 .bento-interests { grid-column: span 4; }
+
+.bento-globe {
+  min-height: 360px;
+  padding: 0;            /* canvas is full-bleed */
+  position: relative;
+  overflow: hidden;
+}
+.bento-globe::after { opacity: 0 !important; }  /* kill the radial-gradient overlay for this card */
 
 .card-eyebrow {
   font-family: var(--mono);
@@ -1356,6 +1364,94 @@ a { color: inherit; text-decoration: none; }
 }
 .proj-add-btn:hover { background: rgba(194,48,94,0.12); border-color: rgba(194,48,94,0.6); }
 .proj-add-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ===== BENTO GLOBE ===== */
+.globe-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* canvas re-enables; overlay layer enables */
+}
+.globe-canvas {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  opacity: 0;
+  transition: opacity 500ms ease;
+  contain: layout paint size;
+  pointer-events: auto;
+  cursor: grab;
+}
+.globe-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* individual markers re-enable when visible */
+}
+.globe-marker {
+  position: absolute;
+  top: 0; left: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+  cursor: pointer;
+  transition: opacity 200ms ease, box-shadow 200ms ease;
+  outline-offset: 4px;
+}
+.globe-marker-home    { background: var(--accent); }
+.globe-marker-current { background: var(--green); box-shadow: 0 0 14px color-mix(in srgb, var(--green) 70%, transparent); }
+.globe-marker-default { background: color-mix(in srgb, var(--accent) 70%, var(--bg)); width: 12px; height: 12px; }
+.globe-marker:hover, .globe-marker:focus-visible {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+.globe-tooltip {
+  position: absolute;
+  top: 0; left: 0;
+  background: var(--panel-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 5;
+  animation: globe-tip-in 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.globe-tooltip strong {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.globe-tooltip-country {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.globe-tooltip-time {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+.globe-tooltip-tz {
+  color: var(--muted);
+  margin-left: 4px;
+}
+@keyframes globe-tip-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 /* ===== BENTO EDITOR ===== */
 .bento-stack-edit {
@@ -2381,3 +2477,134 @@ a { color: inherit; text-decoration: none; }
 .ctx-backfill:hover { background: var(--card-hover); }
 .ctx-status { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
 .ctx-error  { font-size: 0.72rem; color: var(--accent); font-family: var(--mono); }
+
+/* ===== GLOBE MARKER EDITOR ===== */
+.globe-editor {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10;
+  background: var(--panel-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  max-width: 320px;
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  pointer-events: auto;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.globe-editor-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.globe-editor-body {
+  padding-top: 6px;
+}
+.globe-marker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.globe-marker-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.globe-marker-list li:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.globe-marker-list-city { flex: 1; }
+.globe-marker-kind {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.globe-marker-kind-home    { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+.globe-marker-kind-current { background: color-mix(in srgb, var(--green) 30%, transparent); }
+.globe-marker-kind-default { background: color-mix(in srgb, var(--muted) 30%, transparent); }
+.globe-marker-list button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.globe-marker-list button:hover { color: var(--text); }
+.globe-editor-add {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border: 1px dashed var(--border-hover);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+.globe-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.globe-editor-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.globe-editor-form input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.globe-kind-picker {
+  border: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+}
+.globe-kind-picker legend { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); margin-bottom: 4px; }
+.globe-kind-picker label { flex-direction: row; align-items: center; gap: 4px; cursor: pointer; }
+.globe-editor-actions { display: flex; gap: 8px; margin-top: 4px; }
+.globe-editor-actions button {
+  flex: 1;
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  border: 0;
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.globe-editor-actions button[type="button"] { background: color-mix(in srgb, var(--muted) 25%, transparent); }
+.globe-editor-err {
+  color: #ef4444;
+  font-size: 0.72rem;
+  margin: 4px 0 0;
+}

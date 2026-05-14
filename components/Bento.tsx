@@ -4,13 +4,13 @@ import { motion } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
-import LocalTime from "./LocalTime";
-import { upsertSiteContent } from "@/app/admin/actions";
+import BentoGlobeCard from "./BentoGlobeCard";
+import { upsertSiteContent, updateGlobeMarkers } from "@/app/admin/actions";
+import type { GlobeMarker } from "@/lib/types";
 
 interface Building { title: string; description: string; tags: string[] }
 interface Stat { num: string; label: string }
 
-const DEF_LOCATION = "West Lafayette, IN";
 const DEF_BUILDING: Building = {
   title: "Rithvik.ai",
   description: "A full-stack AI-powered personal platform with a RAG chatbot, live admin UI, and project dashboard. Built with Next.js, Supabase, and Claude.",
@@ -30,13 +30,14 @@ const DEF_INTERESTS = [
   "Full-Stack Engineering","AI Systems","Applied ML",
   "Computer Systems","Startups","Research","Open Source",
 ];
+const DEF_MARKERS: GlobeMarker[] = [];
 
 interface Props {
-  location?: string;
   building?: Building;
   stats?: Stat[];
   stack?: string[];
   interests?: string[];
+  markers?: GlobeMarker[];
 }
 
 const grid = {
@@ -48,23 +49,23 @@ const card = {
   visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
-export default function Bento({ location: lp, building: bp, stats: sp, stack: skp, interests: ip }: Props) {
+export default function Bento({ building: bp, stats: sp, stack: skp, interests: ip, markers: mp }: Props) {
   const { isEditing } = useEditMode();
-  const [loc, setLoc]           = useState(lp ?? DEF_LOCATION);
   const [bld, setBld]           = useState(bp ?? DEF_BUILDING);
   const [stats, setStats]       = useState(sp ?? DEF_STATS);
   const [stack, setStack]       = useState(skp ?? DEF_STACK);
   const [interests, setInterests] = useState(ip ?? DEF_INTERESTS);
+  const [markers, setMarkers]   = useState(mp ?? DEF_MARKERS);
 
   useEffect(() => {
     if (!isEditing) {
-      setLoc(lp ?? DEF_LOCATION);
       setBld(bp ?? DEF_BUILDING);
       setStats(sp ?? DEF_STATS);
       setStack(skp ?? DEF_STACK);
       setInterests(ip ?? DEF_INTERESTS);
+      setMarkers(mp ?? DEF_MARKERS);
     }
-  }, [lp, bp, sp, skp, ip, isEditing]);
+  }, [bp, sp, skp, ip, mp, isEditing]);
 
   const saveBld = async (patch: Partial<Building>) => {
     const u = { ...bld, ...patch };
@@ -88,16 +89,14 @@ export default function Bento({ location: lp, building: bp, stats: sp, stack: sk
         viewport={{ once: true, amount: 0.1 }}
       >
 
-        {/* ── Location ────────────────────────────────────────────────── */}
-        <motion.div className="bento-card bento-location" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>
-          <p className="card-eyebrow">Location</p>
-          <EditableText
-            tag="h3" className="card-title" value={loc}
-            onSave={async (v) => { setLoc(v); await upsertSiteContent("bento.location", v); }}
-          />
-          <p className="card-sub">Purdue University</p>
-          <LocalTime />
-        </motion.div>
+        {/* ── Location (Globe) ─────────────────────────────────────────── */}
+        <BentoGlobeCard
+          markers={markers}
+          onSave={async (next) => {
+            setMarkers(next);
+            await updateGlobeMarkers(next);
+          }}
+        />
 
         {/* ── Currently Building ──────────────────────────────────────── */}
         <motion.div className="bento-card bento-building" variants={card} whileHover={{ y: -3, transition: { duration: 0.2 } }}>

@@ -64,6 +64,19 @@ export interface Theme {
   updated_at: string;
 }
 
+export type GlobeMarkerKind = "home" | "current" | "default";
+
+export interface GlobeMarker {
+  id: string;          // uuid, client-generated
+  city: string;
+  region: string;      // state/province — may be empty for non-US locations
+  country: string;
+  lat: number;         // -90..90
+  lng: number;         // -180..180
+  timezone: string;    // IANA name, e.g. "America/Los_Angeles"
+  kind: GlobeMarkerKind;
+}
+
 export interface Database {
   public: {
     Tables: {
