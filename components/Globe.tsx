@@ -33,9 +33,10 @@ function luminance([r, g, b]: RGB): number {
 }
 
 /** Project (lat,lng) → 3D unit-sphere screen coords in cobe v2's frame.
- *  Mirrors cobe's internal U() + O() math exactly so the DOM overlay sits on
- *  top of cobe's canvas-drawn markers rather than 180° away. Visibility uses
- *  cobe's back-face test (z ≥ 0 is the back hemisphere). */
+ *  Mirrors cobe's internal U() (location → 3D) and A() rotation matrix from
+ *  the sphere shader so the overlay tracks the texture rather than landing
+ *  180° away. Camera looks along +Z toward the origin, so the camera-facing
+ *  hemisphere is `z > 0`. */
 function project(
   lat: number,
   lng: number,
@@ -57,7 +58,7 @@ function project(
   const cosT = Math.cos(theta), sinT = Math.sin(theta);
   const y2 = cosT * y0 - sinT * z1;
   const z2 = sinT * y0 + cosT * z1;
-  return { x: x1, y: y2, visible: z2 < 0 };
+  return { x: x1, y: y2, visible: z2 > 0 };
 }
 
 const THETA = 0.3;
