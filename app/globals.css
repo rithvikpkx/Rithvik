@@ -211,8 +211,23 @@ a { color: inherit; text-decoration: none; }
   inherits: false;
 }
 
+/* DEFAULTS for every group's image pair: skip the default 250ms crossfade,
+   show only the NEW pseudo from t=0. The group animation still interpolates
+   position/transform over 900ms (see ::view-transition-group(*) below), so
+   participants like pills smoothly rotate from old to new positions — but
+   their appearance is the new state the whole time, no "ghost" of the old
+   image at the same interpolated location. Specific groups override below. */
+::view-transition-old(*) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(*) {
+  animation: none;
+  opacity: 1;
+}
+
 ::view-transition-old(root) {
-  /* Stay fully visible — the NEW pseudo reveals OVER us via its mask */
+  /* Override default: stay fully visible — the NEW pseudo reveals OVER us */
   animation: none;
   mix-blend-mode: normal;
   opacity: 1;
