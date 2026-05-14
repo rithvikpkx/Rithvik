@@ -90,10 +90,12 @@ export async function listSecondaryDocuments(): Promise<SecondaryDocRow[]> {
   const ids = (docs ?? []).map((d) => d.id);
   const countMap = new Map<string, number>();
   if (ids.length) {
-    const { data: chunks } = await db
+    const { data: chunks, error: chunksErr } = await db
       .from("secondary_embeddings")
       .select("document_id")
-      .in("document_id", ids);
+      .in("document_id", ids)
+      .range(0, 99999);
+    if (chunksErr) throw new Error(chunksErr.message);
     for (const c of chunks ?? []) {
       countMap.set(c.document_id, (countMap.get(c.document_id) ?? 0) + 1);
     }
@@ -102,6 +104,7 @@ export async function listSecondaryDocuments(): Promise<SecondaryDocRow[]> {
 }
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_CHUNKS_PER_DOC = 200;
 
 /**
  * Accepts a single file from a <form action={uploadSecondaryDocument}>.
@@ -142,7 +145,7 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
   const { data: doc, error: docErr } = await db
     .from("secondary_documents")
     .insert({ filename: file.name, mime_type: mime, storage_path: storagePath, byte_size: file.size })
-    .select()
+    .select("id, filename, mime_type, byte_size, uploaded_at")
     .single();
   if (docErr) {
     await db.storage.from("secondary").remove([storagePath]);
@@ -150,14 +153,18 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
   }
 
   // 3) Convert to embeddable text
+  let chunks: string[] = [];
   try {
-    let chunks: string[];
     if (extracted.kind === "image") {
       const caption = await captionImage(extracted.bytes, extracted.mime);
       chunks = [caption]; // captions are short — no further splitting
     } else {
       chunks = chunkText(extracted.text);
       if (chunks.length === 0) throw new Error("No extractable text found in file.");
+    }
+
+    if (chunks.length > MAX_CHUNKS_PER_DOC) {
+      throw new Error(`File produces ${chunks.length} chunks (cap is ${MAX_CHUNKS_PER_DOC}). Split into smaller files.`);
     }
 
     // 4) Embed + insert each chunk
@@ -186,7 +193,7 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
     mime_type: doc.mime_type,
     byte_size: doc.byte_size,
     uploaded_at: doc.uploaded_at,
-    chunk_count: 0, // UI re-fetches via listSecondaryDocuments after upload
+    chunk_count: chunks.length,
   };
 }
 
