@@ -6,7 +6,7 @@
  * in `extractText`. Returns null for unsupported types so the upload action
  * can refuse the file with a clear error.
  */
-import { PDFParse } from "pdf-parse";
+import { extractText as unpdfExtractText } from "unpdf";
 import mammoth from "mammoth";
 
 const TEXT_MIMES = new Set([
@@ -41,20 +41,16 @@ export async function extractText(bytes: Buffer, mime: string): Promise<ExtractR
   return { kind: "unsupported", reason: `MIME type "${mime}" is not supported.` };
 }
 
-/** Extract plain text from a PDF buffer using pdf-parse v2's class API. */
+/** Extract plain text from a PDF buffer. Uses unpdf — a serverless-friendly
+ *  wrapper around pdfjs-dist that ships the polyfills (DOMMatrix, etc.) that
+ *  Vercel/Node functions don't expose natively. pdf-parse v2 crashed at
+ *  module evaluation on Vercel for that reason. */
 async function extractPdf(bytes: Buffer): Promise<string> {
-  // pdf-parse v2 is class-based and consumes a Uint8Array. We wrap inside
-  // the try so a malformed-PDF throw during construction still routes
-  // through the caller; the parser handle is only destroyed if it was
-  // successfully constructed.
-  let parser: PDFParse | null = null;
-  try {
-    parser = new PDFParse({ data: new Uint8Array(bytes) });
-    const result = await parser.getText();
-    return result.text.trim();
-  } finally {
-    await parser?.destroy();
-  }
+  // mergePages: true makes `text` a single string. The function's overload
+  // surface is loose enough that TS doesn't narrow it, so handle both shapes.
+  const result = await unpdfExtractText(new Uint8Array(bytes), { mergePages: true });
+  const text = result.text as string | string[];
+  return (typeof text === "string" ? text : text.join("\n\n")).trim();
 }
 
 /** Extract plain text from a DOCX buffer via mammoth. No teardown — mammoth's
