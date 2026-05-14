@@ -10,8 +10,31 @@ interface Message {
 
 const WELCOME: Message = {
   role: "bot",
-  content: "Hey! I'm **RAG** — I know everything about Rithvik. Ask me about his projects, skills, or background.",
+  content:
+    "Hey! I'm **RAG** — I know everything about Rithvik. Treat me like a talking portfolio: ask me about his projects, skills, or background, and I'll answer like he would.",
 };
+
+/* Starter prompts shown as chips on the welcome screen. Answers are
+   precomputed (no API call) so they feel instant. Keep them grounded in
+   real site_content — update if the underlying data drifts. */
+const STARTERS: { q: string; a: string }[] = [
+  {
+    q: "What does Rithvik study?",
+    a: "Rithvik is studying **Computer Science and Math at Purdue University** in West Lafayette, IN. He's building at the intersection of AI, systems, and real-world problems.",
+  },
+  {
+    q: "What's his tech stack?",
+    a: "Rithvik works across the stack with:\n- `TypeScript`, `JavaScript`, `Python`, `Java`, `C`\n- `React`, `Next.js`, `Node.js`\n- `Supabase`, `SQL`, `AWS`, `Vercel`\n- `NumPy`, `Pandas`, `scikit-learn`, `OpenAI API` for ML/AI work",
+  },
+  {
+    q: "What is rithvik.ai?",
+    a: "**rithvik.ai** is Rithvik's full-stack AI-powered personal platform — a portfolio, a live admin UI for inline editing, and the RAG chatbot you're talking to right now. Built with `Next.js`, `Supabase`, and the `OpenAI API`.",
+  },
+  {
+    q: "How can I reach him?",
+    a: "You can email Rithvik directly at [rithvikpkx@gmail.com](mailto:rithvikpkx@gmail.com), or check the **Contact** section at the bottom of the page for his other links.",
+  },
+];
 
 // Resize bounds. Min keeps the panel usable; max stays under most viewports.
 const SIZE = {
@@ -168,6 +191,21 @@ export default function RagBot() {
     }
   }
 
+  /** Append a starter Q+A pair instantly without hitting the API. Used by
+   *  the precomputed example chips on the welcome screen. */
+  function handleStarterClick(starter: { q: string; a: string }) {
+    if (loading) return;
+    setInput("");
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: starter.q },
+      { role: "bot", content: starter.a },
+    ]);
+  }
+
+  // Show chips only on the welcome screen (no real exchange has happened yet).
+  const showStarters = messages.length === 1 && messages[0].role === "bot";
+
   return (
     <div className="rag-launcher">
       <AnimatePresence>
@@ -227,6 +265,22 @@ export default function RagBot() {
               ))}
               <div ref={messagesEndRef} />
             </div>
+
+            {showStarters && (
+              <div className="rag-starters" aria-label="Example questions">
+                {STARTERS.map((s) => (
+                  <button
+                    key={s.q}
+                    type="button"
+                    className="rag-chip"
+                    onClick={() => handleStarterClick(s)}
+                    disabled={loading}
+                  >
+                    {s.q}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="rag-input-row">
               <input
