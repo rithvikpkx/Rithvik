@@ -247,7 +247,7 @@ export function Globe({ markers, className }: GlobeProps) {
       globeRef.current.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [markers, rs]);
+  }, [markers, r, rs]);
 
   return (
     <div className={`globe-wrap${className ? " " + className : ""}`}>
