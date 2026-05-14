@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import type { CSSProperties } from "react";
 
@@ -28,6 +28,14 @@ const DRAG_STEP_PX = 38;         // px of vertical drag per theme step;
                                  //   also the minimum movement before we
                                  //   commit to "this is a drag, not a click"
 
+// First-visit wiggle: a small one-time nudge so visitors notice the picker.
+// Pure client-side, single localStorage flag, no DB or network.
+const WIGGLE_SHOWN_KEY = "rithvik-theme-wiggle-shown";
+const WIGGLE_DELAY_MS  = 5000;  // wait after first paint
+// Animation duration is owned by CSS (.is-wiggling animation). Keep this in
+// sync so we can clear the class once the animation finishes.
+const WIGGLE_DURATION_MS = 1800;
+
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
   const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
@@ -44,6 +52,53 @@ export default function ThemeDial() {
     stateRef.current.sorted = sorted;
     stateRef.current.setTheme = setTheme;
   }, [selectedIdx, sorted, setTheme]);
+
+  // ── First-visit wiggle ───────────────────────────────────────────────────
+  // After 5s of being on the site, if the user hasn't switched themes yet
+  // AND has never seen the wiggle before, nudge the dormant pill once. The
+  // moment they change themes (or have done so before), the wiggle is
+  // permanently suppressed.
+  const [isWiggling, setIsWiggling] = useState(false);
+  const wiggleAbortedRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (localStorage.getItem(WIGGLE_SHOWN_KEY)) return;
+    } catch { return; }
+
+    const initialSlug = currentSlug;
+    let kickoff: ReturnType<typeof setTimeout> | null = null;
+    let endTimer: ReturnType<typeof setTimeout> | null = null;
+
+    kickoff = setTimeout(() => {
+      // If the user switched themes during the wait, suppress and remember.
+      if (wiggleAbortedRef.current || stateRef.current.sorted[stateRef.current.selectedIdx]?.slug !== initialSlug) {
+        try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
+        return;
+      }
+      try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
+      setIsWiggling(true);
+      endTimer = setTimeout(() => setIsWiggling(false), WIGGLE_DURATION_MS);
+    }, WIGGLE_DELAY_MS);
+
+    return () => {
+      if (kickoff) clearTimeout(kickoff);
+      if (endTimer) clearTimeout(endTimer);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentional one-shot
+
+  // Mark wiggle as shown the instant the user actually changes themes — both
+  // pre-wiggle (suppress entirely) and during (stop early). Pure local check.
+  const lastSeenSlugRef = useRef(currentSlug);
+  useEffect(() => {
+    if (currentSlug !== lastSeenSlugRef.current) {
+      lastSeenSlugRef.current = currentSlug;
+      wiggleAbortedRef.current = true;
+      setIsWiggling(false);
+      try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
+    }
+  }, [currentSlug]);
 
   // ── Wheel: React's onWheel is passive in React 17+, so attach manually
   //   with { passive: false } to be able to preventDefault on the page scroll.
@@ -132,7 +187,7 @@ export default function ThemeDial() {
 
   return (
     <aside
-      className="theme-dial-aside"
+      className={`theme-dial-aside${isWiggling ? " is-wiggling" : ""}`}
       role="radiogroup"
       aria-label="Theme selector"
     >
