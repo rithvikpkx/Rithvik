@@ -32,32 +32,32 @@ function luminance([r, g, b]: RGB): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-/** Project (lat,lng) → 3D unit sphere coords in cobe's convention, rotated
- *  by the current phi (around Y) and the fixed theta (around X). Returns
- *  screen-relative (x,y) in [-1, 1] and a visibility flag (true if the point
- *  is on the front-facing hemisphere). */
+/** Project (lat,lng) → 3D unit-sphere screen coords in cobe v2's frame.
+ *  Mirrors cobe's internal U() + O() math exactly so the DOM overlay sits on
+ *  top of cobe's canvas-drawn markers rather than 180° away. Visibility uses
+ *  cobe's back-face test (z ≥ 0 is the back hemisphere). */
 function project(
   lat: number,
   lng: number,
   phi: number,
   theta: number,
 ): { x: number; y: number; visible: boolean } {
-  const phiS = ((90 - lat) * Math.PI) / 180;
-  const thetaS = ((lng + 180) * Math.PI) / 180;
-  let x = Math.sin(phiS) * Math.cos(thetaS);
-  let y = Math.cos(phiS);
-  let z = Math.sin(phiS) * Math.sin(thetaS);
-  // Rotate around Y by phi (spinning axis).
+  const latR = (lat * Math.PI) / 180;
+  const lngR = (lng * Math.PI) / 180;
+  const cosLat = Math.cos(latR);
+  // Initial position on unit sphere in cobe's frame.
+  const x0 = cosLat * Math.cos(lngR);
+  const y0 = Math.sin(latR);
+  const z0 = -cosLat * Math.sin(lngR);
+  // Rotate around Y by phi.
   const cosP = Math.cos(phi), sinP = Math.sin(phi);
-  const xR = x * cosP - z * sinP;
-  const zR = x * sinP + z * cosP;
-  x = xR; z = zR;
-  // Rotate around X by theta (cobe's static tilt).
+  const x1 = cosP * x0 + sinP * z0;
+  const z1 = -sinP * x0 + cosP * z0;
+  // Rotate around X by theta (applied after phi, matching cobe).
   const cosT = Math.cos(theta), sinT = Math.sin(theta);
-  const yR = y * cosT - z * sinT;
-  const zR2 = y * sinT + z * cosT;
-  y = yR; z = zR2;
-  return { x, y, visible: z < 0 };
+  const y2 = cosT * y0 - sinT * z1;
+  const z2 = sinT * y0 + cosT * z1;
+  return { x: x1, y: y2, visible: z2 < 0 };
 }
 
 const THETA = 0.3;
@@ -94,19 +94,15 @@ function readPalette() {
 }
 
 function buildConfig(
-  markers: GlobeMarker[],
+  _markers: GlobeMarker[],
   palette: ReturnType<typeof readPalette>,
   size: number,
 ): COBEOptions {
-  const cobeMarkers = markers.map((m) => {
-    // Size by kind. Color cannot be per-marker through the global markerColor,
-    // so we set markerColor to accent here and (Task 9+) rely on the DOM
-    // overlay layer for kind-specific visual differentiation. Size still
-    // encodes kind so home/current dots read larger on the canvas itself.
-    const dotSize = m.kind === "current" ? 0.12 : m.kind === "home" ? 0.10 : 0.06;
-    return { location: [m.lat, m.lng] as [number, number], size: dotSize };
-  });
-
+  // Markers are rendered via the DOM overlay layer (kind-aware colors, hover
+  // tooltips, keyboard focus), not by cobe — cobe can only paint one global
+  // markerColor and ignores per-marker color metadata. Passing an empty list
+  // here removes the redundant accent-only canvas dots that would otherwise
+  // sit underneath every DOM marker.
   return {
     width: size,
     height: size,
@@ -120,7 +116,7 @@ function buildConfig(
     baseColor: palette.text,
     markerColor: palette.accent,
     glowColor: palette.bg,
-    markers: cobeMarkers,
+    markers: [],
   };
 }
 
@@ -198,7 +194,7 @@ export function Globe({ markers, className }: GlobeProps) {
       const w = widthRef.current;
       const cx = w / 2;
       const cy = w / 2;
-      const radius = w * 0.42; // tuned to cobe's drawn globe radius
+      const radius = w * 0.425; // cobe sphere radius 0.8 + marker elevation 0.05, in CSS px
       for (let i = 0; i < markers.length; i++) {
         const btn = buttonRefs.current[i];
         if (!btn) continue;
