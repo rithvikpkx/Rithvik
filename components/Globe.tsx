@@ -32,6 +32,36 @@ function luminance([r, g, b]: RGB): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
+/** Project (lat,lng) → 3D unit sphere coords in cobe's convention, rotated
+ *  by the current phi (around Y) and the fixed theta (around X). Returns
+ *  screen-relative (x,y) in [-1, 1] and a visibility flag (true if the point
+ *  is on the front-facing hemisphere). */
+function project(
+  lat: number,
+  lng: number,
+  phi: number,
+  theta: number,
+): { x: number; y: number; visible: boolean } {
+  const phiS = ((90 - lat) * Math.PI) / 180;
+  const thetaS = ((lng + 180) * Math.PI) / 180;
+  let x = Math.sin(phiS) * Math.cos(thetaS);
+  let y = Math.cos(phiS);
+  let z = Math.sin(phiS) * Math.sin(thetaS);
+  // Rotate around Y by phi (spinning axis).
+  const cosP = Math.cos(phi), sinP = Math.sin(phi);
+  const xR = x * cosP - z * sinP;
+  const zR = x * sinP + z * cosP;
+  x = xR; z = zR;
+  // Rotate around X by theta (cobe's static tilt).
+  const cosT = Math.cos(theta), sinT = Math.sin(theta);
+  const yR = y * cosT - z * sinT;
+  const zR2 = y * sinT + z * cosT;
+  y = yR; z = zR2;
+  return { x, y, visible: z < 0 };
+}
+
+const THETA = 0.3;
+
 function readPalette() {
   const root = document.documentElement;
   const css = getComputedStyle(root);
@@ -80,6 +110,8 @@ export interface GlobeProps {
 
 export function Globe({ markers, className }: GlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const widthRef = useRef(0);
   const phiRef = useRef(0);
   const pointerInteracting = useRef<number | null>(null);
@@ -119,11 +151,29 @@ export function Globe({ markers, className }: GlobeProps) {
     let raf = 0;
     const tick = () => {
       if (pointerInteracting.current === null) phiRef.current += 0.005;
+      const phi = phiRef.current + rs.get();
       globeRef.current.update({
-        phi: phiRef.current + rs.get(),
+        phi,
         width: widthRef.current * 2,
         height: widthRef.current * 2,
       });
+
+      // Drive the DOM overlay in lockstep with the canvas frame.
+      const w = widthRef.current;
+      const cx = w / 2;
+      const cy = w / 2;
+      const radius = w * 0.42; // tuned to cobe's drawn globe radius
+      for (let i = 0; i < markers.length; i++) {
+        const btn = buttonRefs.current[i];
+        if (!btn) continue;
+        const p = project(markers[i].lat, markers[i].lng, phi, THETA);
+        const screenX = cx + p.x * radius;
+        const screenY = cy - p.y * radius;
+        btn.style.transform = `translate3d(${screenX}px, ${screenY}px, 0) translate(-50%, -50%)`;
+        btn.style.opacity = p.visible ? "1" : "0";
+        btn.style.pointerEvents = p.visible ? "auto" : "none";
+      }
+
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -163,6 +213,17 @@ export function Globe({ markers, className }: GlobeProps) {
         onMouseMove={(e) => updateMovement(e.clientX)}
         onTouchMove={(e) => { if (e.touches[0]) updateMovement(e.touches[0].clientX); }}
       />
+      <div ref={overlayRef} className="globe-overlay" aria-label="Globe markers">
+        {markers.map((m, i) => (
+          <button
+            key={m.id}
+            ref={(el) => { buttonRefs.current[i] = el; }}
+            type="button"
+            className={`globe-marker globe-marker-${m.kind}`}
+            aria-label={`${m.city}${m.region ? ", " + m.region : ""}, ${m.country}`}
+          />
+        ))}
+      </div>
     </div>
   );
 }

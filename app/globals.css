@@ -1385,6 +1385,31 @@ a { color: inherit; text-decoration: none; }
   pointer-events: auto;
   cursor: grab;
 }
+.globe-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* individual markers re-enable when visible */
+}
+.globe-marker {
+  position: absolute;
+  top: 0; left: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent);
+  cursor: pointer;
+  transition: opacity 200ms ease, box-shadow 200ms ease;
+  outline-offset: 4px;
+}
+.globe-marker-home    { background: var(--accent); }
+.globe-marker-current { background: var(--green); box-shadow: 0 0 14px color-mix(in srgb, var(--green) 70%, transparent); }
+.globe-marker-default { background: color-mix(in srgb, var(--accent) 70%, var(--bg)); width: 12px; height: 12px; }
+.globe-marker:hover, .globe-marker:focus-visible {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 90%, transparent);
+}
 
 /* ===== BENTO EDITOR ===== */
 .bento-stack-edit {
