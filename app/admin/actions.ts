@@ -6,6 +6,7 @@ import {
   buildProjectText, buildExperienceText, buildEducationText, buildSiteContentText,
 } from "@/lib/embeddings";
 import { requireAuth } from "./auth-helper";
+import type { GlobeMarker, GlobeMarkerKind } from "@/lib/types";
 
 type PublishableRow = { id: string; published: boolean };
 
@@ -194,4 +195,39 @@ export async function deleteEducation(id: string) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`education ${id} delete`, () => deletePrimary("education", id));
+}
+
+const VALID_KINDS: ReadonlySet<GlobeMarkerKind> = new Set(["home", "current", "default"]);
+
+/** Replace the full markers list. Validates each marker (lat/lng range, IANA
+ *  timezone, kind enum) then upserts as a JSON array under site_content key
+ *  bento.globe_markers. The existing safeEmbed + embedPrimary chain runs the
+ *  globe-aware prose builder (see lib/embeddings.ts) so RAG stays in sync. */
+export async function updateGlobeMarkers(markers: GlobeMarker[]): Promise<void> {
+  await requireAuth();
+
+  for (const m of markers) {
+    if (!m.id || typeof m.id !== "string") throw new Error("marker id missing");
+    if (!m.city?.trim()) throw new Error(`marker ${m.id}: city required`);
+    if (!m.country?.trim()) throw new Error(`marker ${m.id}: country required`);
+    if (typeof m.lat !== "number" || m.lat < -90 || m.lat > 90) {
+      throw new Error(`marker ${m.id}: lat must be a number in [-90, 90]`);
+    }
+    if (typeof m.lng !== "number" || m.lng < -180 || m.lng > 180) {
+      throw new Error(`marker ${m.id}: lng must be a number in [-180, 180]`);
+    }
+    if (!VALID_KINDS.has(m.kind)) {
+      throw new Error(`marker ${m.id}: invalid kind ${m.kind}`);
+    }
+    try {
+      // Throws RangeError for invalid IANA names. Constructing is free.
+      new Intl.DateTimeFormat("en-US", { timeZone: m.timezone });
+    } catch {
+      throw new Error(`marker ${m.id}: invalid IANA timezone ${m.timezone}`);
+    }
+  }
+
+  // Reuse the existing upsertSiteContent path — it handles the DB write,
+  // revalidate, and (post-Task 5) the globe-aware embed in one shot.
+  await upsertSiteContent("bento.globe_markers", JSON.stringify(markers));
 }
