@@ -11,7 +11,8 @@ interface EditModeCtx {
   panelOpen: boolean;
   openPanel: () => void;
   closePanel: () => void;
-  login: (email: string, password: string) => Promise<string | null>;
+  requestOtp: (email: string) => Promise<string | null>;
+  verifyOtpCode: (email: string, code: string) => Promise<string | null>;
   logout: () => void;
 }
 
@@ -35,6 +36,23 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   );
 
   useEffect(() => {
+    // Magic-link landing: /auth/callback redirected here with ?auth=ok after
+    // exchanging the PKCE code for a session. The server-side cookie write
+    // means the in-tab SDK will fire INITIAL_SESSION (not SIGNED_IN) on
+    // mount; without this short-circuit we'd filter the session out because
+    // the per-tab flag is empty in a brand-new tab. Pre-arm the flag so the
+    // session is captured when it arrives.
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("auth") === "ok") {
+        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        tabAuth.current = true;
+        setIsEditing(true);
+        url.searchParams.delete("auth");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (event === "SIGNED_IN") {
         // Fresh login — mark this tab as authenticated
@@ -56,12 +74,38 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<string | null> => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() ?? "";
+
+  const requestOtp = async (email: string): Promise<string | null> => {
+    const normalized = email.trim().toLowerCase();
+    // Belt + suspenders on top of shouldCreateUser: false — fail instantly
+    // without burning Supabase's 4-per-hour OTP rate limit.
+    if (ADMIN_EMAIL && normalized !== ADMIN_EMAIL) {
+      return "This email isn't allowed.";
+    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalized,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    return error?.message ?? null;
+  };
+
+  const verifyOtpCode = async (email: string, code: string): Promise<string | null> => {
+    const normalized = email.trim().toLowerCase();
+    const token = code.replace(/\s+/g, "").trim();
+    const { error } = await supabase.auth.verifyOtp({
+      email: normalized,
+      token,
+      type: "email",
+    });
     if (error) return error.message;
-    setSession(data.session);
-    setIsEditing(true);
+    // onAuthStateChange handles tab-auth + session capture; flip the UI here
+    // so the panel closes immediately rather than waiting for the next render.
     setPanelOpen(false);
+    setIsEditing(true);
     return null;
   };
 
@@ -84,7 +128,8 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     <EditModeContext.Provider value={{
       isEditing, session, panelOpen,
       openPanel, closePanel: () => setPanelOpen(false),
-      login, logout,
+      requestOtp, verifyOtpCode,
+      logout,
     }}>
       {children}
     </EditModeContext.Provider>
