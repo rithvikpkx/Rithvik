@@ -2349,8 +2349,11 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 860px) {
-  /* Full-height hero on phones — the large title needs the room; peek is a desktop nicety */
-  .hero { min-height: 100svh; }
+  /* Smaller peek + tighter nav gap on phones — the desktop 320px/148px values are too large here */
+  .hero {
+    min-height: calc(100svh - 200px);
+    padding-top: 92px;
+  }
 
   .bento-location,
   .bento-building,
