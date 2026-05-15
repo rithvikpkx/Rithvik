@@ -584,9 +584,9 @@ a { color: inherit; text-decoration: none; }
 }
 .bento-card:hover::after { opacity: 1; }
 
-.bento-location  { grid-column: span 5; grid-row: span 2; }
-.bento-building  { grid-column: span 7; }
-.bento-growth    { grid-column: span 7; }
+.bento-location  { grid-column: span 6; grid-row: span 2; }
+.bento-building  { grid-column: span 6; }
+.bento-growth    { grid-column: span 6; }
 .bento-marquee   { grid-column: span 8; }
 .bento-interests { grid-column: span 4; }
 
@@ -897,7 +897,32 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-3px);
 }
 
-.project-header { display: flex; justify-content: flex-end; }
+/* Linkified cards: reset anchor defaults and reveal the corner arrow on hover. */
+.project-card-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.project-card-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.project-link-arrow {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 1rem;
+  margin-right: auto;
+  opacity: 0.5;
+  transition: transform 240ms ease, opacity 240ms ease, color 240ms ease;
+}
+.project-card-link:hover .project-link-arrow,
+.project-card-link:focus-visible .project-link-arrow {
+  opacity: 1;
+  color: var(--accent);
+  transform: translate(2px, -2px);
+}
+
+.project-header { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 .project-badge {
   background: var(--accent-glow);
   border: 1px solid rgba(194,48,94,0.24);

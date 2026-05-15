@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
-import FadeIn from "./FadeIn";
 import {
   createProject,
   updateProject,
@@ -11,6 +11,13 @@ import {
   type ProjectInput,
 } from "@/app/admin/actions";
 import type { Project } from "@/lib/types";
+
+const FALLBACK_LINK = "https://github.com/rithvikpkx";
+
+/** Pick the most useful external URL for a project card: github > live > demo > fallback. */
+function primaryLink(links: Record<string, string>): string {
+  return links.github || links.live || links.demo || FALLBACK_LINK;
+}
 
 /** Strips server-generated fields to produce a ProjectInput for server actions. */
 function toInput(p: Project): ProjectInput {
@@ -85,17 +92,28 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
   if (!isEditing) {
     return (
       <div className="projects-grid">
-        {projects.map(({ slug, badge, title, description, tags }, i) => (
-          <FadeIn key={slug} delay={i * 0.1} className="project-card">
+        {projects.map(({ slug, badge, title, description, tags, links }, i) => (
+          <motion.a
+            key={slug}
+            href={primaryLink(links)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="project-card project-card-link"
+            initial={{ opacity: 0, filter: "blur(10px)", y: 18 }}
+            whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.65, ease: "easeOut", delay: i * 0.1 }}
+          >
             <div className="project-header">
               <span className="project-badge">{badge}</span>
+              <span className="project-link-arrow" aria-hidden="true">↗</span>
             </div>
             <h3>{title}</h3>
             <p>{description}</p>
             <div className="project-tags">
               {tags.map((t) => <span key={t}>{t}</span>)}
             </div>
-          </FadeIn>
+          </motion.a>
         ))}
       </div>
     );
