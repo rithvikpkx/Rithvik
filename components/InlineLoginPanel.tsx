@@ -118,7 +118,7 @@ export default function InlineLoginPanel() {
             {step === "code" && (
               <form onSubmit={submitCode} className="login-panel-form">
                 <p className="otp-instructions">
-                  Check <strong>{email}</strong> for a 6-digit code, or click the link in the email.
+                  Check <strong>{email}</strong> for the code, or click the link in the email.
                 </p>
                 <div className="admin-field">
                   <label htmlFor="il-code">Code</label>
@@ -126,13 +126,13 @@ export default function InlineLoginPanel() {
                     id="il-code"
                     type="text"
                     inputMode="numeric"
-                    pattern="\d{6}"
-                    maxLength={6}
+                    pattern="\d{6,10}"
+                    maxLength={10}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                     required
                     autoComplete="one-time-code"
-                    placeholder="123456"
+                    placeholder="12345678"
                     autoFocus
                     className="otp-input"
                   />
@@ -140,7 +140,7 @@ export default function InlineLoginPanel() {
 
                 {error && <p className="admin-error">{error}</p>}
 
-                <button type="submit" className="admin-submit" disabled={loading || code.length !== 6}>
+                <button type="submit" className="admin-submit" disabled={loading || code.length < 6}>
                   {loading ? "Verifying…" : "Verify →"}
                 </button>
                 <button
