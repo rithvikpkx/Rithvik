@@ -13,8 +13,6 @@
 - Per CLAUDE.md, all feature work happens on `dev`. Do NOT merge to `main` from inside this plan — that requires explicit user approval at the end.
 - Commit per task using the existing `feat:` / `fix:` / `chore:` prefixes seen in `git log`.
 
-**Spec:** `docs/superpowers/specs/bento-globe-design.md`
-
 ---
 
 ## File Structure (decisions locked in)
