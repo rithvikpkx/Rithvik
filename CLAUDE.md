@@ -120,15 +120,22 @@ A small one-time `translate + rotate` shake on the dormant dial draws attention 
 
 An earlier iteration auto-rotated the dial and selected SynthWave '84 by itself; it was too invasive and was rolled back. See Pitfalls.
 
-### Inline editing (`feat-inline-editing.md`, completed)
+### Inline editing (passwordless OTP, completed)
 
-- `EditModeProvider` (client) owns `isEditing`, `panelOpen`, Supabase session, login/logout
-- Session policy: stays alive **per tab** (`sessionStorage` flag `rithvik-tab-auth`); closing the tab clears it so the next tab requires fresh login. The Supabase session itself is not signed out on "exit edit mode" — so re-entering the dial doesn't reopen the login panel
-- `InlineLoginPanel` — top-right glass card, springs from the nav button
+- `EditModeProvider` (client) owns `isEditing`, `panelOpen`, Supabase session, and the OTP flow
+- Login is **passwordless**: enter email → Supabase emails both a numeric code AND a magic link (single token, two completion paths). Enter the code in the panel for same-tab auth, or click the link to authenticate a fresh tab. Supabase's password column is unused by our UI but left in place as an emergency escape hatch
+- Email delivery uses **Resend** as the custom SMTP provider (Supabase Auth → Emails → SMTP Settings). Verified domain `rithvik.ai` with SPF/DKIM/return-path DNS records on Vercel. Mail comes from `auth@rithvik.ai`. The built-in Supabase mailer is bypassed entirely — its rate limits and deliverability don't apply
+- The email template (Supabase Auth → Email Templates → Magic Link) is customized to render both `{{ .Token }}` and `{{ .ConfirmationURL }}`. The default template only includes the link; without the template edit, the code-entry path has no code to enter
+- OTP length is whatever Supabase generates (configurable in Auth → Providers → Email; default is 8 in newer projects). The panel input accepts 6–10 digits to stay robust to the dashboard setting
+- Session policy: stays alive **per tab** (`sessionStorage` flag `rithvik-tab-auth`); closing the tab clears it so the next tab requires fresh auth. The Supabase session itself is not signed out on "exit edit mode" — so re-entering the dial doesn't reopen the login panel
+- Client-side allow-list: `NEXT_PUBLIC_ADMIN_EMAIL` is matched against the form input before the Supabase call. Defends against accidental OTP-rate-limit consumption and gives instant "not allowed" feedback. Belt + suspenders on top of `shouldCreateUser: false`
+- Magic-link landing tab: the callback redirects to `/?auth=ok`. `EditModeProvider` detects the marker on mount, pre-arms `tabAuth`, and strips the param via `history.replaceState`. Without this, the `INITIAL_SESSION` event from the SDK is filtered out and the new tab stays unauthenticated despite having valid cookies — see the Pitfalls section
+- `InlineLoginPanel` — top-right glass card, two-step (email → code) with an `← Use a different email` back button on step 2
 - `EditBar` — bottom floating indicator with "Exit editing"
 - `EditableText` — `contentEditable` wrapper, saves on blur, Escape reverts, Enter blurs unless `multiline`
 - `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
-- Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session) and `revalidatePath("/")`
+- Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session, unchanged from password days) and `revalidatePath("/")`
+- Magic-link callback at `app/auth/callback/route.ts`: exchanges PKCE code for session, redirects to `/?auth=ok` (success) or `/?auth_error=…` (failure surfaced by the panel)
 
 ### RAG bot (`components/RagBot.tsx`, `components/SimpleMarkdown.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
@@ -158,7 +165,7 @@ Two parallel pgvector stores in Supabase, both indexed with **HNSW** (NOT IVFFla
 
 Originals of secondary uploads live in the private `secondary` Supabase Storage bucket. RLS denies anon access to all three RAG tables; the chat route and server actions reach them via `adminClient()` (service-role).
 
-Env vars in `.env.local` (see `.env.local.example`): `OPENAI_API_KEY` (used for embeddings, HyDE, image captioning, and chat), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. `DEEPSEEK_API_KEY` is dead code now — left in the example for future reference but not consumed anywhere.
+Env vars in `.env.local` (see `.env.local.example`): `OPENAI_API_KEY` (used for embeddings, HyDE, image captioning, and chat), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL` (admin OTP allow-list). `DEEPSEEK_API_KEY` is dead code now — left in the example for future reference but not consumed anywhere.
 
 **One-time setup:** apply `supabase/rag_pipeline_migration.sql` in the Supabase SQL editor (or via `supabase db query --linked -f ...` with the CLI), then enter edit mode and hit "Re-embed all primary content" in `SecondaryContextPanel`. After that, every inline edit keeps primary in sync automatically, and the same panel handles secondary uploads + deletions. No terminal scripts needed.
 
@@ -259,6 +266,17 @@ docs/explanations/
 - **Vercel deployments are bundled separately per route.** During the `pdf-parse` DOMMatrix crash, the `/api/chat` endpoint kept working because it doesn't import `lib/file-extractors.ts`; only the server-actions bundle (which `app/admin/rag-actions.ts` loads into) was broken. So "the chat bot is alive" doesn't mean "all server actions work."
 - **`buildSiteContentText` is async (since the globe shipped).** It returns `Promise<string>` because the `bento.globe_markers` branch joins the `education` table for richer prose. Both call sites — `upsertSiteContent` in `app/admin/actions.ts` and the site_content backfill loop in `app/admin/rag-actions.ts` — await it. If you add a new caller, await the result. TypeScript will catch the omission, but the failure mode without `await` is a `[object Promise]` string ending up in the embedding text, which silently degrades retrieval quality without breaking the build.
 
+### Auth (passwordless OTP)
+
+- **Magic-link landing tab needs the `?auth=ok` marker.** The callback route writes auth cookies server-side, then redirects to home. The in-tab Supabase SDK reads those cookies and fires `INITIAL_SESSION` (not `SIGNED_IN`, because the SDK didn't run the sign-in itself). The per-tab session policy in `EditModeProvider` filters `INITIAL_SESSION` events that don't have a pre-existing `sessionStorage` flag — so without an extra signal the new tab stays unauthenticated despite holding valid cookies. The `?auth=ok` query param is that signal: the callback redirects to `/?auth=ok` on success, and `EditModeProvider` pre-arms the tab flag + flips `isEditing` on mount when it sees the marker, then strips it via `history.replaceState`. If you ever change the callback's redirect target, preserve the marker or the magic-link path silently breaks.
+- **PKCE magic links require the same browser session.** `signInWithOtp` stores a `code_verifier` cookie when the OTP is requested. `exchangeCodeForSession` in the callback route needs that same cookie to succeed. So a magic link clicked in a different browser or device than the one that requested it fails with "both auth code and code verifier should be non-empty". The 6–10-digit code path is the cross-device fallback — `verifyOtp({ email, token, type })` doesn't depend on the code_verifier cookie.
+- **Supabase rejects redirects not on the allow-list.** Preview URLs change per deploy. Use a wildcard like `https://rithvik-*.vercel.app/auth/callback` in Authentication → URL Configuration → Redirect URLs. Without it, the magic link bounces to a Supabase error page instead of `/auth/callback`.
+- **`shouldCreateUser: false` is mandatory.** Without it, anyone who types an arbitrary email gets a Supabase account created (no password — but the row exists, polluting `auth.users`). With it, Supabase returns a 422 for unknown emails. The client-side `NEXT_PUBLIC_ADMIN_EMAIL` allow-list catches it before the network call so we don't burn the 4/hour/email rate limit on imposters.
+- **Email template default ships without `{{ .Token }}`.** Supabase's default Magic Link template renders only the link. The OTP code path needs `{{ .Token }}` in the template body, or the email arrives with no code to enter. Re-paste the custom template (block in this file's history near the OTP plan) if anyone resets it.
+- **OTP length is configurable per project.** Supabase Auth → Providers → Email → "OTP Length" defaults to 8 in newer projects, used to be 6. The panel's input accepts 6–10 digits to stay robust to the dashboard setting; don't hard-code a single length.
+- **Custom SMTP via Resend.** Built-in Supabase mailer is bypassed. Emails come from `auth@rithvik.ai` via Resend's SMTP. SPF/DKIM/return-path DNS records live on Vercel DNS for `rithvik.ai`. If deliverability ever degrades, check Resend dashboard first (the per-message log shows bounce/spam reports), then DNS record health (`dig TXT resend._domainkey.rithvik.ai`), then Supabase's SMTP test ping.
+- **OTP rate limit is per email, not per tab.** Multiple "Send me a code" clicks within the hour all hit the same 4-request bucket. The 5th throws "Email rate limit exceeded." Wait 15 minutes or use the code from an earlier email.
+
 ## Where to look first when something breaks
 
 - Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
@@ -276,3 +294,9 @@ docs/explanations/
 - **Secondary panel doesn't appear** → check `useEditMode().isEditing`. The panel self-gates; if you're not logged in via `InlineLoginPanel` it won't render.
 - **Chat route logs `[rag] match_secondary rpc error:`** → the table or RPC is missing; reapply the migration. Note the chat route gracefully degrades (returns answers using only the source that worked) so the bot still responds.
 - **Chat route logs `[rag] hyde failed`** → HyDE expansion errored (likely an OpenAI 429 or 401). Retrieval falls back to embedding the raw question — still works, just retrieval quality on question-form queries drops. Check `OPENAI_API_KEY` and quota.
+- **OTP email never arrives** → check Resend dashboard → Logs for the send event. If Resend shows "delivered" but inbox is empty, check spam, then your DNS-record health (`dig TXT resend._domainkey.rithvik.ai`). If Resend shows nothing, Supabase didn't hand it off — check Supabase Auth → SMTP Settings is enabled, the API key is correct, and the test ping succeeds. If Supabase shows a 422 in its auth logs, the email isn't in `auth.users` (or `shouldCreateUser: false` rejected it).
+- **Magic link redirects to a Supabase error page instead of `/auth/callback`** → the redirect URL isn't on the allow-list in Supabase Dashboard → Authentication → URL Configuration. Add the exact URL or a matching wildcard (`https://rithvik-*.vercel.app/auth/callback`), then re-request the OTP — existing email links bake in the redirect at send time.
+- **Magic link clicks but new tab doesn't enter edit mode** → the `?auth=ok` marker was either stripped before `EditModeProvider` saw it, or the callback never reached the success path. Check Vercel function logs for `/auth/callback` errors. The fix usually involves preserving the marker — see Pitfalls > Auth.
+- **OTP code rejected as expired/invalid right after typing it** → likely length mismatch with the panel's accepted range. Confirm OTP length in Supabase Auth → Providers → Email is between 6 and 10. If you changed it to >10, widen the input's `pattern`/`maxLength` in `InlineLoginPanel.tsx`.
+- **"Email rate limit exceeded" on resend attempts** → Supabase's per-email-per-hour cap (default 4). Wait 15 min or use an already-sent (still-unexpired) code from your inbox.
+- **OTP works but `requireAuth()` in server actions redirects to `/` afterward** → cookie scope mismatch. Confirm the browser client in `lib/supabase.ts` is `createBrowserClient` from `@supabase/ssr` (cookie storage), not `createClient` from `@supabase/supabase-js` (localStorage). Same trap as the pre-OTP setup; reconfirm if anyone touches that module.
