@@ -5,8 +5,10 @@ Guidance for Claude Code when working in this repo. Project: a personal portfoli
 ## Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
-- **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie-based sessions, `@supabase/supabase-js` server admin client
+- **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie-based sessions, `@supabase/supabase-js` server admin client. Auth is **passwordless OTP** (email code + magic link) since the OTP shipment; the password column on the admin row is unused by the UI.
+- **Resend** as the custom SMTP provider for Supabase Auth emails. Verified domain `rithvik.ai`; mail sends from `auth@rithvik.ai`.
 - **Motion** (`motion/react`) for animation
+- **cobe** for the WebGL-rendered 3D globe in the Bento section (cobe v2; we drive our own rAF loop because v2 has no `onRender` callback)
 - **LangChain** (`@langchain/openai`) wrapping **OpenAI** `gpt-4o-mini` for chat completions, HyDE expansion, and image captioning; OpenAI `text-embedding-3-small` for embeddings in the RAG bot (`app/api/chat`). DeepSeek was tried earlier and rolled back — see Pitfalls.
 - **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2` which crashed on Vercel due to a `DOMMatrix` reference at module evaluation).
 - Deployed on **Vercel** (`dev` branch deploys preview, `main` deploys production)
@@ -182,7 +184,7 @@ Tables (all in Supabase public schema):
 - `projects` — portfolio projects
 - `experience` — timeline rows
 - `education` — schools (single-row Purdue today)
-- `site_content` — key/value JSONB store for hardcoded text that became editable (`hero.tagline`, `hero.sub_line`, `bento.location`, `bento.building`, `bento.stats`, `bento.stack`, `bento.interests`, `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`)
+- `site_content` — key/value store for editable text + structured JSON (`hero.tagline`, `hero.sub_line`, `bento.building`, `bento.stack`, `bento.interests`, `bento.globe_markers` (JSON array of `{id,city,region,country,lat,lng,timezone,kind}`), `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`). The Growth bento tile is hardcoded narrative content in `components/Bento.tsx`, not a site_content row.
 - `themes` — `{ slug, name, tokens (JSONB), sort_order, published }`. Currently seeded: Rithvik Dark, Rithvik Light, Rithvik Terminal
 - `primary_embeddings` — pgvector store for live website content. One row per projects/experience/education/site_content record; auto-upserted on inline edits. projects/experience/education respect `published` (rows flip to `false` are deleted from the store); site_content has no published column and always embeds. Service-role only.
 - `secondary_documents` — file metadata for user-uploaded RAG materials (filename, mime, storage path, byte size).
@@ -197,6 +199,8 @@ RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-ro
 - `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
 - `supabase/themes_add_editor_themes.sql` — 11 popular editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light). Idempotent; sort orders 10–31 so it sits after the 3 Rithvik themes.
 - `supabase/rag_pipeline_migration.sql` — pgvector extension + `primary_embeddings` + `secondary_documents` + `secondary_embeddings` + **HNSW** indexes + `match_primary` + `match_secondary` RPCs + RLS lockdown + Storage bucket. Apply once; the rest is UI-driven. (NOTE: an earlier version used IVFFlat with `lists = 100`; that caused silent under-retrieval — see Pitfalls. HNSW is the correct choice and is what the committed migration sets up.)
+- `supabase/globe_markers_seed.sql` — idempotent UPSERT of the three seed globe markers (Boston home, West Lafayette default, San Francisco current) into `site_content.bento.globe_markers`.
+- `supabase/resume_seed.sql` — idempotent sync of `projects` + `experience` rows with the canonical resume. Drops stale rows, updates BoilerFrame in place, inserts the five new projects and the four new experience entries (TinyML research, Hack The Future, Code Ninjas IR + Sensei). Re-applying lands the same state.
 
 Apply migrations via the linked CLI: `supabase db query --linked -f supabase/<file>.sql`. The linked project is the `Rithvik` Supabase project (not `rithvikpkx's Project` or `Grind-Catapult26` — there are three under the same org).
 
@@ -204,14 +208,18 @@ Apply migrations via the linked CLI: `supabase db query --linked -f supabase/<fi
 
 ```
 app/
-  layout.tsx          — force-dynamic root layout; fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + EditModeProvider + ThemeDial
-  page.tsx            — fetches site_content; passes to Hero/Bento/Contact; renders all sections
-  globals.css         — tokens, dial, rag chat (theme-independent), all the rest
+  layout.tsx          — force-dynamic root layout; fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial
+  page.tsx            — fetches site_content + parses bento.globe_markers; renders Hero/Bento/Education/Projects/Experience/Contact + RagBot + SecondaryContextPanel
+  globals.css         — tokens, dial, bento (incl. globe + marker overlay + growth tile), rag chat (theme-independent), OTP login (code step), all the rest
+  icon.tsx            — dynamic 64×64 browser-tab favicon ("R." in the default-theme accent)
+  apple-icon.tsx      — 180×180 iOS Home Screen icon (same recipe, no border-radius)
+  opengraph-image.tsx — dynamic OG image for social link previews
   admin/
-    actions.ts        — server actions for all tables (used by inline-editing flow)
+    actions.ts        — server actions for all tables (used by inline-editing flow); includes updateGlobeMarkers
     rag-actions.ts    — server actions: backfillPrimaryEmbeddings, list/upload/delete secondary docs
     auth-helper.ts    — shared requireAuth (used by actions.ts and rag-actions.ts)
   api/chat/route.ts   — HyDE expand → match_primary + match_secondary → gpt-4o-mini stream
+  auth/callback/route.ts — magic-link landing: exchanges PKCE code for session, redirects to /?auth=ok or /?auth_error=…
 
 components/
   Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
@@ -220,8 +228,11 @@ components/
   EditableText.tsx, EditableTagList.tsx
   ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
   FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
-  RagBot.tsx           — floating chat launcher + streaming chat panel (resizable, markdown)
-  SimpleMarkdown.tsx   — hand-rolled markdown renderer used by bot replies
+  Globe.tsx                  — cobe canvas + rAF loop driving rotation + DOM marker projection + tooltip
+  BentoGlobeCard.tsx         — bento-tile wrapper that mounts Globe + (in edit mode) MarkerEditorPanel
+  MarkerEditorPanel.tsx      — edit-mode-only add/edit/delete UI for globe markers
+  RagBot.tsx                 — floating chat launcher + streaming chat panel (resizable, markdown)
+  SimpleMarkdown.tsx         — hand-rolled markdown renderer used by bot replies
   SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
 
 lib/
@@ -232,11 +243,13 @@ lib/
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + gpt-4o-mini image captioner
 
 docs/plans/
+  phase1-design-plan.md           — done (initial design pass before the build began)
+  phase1-development-plan.md      — done (initial development pass before the build began)
   feat-inline-editing.md          — done (stages 1–8 shipped, merged to main as v1.1)
   feat-theme.md                   — done (theme stage 8 polish + a11y complete)
   feat-rag-pipeline.md            — done (RAG pipeline shipped + IVFFlat/DOMMatrix/HyDE rescues)
-  bento-globe-plan.md             — done (interactive cobe globe + DOM marker overlay)
-  feat-passwordless-otp-auth.md   — pending (replace password login with Supabase email OTP)
+  bento-globe-plan.md             — done (interactive cobe globe + DOM marker overlay + edit-mode panel + RAG school join)
+  feat-passwordless-otp-auth.md   — done (Supabase email OTP + magic-link callback + Resend SMTP shipped)
 
 docs/explanations/
   rag-pipeline.md         — deep architectural reference for the RAG bot
