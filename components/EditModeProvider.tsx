@@ -36,6 +36,23 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   );
 
   useEffect(() => {
+    // Magic-link landing: /auth/callback redirected here with ?auth=ok after
+    // exchanging the PKCE code for a session. The server-side cookie write
+    // means the in-tab SDK will fire INITIAL_SESSION (not SIGNED_IN) on
+    // mount; without this short-circuit we'd filter the session out because
+    // the per-tab flag is empty in a brand-new tab. Pre-arm the flag so the
+    // session is captured when it arrives.
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("auth") === "ok") {
+        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        tabAuth.current = true;
+        setIsEditing(true);
+        url.searchParams.delete("auth");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (event === "SIGNED_IN") {
         // Fresh login — mark this tab as authenticated

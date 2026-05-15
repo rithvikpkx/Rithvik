@@ -40,5 +40,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL(`/?auth_error=${encodeURIComponent(error.message)}`, url.origin));
   }
 
-  return NextResponse.redirect(new URL("/", url.origin));
+  // `?auth=ok` tells EditModeProvider that this tab just completed an auth
+  // flow — without it the provider drops INITIAL_SESSION because the per-tab
+  // sessionStorage flag hasn't been set yet (cookies were minted server-side).
+  return NextResponse.redirect(new URL("/?auth=ok", url.origin));
 }
