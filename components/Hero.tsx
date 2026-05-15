@@ -98,20 +98,7 @@ export default function Hero({
               placeholder="Enter a sub-headline…" />
           </motion.div>
 
-          <motion.div className="hero-actions" variants={item}>
-            <motion.a href="#projects" className="btn-shimmer" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
-              View Projects
-            </motion.a>
-            <motion.a href="#contact" className="btn-outline" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
-              Get in Touch
-            </motion.a>
-          </motion.div>
-
         </motion.div>
-      </div>
-
-      <div className="scroll-indicator">
-        <span />
       </div>
     </section>
   );

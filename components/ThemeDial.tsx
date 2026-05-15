@@ -152,7 +152,10 @@ export default function ThemeDial() {
       d.isDragging = true;
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
     }
-    const steps = Math.trunc(dy / DRAG_STEP_PX);
+    // Touch: dragging down rotates the dial down to reveal the upper theme,
+    // matching native scroll convention. Mouse drag keeps its existing direction.
+    const stepDir = e.pointerType === "touch" ? -1 : 1;
+    const steps = Math.trunc(dy / DRAG_STEP_PX) * stepDir;
     const next = Math.max(0, Math.min(sorted.length - 1, d.startIdx + steps));
     if (next !== selectedIdx) setTheme(sorted[next].slug);
   };
