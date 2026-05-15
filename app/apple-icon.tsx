@@ -1,13 +1,13 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const size = { width: 64, height: 64 };
+export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-/** Browser-tab favicon: bold "R." in the default-theme accent color on the
- *  default-theme bg, mirroring the "Rithvik." brand mark in the hero. Rendered
- *  at 64×64 so retina tabs stay crisp; Next.js cache-busts via build hash. */
-export default function Icon() {
+/** iOS Home Screen icon. iOS rounds the corners and applies a subtle gloss
+ *  automatically, so we render a flat full-bleed mark and let the OS handle
+ *  framing. Same brand recipe as the browser favicon: accent "R." on bg. */
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -18,12 +18,11 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#08080e",
-          borderRadius: 12,
           color: "#c2305e",
           fontFamily: "system-ui, sans-serif",
           fontWeight: 900,
           letterSpacing: "-0.04em",
-          fontSize: 44,
+          fontSize: 124,
           lineHeight: 1,
         }}
       >
