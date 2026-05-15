@@ -142,7 +142,7 @@ A floating **"Ask RAG"** launcher in the bottom-right (mounted in `app/page.tsx`
 - **Starter chips** appear only on the welcome screen (`messages.length === 1 && messages[0].role === "bot"`). Each chip has a precomputed Q+A pair (`STARTERS` constant in `RagBot.tsx`). Clicking appends the user message + bot answer instantly — no API call, no latency, no embedding load. Chips disappear the moment any real exchange happens. **Maintenance note:** the answers are static and grounded in current `site_content` seeds; update `STARTERS` if Rithvik changes schools, tech stack, or contact info significantly.
 - **"Talking portfolio" welcome message** explicitly frames RAG so new visitors immediately understand what they're talking to.
 
-> Full architectural deep dive: see `explanations/rag-pipeline.md`. This section is the quick reference.
+> Full architectural deep dive: see `docs/explanations/rag-pipeline.md`. This section is the quick reference.
 
 Two parallel pgvector stores in Supabase, both indexed with **HNSW** (NOT IVFFlat — see Pitfalls):
 
@@ -224,12 +224,14 @@ lib/
   embeddings.ts       — OpenAI embed wrapper, chunker, row→text builders, upsert helpers
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + gpt-4o-mini image captioner
 
-plans/
-  feat-inline-editing.md  — done (stages 1–8 shipped, merged to main as v1.1)
-  feat-theme.md           — done (theme stage 8 polish + a11y complete)
-  feat-rag-pipeline.md    — done (RAG pipeline shipped + IVFFlat/DOMMatrix/HyDE rescues)
+docs/plans/
+  feat-inline-editing.md          — done (stages 1–8 shipped, merged to main as v1.1)
+  feat-theme.md                   — done (theme stage 8 polish + a11y complete)
+  feat-rag-pipeline.md            — done (RAG pipeline shipped + IVFFlat/DOMMatrix/HyDE rescues)
+  bento-globe-plan.md             — done (interactive cobe globe + DOM marker overlay)
+  feat-passwordless-otp-auth.md   — pending (replace password login with Supabase email OTP)
 
-explanations/
+docs/explanations/
   rag-pipeline.md         — deep architectural reference for the RAG bot
 ```
 

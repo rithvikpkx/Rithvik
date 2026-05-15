@@ -67,7 +67,9 @@ INSERT INTO projects (slug, title, badge, description, tags, links, image_url, f
    'BCI / Hardware',
    'Proof-of-concept that drives a robotic arm from thought alone using a NeuroSky EEG headset and an Arduino microprocessor. Built as a foundation for future BCI work translating intent into sign-language gestures for differently-abled users.',
    ARRAY['NeuroSky','Arduino','C++','Python','EEG'],
-   '{"github":"https://github.com/rithvikpkx/MindControlRoboticArm","demo":"https://www.youtube.com/watch?v=W8EzUuWgi4o"}'::jsonb,
+   -- demo-only: the YouTube walkthrough is the primary CTA on this card. The
+   -- github repo (MindControlRoboticArm) is intentionally not surfaced here.
+   '{"demo":"https://www.youtube.com/watch?v=W8EzUuWgi4o"}'::jsonb,
    NULL, FALSE, TRUE, 6);
 
 ------------------------------------------------------------------
