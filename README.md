@@ -100,58 +100,15 @@ The site is a **Next.js 16 App Router** application. Server components fetch con
 ### System diagram
 
 ```mermaid
-graph TD
-    subgraph Client["Browser"]
-        V[Visitor]
-        TD[Theme Dial<br/>14 themes]
-        GL[3D Globe<br/>cobe + rAF loop]
-        RB[Ask RAG<br/>chat panel]
-        EM[Edit Mode<br/>inline editing]
-    end
+graph LR
+    Browser["Browser<br/>portfolio · theme dial<br/>3D globe · AI chat"]
+    App["Next.js 16 on Vercel<br/>server components · server actions<br/>chat API"]
+    Supabase["Supabase<br/>Postgres · Auth · Storage<br/>pgvector embeddings"]
+    AI["OpenAI<br/>chat · embeddings"]
 
-    subgraph Vercel["Next.js 16 on Vercel"]
-        SC[Server Components<br/>app/page.tsx]
-        SA[Server Actions<br/>app/admin/actions.ts]
-        CHAT[Chat API<br/>app/api/chat/route.ts]
-        AUTH[Auth Callback<br/>magic-link / OTP]
-    end
-
-    subgraph Supabase["Supabase"]
-        DB[(Postgres<br/>projects, experience,<br/>education, site_content,<br/>themes)]
-        PE[(primary_embeddings<br/>pgvector / HNSW)]
-        SE[(secondary_embeddings<br/>pgvector / HNSW)]
-        STORE[Storage<br/>uploaded docs]
-        SAUTH[Supabase Auth]
-    end
-
-    subgraph External["External services"]
-        OPENAI[OpenAI<br/>gpt-4o-mini + embeddings]
-        RESEND[Resend SMTP]
-    end
-
-    V --> SC
-    SC --> DB
-    TD -.theme.-> V
-    GL --> SC
-
-    EM --> SA
-    SA --> DB
-    SA -->|safeEmbed| OPENAI
-    SA --> PE
-
-    RB --> CHAT
-    CHAT -->|1. HyDE expand| OPENAI
-    CHAT -->|2. embed query| OPENAI
-    CHAT -->|3. retrieve| PE
-    CHAT -->|3. retrieve| SE
-    CHAT -->|4. stream answer| OPENAI
-
-    EM -->|upload docs| SA
-    SA --> STORE
-    SA --> SE
-
-    AUTH --> SAUTH
-    SAUTH --> RESEND
+    Browser <--> App
+    App <--> Supabase
+    App <--> AI
 ```
 
 ### How the RAG chatbot works
@@ -193,51 +150,6 @@ lib/                  Supabase clients, themes, types, embeddings, extractors
 supabase/             SQL migrations (schema, themes, RAG pipeline, seeds)
 docs/                 Plans, architectural explanations, README assets
 ```
-
----
-
-## Running locally
-
-```bash
-# 1. Install dependencies (Node 22, npm)
-npm install
-
-# 2. Configure environment
-cp .env.local.example .env.local
-# fill in Supabase, OpenAI, and admin-email values
-
-# 3. Apply database migrations to your Supabase project
-supabase db query --linked -f supabase/rag_pipeline_migration.sql
-# (plus the other files in supabase/ as needed)
-
-# 4. Start the dev server
-npm run dev
-```
-
-The site runs at `http://localhost:3000`. `npm run build` and `npm run lint` cover production builds and linting.
-
----
-
-## Learnings
-
-> _A space for me to reflect on what building this taught me. To be filled in._
-
-### What I set out to build
-
-<!-- TODO: describe the original vision and how it evolved -->
-
-### Hardest problems I solved
-
-<!-- TODO: e.g. the RAG retrieval tuning, cobe v2's missing render loop,
-     serverless PDF parsing, passwordless auth edge cases -->
-
-### What I'd do differently
-
-<!-- TODO -->
-
-### Skills this project sharpened
-
-<!-- TODO -->
 
 ---
 
