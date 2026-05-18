@@ -16,6 +16,18 @@ const DEFAULT_GITHUB    = "https://github.com/rithvikpkx";
 const DEFAULT_LINKEDIN  = "#";
 const DEFAULT_EMAIL     = "mailto:rithvikpkx@gmail.com";
 
+// Picks a flickering-grid particle color that contrasts with a hex background.
+// Derived per-theme so every light theme gets dark particles, not just rithvik-light.
+function gridColorForBg(bgHex: string): string {
+  const hex = bgHex.replace("#", "").trim();
+  if (hex.length < 6) return "#ffffff";
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#0e0b0a" : "#ffffff";
+}
+
 const container = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.12 } },
@@ -51,10 +63,12 @@ export default function Hero({
   emailUrl    = DEFAULT_EMAIL,
 }: Props) {
   const { isEditing } = useEditMode();
-  const { currentSlug } = useTheme();
+  const { themes, currentSlug } = useTheme();
 
-  // Theme-aware particle color — white particles vanish on light bg
-  const gridColor = currentSlug === "rithvik-light" ? "#0e0b0a" : "#ffffff";
+  // Theme-aware particle color — white particles vanish on any light theme,
+  // so derive contrast from the active theme's background luminance.
+  const currentBg = themes.find((t) => t.slug === currentSlug)?.tokens.bg ?? "#0e0b0a";
+  const gridColor = gridColorForBg(currentBg);
 
   // Keep the Purdue link in view mode by splitting on "Purdue"
   const tagParts = tagLine.split("Purdue");
