@@ -37,6 +37,9 @@ export default async function Home() {
           tagLine={content["hero.tagline"]}
           nameLine1={content["hero.name.line1"]}
           nameLine2={content["hero.name.line2"]}
+          githubUrl={content["contact.link.github"]}
+          linkedinUrl={content["contact.link.linkedin"]}
+          emailUrl={content["contact.link.email"]}
         />
         <Bento
           building={bentoBuilding}
