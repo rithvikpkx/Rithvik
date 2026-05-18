@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
+import DescriptionBlock from "./DescriptionBlock";
 import {
   createProject,
   updateProject,
@@ -109,7 +110,7 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
               <span className="project-link-arrow" aria-hidden="true">↗</span>
             </div>
             <h3>{title}</h3>
-            <p>{description}</p>
+            <DescriptionBlock text={description} />
             <div className="project-tags">
               {tags.map((t) => <span key={t}>{t}</span>)}
             </div>

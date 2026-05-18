@@ -61,7 +61,10 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   // Gradient sweep direction. Horizontal beams sweep along X; vertical beams
   // sweep along Y (upward) so the comet travels along a near-vertical path.
   const gradientCoordinates = vertical
-    ? { x1: ["50%", "50%"], x2: ["50%", "50%"], y1: ["65%", "-35%"], y2: ["100%", "0%"] }
+    ? // Head (y1) starts just below the button and ends just above the photo;
+      // tail (y2) trails 14% behind. The comet emerges at the button, glides
+      // the full beam at constant speed, and fully clears before the loop.
+      { x1: ["50%", "50%"], x2: ["50%", "50%"], y1: ["100%", "-5%"], y2: ["114%", "9%"] }
     : reverse
       ? { x1: ["90%", "-10%"], x2: ["100%", "0%"], y1: ["0%", "0%"], y2: ["0%", "0%"] }
       : { x1: ["10%", "110%"], x2: ["0%", "100%"], y1: ["0%", "0%"], y2: ["0%", "0%"] };
@@ -144,7 +147,9 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
               transition={{
                 delay,
                 duration,
-                ease: [0.16, 1, 0.3, 1],
+                // Constant velocity — an eased curve makes the comet lurch
+                // then crawl, which reads as janky on a travelling beam.
+                ease: "linear",
                 repeat,
                 repeatDelay,
               }}

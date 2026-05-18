@@ -122,6 +122,16 @@ A small one-time `translate + rotate` shake on the dormant dial draws attention 
 
 An earlier iteration auto-rotated the dial and selected SynthWave '84 by itself; it was too invasive and was rolled back. See Pitfalls.
 
+### Hero connect cluster (`components/HeroConnect.tsx`, `components/ui/animated-beam.tsx`, `components/SocialIcons.tsx`)
+
+The hero is a **two-column grid** (`.hero-content`): the existing text block on the left, a "connect cluster" on the right. The cluster is the profile photo (`public/images/rithvik.jpeg`) on top with three circular social buttons (GitHub / LinkedIn / Email) in a row beneath it, joined by animated light beams that pulse **upward** from each button into the photo.
+
+- `HeroConnect.tsx` — owns the refs (`containerRef` + one per button + the photo) and renders three `<AnimatedBeam>`. All three beams share `delay`/`duration`/`repeatDelay` so they pulse in unison. The buttons mirror the `contact.link.*` keys (passed from `page.tsx` → `Hero` → `HeroConnect`); they are **read-only** here — URLs are still edited from the Contact section. The Email button copies the address to the clipboard with a confirmation, mirroring the Contact email button.
+- `components/ui/animated-beam.tsx` — vendored from MagicUI. Two local changes: the `cn` className helper was dropped (no `clsx`/`tailwind-merge` in this project) and a `prefers-reduced-motion` gate renders just the static path. A `vertical` prop was **added** — see Pitfalls; the upstream gradient only animates horizontal beams.
+- `SocialIcons.tsx` — the three brand SVGs (`size` prop), shared by `HeroConnect` and `Contact`.
+- The cluster's entrance animation (in `Hero.tsx`'s `connectCol` variant) animates **opacity + blur only, never `y`** — a translate would shift the layout box mid-animation and leave the ref-measured beams pointing at stale coordinates.
+- The flickering-grid particle color is derived from the **active theme's `--bg` luminance** (`gridColorForBg` in `Hero.tsx`, reading `tokens.bg` from `useTheme()`), so every light theme gets dark particles — see Pitfalls.
+
 ### Inline editing (passwordless OTP, completed)
 
 - `EditModeProvider` (client) owns `isEditing`, `panelOpen`, Supabase session, and the OTP flow
@@ -234,6 +244,9 @@ components/
   RagBot.tsx                 — floating chat launcher + streaming chat panel (resizable, markdown)
   SimpleMarkdown.tsx         — hand-rolled markdown renderer used by bot replies
   SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
+  HeroConnect.tsx            — hero connect cluster: profile photo + 3 social buttons + beams
+  SocialIcons.tsx            — shared GitHub/LinkedIn/Email brand SVGs (used by HeroConnect + Contact)
+  ui/animated-beam.tsx       — vendored MagicUI beam (cn stripped, reduced-motion + vertical mode added)
 
 lib/
   supabase.ts         — clients (browser uses createBrowserClient)
@@ -266,6 +279,10 @@ docs/explanations/
 - **Mounting an edit-mode-only component outside `<EditModeProvider>` 500s the entire route.** `useEditMode()` throws if no provider is above it in the tree, which crashes SSR for every visitor (not just authenticated editors). The previously-shipped `ThemeDemoSettings` panel triggered this and was rolled back. If you add a new component that calls `useEditMode()`, mount it INSIDE `<EditModeProvider>` (which wraps `{children}` in `app/layout.tsx`, not the theme dial siblings).
 - **`force-dynamic` on the root layout is required when content can be changed via direct DB writes** (themes added through `supabase db query`). Without it, the homepage is statically generated at build time and stale DB state lingers until the next deploy. The cost is one extra Supabase fetch per request, which is negligible. The inline-editing flow already revalidates via `revalidatePath("/")`, but anything that bypasses server actions (raw SQL, dashboard inserts) needs this safety net.
 - **cobe v2 has no `onRender` callback.** A lot of cobe tutorials/snippets online were written for v1, which exposed `onRender: (state) => { ... }` and drove its own animation loop. v2 (currently `cobe@^2.0.1`) dropped both: there is no callback, no internal rAF, and the typed `COBEOptions` no longer includes `onRender`. The runtime calls `te()` once on construction and exposes `update(opts)` for everything else. Any motion (spin, drag rotation, marker overlay) must be driven from a caller-owned `requestAnimationFrame` loop that pushes `{phi, width, height}` to `globe.update(...)` every frame. If you find yourself reaching for `as any` to satisfy `onRender`, stop — it compiles but the globe will render once and freeze.
+- **The MagicUI `AnimatedBeam` gradient only animates horizontal beams.** Upstream sweeps the gradient along the X axis (`x1`/`x2` keyframes, `y` fixed). On a vertical beam the comet slides sideways across a vertical stroke, so the whole beam just brightens/dims instead of a pulse travelling along it. `components/ui/animated-beam.tsx` has a local `vertical` prop that sweeps along Y instead; `HeroConnect` passes it. If you reuse the beam for a vertical connection, set `vertical`. Trail length is the gradient-vector span (the `y1`–`y2` gap in the vertical branch); sweep speed is the `duration` prop.
+- **`KineticText` must use `block` flow, not `flex flex-wrap`.** It renders one `<span>` per character; with a flex container, `flex-wrap` breaks between *any* two letter-spans, so a multi-word line wraps mid-word ("Praveen Ku / mar"). `block` (normal text flow) only breaks at whitespace, and the component's space character is a non-breaking space, so multi-word lines stay intact. Don't reintroduce flex here.
+- **`radial-gradient(circle, …)` in a non-square box gets clipped.** A `circle` sizes to `farthest-corner`, which can exceed the element's box; the background is clipped to the box, leaving a hard straight edge — invisible on dark themes, obvious on light ones. The hero glow blobs (`.hero::before`/`::after`) use `ellipse closest-side` so the gradient always fades to transparent inside its box.
+- **Theme-dependent UI must derive from theme tokens, not a hardcoded slug check.** The hero flickering grid once picked its particle color with `currentSlug === "rithvik-light"`, so every *other* light theme (GitHub Light, Atom One Light) got white particles that vanished. `gridColorForBg` in `Hero.tsx` now computes contrast from the active theme's `tokens.bg` luminance (via `useTheme()`) — a pure render-time computation, so a new light theme needs zero code changes. Prefer luminance-from-tokens over slug checks for anything that must adapt light/dark.
 
 ### RAG (every one of these cost real debugging time)
 
