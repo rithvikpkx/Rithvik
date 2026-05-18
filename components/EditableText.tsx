@@ -42,7 +42,10 @@ export default function EditableText({
   }
 
   const handleBlur = async () => {
-    const newVal = el.current?.textContent?.trim() ?? "";
+    // innerText preserves the line breaks the browser inserts on Enter;
+    // textContent would flatten a multi-line value onto one line.
+    const raw = multiline ? el.current?.innerText : el.current?.textContent;
+    const newVal = raw?.trim() ?? "";
     if (newVal === lastSaved.current) return;
     if (!newVal) {
       // Restore if cleared completely
@@ -74,6 +77,7 @@ export default function EditableText({
 
   const cls = [
     "editable-text",
+    multiline ? "editable-multiline" : "",
     status === "saved" ? "is-saved" : status === "saving" ? "is-saving" : "",
     className,
   ].filter(Boolean).join(" ");

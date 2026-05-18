@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
+import DescriptionBlock from "./DescriptionBlock";
 import FadeIn from "./FadeIn";
 import TimelineBeam from "./TimelineBeam";
 import {
@@ -100,7 +101,7 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
                 <span className="timeline-date">{date_range}</span>
               </div>
               <p className="timeline-role">{role}</p>
-              <p className="timeline-desc">{description}</p>
+              <DescriptionBlock text={description} className="timeline-desc" />
               <div className="timeline-tags">
                 {tags.map((t) => <span key={t}>{t}</span>)}
               </div>
