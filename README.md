@@ -19,21 +19,11 @@
 
 ## Demo
 
-<!--
-  PLACEHOLDER — replace with a real screen recording of the site in action.
-  GitHub renders an uploaded .mp4 as an inline player. For true autoplay,
-  a looping muted .mp4 (via the <video> tag below) or a .gif works best.
-  Drop the file in docs/assets/ and update the path.
--->
-
 <div align="center">
 
-<video src="docs/assets/demo.mp4" autoplay loop muted playsinline width="800">
-  Your browser does not support the video tag.
-  <a href="docs/assets/demo.mp4">Watch the demo video</a>
-</video>
+![Rithvik.ai demo](docs/assets/demo.gif)
 
-_<sub>Placeholder: add `docs/assets/demo.mp4` (looping, muted) — or a `docs/assets/demo.gif` fallback.</sub>_
+_<sub>A 12-second preview — **[watch the full walkthrough →](docs/assets/demo.mp4)**</sub>_
 
 </div>
 
