@@ -48,7 +48,7 @@ export default function HeroConnect({ githubUrl, linkedinUrl, emailUrl }: Props)
     pathWidth: 4,
     gradientStartColor: "var(--accent)",
     gradientStopColor: "#d9c2ff",
-    duration: 4.8,
+    duration: 6,
     repeatDelay: 1.2,
     delay: 0,
   };
