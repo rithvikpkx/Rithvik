@@ -21,9 +21,9 @@
 
 <div align="center">
 
-![Rithvik.ai demo](docs/assets/demo.gif)
+![Rithvik.ai demo](docs/assets/demo.webp)
 
-_<sub>A 12-second preview — **[watch the full walkthrough →](docs/assets/demo.mp4)**</sub>_
+_<sub>A 60-second preview — **[watch the full walkthrough →](docs/assets/demo.mp4)**</sub>_
 
 </div>
 
