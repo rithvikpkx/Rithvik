@@ -61,7 +61,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   // Gradient sweep direction. Horizontal beams sweep along X; vertical beams
   // sweep along Y (upward) so the comet travels along a near-vertical path.
   const gradientCoordinates = vertical
-    ? { x1: ["50%", "50%"], x2: ["50%", "50%"], y1: ["90%", "-10%"], y2: ["100%", "0%"] }
+    ? { x1: ["50%", "50%"], x2: ["50%", "50%"], y1: ["65%", "-35%"], y2: ["100%", "0%"] }
     : reverse
       ? { x1: ["90%", "-10%"], x2: ["100%", "0%"], y1: ["0%", "0%"], y2: ["0%", "0%"] }
       : { x1: ["10%", "110%"], x2: ["0%", "100%"], y1: ["0%", "0%"], y2: ["0%", "0%"] };
