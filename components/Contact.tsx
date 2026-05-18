@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import FadeIn from "./FadeIn";
@@ -47,6 +47,8 @@ export default function Contact({
   const [githubUrl, setGithubUrl]   = useState(g);
   const [linkedinUrl, setLinkedinUrl] = useState(li);
   const [emailUrl, setEmailUrl]     = useState(em);
+  const [copied, setCopied]         = useState(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isEditing) {
@@ -55,10 +57,25 @@ export default function Contact({
     }
   }, [h, s, g, li, em, isEditing]);
 
+  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
+
+  // Copies the bare email address (mailto: prefix stripped) and flashes a confirmation.
+  const copyEmail = async () => {
+    const address = emailUrl.replace(/^mailto:/i, "").trim();
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      return; // clipboard unavailable (insecure context / denied) — fail silently
+    }
+    setCopied(true);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(false), 2000);
+  };
+
   const links = [
-    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl },
-    { href: linkedinUrl, label: "LinkedIn",  Icon: LinkedinIcon, key: "contact.link.linkedin",  setter: setLinkedinUrl },
-    { href: emailUrl,    label: "Email",     Icon: EmailIcon,    key: "contact.link.email",     setter: setEmailUrl },
+    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   isCopy: false },
+    { href: linkedinUrl, label: "LinkedIn", Icon: LinkedinIcon, key: "contact.link.linkedin", setter: setLinkedinUrl, isCopy: false },
+    { href: emailUrl,    label: "Email",    Icon: EmailIcon,    key: "contact.link.email",    setter: setEmailUrl,    isCopy: true  },
   ];
 
   return (
@@ -76,17 +93,31 @@ export default function Contact({
       </FadeIn>
 
       <FadeIn delay={0.15} className="contact-links">
-        {links.map(({ href, label, Icon, key, setter }) => (
-          <div key={label} className={isEditing ? "contact-link-editing" : ""}>
-            <a
-              href={href}
-              target={href.startsWith("http") ? "_blank" : undefined}
-              rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className="contact-link"
-            >
-              <Icon />
-              {label}
-            </a>
+        {links.map(({ href, label, Icon, key, setter, isCopy }, i) => (
+          <div
+            key={label}
+            className={"contact-link-wrap" + (isEditing ? " contact-link-editing" : "")}
+            style={{ "--pulse-delay": `${i * 0.55}s` } as React.CSSProperties}
+          >
+            {isCopy ? (
+              <button type="button" onClick={copyEmail} className="contact-link" aria-label="Copy email address">
+                <Icon />
+                {label}
+              </button>
+            ) : (
+              <a
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noreferrer" : undefined}
+                className="contact-link"
+              >
+                <Icon />
+                {label}
+              </a>
+            )}
+            {isCopy && copied && (
+              <span className="contact-copied" role="status">Copied to clipboard</span>
+            )}
             {isEditing && (
               <EditableText
                 tag="span" className="contact-edit-url" value={href}
