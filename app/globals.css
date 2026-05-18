@@ -405,7 +405,9 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   top: -15%; left: -8%;
   width: 55%; height: 75%;
-  background: radial-gradient(circle, rgba(110,50,200,0.1) 0%, transparent 68%);
+  /* closest-side keeps the blob inside its box — a `circle` overflows the
+     non-square box and gets clipped, showing a hard edge on light themes */
+  background: radial-gradient(ellipse closest-side, rgba(110,50,200,0.1) 0%, transparent 70%);
   pointer-events: none;
 }
 .hero::after {
@@ -413,7 +415,7 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   bottom: -8%; right: -4%;
   width: 48%; height: 60%;
-  background: radial-gradient(circle, rgba(194,48,94,0.07) 0%, transparent 68%);
+  background: radial-gradient(ellipse closest-side, rgba(194,48,94,0.07) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -422,10 +424,15 @@ a { color: inherit; text-decoration: none; }
   max-width: var(--max);
   margin: 0 auto;
   width: 100%;
+  display: grid;
+  /* Text takes the remaining space; the connect cluster is sized to content */
+  grid-template-columns: 1fr auto;
+  gap: 64px;
+  align-items: center;
 }
 
 .hero-title {
-  font-size: clamp(3.8rem, 10.5vw, 8.5rem);
+  font-size: clamp(3.2rem, 7.6vw, 6.4rem);
   font-weight: 800;
   line-height: 0.92;
   letter-spacing: -0.045em;
@@ -484,6 +491,106 @@ a { color: inherit; text-decoration: none; }
   transition: opacity 0.2s;
 }
 .purdue-link:hover { opacity: 0.75; }
+
+/* ===== HERO CONNECT (profile photo + beam-linked social buttons) ===== */
+.hero-connect-col {
+  display: flex;
+  justify-content: center;
+}
+
+/* Ref container for the beams — must be position:relative so the absolutely
+   positioned beam SVGs measure against it. Photo on top, buttons row below. */
+.hero-connect {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+.hero-connect-buttons {
+  position: relative;
+  z-index: 1; /* sit above the beam SVGs */
+  display: flex;
+  gap: 24px;
+}
+
+.hero-connect-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.22s, border-color 0.22s, background 0.22s,
+    color 0.22s, box-shadow 0.22s;
+}
+.hero-connect-btn:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  background: var(--card-hover);
+  color: var(--accent);
+  box-shadow: 0 8px 22px -8px var(--accent-glow);
+}
+
+/* Positioning + ref node for the beams; the circular crop lives on the inner
+   element so the hover tooltip isn't clipped by overflow:hidden. */
+.hero-connect-photo {
+  position: relative;
+  z-index: 1;
+}
+.hero-connect-photo-img {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 10%, transparent),
+    0 18px 50px -16px var(--accent-glow);
+}
+
+/* Hover tooltip above the photo */
+.hero-photo-tip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  white-space: nowrap;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--panel-glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  font-size: 0.78rem;
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.hero-connect-photo:hover .hero-photo-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* "Copied" confirmation below the buttons row */
+.hero-connect-copied {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.76rem;
+  color: var(--green);
+}
+
+/* Brightening glow on the beam pulse */
+.hero-beam {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 65%, transparent));
+}
 
 /* ===== BENTO ===== */
 .bento-section {
@@ -2405,6 +2512,12 @@ a { color: inherit; text-decoration: none; }
     min-height: calc(100svh - 200px);
     padding-top: 92px;
     padding-bottom: 220px;
+  }
+
+  /* Stack the connect cluster below the text */
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 44px;
   }
 
   .bento-location,

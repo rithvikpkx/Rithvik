@@ -15,7 +15,10 @@ export function KineticText({ text, as: Tag = "h1", className = "", style, ...re
   return (
     <Tag
       {...rest}
-      className={`flex flex-wrap font-[300] ${className}`}
+      // `block` (not flex) so letters use normal text flow — the browser only
+      // breaks at whitespace, never mid-word. The space below is a non-breaking
+      // space, so multi-word lines (e.g. "Praveen Kumar") stay intact.
+      className={`block font-[300] ${className}`}
       style={mergedStyle}
     >
       {text.split("").map((letter, i) => (
