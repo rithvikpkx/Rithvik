@@ -10,6 +10,8 @@ export interface AnimatedBeamProps {
   toRef: RefObject<HTMLElement | null>;
   curvature?: number;
   reverse?: boolean;
+  /** When true the comet travels vertically (upward) instead of horizontally. */
+  vertical?: boolean;
   pathColor?: string;
   pathWidth?: number;
   pathOpacity?: number;
@@ -36,6 +38,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   toRef,
   curvature = 0,
   reverse = false,
+  vertical = false,
   duration = 5,
   delay = 0,
   pathColor = "gray",
@@ -55,10 +58,13 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   const [pathD, setPathD] = useState("");
   const [svgDimensions, setSvgDimensions] = useState({ width: 0, height: 0 });
 
-  // Gradient sweep direction; reversed swaps the comet's travel.
-  const gradientCoordinates = reverse
-    ? { x1: ["90%", "-10%"], x2: ["100%", "0%"], y1: ["0%", "0%"], y2: ["0%", "0%"] }
-    : { x1: ["10%", "110%"], x2: ["0%", "100%"], y1: ["0%", "0%"], y2: ["0%", "0%"] };
+  // Gradient sweep direction. Horizontal beams sweep along X; vertical beams
+  // sweep along Y (upward) so the comet travels along a near-vertical path.
+  const gradientCoordinates = vertical
+    ? { x1: ["50%", "50%"], x2: ["50%", "50%"], y1: ["90%", "-10%"], y2: ["100%", "0%"] }
+    : reverse
+      ? { x1: ["90%", "-10%"], x2: ["100%", "0%"], y1: ["0%", "0%"], y2: ["0%", "0%"] }
+      : { x1: ["10%", "110%"], x2: ["0%", "100%"], y1: ["0%", "0%"], y2: ["0%", "0%"] };
 
   useEffect(() => {
     const updatePath = () => {

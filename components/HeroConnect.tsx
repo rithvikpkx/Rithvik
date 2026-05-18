@@ -42,6 +42,7 @@ export default function HeroConnect({ githubUrl, linkedinUrl, emailUrl }: Props)
     containerRef,
     toRef: profileRef,
     className: "hero-beam",
+    vertical: true,
     pathColor: "var(--text)",
     pathOpacity: 0.1,
     pathWidth: 4,
