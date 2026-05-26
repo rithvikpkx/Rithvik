@@ -13,9 +13,11 @@ export default function LocalTime() {
         minute: "2-digit",
         hour12: true,
       });
-    setTime(fmt());
-    const id = setInterval(() => setTime(fmt()), 1000);
-    return () => clearInterval(id);
+    const tick = () => setTime(fmt());
+    // Defer the first paint off the effect's synchronous path (lands next frame).
+    const raf = requestAnimationFrame(tick);
+    const id = setInterval(tick, 1000);
+    return () => { cancelAnimationFrame(raf); clearInterval(id); };
   }, []);
 
   return <p className="location-time">{time}</p>;

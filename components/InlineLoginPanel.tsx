@@ -23,23 +23,27 @@ export default function InlineLoginPanel() {
   useEffect(() => {
     const url = new URL(window.location.href);
     const authError = url.searchParams.get("auth_error");
-    if (authError) {
-      setError(authError);
-      // Strip the param so refreshes don't keep replaying the error.
-      url.searchParams.delete("auth_error");
-      router.replace(url.pathname + url.search);
-    }
+    if (!authError) return;
+    // Strip the param so refreshes don't keep replaying the error.
+    url.searchParams.delete("auth_error");
+    router.replace(url.pathname + url.search);
+    // Defer the setState off the effect's synchronous path.
+    const raf = requestAnimationFrame(() => setError(authError));
+    return () => cancelAnimationFrame(raf);
   }, [router]);
 
-  // Reset state when the panel closes so the next open starts fresh.
-  useEffect(() => {
+  // Reset state when the panel closes so the next open starts fresh — tracked
+  // during render rather than in an effect to avoid a cascading re-render.
+  const [prevOpen, setPrevOpen] = useState(panelOpen);
+  if (prevOpen !== panelOpen) {
+    setPrevOpen(panelOpen);
     if (!panelOpen) {
       setStep("email");
       setCode("");
       setError("");
       setLoading(false);
     }
-  }, [panelOpen]);
+  }
 
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();

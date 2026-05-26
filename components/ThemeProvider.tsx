@@ -33,8 +33,15 @@ export default function ThemeProvider({ themes, children }: Props) {
   const [currentSlug, setCurrentSlug] = useState<string>(DEFAULT_THEME_SLUG);
 
   useEffect(() => {
-    const fromDom = document.documentElement.dataset.theme;
-    if (fromDom && themes.some((t) => t.slug === fromDom)) setCurrentSlug(fromDom);
+    // The inline boot script sets <html data-theme> before hydration; sync our
+    // state to it after mount. Deferred a frame so the setState isn't on the
+    // effect's synchronous path (the page colors come from the DOM attribute,
+    // not this state, so the dial-only adjustment is imperceptible).
+    const raf = requestAnimationFrame(() => {
+      const fromDom = document.documentElement.dataset.theme;
+      if (fromDom && themes.some((t) => t.slug === fromDom)) setCurrentSlug(fromDom);
+    });
+    return () => cancelAnimationFrame(raf);
   }, [themes]);
 
   const setTheme = (slug: string) => {

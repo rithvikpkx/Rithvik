@@ -42,14 +42,16 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     // mount; without this short-circuit we'd filter the session out because
     // the per-tab flag is empty in a brand-new tab. Pre-arm the flag so the
     // session is captured when it arrives.
+    let raf = 0;
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       if (url.searchParams.get("auth") === "ok") {
         sessionStorage.setItem(TAB_AUTH_KEY, "1");
         tabAuth.current = true;
-        setIsEditing(true);
         url.searchParams.delete("auth");
         window.history.replaceState({}, "", url.pathname + url.search);
+        // Defer the setState off the effect's synchronous path (next frame).
+        raf = requestAnimationFrame(() => setIsEditing(true));
       }
     }
 
@@ -71,7 +73,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
       }
       // INITIAL_SESSION with no tab auth: leave session null so new tab requires login
     });
-    return () => subscription.unsubscribe();
+    return () => { if (raf) cancelAnimationFrame(raf); subscription.unsubscribe(); };
   }, []);
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() ?? "";

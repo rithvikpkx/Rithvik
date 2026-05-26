@@ -33,7 +33,6 @@ export default function SecondaryContextPanel() {
   useEffect(() => {
     if (!isEditing) return;
     refresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
 
   useEffect(() => {

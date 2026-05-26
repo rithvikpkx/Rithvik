@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
@@ -55,14 +55,17 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
   const [interests, setInterests] = useState(ip ?? DEF_INTERESTS);
   const [markers, setMarkers]   = useState(mp ?? DEF_MARKERS);
 
-  useEffect(() => {
-    if (!isEditing) {
-      setBld(bp ?? DEF_BUILDING);
-      setStack(skp ?? DEF_STACK);
-      setInterests(ip ?? DEF_INTERESTS);
-      setMarkers(mp ?? DEF_MARKERS);
-    }
-  }, [bp, skp, ip, mp, isEditing]);
+  // Mirror server props into local state when not editing (catches revalidation
+  // updates) without clobbering in-progress edits — done during render rather
+  // than in an effect to avoid a cascading re-render.
+  const [synced, setSynced] = useState({ bp, skp, ip, mp });
+  if (!isEditing && (synced.bp !== bp || synced.skp !== skp || synced.ip !== ip || synced.mp !== mp)) {
+    setSynced({ bp, skp, ip, mp });
+    setBld(bp ?? DEF_BUILDING);
+    setStack(skp ?? DEF_STACK);
+    setInterests(ip ?? DEF_INTERESTS);
+    setMarkers(mp ?? DEF_MARKERS);
+  }
 
   const saveBld = async (patch: Partial<Building>) => {
     const u = { ...bld, ...patch };

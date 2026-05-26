@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
@@ -30,9 +30,14 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    if (!isEditing) setEntries(initialEntries);
-  }, [initialEntries, isEditing]);
+  // Mirror server data into local state when not editing (catches revalidation
+  // updates) without clobbering in-progress edits — done during render to avoid
+  // a cascading re-render.
+  const [syncedInit, setSyncedInit] = useState(initialEntries);
+  if (!isEditing && syncedInit !== initialEntries) {
+    setSyncedInit(initialEntries);
+    setEntries(initialEntries);
+  }
 
   const patch = async (id: string, changes: Partial<ExperienceInput>) => {
     const prev = entries.find((e) => e.id === id)!;

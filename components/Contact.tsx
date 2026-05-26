@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import FadeIn from "./FadeIn";
@@ -33,12 +33,15 @@ export default function Contact({
   const [emailUrl, setEmailUrl]     = useState(em);
   const { open } = useContactComposer();
 
-  useEffect(() => {
-    if (!isEditing) {
-      setHeadline(h); setSub(s);
-      setGithubUrl(g); setLinkedinUrl(li); setEmailUrl(em);
-    }
-  }, [h, s, g, li, em, isEditing]);
+  // Mirror server props back into local state when not editing (catches
+  // revalidation updates) without clobbering in-progress edits. Done during
+  // render rather than in an effect to avoid a cascading re-render.
+  const [synced, setSynced] = useState({ h, s, g, li, em });
+  if (!isEditing && (synced.h !== h || synced.s !== s || synced.g !== g || synced.li !== li || synced.em !== em)) {
+    setSynced({ h, s, g, li, em });
+    setHeadline(h); setSub(s);
+    setGithubUrl(g); setLinkedinUrl(li); setEmailUrl(em);
+  }
 
   const links = [
     { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   opensComposer: false },
