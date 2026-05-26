@@ -79,7 +79,8 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       from: process.env.CONTACT_FROM!,
       to: process.env.CONTACT_TO!,
-      reply_to: sender,
+      cc: [sender],            // sender gets a copy (their confirmation) + reply-all threads them in
+      reply_to: sender,        // plain reply still reaches the sender even if CC is stripped
       subject: `[rithvik.ai] ${subject.trim()}`,
       html: headerLine + cleanHtml,
       text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}`,
