@@ -3179,3 +3179,55 @@ a { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   .composer-panel { transition: none; }
 }
+
+/* "For Warren Buffett" easter-egg link — bottom-left, near the theme dial. */
+.buffett-link {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 90;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  padding: 6px 11px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--panel-glass);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.buffett-link:hover,
+.buffett-link:focus-visible {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 22%, transparent);
+}
+.buffett-tip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 240px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--text);
+  background: var(--panel-glass);
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.buffett-link:hover .buffett-tip,
+.buffett-link:focus-visible .buffett-tip {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .buffett-tip { transition: opacity 0.18s ease; transform: none; }
+}

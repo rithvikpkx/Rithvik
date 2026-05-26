@@ -7,6 +7,7 @@ import EditBar from "@/components/EditBar";
 import ThemeStyleInjector from "@/components/ThemeStyleInjector";
 import ThemeProvider from "@/components/ThemeProvider";
 import ThemeDial from "@/components/ThemeDial";
+import BuffettLink from "@/components/BuffettLink";
 import { serverClient } from "@/lib/supabase";
 import type { Theme } from "@/lib/types";
 import { FALLBACK_THEMES, DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <EditBar />
           </EditModeProvider>
           <ThemeDial />
+          <BuffettLink />
         </ThemeProvider>
       </body>
     </html>
