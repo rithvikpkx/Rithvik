@@ -158,8 +158,24 @@ export default function ContactComposer({ toAddress }: Props) {
         className="composer-panel"
         style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
-        <div className="composer-header" onPointerDown={startDrag}>
+        <div className="composer-shine" aria-hidden="true" />
+        <div className="composer-header" onPointerDown={startDrag} title="Drag to move">
           <span className="composer-title">Email Rithvik</span>
+          <span className="composer-grip" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+          <button
+            type="button"
+            className="composer-peek"
+            aria-label="Hold to peek at the page behind"
+            title="Peek at the page behind"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
           <button type="button" className="composer-close" onClick={close} aria-label="Close">×</button>
         </div>
 

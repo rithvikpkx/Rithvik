@@ -2908,13 +2908,15 @@ a { color: inherit; text-decoration: none; }
   border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  isolation: isolate;
+  transition: opacity 0.18s ease;
 }
 .composer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  cursor: move;
+  cursor: grab;
   user-select: none;
   background: color-mix(in srgb, var(--text) 6%, transparent);
   border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
@@ -2930,6 +2932,69 @@ a { color: inherit; text-decoration: none; }
   padding: 0 4px;
 }
 .composer-close:hover { color: var(--text); }
+
+/* Rainbow shine border — mirrors .rag-shine: a radial gradient masked into a
+   1px ring, animated by shifting background-position. Makes the window pop off
+   the content beneath it. */
+.composer-shine {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    transparent,
+    transparent,
+    rgba(156, 64, 255, 0.85),
+    rgba(255, 170, 64, 0.85),
+    transparent,
+    transparent
+  );
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: rag-shine 14s linear infinite;
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-shine { animation: none; }
+}
+
+.composer-header:active { cursor: grabbing; }
+/* Three dots: a quiet, conventional "draggable" affordance. */
+.composer-grip {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+  margin-right: 10px;
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+.composer-header:hover .composer-grip { opacity: 0.8; }
+.composer-grip i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted, currentColor);
+}
+
+.composer-peek {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--muted, var(--text));
+  cursor: pointer;
+  padding: 0 4px;
+}
+.composer-peek:hover { color: var(--text); }
+/* While the peek control is hovered/focused, fade the whole window so the user
+   can glance at the page beneath without moving or closing it. */
+.composer-panel:has(.composer-peek:hover),
+.composer-panel:has(.composer-peek:focus-visible) {
+  opacity: 0.12;
+}
 
 .composer-form, .composer-success {
   display: flex;
