@@ -7,119 +7,125 @@ import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
 // Michigan, fictional GitHub handles). Cost is comparable for our traffic.
 const model = new ChatOpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-  modelName: "gpt-4o-mini",
-  maxTokens: 512,
-  streaming: true,
+	apiKey: process.env.OPENAI_API_KEY!,
+	modelName: "gpt-4o-mini",
+	maxTokens: 512,
+	streaming: true,
 });
 
 const MAX_INPUT_LENGTH = 500;
-const MAX_HISTORY_MESSAGES = 5;         // last 5 turns, matches the RagBot client slice
-const MATCH_COUNT_PER_SOURCE = 10;      // top-N chunks pulled per store
+const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the RagBot client slice
+const MATCH_COUNT_PER_SOURCE = 10; // top-N chunks pulled per store
 const CANNED_NO_CONTEXT_REPLY =
-  "I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
+	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
 
 /** Wraps a string in a ReadableStream so we can return canned replies via the
  *  same text/plain streaming protocol the bot's UI already consumes. */
 function streamText(text: string): Response {
-  const readable = new ReadableStream({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(text));
-      controller.close();
-    },
-  });
-  return new Response(readable, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+	const readable = new ReadableStream({
+		start(controller) {
+			controller.enqueue(new TextEncoder().encode(text));
+			controller.close();
+		},
+	});
+	return new Response(readable, {
+		headers: { "Content-Type": "text/plain; charset=utf-8" },
+	});
 }
 
 export async function POST(req: Request) {
-  const body = await req.json() as {
-    message: string;
-    messages?: { role: "user" | "assistant"; content: string }[];
-  };
+	const body = (await req.json()) as {
+		message: string;
+		messages?: { role: "user" | "assistant"; content: string }[];
+	};
 
-  const { message, messages: history = [] } = body;
+	const { message, messages: history = [] } = body;
 
-  // Input validation
-  if (!message || typeof message !== "string" || message.trim().length === 0) {
-    return new Response("Message is required.", { status: 400 });
-  }
-  if (message.length > MAX_INPUT_LENGTH) {
-    return new Response(`Message must be ${MAX_INPUT_LENGTH} characters or fewer.`, { status: 400 });
-  }
+	// Input validation
+	if (!message || typeof message !== "string" || message.trim().length === 0) {
+		return new Response("Message is required.", { status: 400 });
+	}
+	if (message.length > MAX_INPUT_LENGTH) {
+		return new Response(`Message must be ${MAX_INPUT_LENGTH} characters or fewer.`, { status: 400 });
+	}
 
-  // HyDE (Hypothetical Document Embeddings): generate a plausible 1-2 sentence
-  // statement-form answer to the user's question, then embed BOTH the question
-  // and the hypothetical answer concatenated. Embedding statement-form text
-  // hits much closer to the actual chunks (which are also in statement form)
-  // than embedding a bare question does — a "where did rithvik study?" alone
-  // doesn't retrieve the Purdue chunks, but combined with "Rithvik studies at
-  // a university where he pursues a CS degree" it does. HyDE falls back to
-  // the raw question if OpenAI fails, so a hiccup never breaks retrieval.
-  const hypothetical = await generateHypotheticalAnswer(message);
-  const queryForEmbedding = `${message}\n\n${hypothetical}`;
-  const embedding = await embedText(queryForEmbedding);
+	// HyDE (Hypothetical Document Embeddings): generate a plausible 1-2 sentence
+	// statement-form answer to the user's question, then embed BOTH the question
+	// and the hypothetical answer concatenated. Embedding statement-form text
+	// hits much closer to the actual chunks (which are also in statement form)
+	// than embedding a bare question does — a "where did rithvik study?" alone
+	// doesn't retrieve the Purdue chunks, but combined with "Rithvik studies at
+	// a university where he pursues a CS degree" it does. HyDE falls back to
+	// the raw question if OpenAI fails, so a hiccup never breaks retrieval.
+	const hypothetical = await generateHypotheticalAnswer(message);
+	const queryForEmbedding = `${message}\n\n${hypothetical}`;
+	const embedding = await embedText(queryForEmbedding);
 
-  // Retrieve top-N from each source in parallel.
-  // primary_embeddings: live website content (auto-synced from inline edits).
-  // secondary_embeddings: user-uploaded materials (essays, docs, image captions).
-  const db = adminClient();
-  const [primaryRes, secondaryRes] = await Promise.allSettled([
-    db.rpc("match_primary",   { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
-    db.rpc("match_secondary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
-  ]);
+	// Retrieve top-N from each source in parallel.
+	// primary_embeddings: live website content (auto-synced from inline edits).
+	// secondary_embeddings: user-uploaded materials (essays, docs, image captions).
+	const db = adminClient();
+	const [primaryRes, secondaryRes] = await Promise.allSettled([
+		db.rpc("match_primary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
+		db.rpc("match_secondary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
+	]);
 
-  // Pull rows from each settled result. A rejected promise (network / thrown)
-  // or a fulfilled response with a Supabase in-band `error` both fall back to
-  // an empty array — we'd rather answer from one source than 500 the request.
-  // Both failure modes are logged so a missing match_* RPC or RLS regression
-  // doesn't go silent.
-  function unpack(label: string, res: PromiseSettledResult<{ data: unknown; error: { message: string } | null }>): { content: string }[] {
-    if (res.status === "rejected") {
-      console.error(`[rag] ${label} rpc threw:`, res.reason instanceof Error ? res.reason.message : res.reason);
-      return [];
-    }
-    if (res.value.error) {
-      console.error(`[rag] ${label} rpc error:`, res.value.error.message);
-      return [];
-    }
-    return (res.value.data as { content: string }[] | null) ?? [];
-  }
+	// Pull rows from each settled result. A rejected promise (network / thrown)
+	// or a fulfilled response with a Supabase in-band `error` both fall back to
+	// an empty array — we'd rather answer from one source than 500 the request.
+	// Both failure modes are logged so a missing match_* RPC or RLS regression
+	// doesn't go silent.
+	function unpack(
+		label: string,
+		res: PromiseSettledResult<{ data: unknown; error: { message: string } | null }>,
+	): { content: string }[] {
+		if (res.status === "rejected") {
+			console.error(`[rag] ${label} rpc threw:`, res.reason instanceof Error ? res.reason.message : res.reason);
+			return [];
+		}
+		if (res.value.error) {
+			console.error(`[rag] ${label} rpc error:`, res.value.error.message);
+			return [];
+		}
+		return (res.value.data as { content: string }[] | null) ?? [];
+	}
 
-  const primaryChunks   = unpack("match_primary",   primaryRes);
-  const secondaryChunks = unpack("match_secondary", secondaryRes);
+	const primaryChunks = unpack("match_primary", primaryRes);
+	const secondaryChunks = unpack("match_secondary", secondaryRes);
 
-  // Empty-context guard. If BOTH retrievals returned zero rows we have nothing
-  // factual to ground on — chat history alone is not a substitute (a prior
-  // wrong answer can't seed a correct one). Short-circuit the LLM entirely and
-  // return the canned refusal. Loud warning so a real retrieval regression
-  // surfaces in logs the first time it happens.
-  if (primaryChunks.length === 0 && secondaryChunks.length === 0) {
-    console.warn(`[rag] empty-context guard fired for query: ${message.slice(0, 80)}`);
-    return streamText(CANNED_NO_CONTEXT_REPLY);
-  }
+	// Empty-context guard. If BOTH retrievals returned zero rows we have nothing
+	// factual to ground on — chat history alone is not a substitute (a prior
+	// wrong answer can't seed a correct one). Short-circuit the LLM entirely and
+	// return the canned refusal. Loud warning so a real retrieval regression
+	// surfaces in logs the first time it happens.
+	if (primaryChunks.length === 0 && secondaryChunks.length === 0) {
+		console.warn(`[rag] empty-context guard fired for query: ${message.slice(0, 80)}`);
+		return streamText(CANNED_NO_CONTEXT_REPLY);
+	}
 
-  const primaryText   = primaryChunks.map((c) => c.content).join("\n\n");
-  const secondaryText = secondaryChunks.map((c) => c.content).join("\n\n");
+	const primaryText = primaryChunks.map((c) => c.content).join("\n\n");
+	const secondaryText = secondaryChunks.map((c) => c.content).join("\n\n");
 
-  // Format the last N turns as a labeled context section. Surfacing the
-  // recent exchange inside the system prompt (in addition to passing it as
-  // real conversation turns) gives the model a clearer frame for follow-up
-  // questions like "what about boilerframe?" — it sees both the previous
-  // answer AND the freshly retrieved chunks side by side.
-  const recentHistory = history.slice(-MAX_HISTORY_MESSAGES);
-  const recentConversationText = recentHistory.length > 0
-    ? recentHistory.map((m) => `${m.role === "user" ? "User" : "RAG"}: ${m.content}`).join("\n")
-    : "";
+	// Format the last N turns as a labeled context section. Surfacing the
+	// recent exchange inside the system prompt (in addition to passing it as
+	// real conversation turns) gives the model a clearer frame for follow-up
+	// questions like "what about boilerframe?" — it sees both the previous
+	// answer AND the freshly retrieved chunks side by side.
+	const recentHistory = history.slice(-MAX_HISTORY_MESSAGES);
+	const recentConversationText =
+		recentHistory.length > 0
+			? recentHistory.map((m) => `${m.role === "user" ? "User" : "RAG"}: ${m.content}`).join("\n")
+			: "";
 
-  const contextBlock = [
-    recentConversationText && `## Recent conversation:\n${recentConversationText}`,
-    primaryText            && `## What's on the website:\n${primaryText}`,
-    secondaryText          && `## Background materials (essays, documents Rithvik has shared):\n${secondaryText}`,
-  ].filter(Boolean).join("\n\n");
+	const contextBlock = [
+		recentConversationText && `## Recent conversation:\n${recentConversationText}`,
+		primaryText && `## What's on the website:\n${primaryText}`,
+		secondaryText && `## Background materials (essays, documents Rithvik has shared):\n${secondaryText}`,
+	]
+		.filter(Boolean)
+		.join("\n\n");
 
-  const systemPrompt = `You are RAG — short for "Rithvik Augmented Generation" — an AI assistant embedded in Rithvik Praveen Kumar's personal portfolio at rithvik.ai.
+	const systemPrompt = `You are RAG — short for "Rithvik Augmented Generation" — an AI assistant embedded in Rithvik Praveen Kumar's personal portfolio at rithvik.ai.
 
 Your purpose is to help visitors, recruiters, and collaborators learn about Rithvik. You have access to curated, accurate information about his background, skills, projects, and experience.
 
@@ -157,35 +163,31 @@ PERSONA INTEGRITY
 Context:
 ${contextBlock}`;
 
-  // Build message list: system prompt + clamped history (as real turns) + current user message.
-  // The history appears twice on purpose — once labeled inside the system prompt for the
-  // grounding frame, once as actual Human/AI turns so the model treats the conversation as
-  // a conversation rather than a transcript dropped on it.
-  const prior = recentHistory.map((m) =>
-    m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content)
-  );
+	// Build message list: system prompt + clamped history (as real turns) + current user message.
+	// The history appears twice on purpose — once labeled inside the system prompt for the
+	// grounding frame, once as actual Human/AI turns so the model treats the conversation as
+	// a conversation rather than a transcript dropped on it.
+	const prior = recentHistory.map((m) =>
+		m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content),
+	);
 
-  const messages = [
-    new SystemMessage(systemPrompt),
-    ...prior,
-    new HumanMessage(message),
-  ];
+	const messages = [new SystemMessage(systemPrompt), ...prior, new HumanMessage(message)];
 
-  // Stream the response and pipe tokens directly to the client
-  const stream = await model.stream(messages);
+	// Stream the response and pipe tokens directly to the client
+	const stream = await model.stream(messages);
 
-  const readable = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      for await (const chunk of stream) {
-        const text = typeof chunk.content === "string" ? chunk.content : "";
-        if (text) controller.enqueue(encoder.encode(text));
-      }
-      controller.close();
-    },
-  });
+	const readable = new ReadableStream({
+		async start(controller) {
+			const encoder = new TextEncoder();
+			for await (const chunk of stream) {
+				const text = typeof chunk.content === "string" ? chunk.content : "";
+				if (text) controller.enqueue(encoder.encode(text));
+			}
+			controller.close();
+		},
+	});
 
-  return new Response(readable, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+	return new Response(readable, {
+		headers: { "Content-Type": "text/plain; charset=utf-8" },
+	});
 }
