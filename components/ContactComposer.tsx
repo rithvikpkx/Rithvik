@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useContactComposer } from "./ContactComposerProvider";
 import RichTextEditor from "./RichTextEditor";
 
@@ -29,10 +29,18 @@ interface Props { toAddress: string; }
 
 export default function ContactComposer({ toAddress }: Props) {
   const { isOpen, close } = useContactComposer();
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const [size, setSize] = useState(loadSize);
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  // Center on the viewport at mount. A lazy initializer (not an effect) keeps
+  // inline left/top always present, so the CSS needs no centering logic and the
+  // mobile sheet just overrides with !important. ssr:false → window is defined.
+  const [pos, setPos] = useState(() => {
+    if (typeof window === "undefined") return { x: 0, y: 0 };
+    return {
+      x: Math.max(12, (window.innerWidth - size.w) / 2),
+      y: Math.max(12, (window.innerHeight - size.h) / 3),
+    };
+  });
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
@@ -55,13 +63,10 @@ export default function ContactComposer({ toAddress }: Props) {
 
   // Drag via the header. Capture nothing on pointerdown — only move once past
   // the threshold, so header buttons (close) still click cleanly.
-  // When pos is null the panel is CSS-centered; read its actual rect on first drag.
   const startDrag = (e: React.PointerEvent) => {
     if (window.innerWidth < MOBILE_BP) return;        // sheet mode: no drag
     const startX = e.clientX, startY = e.clientY;
-    // Resolve origin from DOM rect when no explicit pos is set yet.
-    const rect = panelRef.current?.getBoundingClientRect();
-    const origin = pos ?? (rect ? { x: rect.left, y: rect.top } : { x: startX, y: startY });
+    const origin = pos;
     let dragging = false;
     const move = (ev: PointerEvent) => {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
@@ -130,9 +135,8 @@ export default function ContactComposer({ toAddress }: Props) {
   return (
     <div className="composer-overlay" role="dialog" aria-label="Email Rithvik">
       <div
-        ref={panelRef}
         className="composer-panel"
-        style={pos ? { left: pos.x, top: pos.y, width: size.w, height: size.h } : undefined}
+        style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
         <div className="composer-header" onPointerDown={startDrag}>
           <span className="composer-title">Email Rithvik</span>
