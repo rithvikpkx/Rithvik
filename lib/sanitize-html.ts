@@ -19,41 +19,53 @@ function safeHref(tag: string): string | null {
     ({ "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
 }
 
+// Escape angle brackets in a text segment so a stray or incomplete tag (e.g. an
+// unclosed `<img onerror=…`) can't pass through as live markup. We escape only
+// < and > (not &), to avoid double-encoding entities the editor already emits.
+function escapeText(s: string): string {
+  return s.replace(/[<>]/g, (c) => (c === "<" ? "&lt;" : "&gt;"));
+}
+
 /** Strip the input to an allowlist of inline/list tags, dropping everything else
- *  (including <script>/<style> and their contents) while keeping text. */
+ *  (including <script>/<style> and their contents) and escaping all non-tag text
+ *  so only reconstructed, attribute-free allowlisted tags reach the output. */
 export function sanitizeEmailHtml(input: string): string {
   // Drop script/style blocks wholesale (tags + contents) before tokenizing.
   const withoutBlocks = input.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
 
-  // Track suppressed <a> openers so their matching </a> closers are also dropped.
-  let suppressedAnchorDepth = 0;
+  // Only well-formed tags (an opener letter and a closing `>`) are treated as
+  // tags; anything else falls into the text run and gets angle-escaped.
+  const tagRe = /<\/?[a-z][^>]*>/gi;
+  let suppressedAnchorDepth = 0;   // suppressed <a> openers whose </a> we must eat
+  let out = "";
+  let last = 0;
+  let m: RegExpExecArray | null;
 
-  // Walk tag-by-tag; reconstruct kept tags clean, drop the rest, leave text as-is.
-  return withoutBlocks.replace(/<\/?[^>]+>/g, (tag) => {
-    const m = tag.match(/^<\s*(\/?)\s*([a-z0-9]+)/i);
-    if (!m) return "";                          // malformed → drop
-    const closing = m[1] === "/";
-    const name = m[2].toLowerCase();
-    if (!ALLOWED_TAGS.has(name)) return "";     // not allowlisted → drop tag, keep text
+  while ((m = tagRe.exec(withoutBlocks)) !== null) {
+    out += escapeText(withoutBlocks.slice(last, m.index));  // text before this tag
+    last = tagRe.lastIndex;
+
+    const tag = m[0];
+    const name = tag.match(/^<\s*\/?\s*([a-z0-9]+)/i)![1].toLowerCase();
+    const closing = /^<\s*\//.test(tag);
+    if (!ALLOWED_TAGS.has(name)) continue;       // drop the tag (its text already escaped)
     if (closing) {
       // If this </a> matches a suppressed opener, eat it instead of emitting.
-      if (name === "a" && suppressedAnchorDepth > 0) {
-        suppressedAnchorDepth--;
-        return "";
-      }
-      return `</${name}>`;
+      if (name === "a" && suppressedAnchorDepth > 0) { suppressedAnchorDepth--; continue; }
+      out += `</${name}>`;
+      continue;
     }
-    if (name === "br") return "<br>";
+    if (name === "br") { out += "<br>"; continue; }
     if (name === "a") {
       const href = safeHref(tag);
-      if (!href) {
-        suppressedAnchorDepth++;               // remember to swallow the matching </a>
-        return "";
-      }
-      return `<a href="${href}">`;
+      if (!href) { suppressedAnchorDepth++; continue; }  // swallow the matching </a>
+      out += `<a href="${href}">`;
+      continue;
     }
-    return `<${name}>`;                          // reconstruct with NO attributes
-  });
+    out += `<${name}>`;                           // reconstruct with NO attributes
+  }
+  out += escapeText(withoutBlocks.slice(last));   // trailing text after the last tag
+  return out;
 }
 
 /** Cheap plaintext fallback for the email's text part: block/break tags become

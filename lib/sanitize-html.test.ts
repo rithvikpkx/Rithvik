@@ -37,6 +37,17 @@ test("normalizes <br>", () => {
   assert.equal(sanitizeEmailHtml("a<br/>b<BR>c"), "a<br>b<br>c");
 });
 
+test("escapes an unclosed tag instead of passing it through", () => {
+  assert.equal(
+    sanitizeEmailHtml('<img src=x onerror="alert(1)"'),
+    '&lt;img src=x onerror="alert(1)"',
+  );
+});
+
+test("escapes stray angle brackets in text", () => {
+  assert.equal(sanitizeEmailHtml("1 < 2 and 3 > 2"), "1 &lt; 2 and 3 &gt; 2");
+});
+
 test("htmlToText converts blocks/breaks to newlines and strips tags", () => {
   assert.equal(htmlToText("<p>hi</p><ul><li>a</li><li>b</li></ul>"), "hi\na\nb");
 });
