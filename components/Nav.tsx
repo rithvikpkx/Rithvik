@@ -56,12 +56,13 @@ export default function Nav() {
   };
 
   useEffect(() => {
-    setActive(detectSection(window.scrollY));
     const onScroll = () => {
       if (!lockedRef.current) setActive(detectSection(window.scrollY));
     };
+    // Defer the initial highlight off the effect's synchronous path.
+    const raf = requestAnimationFrame(() => setActive(detectSection(window.scrollY)));
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", onScroll); };
   }, []);
 
   return (

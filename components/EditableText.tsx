@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ElementType } from "react";
 import { useEditMode } from "./EditModeProvider";
 
 type Tag = "h1" | "h2" | "h3" | "h4" | "p" | "span";
@@ -35,7 +35,9 @@ export default function EditableText({
     lastSaved.current = value;
   }, [value]);
 
-  const Tag = tag;
+  // Cast to ElementType so the polymorphic tag accepts our generic ref callback
+  // (the string-literal union would otherwise demand one element's exact ref).
+  const Tag: ElementType = tag;
 
   if (!isEditing) {
     return <Tag className={className}>{value}</Tag>;
@@ -82,12 +84,11 @@ export default function EditableText({
     className,
   ].filter(Boolean).join(" ");
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const setRef = (node: HTMLElement | null) => { el.current = node; };
 
   return (
     <Tag
-      ref={setRef as any}
+      ref={setRef}
       className={cls}
       contentEditable
       suppressContentEditableWarning

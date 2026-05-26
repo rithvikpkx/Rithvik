@@ -7,6 +7,7 @@ import Experience from "@/components/Experience";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import DeferredOverlays from "@/components/DeferredOverlays";
+import { ContactComposerProvider } from "@/components/ContactComposerProvider";
 import { serverClient } from "@/lib/supabase";
 import type { GlobeMarker } from "@/lib/types";
 
@@ -32,7 +33,7 @@ export default async function Home() {
   const bentoGlobeMarkers = parseSafe<GlobeMarker[]>(content["bento.globe_markers"], []);
 
   return (
-    <>
+    <ContactComposerProvider>
       <Nav />
       <main>
         <Hero
@@ -62,7 +63,7 @@ export default async function Home() {
         />
       </main>
       <Footer />
-      <DeferredOverlays />
-    </>
+      <DeferredOverlays emailUrl={content["contact.link.email"]} />
+    </ContactComposerProvider>
   );
 }

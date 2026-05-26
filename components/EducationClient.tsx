@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
@@ -14,9 +14,14 @@ export default function EducationClient({ initialEntries }: { initialEntries: Ed
   const { isEditing } = useEditMode();
   const [entries, setEntries] = useState(initialEntries);
 
-  useEffect(() => {
-    if (!isEditing) setEntries(initialEntries);
-  }, [initialEntries, isEditing]);
+  // Mirror server data into local state when not editing (catches revalidation
+  // updates) without clobbering in-progress edits — done during render to avoid
+  // a cascading re-render.
+  const [syncedInit, setSyncedInit] = useState(initialEntries);
+  if (!isEditing && syncedInit !== initialEntries) {
+    setSyncedInit(initialEntries);
+    setEntries(initialEntries);
+  }
 
   const patch = async (id: string, changes: Partial<Education>) => {
     // Skip saving for the hardcoded fallback entry (migration not yet run)

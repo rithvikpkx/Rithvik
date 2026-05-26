@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import FadeIn from "./FadeIn";
 import { GithubIcon, LinkedinIcon, EmailIcon } from "./SocialIcons";
 import { upsertSiteContent } from "@/app/admin/actions";
+import { useContactComposer } from "./ContactComposerProvider";
 
 const DEFAULT_HEADLINE = "Let’s connect.";
 const DEFAULT_SUB = "I’m always interested in software engineering, AI, startups, research, and ambitious technical projects.";
@@ -30,35 +31,22 @@ export default function Contact({
   const [githubUrl, setGithubUrl]   = useState(g);
   const [linkedinUrl, setLinkedinUrl] = useState(li);
   const [emailUrl, setEmailUrl]     = useState(em);
-  const [copied, setCopied]         = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { open } = useContactComposer();
 
-  useEffect(() => {
-    if (!isEditing) {
-      setHeadline(h); setSub(s);
-      setGithubUrl(g); setLinkedinUrl(li); setEmailUrl(em);
-    }
-  }, [h, s, g, li, em, isEditing]);
-
-  useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
-
-  // Copies the bare email address (mailto: prefix stripped) and flashes a confirmation.
-  const copyEmail = async () => {
-    const address = emailUrl.replace(/^mailto:/i, "").trim();
-    try {
-      await navigator.clipboard.writeText(address);
-    } catch {
-      return; // clipboard unavailable (insecure context / denied) — fail silently
-    }
-    setCopied(true);
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopied(false), 2000);
-  };
+  // Mirror server props back into local state when not editing (catches
+  // revalidation updates) without clobbering in-progress edits. Done during
+  // render rather than in an effect to avoid a cascading re-render.
+  const [synced, setSynced] = useState({ h, s, g, li, em });
+  if (!isEditing && (synced.h !== h || synced.s !== s || synced.g !== g || synced.li !== li || synced.em !== em)) {
+    setSynced({ h, s, g, li, em });
+    setHeadline(h); setSub(s);
+    setGithubUrl(g); setLinkedinUrl(li); setEmailUrl(em);
+  }
 
   const links = [
-    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   isCopy: false },
-    { href: linkedinUrl, label: "LinkedIn", Icon: LinkedinIcon, key: "contact.link.linkedin", setter: setLinkedinUrl, isCopy: false },
-    { href: emailUrl,    label: "Email",    Icon: EmailIcon,    key: "contact.link.email",    setter: setEmailUrl,    isCopy: true  },
+    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   opensComposer: false },
+    { href: linkedinUrl, label: "LinkedIn", Icon: LinkedinIcon, key: "contact.link.linkedin", setter: setLinkedinUrl, opensComposer: false },
+    { href: emailUrl,    label: "Email",    Icon: EmailIcon,    key: "contact.link.email",    setter: setEmailUrl,    opensComposer: true  },
   ];
 
   return (
@@ -76,14 +64,14 @@ export default function Contact({
       </FadeIn>
 
       <FadeIn delay={0.15} className="contact-links">
-        {links.map(({ href, label, Icon, key, setter, isCopy }, i) => (
+        {links.map(({ href, label, Icon, key, setter, opensComposer }, i) => (
           <div
             key={label}
             className={"contact-link-wrap" + (isEditing ? " contact-link-editing" : "")}
             style={{ "--pulse-delay": `${i * 0.55}s` } as React.CSSProperties}
           >
-            {isCopy ? (
-              <button type="button" onClick={copyEmail} className="contact-link" aria-label="Copy email address">
+            {opensComposer ? (
+              <button type="button" onClick={open} className="contact-link" aria-label="Email Rithvik">
                 <Icon />
                 {label}
               </button>
@@ -97,9 +85,6 @@ export default function Contact({
                 <Icon />
                 {label}
               </a>
-            )}
-            {isCopy && copied && (
-              <span className="contact-copied" role="status">Copied to clipboard</span>
             )}
             {isEditing && (
               <EditableText

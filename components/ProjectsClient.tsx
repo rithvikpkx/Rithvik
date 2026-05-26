@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
@@ -36,9 +36,13 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
   const [adding, setAdding] = useState(false);
 
   // Sync server data back in when not editing (catches revalidation updates)
-  useEffect(() => {
-    if (!isEditing) setProjects(initialProjects);
-  }, [initialProjects, isEditing]);
+  // without clobbering in-progress edits — done during render rather than in an
+  // effect to avoid a cascading re-render.
+  const [syncedInit, setSyncedInit] = useState(initialProjects);
+  if (!isEditing && syncedInit !== initialProjects) {
+    setSyncedInit(initialProjects);
+    setProjects(initialProjects);
+  }
 
   const patch = async (id: string, changes: Partial<ProjectInput>) => {
     const prev = projects.find((p) => p.id === id)!;
