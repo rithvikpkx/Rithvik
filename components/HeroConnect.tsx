@@ -1,8 +1,9 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import { AnimatedBeam } from "./ui/animated-beam";
 import { GithubIcon, LinkedinIcon, EmailIcon } from "./SocialIcons";
+import { useContactComposer } from "./ContactComposerProvider";
 
 interface Props {
   githubUrl: string;
@@ -13,28 +14,13 @@ interface Props {
 // The hero "node graph": the profile photo on top, three social buttons in a
 // row beneath it, with animated beams pulsing upward from each button into the
 // photo — a visual cue that those links all connect to Rithvik.
-export default function HeroConnect({ githubUrl, linkedinUrl, emailUrl }: Props) {
+export default function HeroConnect({ githubUrl, linkedinUrl }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const githubRef = useRef<HTMLAnchorElement>(null);
   const linkedinRef = useRef<HTMLAnchorElement>(null);
   const emailRef = useRef<HTMLButtonElement>(null);
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Copies the bare email (mailto: prefix stripped) and flashes a confirmation
-  // — mirrors the Contact section's email button.
-  const copyEmail = async () => {
-    const address = emailUrl.replace(/^mailto:/i, "").trim();
-    try {
-      await navigator.clipboard.writeText(address);
-    } catch {
-      return; // clipboard unavailable (insecure context / denied) — fail silently
-    }
-    setCopied(true);
-    if (copyTimer.current) clearTimeout(copyTimer.current);
-    copyTimer.current = setTimeout(() => setCopied(false), 2000);
-  };
+  const { open } = useContactComposer();
 
   // Shared beam config — identical delay/duration on all three so they pulse
   // in unison. Gradient start tracks the active theme accent.
@@ -93,19 +79,13 @@ export default function HeroConnect({ githubUrl, linkedinUrl, emailUrl }: Props)
         <button
           ref={emailRef}
           type="button"
-          onClick={copyEmail}
+          onClick={open}
           className="hero-connect-btn"
-          aria-label="Copy email address"
+          aria-label="Email Rithvik"
         >
           <EmailIcon size={22} />
         </button>
       </div>
-
-      {copied && (
-        <span className="hero-connect-copied" role="status">
-          Email copied to clipboard
-        </span>
-      )}
 
       {/* Beams render after the nodes; the nodes carry z-index to sit on top. */}
       <AnimatedBeam {...beam} fromRef={githubRef} curvature={22} />
