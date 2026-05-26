@@ -41,7 +41,24 @@
   --mono:      var(--font-geist-mono), 'Fira Code', monospace;
 }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* Fixed nav pill is ~50px tall + float gap; offset anchor targets so section
+     headings aren't hidden under it after a nav click. */
+  scroll-padding-top: 88px;
+}
+
+/* Skip layout + paint for off-screen sections until they're scrolled near.
+   Cuts initial render work and per-scroll cost on this long single page.
+   contain-intrinsic-size reserves space so the scrollbar doesn't jump as
+   sections realize. The hero is intentionally excluded (always above fold). */
+.bento-section,
+.projects-section,
+.experience-section,
+.education-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 600px;
+}
 
 ::selection {
   background: #f5c400;
@@ -82,8 +99,15 @@ a { color: inherit; text-decoration: none; }
   height: 50px;
   border-radius: 9999px;
   background: var(--nav-glass);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  /* 28px backdrop-blur re-rasterizes the area behind a fixed element on every
+     scroll frame — the chief scroll-jank source. 16px is visually close at
+     this small size; contain + own layer keep the blur from re-sampling more
+     than its own box. */
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  will-change: transform;
+  transform: translateZ(0);
+  contain: paint;
   border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--text) 9%, transparent),
@@ -2845,4 +2869,18 @@ a { color: inherit; text-decoration: none; }
   color: #ef4444;
   font-size: 0.72rem;
   margin: 4px 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  /* Belt-and-suspenders: kill long transitions/animations site-wide for
+     reduced-motion users. Motion's JS variants already respect this via the
+     library, but CSS-driven transitions need their own opt-out. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
