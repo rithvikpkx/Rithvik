@@ -123,6 +123,13 @@ Visitors can email Rithvik directly from the site via a draggable, resizable, th
 - **`app/api/contact/route.ts`** — POST handler. **Honeypot**: a hidden field filled → fake 200, silently dropped. Validates email/subject/body, **re-sanitizes body server-side** (client sanitization is convenience, server is the gate). **Rate limit**: 3 sends/hour per IP via the `contact_submissions` table (checks recent rows before sending). Sends via the Resend HTTP API (`fetch`) from `CONTACT_FROM` (`contact@rithvik.ai`) to `CONTACT_TO`, with the visitor's address as `reply_to` — visitor address never goes in `from` (SPF/DKIM would reject). The sender display name is HTML-escaped before header interpolation. Logs each successful send to `contact_submissions`.
 - **`components/DeferredOverlays.tsx`** — mounts `ContactComposer` once (dynamic, `ssr:false`), deriving `toAddress` from `contact.link.email` in `site_content`.
 
+**Phase 2 polish:**
+- **Rainbow shine border** — `.composer-shine` overlay mirrors `.rag-shine`: a 1px masked radial-gradient ring using the existing `@keyframes rag-shine`. The panel surface stays theme-aware; only the ring is a fixed purple/orange gradient. `prefers-reduced-motion` disables the animation.
+- **Drag hint** — a three-dot `.composer-grip` in the header with `cursor: grab`/`grabbing` and a "Drag to move" tooltip.
+- **Peek-through** — a `.composer-peek` eye button in the header; pure CSS `:has(.composer-peek:hover, :focus-visible)` drops `.composer-panel` to `opacity: 0.12` so the user can glance at content behind while writing. No JS state.
+- **Send animation** — `components/SendAnimation.tsx`: a viewport-covering `<canvas>` that dematerializes particles from the message area, morphs them into a paper-airplane silhouette, and flies the formation off-screen (~2.2s rAF loop). Rendered as a **sibling** of `.composer-panel` (not a child) so the panel's `overflow:hidden`/`isolation`/drag-transform can't clip the fly-off. Honors `prefers-reduced-motion` (skips to `onDone` immediately). Success/error is gated on BOTH the animation finishing AND the request settling — two refs + a `finalize()` in `ContactComposer` — so a slow network never flashes success early and a fast network never cuts the animation short.
+- **CC sender** — `/api/contact` now includes `cc: [sender]` so the visitor receives a copy and Rithvik can reply-all to thread. `reply_to: sender` is kept alongside it.
+
 **DB:** `contact_submissions` table (id, created_at, ip, from_email, subject, status) — service-role only, RLS enabled with no anon policies. Migration: `supabase/contact_submissions_migration.sql`.
 
 **Env (server-only):** `RESEND_API_KEY`, `CONTACT_FROM`, `CONTACT_TO`.
@@ -217,9 +224,10 @@ components/
   SecondaryContextPanel — edit-mode: secondary docs + backfill
   HeroConnect           — photo + 3 social buttons + beams
   SocialIcons           — shared GitHub/LinkedIn/Email SVGs
-  ContactComposer       — draggable/resizable floating email window (non-modal, lazy-init centering)
+  ContactComposer       — draggable/resizable floating email window (non-modal, lazy-init centering, shine/peek/drag-hint)
   ContactComposerProvider — context: isOpen/open/close for the composer
   RichTextEditor        — contentEditable + execCommand toolbar (bold/italic/underline/etc.)
+  SendAnimation         — viewport canvas: particle dematerialise → paper-airplane fly-off (~2.2s); sibling of composer panel
   DeferredOverlays      — mounts ContactComposer once (dynamic, ssr:false)
   ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
 
@@ -250,6 +258,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 - **`KineticText` must use `block` flow, not `flex flex-wrap`.** With flex, `flex-wrap` breaks between any two letter-spans, splitting words mid-word. `block` only breaks on whitespace (and its space is non-breaking).
 - **`radial-gradient(circle, …)` in a non-square box clips** to a hard edge (`circle` sizes to farthest-corner). The hero glow blobs use `ellipse closest-side` so they always fade to transparent inside the box.
 - **Theme-dependent UI must derive from tokens, not slug checks.** The flickering grid once keyed on `currentSlug === "rithvik-light"`, so other light themes got invisible white particles. `gridColorForBg` now computes contrast from `tokens.bg` luminance — new light themes need zero code.
+- **A fixed-position overlay rendered inside an element with `overflow:hidden` + a `transform`/`will-change` ancestor gets clipped** — the ancestor creates a new containing block, trapping the overlay. Render viewport-covering layers (e.g. `SendAnimation`) as siblings of the clipping element, not children.
 
 ### RAG (each cost real debugging time)
 
