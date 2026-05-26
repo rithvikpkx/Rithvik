@@ -2,6 +2,7 @@
 ideas.md
 node_modules
 .next
+tsconfig.tsbuildinfo
 .env*.local
 context/
 supabase/.temp/

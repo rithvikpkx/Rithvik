@@ -1,332 +1,276 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working in this repo. Project: a personal portfolio for **Rithvik Praveen Kumar**, deployed to [rithvik.ai](https://rithvik.ai), built as a one-stop showcase plus an experimental playground for live editing + an AI chatbot.
+Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithvik Praveen Kumar** at [rithvik.ai](https://rithvik.ai) — a showcase plus a playground for live inline editing and an AI chatbot.
 
 ## Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
-- **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie-based sessions, `@supabase/supabase-js` server admin client. Auth is **passwordless OTP** (email code + magic link) since the OTP shipment; the password column on the admin row is unused by the UI.
-- **Resend** as the custom SMTP provider for Supabase Auth emails. Verified domain `rithvik.ai`; mail sends from `auth@rithvik.ai`.
+- **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie sessions, `@supabase/supabase-js` for the server admin client. Auth is **passwordless OTP** (email code + magic link); the password column is unused by the UI.
+- **Resend** — custom SMTP for Supabase Auth emails. Verified domain `rithvik.ai`; mail sends from `auth@rithvik.ai`.
 - **Motion** (`motion/react`) for animation
-- **cobe** for the WebGL-rendered 3D globe in the Bento section (cobe v2; we drive our own rAF loop because v2 has no `onRender` callback)
-- **LangChain** (`@langchain/openai`) wrapping **OpenAI** `gpt-4o-mini` for chat completions, HyDE expansion, and image captioning; OpenAI `text-embedding-3-small` for embeddings in the RAG bot (`app/api/chat`). DeepSeek was tried earlier and rolled back — see Pitfalls.
-- **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2` which crashed on Vercel due to a `DOMMatrix` reference at module evaluation).
-- Deployed on **Vercel** (`dev` branch deploys preview, `main` deploys production)
+- **cobe** v2 for the WebGL globe in Bento (we drive our own rAF loop — v2 has no `onRender`)
+- **LangChain** (`@langchain/openai`) → **OpenAI** `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back — see Pitfalls.
+- **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2`, which crashed on Vercel — see Pitfalls)
+- Deployed on **Vercel**: `dev` → preview, `main` → production
 
-Node 22, package manager: npm. `npm run dev` / `npm run build` / `npm run lint`.
+Node 22, npm. `npm run dev` / `build` / `lint`.
 
-## Rules (carried from earlier)
+## Rules
 
-- Keep design philosophy simple. Architecture minimal and clean.
-- Each function: 1–2 sentence description as a comment.
-- Confusing or non-obvious lines: 1 short inline comment explaining WHY.
-- Develop in **vertical slices** across the full stack — keep work visible and testable end-to-end.
-- Self-test before claiming done. `node_modules/.bin/tsc --noEmit` is the cheapest gate; visual check on Vercel preview is the next.
+- Keep design philosophy simple; architecture minimal and clean.
+- Each function: a 1–2 sentence description comment. Non-obvious lines: one short inline comment on WHY.
+- Develop in **vertical slices** — keep work visible and testable end-to-end.
+- Self-test before claiming done. `node_modules/.bin/tsc --noEmit` is the cheapest gate; a Vercel preview check is next.
 
 ## CI/CD and branching
 
-Vercel is wired up to the GitHub repo with two long-lived branches:
+Two long-lived branches, both wired to Vercel:
 
-- **`dev`** — every push triggers a **preview deployment** at a `rithvik-<hash>.vercel.app` URL. This is where all feature work happens and where the user reviews changes before they go live.
-- **`main`** — every push triggers a **production deployment** at [rithvik.ai](https://rithvik.ai). Only fully completed, tested work lands here.
+- **`dev`** — every push → preview at `rithvik-<hash>.vercel.app`. All feature work and user review happens here.
+- **`main`** — every push → production at rithvik.ai. Only completed, tested work lands here.
 
-### Workflow for a new feature
+### New-feature workflow
 
-1. Work happens on `dev`. Commit each logical step (`feat:`, `fix:`, `chore:`, `revert:` prefixes per the existing log). Push to `origin/dev` and let the Vercel preview build. Iterate until the user is happy with the preview.
-2. When the user explicitly says "merge to main" (or equivalent), integrate with a **descriptive merge commit**:
+1. Work on `dev`. Commit each logical step (`feat:`/`fix:`/`chore:`/`revert:` prefixes per the log). Push to `origin/dev`, let the preview build, iterate until the user is happy.
+2. Only when the user explicitly says "merge to main", integrate with a **descriptive `--no-ff` merge commit** (body bullets the bundled feature areas — see `git log` for format):
    ```
-   git checkout main
-   git pull origin main
+   git checkout main && git pull origin main
    git merge --no-ff dev -m "chore: merge dev → main (<bundle title>)"
    git push origin main
    ```
-   The merge commit body should bullet the bundled feature areas — past examples in `git log` for the format. `--no-ff` is intentional: it preserves a visible "this is when dev landed" boundary instead of fast-forwarding the linear history into main.
-3. Never push directly to `main`. Never merge without explicit user approval — production goes to a real domain.
-4. Hotfixes are extremely rare; if needed, branch off `main`, fix, merge back to BOTH `main` and `dev` so they don't drift.
+   `--no-ff` is intentional — it preserves a visible "dev landed here" boundary.
+3. Never push directly to `main`. Never merge without explicit approval — production is a real domain.
+4. Hotfixes are rare; branch off `main`, fix, merge back into BOTH `main` and `dev` so they don't drift.
 
-### Things to verify before suggesting a merge
+### Verify before suggesting a merge
 
-- `node_modules/.bin/tsc --noEmit` clean
-- `node_modules/.bin/eslint <touched files>` clean
-- `node_modules/.bin/next build` succeeds (catches Vercel-specific bundling issues that don't show up locally)
-- Vercel preview on `dev` is rendering correctly (the **only** way to catch SSR/edge runtime bugs that pass `next build` locally — see Pitfalls > Vercel)
-- DB migrations in `supabase/*.sql` are applied to the linked project (`supabase db query --linked -f ...`) BEFORE the merge, since static state assumptions may break otherwise
+- `tsc --noEmit` clean, `eslint <touched files>` clean
+- `next build` succeeds (catches Vercel bundling issues that don't show locally)
+- Vercel preview on `dev` renders correctly — the **only** way to catch SSR/edge runtime bugs that pass `next build` locally
+- DB migrations in `supabase/*.sql` applied to the linked project (`supabase db query --linked -f ...`) BEFORE the merge
 
-## High-level architecture
+## Architecture
 
 ### Page composition
 
-`app/page.tsx` is a server component. It fetches `site_content` once and passes parsed/typed props down to client section components. Each section (`Hero`, `Bento`, `Education`, `Projects`, `Experience`, `Contact`) renders the same way for visitors but adapts to edit mode via `useEditMode()`.
+`app/page.tsx` is a server component: fetches `site_content` once, passes typed props to client section components. Sections (`Hero`, `Bento`, `Education`, `Projects`, `Experience`, `Contact`) render identically for visitors but adapt to edit mode via `useEditMode()`.
 
 ### Server / client section split
 
-Sections backed by their own table (`Projects`, `Experience`, `Education`) use a two-file pattern:
+Table-backed sections (`Projects`, `Experience`, `Education`) use two files:
+- `Component.tsx` — server: fetches rows, renders wrapper + header, passes `initialRows` down.
+- `ComponentClient.tsx` — `"use client"`: local state, edit-mode UI (sort/add/delete, `EditableText` per field, `EditableTagList` for tag arrays), and the public view when not editing.
 
-- `ComponentName.tsx` — server component, fetches the rows from Supabase, renders the section wrapper and section header, passes `initialRows` to a client component.
-- `ComponentNameClient.tsx` — `"use client"`, owns local state, runs the edit-mode UI (sort buttons, add/delete, inline `EditableText` for each field, `EditableTagList` for tag arrays). Public view in this same component when `isEditing === false`.
+`site_content`-only sections (`Hero`, `Bento`, `Contact`) are single client components taking content as props, swapping to `EditableText` when editing.
 
-Sections that just read keys from `site_content` (`Hero`, `Bento`, `Contact`) are single client components that take their content as props and use `useEditMode()` to swap to `EditableText` when editing.
+### Theme system (`lib/themes.ts`, `components/Theme{Provider,StyleInjector,Dial}.tsx`)
 
-### Theme system (`lib/themes.ts`, `components/ThemeProvider.tsx`, `components/ThemeStyleInjector.tsx`, `components/ThemeDial.tsx`)
+Themes are rows in the `themes` table with a `tokens` JSONB column. **Only the primary palette is per-theme**: `bg, bg-soft, text, muted, accent, accent-glow, green` (+ optional `font`). Surface tokens are **derived in CSS via `color-mix()`** — `--card`/`--card-hover`/`--border`/`--border-hover` mix `--text` into transparent; `--nav-glass`/`--panel-glass` mix `--bg`. So **adding a theme is one DB row** — define 7 tokens, every surface adapts, no CSS changes.
 
-Themes are rows in the `themes` table. Each row has a `tokens` JSONB column. **Only the primary palette is per-theme**:
+The dial fans out **14 themes**: 3 Rithvik-branded (Dark, Light, Terminal) + 11 editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light).
 
-`bg, bg-soft, text, muted, accent, accent-glow, green` (plus optional `font`).
+At SSR, `ThemeStyleInjector` emits one `<style id="theme-tokens">` with `:root[data-theme="<slug>"]{…}` for every theme. Active theme is set on `<html data-theme>` by (1) a hardcoded `rithvik-dark` default in JSX, then (2) an inline boot script that reads `localStorage[rithvik-theme]` and overwrites the attribute before first paint (no FOUC).
 
-Surface tokens are **derived in CSS via `color-mix()`**:
+`ThemeProvider` exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip**: writes localStorage, swaps `<html data-theme>`, updates `currentSlug`. No page-wide transition animation (see Pitfalls — two were rolled back).
 
-- `--card`, `--card-hover`, `--border`, `--border-hover` — `color-mix(in srgb, var(--text) X%, transparent)`
-- `--nav-glass` — `color-mix(in srgb, var(--bg) 72%, transparent)`
-- `--panel-glass` — `color-mix(in srgb, var(--bg) 90%, transparent)`
+**Root layout is `force-dynamic`** so theme rows inserted directly into Supabase appear on the next load without a redeploy (see Pitfalls).
 
-So **adding a new theme is one DB row** — define the 7 primary tokens and every surface adapts automatically. No CSS changes required. The dial currently fans out **14 themes**: 3 Rithvik-branded (Dark, Light, Terminal) plus 11 popular editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light).
+### Theme transition + first-visit wiggle
 
-At SSR, `ThemeStyleInjector` renders one `<style id="theme-tokens">` block containing `:root[data-theme="<slug>"] { … }` for every theme. The active theme is set on `<html data-theme="…">` by:
-1. `<html data-theme="rithvik-dark">` hardcoded in JSX (works with JS disabled).
-2. An inline boot script at the top of `<body>` that reads `localStorage[rithvik-theme]` and overwrites the attribute **before first paint** — no FOUC.
+The only animation on a theme change is the dial pill rotation; page colors swap instantly. `.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32,0.72,0,1) }` interpolates each pill's `transform` when `selectedIdx` changes.
 
-`ThemeProvider` wraps the app, exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip** — it writes `localStorage`, swaps `<html data-theme>`, and updates `currentSlug`. There is no page-wide transition animation.
+A one-time dial **wiggle** (in `ThemeDial.tsx` + `.is-wiggling` in `globals.css`) nudges discovery: fires 5s after landing if `localStorage[rithvik-theme-wiggle-shown]` is unset, suppressed the moment `currentSlug` changes, 3 cycles (~1.8s), hover/focus-paused, honors `prefers-reduced-motion`. Pure client-side. (An earlier auto-rotate-to-SynthWave idea was rejected as invasive — see Pitfalls.)
 
-**Root layout is `force-dynamic`** (`app/layout.tsx`) so new theme rows inserted directly into Supabase appear on the next page load — no redeploy required. The cost is one additional cheap themes-fetch per request, which is negligible at this site's traffic. Previously the layout was statically generated and DB-added themes wouldn't show up until the next build; this was a real foot-gun and the fix is permanent.
+### Bento globe (`components/Globe.tsx`, `BentoGlobeCard.tsx`, `MarkerEditorPanel.tsx`)
 
-### Bento globe (`components/Globe.tsx`, `components/BentoGlobeCard.tsx`, `components/MarkerEditorPanel.tsx`)
+The Location tile is an interactive cobe globe. Markers live as a JSON array in `site_content` under `bento.globe_markers` (one chunk, not per-marker), each `{ id, city, region, country, lat, lng, timezone (IANA), kind: "home"|"current"|"default" }`. Seeds: Boston (home, `--accent`), West Lafayette (default, dim accent), San Francisco (current, `--green`).
 
-The Location tile in the Bento section is an interactive cobe-rendered 3D globe. Markers are stored as a JSON array in `site_content` under key `bento.globe_markers` (one chunk, not per-marker — see Pitfalls). Each marker has `{ id, city, region, country, lat, lng, timezone (IANA), kind: "home"|"current"|"default" }`. Seeds: Boston (home), West Lafayette (default), San Francisco (current). The `current` marker renders in `--green`; `home` in `--accent`; `default` is a dimmer accent mix.
+- **No animation loop** — cobe v2 renders once and exposes `update(opts)`. `Globe.tsx` owns a `requestAnimationFrame` loop pushing `{phi, width, height}` every frame, which also positions the DOM marker overlay. See Pitfalls.
+- **Theme reactivity** — reads `--bg`/`--text`/`--accent` via `getComputedStyle`, converts each to a [0,1] RGB triple through an offscreen 1×1 canvas (parses any CSS color incl. `oklch`). On `data-theme` change (MutationObserver) the instance is destroyed and rebuilt (cobe can't live-mutate colors). `dark` flag derives from `--bg` luminance, so new themes need zero JS.
+- **Hover/tooltip** — canvas has no DOM hit testing, so per-frame a projection helper maps each marker's (lat,lng)→(x,y) using the same `phi` and fixed `theta: 0.3` and positions an absolutely-placed `<button>`. Back-hemisphere markers (post-rotation z ≥ 0) get `opacity:0` + `pointer-events:none`. Tooltip is driven from the rAF loop (`tooltipRef`) so it tracks rotation live; content is `Intl.DateTimeFormat`-driven (city local time + tz short code).
+- **Editing** — `MarkerEditorPanel.tsx` mounts only in edit mode; Save calls `updateGlobeMarkers` (`app/admin/actions.ts`), which validates (lat/lng range, IANA tz via `new Intl.DateTimeFormat` in try/catch, kind enum) then delegates to `upsertSiteContent`. For `bento.globe_markers`, the async `buildSiteContentText` → `buildGlobeMarkersText` joins the `education` table to produce a "he attends Purdue" clause for any default marker whose city matches a school name (case-insensitive substring).
 
-**Cobe v2 has no animation loop.** Unlike v1, `cobe@2.x` does NOT call any `onRender` callback and does NOT internally drive `requestAnimationFrame`. The runtime renders once on construction and exposes `update(opts)` for everything else. `Globe.tsx` therefore drives its own `requestAnimationFrame` loop that calls `globe.update({ phi, width, height })` every frame; the same loop also positions the DOM marker overlay. Without this, the globe renders once and freezes.
+### Hero connect cluster (`components/HeroConnect.tsx`, `ui/animated-beam.tsx`, `SocialIcons.tsx`)
 
-**Theme reactivity:** `Globe.tsx` reads `--bg`, `--text`, `--accent` from `getComputedStyle(document.documentElement)` and converts each to a [0,1] RGB triple via an offscreen 1×1 canvas (browser parses any CSS color, including `oklch`). On `<html data-theme>` change (MutationObserver), the cobe instance is destroyed and rebuilt — cobe doesn't support live config mutation of base/marker/glow colors. The `dark` flag is derived from `--bg` luminance, so adding a new theme is still zero JS — palette and light/dark detection happen automatically.
+The hero is a two-column grid (`.hero-content`): text left, "connect cluster" right. The cluster is the profile photo (`public/images/rithvik.jpeg`) above three circular social buttons (GitHub/LinkedIn/Email) joined by animated beams pulsing **upward** into the photo.
 
-**Hover info:** cobe is canvas-only with no DOM hit testing. Per-frame, the projection helper maps each marker's (lat, lng) to (x, y) using the same `phi` we wrote to cobe and the fixed `theta: 0.3`, then positions an absolutely-placed `<button>` per marker. Back-hemisphere markers (post-rotation z ≥ 0) get `opacity: 0` + `pointer-events: none`. The tooltip is also driven from the rAF loop (via a `tooltipRef`) so it tracks rotation in real time rather than snapping only on hover state change. Tooltip content is `Intl.DateTimeFormat`-driven (city local time + tz short code via `formatToParts`).
+- `HeroConnect.tsx` owns the refs and renders three `<AnimatedBeam>` sharing `delay`/`duration`/`repeatDelay` (unison pulse). Buttons mirror `contact.link.*` (read-only here — URLs are edited in Contact); Email copies to clipboard.
+- `ui/animated-beam.tsx` — vendored MagicUI, `cn` helper stripped, `prefers-reduced-motion` gate added, plus a **`vertical` prop** (upstream only animates horizontal beams — see Pitfalls).
+- The cluster entrance animates **opacity + blur only, never `y`** — a translate would leave the ref-measured beams pointing at stale coords.
+- Flickering-grid particle color derives from the active theme's `--bg` luminance (`gridColorForBg` in `Hero.tsx`) — see Pitfalls.
 
-**Editing:** `MarkerEditorPanel.tsx` mounts only when `useEditMode().isEditing`. The panel's Save calls the `updateGlobeMarkers` server action (`app/admin/actions.ts`), which validates (lat/lng range, IANA timezone via `new Intl.DateTimeFormat(...)` in try/catch, kind enum) then delegates to `upsertSiteContent("bento.globe_markers", JSON)`. That goes through the existing `safeEmbed` + `embedPrimary` chain, which uses the now-async `buildSiteContentText`. For the `bento.globe_markers` key specifically, `buildSiteContentText` delegates to `buildGlobeMarkersText`, which joins against the `education` table to produce a "this is where he attends Purdue" clause for any default marker whose city matches a school name. School matching is case-insensitive substring — fine for the few-row scale here.
+### Inline editing (passwordless OTP)
 
-### Theme transition (instant flip + live dial rotation)
+- `EditModeProvider` (client) owns `isEditing`, `panelOpen`, the Supabase session, and the OTP flow.
+- **Passwordless login**: enter email → Supabase emails a numeric code AND a magic link (one token, two paths). Enter the code in the panel for same-tab auth, or click the link for a fresh tab.
+- **Resend SMTP** sends from `auth@rithvik.ai` (SPF/DKIM/return-path DNS on Vercel); the built-in mailer is bypassed. The Magic Link **email template is customized** to render both `{{ .Token }}` and `{{ .ConfirmationURL }}` — the default omits the token, leaving the code path empty.
+- **OTP length** is whatever Supabase generates (default 8 in newer projects); the panel input accepts 6–10 digits.
+- **Session policy**: per-tab via `sessionStorage[rithvik-tab-auth]`; closing the tab clears it. The Supabase session itself isn't signed out on "exit edit mode".
+- **Allow-list**: `NEXT_PUBLIC_ADMIN_EMAIL` is checked client-side before the Supabase call — instant feedback + avoids burning the OTP rate limit. Belt-and-suspenders on top of `shouldCreateUser: false`.
+- **Magic-link landing**: callback redirects to `/?auth=ok`; `EditModeProvider` detects the marker on mount, pre-arms `tabAuth`, flips `isEditing`, strips the param via `history.replaceState` (see Pitfalls — without the marker the new tab stays unauthenticated).
+- Components: `InlineLoginPanel` (top-right two-step card), `EditBar` (bottom "Exit editing"), `EditableText` (contentEditable, saves on blur, Esc reverts, Enter blurs unless multiline), `EditableTagList` (chip editor).
+- Server actions in `app/admin/actions.ts` (`create/update/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`, `updateGlobeMarkers`) all call `requireAuth()` + `revalidatePath("/")`.
+- Callback `app/auth/callback/route.ts` exchanges the PKCE code for a session, redirects to `/?auth=ok` or `/?auth_error=…`.
 
-The only animation on a theme change is the dial pill rotation itself. The page-wide colors swap instantly — every CSS-var-driven surface (bg, text, borders, glass tints, etc.) repaints in the new theme on the next frame.
+### RAG bot (`components/RagBot.tsx`, `SimpleMarkdown.tsx`, `SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
-- **Dial rotation** (`.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) }`) — each pill's `transform: translate(0, calc(-50% + Y)) rotate(Xdeg)` recomputes whenever `selectedIdx` changes; CSS interpolates it. The fan rotates smoothly as one cohesive unit while the rest of the page has already snapped to the new theme.
+A floating **"Ask RAG"** launcher (bottom-right, mounted in `page.tsx`) — deliberately attention-grabbing (animated gradient text in a halo'd pill) — opens a glass chat panel streaming from `/api/chat`. A second launcher (`SecondaryContextPanel`) appears only in edit mode to manage secondary knowledge.
 
-Earlier iterations tried two transition animations and we rolled both back:
-- **View Transitions API** with per-pill `view-transition-name` — pulled pills out of the dial's `overflow: hidden` clipping (named groups aren't clipped by their parent's overflow) and interpolated their bounding boxes rather than their transforms, so pills snapped to the new rotation at t=0 and only slid linearly.
-- **`<ThemeWash>` overlay** with delayed `data-theme` swap — a glass wave sweeping from the dial across the viewport, with the `data-theme` flip hidden behind the opaque crest. Looked busy; the instant flip reads cleaner.
+**Panel UI:**
+- **Theme-independent** — launcher/panel/bubbles/chips/input use private `--rag-*` tokens (hardcoded in `.rag-launcher`), so it looks identical on every theme (gradient/shine effects need a fixed dark base).
+- **Shine border** (`.rag-shine`, masked radial gradient).
+- **Resizable** from the top-left corner: clamped 320×420 → 720×820, persisted to `localStorage[rag-panel-size]`, hydrated via lazy `useState` (SSR-safe — panel only renders post-click).
+- **`SimpleMarkdown`** — hand-rolled, dep-free: bold/italic/inline+fenced code, links, headings, bullet/numbered lists, paragraphs with soft `<br>`. The system prompt's FORMATTING section keeps model output sparing so the renderer gets clean input.
+- **Starter chips** appear only on the welcome screen with precomputed Q+A pairs (`STARTERS` in `RagBot.tsx`) — clicking is instant, no API call. **Maintenance:** update `STARTERS` if schools/stack/contact change significantly.
 
-### First-visit dial wiggle
+> Deep dive: `docs/explanations/rag-pipeline.md`. This is the quick reference.
 
-A small one-time `translate + rotate` shake on the dormant dial draws attention to the theme picker without being intrusive. Implementation lives entirely in `ThemeDial.tsx` + the `.is-wiggling` rule in `globals.css`:
+Two parallel pgvector stores, both **HNSW** (NOT IVFFlat — see Pitfalls):
 
-- Fires 5s after the user lands, if and only if `localStorage[rithvik-theme-wiggle-shown]` is unset.
-- Suppressed early (and the flag set) the moment `currentSlug` changes — if the user already discovered the dial, no nudge needed.
-- Three shake cycles (~1.8s total), pauses on hover/focus, honors `prefers-reduced-motion`.
-- Pure client-side: no DB, no API calls, no props from the layout. The constants live in `ThemeDial.tsx`.
+- `primary_embeddings` — one row per `projects`/`experience`/`education`/`site_content` record, auto-upserted on inline edit, wrapped in `safeEmbed` (save first, embed second; failures don't undo saves). `projects`/`experience`/`education` go through `syncPrimary(...)`, which respects `published` (false → embedding deleted, matching backfill's filter); `site_content` has no `published` and always embeds via `embedPrimary`. `match_primary(query_embedding, match_count)` returns top-N by cosine. Chunk text is **statement-form prose with a Rithvik name anchor** ("Rithvik Praveen Kumar studies at Purdue…"); dotted labels like `[bento.stack]` are mapped to readable phrases so the text carries real meaning.
+- `secondary_embeddings` — chunks from files uploaded via `SecondaryContextPanel`, tied to `secondary_documents` (filename/mime/path). PDF → `unpdf`, DOCX → `mammoth`, text → UTF-8, images → `gpt-4o-mini` caption. Per-file chunk cap 200. `match_secondary` mirrors primary.
 
-An earlier iteration auto-rotated the dial and selected SynthWave '84 by itself; it was too invasive and was rolled back. See Pitfalls.
+`app/api/chat/route.ts` per turn:
+1. **HyDE** — `generateHypotheticalAnswer` gets a 1–2 sentence statement; question + hypothetical are embedded together so question-form queries retrieve statement-form chunks.
+2. **Parallel retrieval** — `Promise.allSettled` over `match_primary` + `match_secondary`, top 10 each; a failed source falls back to `[]`.
+3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
+4. **Context block** — `## Recent conversation` (last 5 turns), `## What's on the website` (primary), `## Background materials` (secondary).
+5. **Chat completion** — streams from `gpt-4o-mini` (NOT DeepSeek — see Pitfalls). Top-of-prompt CRITICAL GROUNDING RULES forbid inventing facts; recent turns are passed as real `Human`/`AI` messages, used for continuity only.
 
-### Hero connect cluster (`components/HeroConnect.tsx`, `components/ui/animated-beam.tsx`, `components/SocialIcons.tsx`)
+Secondary originals live in the private `secondary` Storage bucket. RLS denies anon access to all three RAG tables; the chat route + server actions reach them via `adminClient()` (service-role).
 
-The hero is a **two-column grid** (`.hero-content`): the existing text block on the left, a "connect cluster" on the right. The cluster is the profile photo (`public/images/rithvik.jpeg`) on top with three circular social buttons (GitHub / LinkedIn / Email) in a row beneath it, joined by animated light beams that pulse **upward** from each button into the photo.
+Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`. `DEEPSEEK_API_KEY` is dead code (kept in the example only).
 
-- `HeroConnect.tsx` — owns the refs (`containerRef` + one per button + the photo) and renders three `<AnimatedBeam>`. All three beams share `delay`/`duration`/`repeatDelay` so they pulse in unison. The buttons mirror the `contact.link.*` keys (passed from `page.tsx` → `Hero` → `HeroConnect`); they are **read-only** here — URLs are still edited from the Contact section. The Email button copies the address to the clipboard with a confirmation, mirroring the Contact email button.
-- `components/ui/animated-beam.tsx` — vendored from MagicUI. Two local changes: the `cn` className helper was dropped (no `clsx`/`tailwind-merge` in this project) and a `prefers-reduced-motion` gate renders just the static path. A `vertical` prop was **added** — see Pitfalls; the upstream gradient only animates horizontal beams.
-- `SocialIcons.tsx` — the three brand SVGs (`size` prop), shared by `HeroConnect` and `Contact`.
-- The cluster's entrance animation (in `Hero.tsx`'s `connectCol` variant) animates **opacity + blur only, never `y`** — a translate would shift the layout box mid-animation and leave the ref-measured beams pointing at stale coordinates.
-- The flickering-grid particle color is derived from the **active theme's `--bg` luminance** (`gridColorForBg` in `Hero.tsx`, reading `tokens.bg` from `useTheme()`), so every light theme gets dark particles — see Pitfalls.
+**One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn — well under $1/month at our traffic.
 
-### Inline editing (passwordless OTP, completed)
+### Supabase browser-client gotcha
 
-- `EditModeProvider` (client) owns `isEditing`, `panelOpen`, Supabase session, and the OTP flow
-- Login is **passwordless**: enter email → Supabase emails both a numeric code AND a magic link (single token, two completion paths). Enter the code in the panel for same-tab auth, or click the link to authenticate a fresh tab. Supabase's password column is unused by our UI but left in place as an emergency escape hatch
-- Email delivery uses **Resend** as the custom SMTP provider (Supabase Auth → Emails → SMTP Settings). Verified domain `rithvik.ai` with SPF/DKIM/return-path DNS records on Vercel. Mail comes from `auth@rithvik.ai`. The built-in Supabase mailer is bypassed entirely — its rate limits and deliverability don't apply
-- The email template (Supabase Auth → Email Templates → Magic Link) is customized to render both `{{ .Token }}` and `{{ .ConfirmationURL }}`. The default template only includes the link; without the template edit, the code-entry path has no code to enter
-- OTP length is whatever Supabase generates (configurable in Auth → Providers → Email; default is 8 in newer projects). The panel input accepts 6–10 digits to stay robust to the dashboard setting
-- Session policy: stays alive **per tab** (`sessionStorage` flag `rithvik-tab-auth`); closing the tab clears it so the next tab requires fresh auth. The Supabase session itself is not signed out on "exit edit mode" — so re-entering the dial doesn't reopen the login panel
-- Client-side allow-list: `NEXT_PUBLIC_ADMIN_EMAIL` is matched against the form input before the Supabase call. Defends against accidental OTP-rate-limit consumption and gives instant "not allowed" feedback. Belt + suspenders on top of `shouldCreateUser: false`
-- Magic-link landing tab: the callback redirects to `/?auth=ok`. `EditModeProvider` detects the marker on mount, pre-arms `tabAuth`, and strips the param via `history.replaceState`. Without this, the `INITIAL_SESSION` event from the SDK is filtered out and the new tab stays unauthenticated despite having valid cookies — see the Pitfalls section
-- `InlineLoginPanel` — top-right glass card, two-step (email → code) with an `← Use a different email` back button on step 2
-- `EditBar` — bottom floating indicator with "Exit editing"
-- `EditableText` — `contentEditable` wrapper, saves on blur, Escape reverts, Enter blurs unless `multiline`
-- `EditableTagList` — chip editor (× on each, input adds on Enter/comma/blur)
-- Server actions in `app/admin/actions.ts` — `createProject/updateProject/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`. Every action calls `requireAuth()` (reads cookie session, unchanged from password days) and `revalidatePath("/")`
-- Magic-link callback at `app/auth/callback/route.ts`: exchanges PKCE code for session, redirects to `/?auth=ok` (success) or `/?auth_error=…` (failure surfaced by the panel)
-
-### RAG bot (`components/RagBot.tsx`, `components/SimpleMarkdown.tsx`, `components/SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
-
-A floating **"Ask RAG"** launcher in the bottom-right (mounted in `app/page.tsx`). The button is intentionally attention-grabbing — animated gradient text inside a halo'd pill — to telegraph "this site has an AI bot" at a glance. Clicking opens a glass chat panel; messages stream from `/api/chat` token-by-token. A second launcher to its left — `SecondaryContextPanel` — only appears in edit mode and manages the bot's secondary knowledge.
-
-**Chat panel UI specifics:**
-- **Theme-independent palette.** The launcher, panel, bubbles, chips, and input use private `--rag-*` tokens (defined inside `.rag-launcher` in `globals.css`) with hardcoded values. The bot looks identical on Dark, Light, Terminal, and every editor theme — the gradient/shine effects rely on a fixed dark-slate base to read correctly.
-- **Animated shine border** ring around the panel (`.rag-shine`, masked radial gradient).
-- **Resizable** by dragging the top-left corner: clamped to 320×420 min and 720×820 max; size persisted to `localStorage[rag-panel-size]` and hydrated via a lazy `useState` initializer (SSR-safe — the panel only renders post-hydration on user click, so SSR/client size mismatch is invisible).
-- **`SimpleMarkdown` renderer** for bot replies — hand-rolled, dep-free; handles `**bold**`, `*italic*`/`_italic_`, inline `` `code` ``, fenced ``` blocks, `[text](url)` links, headings `# ##`, bullet/numbered lists, paragraphs with soft `<br>` for streaming mid-paragraph newlines. User messages render as plain text. The chat system prompt has a FORMATTING section instructing the model to use sparing markdown (max 2–3 bolded spans, bullets only for 3+ items, backticks for tech names) so the renderer has clean input.
-- **Starter chips** appear only on the welcome screen (`messages.length === 1 && messages[0].role === "bot"`). Each chip has a precomputed Q+A pair (`STARTERS` constant in `RagBot.tsx`). Clicking appends the user message + bot answer instantly — no API call, no latency, no embedding load. Chips disappear the moment any real exchange happens. **Maintenance note:** the answers are static and grounded in current `site_content` seeds; update `STARTERS` if Rithvik changes schools, tech stack, or contact info significantly.
-- **"Talking portfolio" welcome message** explicitly frames RAG so new visitors immediately understand what they're talking to.
-
-> Full architectural deep dive: see `docs/explanations/rag-pipeline.md`. This section is the quick reference.
-
-Two parallel pgvector stores in Supabase, both indexed with **HNSW** (NOT IVFFlat — see Pitfalls):
-
-- `primary_embeddings` — one row per `projects` / `experience` / `education` / `site_content` record. Auto-upserted by `app/admin/actions.ts` on every inline edit, wrapped in `safeEmbed` (save first, then embed; OpenAI failures don't undo saves). For `projects` / `experience` / `education` the upsert goes through `syncPrimary(...)`, which respects each row's `published` flag — `false` rows have their embedding deleted, matching backfill's `published = true` filter. `site_content` has no `published` column and always embeds via `embedPrimary` directly. `match_primary(query_embedding, match_count)` RPC returns top-N by cosine similarity. Chunk text is **statement-form natural prose with a Rithvik name anchor** (e.g. "Rithvik Praveen Kumar studies at Purdue University…") — labels like `[bento.stack]` are mapped to readable phrases ("Rithvik's tech stack and technologies he works with") so the embedded text actually carries semantic meaning instead of opaque dotted keys.
-- `secondary_embeddings` — chunks from files Rithvik uploads via `SecondaryContextPanel`. Tied to `secondary_documents` rows that track filename / mime / storage path. PDFs use **`unpdf`** (a serverless-friendly wrapper around pdfjs-dist), DOCX uses `mammoth`, plain text reads UTF-8 directly, images get captioned by `gpt-4o-mini` and the caption is embedded. Per-file chunk cap = 200 to bound embedding cost per upload. `match_secondary(query_embedding, match_count)` mirrors the primary RPC.
-
-`app/api/chat/route.ts` runs the following on every turn:
-1. **HyDE expansion** — `generateHypotheticalAnswer(question)` calls `gpt-4o-mini` for a 1–2 sentence statement-form answer. The question + hypothetical are concatenated and embedded together. This is what makes question-form queries (like "where did rithvik study?") retrieve the right statement-form chunks.
-2. **Parallel retrieval** — `Promise.allSettled` over `match_primary` + `match_secondary`, **top 10 each**. A failed source falls back to `[]` so one regression doesn't 500 the request.
-3. **Empty-context guard** — if BOTH retrievals return zero rows, short-circuit the LLM entirely and stream the canned "I don't have that specific detail" refusal. Loud `[rag] empty-context guard fired` warning so a regression surfaces immediately.
-4. **Context block** — three labeled sections: `## Recent conversation` (last 5 turns, for continuity), `## What's on the website` (primary chunks), `## Background materials` (secondary chunks).
-5. **Chat completion** — streams from **OpenAI `gpt-4o-mini`** (NOT DeepSeek — see Pitfalls). System prompt has a top-of-prompt CRITICAL GROUNDING RULES section that's explicit about never inventing facts and only treating Recent conversation as continuity, not as a fact source. Recent turns are also passed as actual `Human`/`AI` message turns so the model sees a real conversation, not a transcript dump.
-
-Originals of secondary uploads live in the private `secondary` Supabase Storage bucket. RLS denies anon access to all three RAG tables; the chat route and server actions reach them via `adminClient()` (service-role).
-
-Env vars in `.env.local` (see `.env.local.example`): `OPENAI_API_KEY` (used for embeddings, HyDE, image captioning, and chat), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL` (admin OTP allow-list). `DEEPSEEK_API_KEY` is dead code now — left in the example for future reference but not consumed anywhere.
-
-**One-time setup:** apply `supabase/rag_pipeline_migration.sql` in the Supabase SQL editor (or via `supabase db query --linked -f ...` with the CLI), then enter edit mode and hit "Re-embed all primary content" in `SecondaryContextPanel`. After that, every inline edit keeps primary in sync automatically, and the same panel handles secondary uploads + deletions. No terminal scripts needed.
-
-**Cost** roughly $0.0008 per chat turn end-to-end (1 HyDE call + 1 embed + 1 chat completion, all on gpt-4o-mini / text-embedding-3-small). A few hundred queries/month is well under $1.
-
-### Important Supabase gotcha
-
-The browser client in `lib/supabase.ts` MUST be `createBrowserClient` from `@supabase/ssr` (NOT `createClient` from `@supabase/supabase-js`). Only the SSR version stores sessions in cookies — the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save call to `/admin/login`. This was a real bug.
+`lib/supabase.ts` MUST use `createBrowserClient` from `@supabase/ssr`, NOT `createClient` from `@supabase/supabase-js`. Only the SSR version stores sessions in cookies; the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save. This was a real bug.
 
 ## Database
 
-Tables (all in Supabase public schema):
+All in the Supabase public schema:
 
-- `projects` — portfolio projects
-- `experience` — timeline rows
-- `education` — schools (single-row Purdue today)
-- `site_content` — key/value store for editable text + structured JSON (`hero.tagline`, `hero.sub_line`, `bento.building`, `bento.stack`, `bento.interests`, `bento.globe_markers` (JSON array of `{id,city,region,country,lat,lng,timezone,kind}`), `contact.headline`, `contact.sub`, optional `contact.link.{github,linkedin,email}`). The Growth bento tile is hardcoded narrative content in `components/Bento.tsx`, not a site_content row.
-- `themes` — `{ slug, name, tokens (JSONB), sort_order, published }`. Currently seeded: Rithvik Dark, Rithvik Light, Rithvik Terminal
-- `primary_embeddings` — pgvector store for live website content. One row per projects/experience/education/site_content record; auto-upserted on inline edits. projects/experience/education respect `published` (rows flip to `false` are deleted from the store); site_content has no published column and always embeds. Service-role only.
-- `secondary_documents` — file metadata for user-uploaded RAG materials (filename, mime, storage path, byte size).
-- `secondary_embeddings` — pgvector store for chunks extracted from secondary documents. Linked to `secondary_documents` via FK with `on delete cascade`.
+- `projects`, `experience`, `education` (single-row Purdue today)
+- `site_content` — key/value for editable text + structured JSON: `hero.tagline`, `hero.sub_line`, `bento.{building,stack,interests}`, `bento.globe_markers` (JSON array, see globe section), `contact.{headline,sub}`, optional `contact.link.{github,linkedin,email}`. The Growth bento tile is hardcoded in `components/Bento.tsx`, not a row.
+- `themes` — `{ slug, name, tokens(JSONB), sort_order, published }`
+- `primary_embeddings` — pgvector for live content; auto-upserted on edits; respects `published` (except `site_content`). Service-role only.
+- `secondary_documents` — uploaded-file metadata.
+- `secondary_embeddings` — pgvector for secondary chunks; FK to `secondary_documents` `on delete cascade`.
 
-RLS: all content tables `SELECT` public; INSERT/UPDATE/DELETE use the service-role key only in server actions. The three RAG tables are service-role for both read and write — the chat route reaches them via `adminClient()`.
+RLS: content tables are `SELECT`-public, writes via service-role in server actions only; the three RAG tables are service-role for read+write.
 
-### Migration files (apply via Supabase SQL editor)
+### Migrations (apply via `supabase db query --linked -f supabase/<file>.sql`)
 
-- `supabase/stage3_migration.sql` — education table + site_content seed (inline-editing stage 3)
-- `supabase/themes_migration.sql` — themes table + Dark/Light/Terminal seed (idempotent ON CONFLICT)
-- `supabase/themes_add_terminal.sql` — UPSERT just the Terminal row (run if other themes already exist)
-- `supabase/themes_add_editor_themes.sql` — 11 popular editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light). Idempotent; sort orders 10–31 so it sits after the 3 Rithvik themes.
-- `supabase/rag_pipeline_migration.sql` — pgvector extension + `primary_embeddings` + `secondary_documents` + `secondary_embeddings` + **HNSW** indexes + `match_primary` + `match_secondary` RPCs + RLS lockdown + Storage bucket. Apply once; the rest is UI-driven. (NOTE: an earlier version used IVFFlat with `lists = 100`; that caused silent under-retrieval — see Pitfalls. HNSW is the correct choice and is what the committed migration sets up.)
-- `supabase/globe_markers_seed.sql` — idempotent UPSERT of the three seed globe markers (Boston home, West Lafayette default, San Francisco current) into `site_content.bento.globe_markers`.
-- `supabase/resume_seed.sql` — idempotent sync of `projects` + `experience` rows with the canonical resume. Drops stale rows, updates BoilerFrame in place, inserts the five new projects and the four new experience entries (TinyML research, Hack The Future, Code Ninjas IR + Sensei). Re-applying lands the same state.
+- `stage3_migration.sql` — education table + site_content seed
+- `themes_migration.sql` — themes table + Dark/Light/Terminal (idempotent)
+- `themes_add_terminal.sql` — UPSERT just the Terminal row
+- `themes_add_editor_themes.sql` — the 11 editor themes (idempotent, sort 10–31)
+- `rag_pipeline_migration.sql` — pgvector + the 3 RAG tables + **HNSW** indexes + `match_primary`/`match_secondary` RPCs + RLS + Storage bucket. Apply once. (An earlier IVFFlat version under-retrieved — see Pitfalls.)
+- `globe_markers_seed.sql` — UPSERT the 3 seed markers
+- `resume_seed.sql` — idempotent sync of `projects` + `experience` with the canonical resume
 
-Apply migrations via the linked CLI: `supabase db query --linked -f supabase/<file>.sql`. The linked project is the `Rithvik` Supabase project (not `rithvikpkx's Project` or `Grind-Catapult26` — there are three under the same org).
+The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 
 ## File layout cheat sheet
 
 ```
 app/
-  layout.tsx          — force-dynamic root layout; fetches themes, renders ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial
-  page.tsx            — fetches site_content + parses bento.globe_markers; renders Hero/Bento/Education/Projects/Experience/Contact + RagBot + SecondaryContextPanel
-  globals.css         — tokens, dial, bento (incl. globe + marker overlay + growth tile), rag chat (theme-independent), OTP login (code step), all the rest
-  icon.tsx            — dynamic 64×64 browser-tab favicon ("R." in the default-theme accent)
-  apple-icon.tsx      — 180×180 iOS Home Screen icon (same recipe, no border-radius)
-  opengraph-image.tsx — dynamic OG image for social link previews
-  admin/
-    actions.ts        — server actions for all tables (used by inline-editing flow); includes updateGlobeMarkers
-    rag-actions.ts    — server actions: backfillPrimaryEmbeddings, list/upload/delete secondary docs
-    auth-helper.ts    — shared requireAuth (used by actions.ts and rag-actions.ts)
-  api/chat/route.ts   — HyDE expand → match_primary + match_secondary → gpt-4o-mini stream
-  auth/callback/route.ts — magic-link landing: exchanges PKCE code for session, redirects to /?auth=ok or /?auth_error=…
+  layout.tsx          — force-dynamic root: themes fetch, ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial
+  page.tsx            — fetches site_content + parses globe markers; renders sections + RagBot + SecondaryContextPanel
+  globals.css         — tokens, dial, bento (globe/markers/growth), rag chat (theme-independent), OTP login
+  icon.tsx / apple-icon.tsx / opengraph-image.tsx — dynamic favicon / iOS icon / OG image
+  admin/actions.ts    — server actions for all tables (incl. updateGlobeMarkers)
+  admin/rag-actions.ts— backfillPrimaryEmbeddings, list/upload/delete secondary docs
+  admin/auth-helper.ts— shared requireAuth
+  api/chat/route.ts   — HyDE → match_primary + match_secondary → gpt-4o-mini stream
+  auth/callback/route.ts — exchanges PKCE code, redirects to /?auth=ok or /?auth_error=…
 
 components/
-  Nav.tsx, Footer.tsx, Hero.tsx, Bento.tsx, Education(.tsx + Client.tsx),
-  Projects(.tsx + Client.tsx), Experience(.tsx + Client.tsx), Contact.tsx
-  EditModeProvider.tsx, InlineLoginPanel.tsx, EditBar.tsx
-  EditableText.tsx, EditableTagList.tsx
-  ThemeProvider.tsx, ThemeStyleInjector.tsx, ThemeDial.tsx
-  FadeIn.tsx, KineticText.tsx, FlickeringGrid.tsx, TimelineBeam.tsx, LocalTime.tsx, EduLogo.tsx
-  Globe.tsx                  — cobe canvas + rAF loop driving rotation + DOM marker projection + tooltip
-  BentoGlobeCard.tsx         — bento-tile wrapper that mounts Globe + (in edit mode) MarkerEditorPanel
-  MarkerEditorPanel.tsx      — edit-mode-only add/edit/delete UI for globe markers
-  RagBot.tsx                 — floating chat launcher + streaming chat panel (resizable, markdown)
-  SimpleMarkdown.tsx         — hand-rolled markdown renderer used by bot replies
-  SecondaryContextPanel.tsx  — edit-mode-only panel: list/upload/delete secondary docs + backfill
-  HeroConnect.tsx            — hero connect cluster: profile photo + 3 social buttons + beams
-  SocialIcons.tsx            — shared GitHub/LinkedIn/Email brand SVGs (used by HeroConnect + Contact)
-  ui/animated-beam.tsx       — vendored MagicUI beam (cn stripped, reduced-motion + vertical mode added)
+  Nav, Footer, Hero, Bento, Education(+Client), Projects(+Client), Experience(+Client), Contact
+  EditModeProvider, InlineLoginPanel, EditBar, EditableText, EditableTagList
+  ThemeProvider, ThemeStyleInjector, ThemeDial
+  FadeIn, KineticText, FlickeringGrid, TimelineBeam, LocalTime, EduLogo
+  Globe                 — cobe canvas + rAF loop + DOM marker projection + tooltip
+  BentoGlobeCard        — mounts Globe + (edit mode) MarkerEditorPanel
+  MarkerEditorPanel     — edit-mode marker add/edit/delete
+  RagBot                — chat launcher + streaming panel (resizable, markdown)
+  SimpleMarkdown        — hand-rolled markdown renderer
+  SecondaryContextPanel — edit-mode: secondary docs + backfill
+  HeroConnect           — photo + 3 social buttons + beams
+  SocialIcons           — shared GitHub/LinkedIn/Email SVGs
+  ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
 
 lib/
-  supabase.ts         — clients (browser uses createBrowserClient)
-  themes.ts           — token list, fallback tokens, buildThemeStyleSheet
+  supabase.ts         — clients (browser = createBrowserClient)
+  themes.ts           — token list, fallbacks, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
-  embeddings.ts       — OpenAI embed wrapper, chunker, row→text builders, upsert helpers
-  file-extractors.ts  — PDF/DOCX/TXT/MD readers + gpt-4o-mini image captioner
+  embeddings.ts       — embed wrapper, chunker, row→text builders, upsert helpers
+  file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
 
-docs/plans/
-  phase1-design-plan.md           — done (initial design pass before the build began)
-  phase1-development-plan.md      — done (initial development pass before the build began)
-  feat-inline-editing.md          — done (stages 1–8 shipped, merged to main as v1.1)
-  feat-theme.md                   — done (theme stage 8 polish + a11y complete)
-  feat-rag-pipeline.md            — done (RAG pipeline shipped + IVFFlat/DOMMatrix/HyDE rescues)
-  bento-globe-plan.md             — done (interactive cobe globe + DOM marker overlay + edit-mode panel + RAG school join)
-  feat-passwordless-otp-auth.md   — done (Supabase email OTP + magic-link callback + Resend SMTP shipped)
-
-docs/explanations/
-  rag-pipeline.md         — deep architectural reference for the RAG bot
+docs/plans/*          — all done: phase1 design/dev, inline-editing, theme, rag-pipeline, bento-globe, passwordless-otp
+docs/explanations/rag-pipeline.md — RAG deep dive
 ```
 
 ## Pitfalls learned the hard way
 
 ### Theme / UI
 
-- **Don't add a page-wide transition animation to the theme swap.** Two prior approaches were rolled back: (a) `document.startViewTransition` freezes the live DOM during the transition, so per-pill CSS rotation can't visibly play, and per-element `view-transition-name` pulls children out of their parent's `overflow: hidden` clipping while interpolating bounding boxes rather than transforms; (b) a custom glass-wash overlay with a delayed `data-theme` flip worked mechanically but read as visually busy. The instant flip + live pill rotation is the chosen architecture.
-- **`setPointerCapture` on `pointerdown` breaks button clicks** — the click target is redirected from the inner button to the captured container. Only call `setPointerCapture` once you've confirmed an actual drag (movement past a threshold).
-- **React's `onWheel` is passive from v17+** — `e.preventDefault()` doesn't work. To intercept the wheel for the theme dial cycling, attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect`.
-- **Auto-rotating the theme dial on first visit was rejected as too invasive.** The original idea was to expand the dial after a delay and cycle it to SynthWave '84 to introduce the picker. Even with a 10s delay and a narrowly-scoped abort, the page-wide color flip felt presumptuous — visitors had not asked for a theme change. The replacement is a subtle one-time wiggle on the dormant pill (3 cycles, ~1.8s, hover-paused), which signals "this is interactive" without forcing a color decision. Lesson: discoverability nudges should affect the affordance, not the underlying state.
-- **Mounting an edit-mode-only component outside `<EditModeProvider>` 500s the entire route.** `useEditMode()` throws if no provider is above it in the tree, which crashes SSR for every visitor (not just authenticated editors). The previously-shipped `ThemeDemoSettings` panel triggered this and was rolled back. If you add a new component that calls `useEditMode()`, mount it INSIDE `<EditModeProvider>` (which wraps `{children}` in `app/layout.tsx`, not the theme dial siblings).
-- **`force-dynamic` on the root layout is required when content can be changed via direct DB writes** (themes added through `supabase db query`). Without it, the homepage is statically generated at build time and stale DB state lingers until the next deploy. The cost is one extra Supabase fetch per request, which is negligible. The inline-editing flow already revalidates via `revalidatePath("/")`, but anything that bypasses server actions (raw SQL, dashboard inserts) needs this safety net.
-- **cobe v2 has no `onRender` callback.** A lot of cobe tutorials/snippets online were written for v1, which exposed `onRender: (state) => { ... }` and drove its own animation loop. v2 (currently `cobe@^2.0.1`) dropped both: there is no callback, no internal rAF, and the typed `COBEOptions` no longer includes `onRender`. The runtime calls `te()` once on construction and exposes `update(opts)` for everything else. Any motion (spin, drag rotation, marker overlay) must be driven from a caller-owned `requestAnimationFrame` loop that pushes `{phi, width, height}` to `globe.update(...)` every frame. If you find yourself reaching for `as any` to satisfy `onRender`, stop — it compiles but the globe will render once and freeze.
-- **The MagicUI `AnimatedBeam` gradient only animates horizontal beams.** Upstream sweeps the gradient along the X axis (`x1`/`x2` keyframes, `y` fixed). On a vertical beam the comet slides sideways across a vertical stroke, so the whole beam just brightens/dims instead of a pulse travelling along it. `components/ui/animated-beam.tsx` has a local `vertical` prop that sweeps along Y instead; `HeroConnect` passes it. If you reuse the beam for a vertical connection, set `vertical`. Trail length is the gradient-vector span (the `y1`–`y2` gap in the vertical branch); sweep speed is the `duration` prop.
-- **`KineticText` must use `block` flow, not `flex flex-wrap`.** It renders one `<span>` per character; with a flex container, `flex-wrap` breaks between *any* two letter-spans, so a multi-word line wraps mid-word ("Praveen Ku / mar"). `block` (normal text flow) only breaks at whitespace, and the component's space character is a non-breaking space, so multi-word lines stay intact. Don't reintroduce flex here.
-- **`radial-gradient(circle, …)` in a non-square box gets clipped.** A `circle` sizes to `farthest-corner`, which can exceed the element's box; the background is clipped to the box, leaving a hard straight edge — invisible on dark themes, obvious on light ones. The hero glow blobs (`.hero::before`/`::after`) use `ellipse closest-side` so the gradient always fades to transparent inside its box.
-- **Theme-dependent UI must derive from theme tokens, not a hardcoded slug check.** The hero flickering grid once picked its particle color with `currentSlug === "rithvik-light"`, so every *other* light theme (GitHub Light, Atom One Light) got white particles that vanished. `gridColorForBg` in `Hero.tsx` now computes contrast from the active theme's `tokens.bg` luminance (via `useTheme()`) — a pure render-time computation, so a new light theme needs zero code changes. Prefer luminance-from-tokens over slug checks for anything that must adapt light/dark.
+- **No page-wide transition on theme swap.** Two approaches were rolled back: (a) `startViewTransition` freezes the DOM so pill rotation can't play, and per-element `view-transition-name` escapes the dial's `overflow:hidden` clip while interpolating bounding boxes not transforms; (b) a glass-wash overlay read as visually busy. Instant flip + live pill rotation is the chosen design.
+- **`setPointerCapture` on `pointerdown` breaks button clicks** (redirects the click target). Only capture once a drag is confirmed past a threshold.
+- **React's `onWheel` is passive** — `preventDefault()` no-ops. Attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect` for dial cycling.
+- **Auto-rotating the dial on first visit was rejected as invasive** — visitors hadn't asked for a color change. The subtle one-time wiggle replaced it. Discoverability nudges should affect the affordance, not the underlying state.
+- **An edit-mode-only component mounted outside `<EditModeProvider>` 500s the whole route** — `useEditMode()` throws with no provider, crashing SSR for every visitor. Mount such components INSIDE the provider (it wraps `{children}`, not the dial siblings).
+- **`force-dynamic` on the root layout is required** when content can change via direct DB writes (themes via raw SQL/dashboard). Without it the homepage is static and stale until the next deploy; server actions revalidate via `revalidatePath("/")` but raw writes don't.
+- **cobe v2 has no `onRender`.** Many online snippets are v1, which drove its own rAF. v2 renders once on construction and exposes only `update(opts)`; all motion must come from a caller-owned rAF loop. Don't `as any` to fake `onRender` — it compiles but the globe freezes.
+- **MagicUI `AnimatedBeam` only animates horizontal beams** — upstream sweeps the gradient along X. Vertical beams need the local `vertical` prop (sweeps Y). Trail length = the `y1`–`y2` gap; sweep speed = `duration`.
+- **`KineticText` must use `block` flow, not `flex flex-wrap`.** With flex, `flex-wrap` breaks between any two letter-spans, splitting words mid-word. `block` only breaks on whitespace (and its space is non-breaking).
+- **`radial-gradient(circle, …)` in a non-square box clips** to a hard edge (`circle` sizes to farthest-corner). The hero glow blobs use `ellipse closest-side` so they always fade to transparent inside the box.
+- **Theme-dependent UI must derive from tokens, not slug checks.** The flickering grid once keyed on `currentSlug === "rithvik-light"`, so other light themes got invisible white particles. `gridColorForBg` now computes contrast from `tokens.bg` luminance — new light themes need zero code.
 
-### RAG (every one of these cost real debugging time)
+### RAG (each cost real debugging time)
 
-- **`pgvector` IVFFlat with `lists` ≫ rows silently returns 0–1 chunks per query.** The initial migration used the published `lists = sqrt(rows)` heuristic and shipped with `lists = 100` — fine for ten thousand rows, catastrophic for the seventeen we had on day one. Each cluster ended up nearly empty; the default `ivfflat.probes = 1` searched a single cluster and almost always returned the seed row only. Symptom: empty `contextBlock`, then the chat model hallucinates wildly (Penn State / Michigan / fictional projects) because the system prompt's "refuse if not in context" rule wasn't enough to overcome a cost-optimized model's tendency to fill blanks. **Use HNSW** — no row-count-dependent parameter to tune, works correctly at any scale.
-- **`pdf-parse@2.x` crashes on Vercel** at module evaluation: `ReferenceError: DOMMatrix is not defined`. The library transitively loads `pdfjs-dist`, which references the browser-only `DOMMatrix` global at the top of its module. Vercel's Node functions runtime doesn't expose it; local Node 24/25 does, so the issue only manifests in production. **Use `unpdf`** — same `pdfjs-dist` under the hood but ships the polyfills serverless needs.
-- **Cost-optimized LLMs (DeepSeek, etc.) treat "don't fabricate" as a suggestion, not a rule.** Even with explicit "if not in context, refuse" wording at the top of the system prompt, DeepSeek would routinely invent plausible-sounding facts about Rithvik (wrong university, wrong GitHub handle, wrong projects). `gpt-4o-mini` follows the rule reliably for ~5x the cost (still pennies per month at our traffic). Lesson: model instruction adherence is a hard requirement for RAG; don't trade it away for a 5x cost saving on what's already a cheap workload.
-- **Embedding similarity is not search.** A question like "where did rithvik study?" doesn't naturally embed close to a chunk that begins `Education: B.S. ...` — question form and statement form live in different parts of embedding space. Two fixes layered together: (1) rewrite chunk text as natural prose with the subject name visible (`Rithvik Praveen Kumar studies at Purdue...`); (2) **HyDE** — generate a 1–2 sentence hypothetical answer with `gpt-4o-mini`, concat with the question, embed the combo. Statement-form input embeds close to statement-form chunks. Both are required; either alone is insufficient.
-- **Decouple "RPC succeeded" from "RPC returned data."** Supabase's JS client distinguishes thrown rejections from in-band `{ data: null, error }` responses. Our `unpack(label, res)` helper handles both, logging `[rag] ... rpc error:` so a missing function or RLS regression doesn't silently degrade to empty context. **Also**: even a successful RPC can return `[]` — the empty-context guard in `route.ts` short-circuits the LLM entirely in that case so the bot returns the canned refusal instead of hallucinating from training data.
-- **`Promise.all` is wrong here; use `Promise.allSettled`.** Two parallel retrievals (primary + secondary) — if either rejects, `Promise.all` 500s the whole request. With `Promise.allSettled` + the unpack helper, one source can fail and the bot still answers from the other.
-- **`safeEmbed` swallows embedding errors on inline-edit actions** so a transient OpenAI hiccup never undoes a user's save. The row is in the DB; if the embedding fails, the worst case is RAG sees a stale version of that one row until the next edit or the "Re-embed all primary content" backfill. `console.warn` (not `error`) so transient OpenAI 429s don't flood Vercel's error stream.
-- **Vercel deployments are bundled separately per route.** During the `pdf-parse` DOMMatrix crash, the `/api/chat` endpoint kept working because it doesn't import `lib/file-extractors.ts`; only the server-actions bundle (which `app/admin/rag-actions.ts` loads into) was broken. So "the chat bot is alive" doesn't mean "all server actions work."
-- **`buildSiteContentText` is async (since the globe shipped).** It returns `Promise<string>` because the `bento.globe_markers` branch joins the `education` table for richer prose. Both call sites — `upsertSiteContent` in `app/admin/actions.ts` and the site_content backfill loop in `app/admin/rag-actions.ts` — await it. If you add a new caller, await the result. TypeScript will catch the omission, but the failure mode without `await` is a `[object Promise]` string ending up in the embedding text, which silently degrades retrieval quality without breaking the build.
+- **IVFFlat with `lists` ≫ rows silently returns 0–1 chunks.** The migration shipped `lists = 100` for ~17 rows; with `probes = 1` each near-empty cluster returned only the seed. Symptom: empty context, then wild hallucination. **Use HNSW** — no row-count-dependent tuning.
+- **`pdf-parse@2.x` crashes on Vercel** with `ReferenceError: DOMMatrix is not defined` at module eval (its `pdfjs-dist` references the browser-only global; local Node has it, Vercel doesn't). **Use `unpdf`.** `pdf-parse` MUST NOT be in `package.json`.
+- **Cost-optimized LLMs treat "don't fabricate" as a suggestion.** DeepSeek invented wrong university/handle/projects despite explicit refusal wording. `gpt-4o-mini` follows the rule reliably for ~5x cost (still pennies). Don't trade instruction adherence for cost on a cheap workload.
+- **Embedding similarity ≠ search.** "where did rithvik study?" doesn't embed near `Education: B.S. …`. Two layered fixes, both required: (1) chunk text as natural prose with the name visible; (2) **HyDE** — generate a statement-form hypothetical, concat + embed with the question.
+- **Decouple "RPC succeeded" from "RPC returned data."** The `unpack(label, res)` helper handles both thrown rejections and in-band `{data:null,error}`, logging `[rag] … rpc error:`. Even a successful RPC can return `[]` — the empty-context guard short-circuits the LLM so it refuses instead of hallucinating.
+- **Use `Promise.allSettled`, not `Promise.all`** — one failed retrieval would 500 the whole request; allSettled lets the bot answer from the surviving source.
+- **`safeEmbed` swallows embedding errors** on inline edits (`console.warn`, not error) so an OpenAI hiccup never undoes a save; worst case RAG sees a stale row until the next edit or a backfill.
+- **Vercel bundles each route separately.** During the `pdf-parse` crash, `/api/chat` kept working (doesn't import `file-extractors.ts`); only the server-actions bundle was broken. "Chat is alive" ≠ "all server actions work."
+- **`buildSiteContentText` is async** (it joins `education` for the globe-markers branch). Both callers — `upsertSiteContent` and the site_content backfill loop — await it. Forgetting `await` puts `[object Promise]` in the embedding, silently degrading retrieval without breaking the build.
 
 ### Auth (passwordless OTP)
 
-- **Magic-link landing tab needs the `?auth=ok` marker.** The callback route writes auth cookies server-side, then redirects to home. The in-tab Supabase SDK reads those cookies and fires `INITIAL_SESSION` (not `SIGNED_IN`, because the SDK didn't run the sign-in itself). The per-tab session policy in `EditModeProvider` filters `INITIAL_SESSION` events that don't have a pre-existing `sessionStorage` flag — so without an extra signal the new tab stays unauthenticated despite holding valid cookies. The `?auth=ok` query param is that signal: the callback redirects to `/?auth=ok` on success, and `EditModeProvider` pre-arms the tab flag + flips `isEditing` on mount when it sees the marker, then strips it via `history.replaceState`. If you ever change the callback's redirect target, preserve the marker or the magic-link path silently breaks.
-- **PKCE magic links require the same browser session.** `signInWithOtp` stores a `code_verifier` cookie when the OTP is requested. `exchangeCodeForSession` in the callback route needs that same cookie to succeed. So a magic link clicked in a different browser or device than the one that requested it fails with "both auth code and code verifier should be non-empty". The 6–10-digit code path is the cross-device fallback — `verifyOtp({ email, token, type })` doesn't depend on the code_verifier cookie.
-- **Supabase rejects redirects not on the allow-list.** Preview URLs change per deploy. Use a wildcard like `https://rithvik-*.vercel.app/auth/callback` in Authentication → URL Configuration → Redirect URLs. Without it, the magic link bounces to a Supabase error page instead of `/auth/callback`.
-- **`shouldCreateUser: false` is mandatory.** Without it, anyone who types an arbitrary email gets a Supabase account created (no password — but the row exists, polluting `auth.users`). With it, Supabase returns a 422 for unknown emails. The client-side `NEXT_PUBLIC_ADMIN_EMAIL` allow-list catches it before the network call so we don't burn the 4/hour/email rate limit on imposters.
-- **Email template default ships without `{{ .Token }}`.** Supabase's default Magic Link template renders only the link. The OTP code path needs `{{ .Token }}` in the template body, or the email arrives with no code to enter. Re-paste the custom template (block in this file's history near the OTP plan) if anyone resets it.
-- **OTP length is configurable per project.** Supabase Auth → Providers → Email → "OTP Length" defaults to 8 in newer projects, used to be 6. The panel's input accepts 6–10 digits to stay robust to the dashboard setting; don't hard-code a single length.
-- **Custom SMTP via Resend.** Built-in Supabase mailer is bypassed. Emails come from `auth@rithvik.ai` via Resend's SMTP. SPF/DKIM/return-path DNS records live on Vercel DNS for `rithvik.ai`. If deliverability ever degrades, check Resend dashboard first (the per-message log shows bounce/spam reports), then DNS record health (`dig TXT resend._domainkey.rithvik.ai`), then Supabase's SMTP test ping.
-- **OTP rate limit is per email, not per tab.** Multiple "Send me a code" clicks within the hour all hit the same 4-request bucket. The 5th throws "Email rate limit exceeded." Wait 15 minutes or use the code from an earlier email.
+- **Magic-link tab needs the `?auth=ok` marker.** The callback writes cookies server-side, so the in-tab SDK fires `INITIAL_SESSION` (not `SIGNED_IN`), which the per-tab policy filters out — leaving the tab unauthenticated despite valid cookies. `?auth=ok` is the signal `EditModeProvider` uses to pre-arm the tab flag. Preserve it if you change the callback redirect.
+- **PKCE magic links require the same browser session** — `signInWithOtp` stores a `code_verifier` cookie that `exchangeCodeForSession` needs. A link clicked on a different device fails ("auth code and code verifier should be non-empty"); the numeric code path (`verifyOtp`) is the cross-device fallback.
+- **Supabase rejects redirects not on the allow-list.** Preview URLs change per deploy — use a wildcard `https://rithvik-*.vercel.app/auth/callback` in Auth → URL Configuration.
+- **`shouldCreateUser: false` is mandatory** — otherwise any typed email creates an `auth.users` row. With it, unknown emails 422; the client allow-list catches them before the network call (saves the 4/hr rate limit).
+- **The default Magic Link email template omits `{{ .Token }}`** — the code path then has no code. Keep the customized template that renders both token and link.
+- **OTP length is per-project configurable** (default 8 now, was 6). The panel accepts 6–10; don't hard-code one length.
+- **Resend SMTP** sends from `auth@rithvik.ai`; the built-in mailer is bypassed. If deliverability degrades: Resend logs → DNS health (`dig TXT resend._domainkey.rithvik.ai`) → Supabase SMTP test ping.
+- **OTP rate limit is per-email, not per-tab** — 4 sends/hour share one bucket; the 5th throws "Email rate limit exceeded." Wait 15 min or reuse an earlier code.
 
 ## Where to look first when something breaks
 
-- Theme not switching → check the browser console for React errors from `ThemeProvider`. Check `localStorage.getItem("rithvik-theme")`. Try forcing `document.documentElement.dataset.theme = "rithvik-light"` in devtools to isolate CSS issues.
-- Edit-mode save redirects to `/admin/login` → the browser client probably isn't `createBrowserClient` (cookie mismatch with server actions).
-- Dial rotation doesn't animate → confirm `.theme-strip-option` still has `transition: transform 0.42s ...` and that pills do NOT have any `view-transition-name` style.
-- A theme is missing from the dial → run `supabase/themes_migration.sql` (Rithvik themes) or `supabase/themes_add_editor_themes.sql` (editor themes). Verify with `SELECT slug, name, sort_order FROM themes ORDER BY sort_order;`. If the row exists in the DB but the dial doesn't show it, the layout's themes-fetch is probably stale-cached — the layout is `force-dynamic` so this shouldn't happen, but a Vercel preview that pre-dates that change would. Trigger a redeploy.
-- **RAG bot hallucinating wildly** (wrong school, made-up projects) → the empty-context guard hasn't fired but retrieval is missing the relevant chunks. Check the rank: in Supabase SQL editor, embed the question via OpenAI manually and query `match_primary` with `match_count = 17`. If the right chunk is buried at rank 8+, HyDE expansion in `app/api/chat/route.ts` may have malfunctioned (check Vercel logs for `[rag] hyde failed`). Recovery: re-embed primary content from the panel to refresh chunks with the latest prose format.
-- **RAG returns the canned "I don't have that specific detail"** for things you know are in the DB → `[rag] empty-context guard fired` will be in Vercel logs. Means BOTH `match_primary` AND `match_secondary` returned 0 rows. Most common cause is the pgvector index being misconfigured — verify it's HNSW not IVFFlat: `SELECT indexdef FROM pg_indexes WHERE tablename = 'primary_embeddings';`.
-- **RAG returns 500 "Embedding failed"** → `OPENAI_API_KEY` missing or quota-exhausted. The chat-completion model is **`gpt-4o-mini`** (NOT DeepSeek anymore); embeddings, HyDE, image captioning, AND chat all use OpenAI.
-- **RAG answers feel stale after inline edits** → confirm `safeEmbed` isn't silently failing — Vercel logs would show `[rag] ... embed skipped:` warnings. Recovery: open edit mode → SecondaryContextPanel → "Re-embed all primary content".
-- **PDF upload fails on Vercel with a server-bundle crash** → `pdf-parse` crept back in somewhere via a dependency. We use `unpdf` because `pdf-parse@2`'s pdfjs-dist refers to `DOMMatrix` at module evaluation, which Vercel's Node runtime doesn't expose. `pdf-parse` MUST NOT be in `package.json`.
-- **Secondary upload fails with "MIME type … not supported"** → add the type to `TEXT_MIMES`/`IMAGE_MIMES` or write a new extractor branch in `lib/file-extractors.ts`.
-- **Secondary upload fails with "File produces N chunks (cap is 200)"** → the file is too long. Split it into smaller documents before uploading.
-- **`match_primary` / `match_secondary` not found** → `supabase/rag_pipeline_migration.sql` wasn't applied, or was applied to a different Supabase project than the one in `.env.local`. Use `supabase db query --linked -f supabase/rag_pipeline_migration.sql` to re-apply (idempotent).
-- **Secondary panel doesn't appear** → check `useEditMode().isEditing`. The panel self-gates; if you're not logged in via `InlineLoginPanel` it won't render.
-- **Chat route logs `[rag] match_secondary rpc error:`** → the table or RPC is missing; reapply the migration. Note the chat route gracefully degrades (returns answers using only the source that worked) so the bot still responds.
-- **Chat route logs `[rag] hyde failed`** → HyDE expansion errored (likely an OpenAI 429 or 401). Retrieval falls back to embedding the raw question — still works, just retrieval quality on question-form queries drops. Check `OPENAI_API_KEY` and quota.
-- **OTP email never arrives** → check Resend dashboard → Logs for the send event. If Resend shows "delivered" but inbox is empty, check spam, then your DNS-record health (`dig TXT resend._domainkey.rithvik.ai`). If Resend shows nothing, Supabase didn't hand it off — check Supabase Auth → SMTP Settings is enabled, the API key is correct, and the test ping succeeds. If Supabase shows a 422 in its auth logs, the email isn't in `auth.users` (or `shouldCreateUser: false` rejected it).
-- **Magic link redirects to a Supabase error page instead of `/auth/callback`** → the redirect URL isn't on the allow-list in Supabase Dashboard → Authentication → URL Configuration. Add the exact URL or a matching wildcard (`https://rithvik-*.vercel.app/auth/callback`), then re-request the OTP — existing email links bake in the redirect at send time.
-- **Magic link clicks but new tab doesn't enter edit mode** → the `?auth=ok` marker was either stripped before `EditModeProvider` saw it, or the callback never reached the success path. Check Vercel function logs for `/auth/callback` errors. The fix usually involves preserving the marker — see Pitfalls > Auth.
-- **OTP code rejected as expired/invalid right after typing it** → likely length mismatch with the panel's accepted range. Confirm OTP length in Supabase Auth → Providers → Email is between 6 and 10. If you changed it to >10, widen the input's `pattern`/`maxLength` in `InlineLoginPanel.tsx`.
-- **"Email rate limit exceeded" on resend attempts** → Supabase's per-email-per-hour cap (default 4). Wait 15 min or use an already-sent (still-unexpired) code from your inbox.
-- **OTP works but `requireAuth()` in server actions redirects to `/` afterward** → cookie scope mismatch. Confirm the browser client in `lib/supabase.ts` is `createBrowserClient` from `@supabase/ssr` (cookie storage), not `createClient` from `@supabase/supabase-js` (localStorage). Same trap as the pre-OTP setup; reconfirm if anyone touches that module.
+- **Theme not switching** → console for `ThemeProvider` errors; check `localStorage[rithvik-theme]`; force `document.documentElement.dataset.theme` in devtools to isolate CSS.
+- **Edit-mode save redirects to `/admin/login`** → browser client isn't `createBrowserClient` (cookie mismatch).
+- **Dial rotation doesn't animate** → `.theme-strip-option` lost its `transition: transform …`, or pills regained a `view-transition-name`.
+- **Theme missing from the dial** → reapply the relevant themes migration; verify `SELECT slug,name,sort_order FROM themes`. Layout is `force-dynamic` so DB rows should appear immediately; a pre-`force-dynamic` preview would need a redeploy.
+- **RAG hallucinating wildly** → guard didn't fire but the right chunk is missing/low-ranked. Manually embed the question and query `match_primary` with `match_count=17`; if buried at rank 8+, check Vercel logs for `[rag] hyde failed`. Recovery: re-embed primary.
+- **RAG returns the canned refusal** for known facts → `[rag] empty-context guard fired` in logs means BOTH retrievals hit 0 rows. Verify the index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.
+- **RAG 500 "Embedding failed"** → `OPENAI_API_KEY` missing/exhausted (embeddings, HyDE, captioning, AND chat all use OpenAI / `gpt-4o-mini`).
+- **RAG stale after edits** → check Vercel logs for `[rag] … embed skipped:`. Recovery: edit mode → SecondaryContextPanel → "Re-embed all primary content".
+- **PDF upload crashes the server bundle on Vercel** → `pdf-parse` crept back in (DOMMatrix at module eval). Must use `unpdf`; `pdf-parse` MUST NOT be in `package.json`.
+- **Secondary upload "MIME … not supported"** → add the type to `TEXT_MIMES`/`IMAGE_MIMES` or add an extractor branch in `lib/file-extractors.ts`.
+- **Secondary upload "File produces N chunks (cap is 200)"** → split the file.
+- **`match_primary`/`match_secondary` not found** → `rag_pipeline_migration.sql` wasn't applied (or to the wrong project). Re-apply (idempotent).
+- **Secondary panel missing** → it self-gates on `useEditMode().isEditing`; log in first.
+- **`[rag] match_secondary rpc error:`** → table/RPC missing; reapply migration (chat degrades gracefully to the working source).
+- **`[rag] hyde failed`** → OpenAI 429/401; retrieval falls back to the raw question (lower quality on question-form queries).
+- **OTP email never arrives** → Resend logs first (delivered? → spam/DNS); if Resend shows nothing, Supabase didn't hand off → check SMTP settings/key/test ping; a 422 in auth logs means the email isn't in `auth.users` or `shouldCreateUser:false` rejected it.
+- **Magic link → Supabase error page** instead of `/auth/callback` → redirect URL not allow-listed; add it (or a wildcard), then re-request (links bake in the redirect at send time).
+- **Magic link clicks but the new tab doesn't enter edit mode** → `?auth=ok` was stripped early or the callback didn't reach success. Check `/auth/callback` logs; usually about preserving the marker.
+- **OTP code rejected right after typing** → length mismatch; confirm Supabase OTP length is 6–10 (widen `InlineLoginPanel.tsx` if >10).
+- **"Email rate limit exceeded"** → the 4/hr/email cap; wait 15 min or reuse an unexpired code.
+- **`requireAuth()` redirects after a working OTP** → cookie-scope mismatch; reconfirm `lib/supabase.ts` uses `createBrowserClient`.
