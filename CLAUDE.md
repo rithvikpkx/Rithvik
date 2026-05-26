@@ -6,7 +6,7 @@ Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithv
 
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
 - **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie sessions, `@supabase/supabase-js` for the server admin client. Auth is **passwordless OTP** (email code + magic link); the password column is unused by the UI.
-- **Resend** — custom SMTP for Supabase Auth emails. Verified domain `rithvik.ai`; mail sends from `auth@rithvik.ai`.
+- **Resend** — two distinct paths: (1) custom SMTP for Supabase Auth emails (`auth@rithvik.ai`); (2) the contact composer POSTs directly to the **Resend HTTP API** (`fetch` to `https://api.resend.com/emails`, no SDK) from `contact@rithvik.ai`. Verified domain `rithvik.ai` covers both.
 - **Motion** (`motion/react`) for animation
 - **cobe** v2 for the WebGL globe in Bento (we drive our own rAF loop — v2 has no `onRender`)
 - **LangChain** (`@langchain/openai`) → **OpenAI** `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back — see Pitfalls.
@@ -112,6 +112,21 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 - Server actions in `app/admin/actions.ts` (`create/update/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`, `updateGlobeMarkers`) all call `requireAuth()` + `revalidatePath("/")`.
 - Callback `app/auth/callback/route.ts` exchanges the PKCE code for a session, redirects to `/?auth=ok` or `/?auth_error=…`.
 
+### Inline email composer (`components/ContactComposer.tsx`, `ContactComposerProvider.tsx`, `RichTextEditor.tsx`, `app/api/contact/route.ts`, `lib/sanitize-html.ts`)
+
+Visitors can email Rithvik directly from the site via a draggable, resizable, theme-aware floating window — no mailto, no clipboard copy required.
+
+- **`ContactComposerProvider.tsx`** — context exposing `useContactComposer()` → `{ isOpen, open, close }`. Wraps the page tree in `app/page.tsx`. Both the Hero connect-cluster email button and the Contact-section email button call `open()`.
+- **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` uses `pointer-events:none` so the site stays interactive behind it; only the panel itself captures events. Draggable via the header; resizable from the bottom-right handle; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the initial centered position (not an effect — avoids the `react-hooks/set-state-in-effect` lint rule), so `left/top/width/height` are always present inline and the CSS needs no centering logic. On mobile (≤640px) a media query overrides to a full-screen sheet with `!important`. Esc closes; From field autofocuses. The "To" row shows the destination address with a **copy-address fallback** button (replacing the old clipboard-only email button).
+- **`RichTextEditor.tsx`** — contentEditable body editor with a toolbar (bold/italic/underline/strikethrough/bullet list/numbered list/link) via `document.execCommand` — deprecated but dep-free, matching `SimpleMarkdown`'s philosophy.
+- **`lib/sanitize-html.ts`** — allowlist HTML sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:` hrefs) never survive; drops `<script>`/`<style>` blocks entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via Node's built-in `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`). Required adding `allowImportingTsExtensions: true` to `tsconfig.json` (valid because `noEmit` is true).
+- **`app/api/contact/route.ts`** — POST handler. **Honeypot**: a hidden field filled → fake 200, silently dropped. Validates email/subject/body, **re-sanitizes body server-side** (client sanitization is convenience, server is the gate). **Rate limit**: 3 sends/hour per IP via the `contact_submissions` table (checks recent rows before sending). Sends via the Resend HTTP API (`fetch`) from `CONTACT_FROM` (`contact@rithvik.ai`) to `CONTACT_TO`, with the visitor's address as `reply_to` — visitor address never goes in `from` (SPF/DKIM would reject). The sender display name is HTML-escaped before header interpolation. Logs each successful send to `contact_submissions`.
+- **`components/DeferredOverlays.tsx`** — mounts `ContactComposer` once (dynamic, `ssr:false`), deriving `toAddress` from `contact.link.email` in `site_content`.
+
+**DB:** `contact_submissions` table (id, created_at, ip, from_email, subject, status) — service-role only, RLS enabled with no anon policies. Migration: `supabase/contact_submissions_migration.sql`.
+
+**Env (server-only):** `RESEND_API_KEY`, `CONTACT_FROM`, `CONTACT_TO`.
+
 ### RAG bot (`components/RagBot.tsx`, `SimpleMarkdown.tsx`, `SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
 A floating **"Ask RAG"** launcher (bottom-right, mounted in `page.tsx`) — deliberately attention-grabbing (animated gradient text in a halo'd pill) — opens a glass chat panel streaming from `/api/chat`. A second launcher (`SecondaryContextPanel`) appears only in edit mode to manage secondary knowledge.
@@ -139,7 +154,7 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat — see Pitfalls):
 
 Secondary originals live in the private `secondary` Storage bucket. RLS denies anon access to all three RAG tables; the chat route + server actions reach them via `adminClient()` (service-role).
 
-Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`. `DEEPSEEK_API_KEY` is dead code (kept in the example only).
+Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`. `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
 
 **One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn — well under $1/month at our traffic.
 
@@ -157,6 +172,7 @@ All in the Supabase public schema:
 - `primary_embeddings` — pgvector for live content; auto-upserted on edits; respects `published` (except `site_content`). Service-role only.
 - `secondary_documents` — uploaded-file metadata.
 - `secondary_embeddings` — pgvector for secondary chunks; FK to `secondary_documents` `on delete cascade`.
+- `contact_submissions` — rate-limit window + contact log for the inline email composer (id, created_at, ip, from_email, subject, status). Service-role only; RLS enabled with no anon policies.
 
 RLS: content tables are `SELECT`-public, writes via service-role in server actions only; the three RAG tables are service-role for read+write.
 
@@ -169,6 +185,7 @@ RLS: content tables are `SELECT`-public, writes via service-role in server actio
 - `rag_pipeline_migration.sql` — pgvector + the 3 RAG tables + **HNSW** indexes + `match_primary`/`match_secondary` RPCs + RLS + Storage bucket. Apply once. (An earlier IVFFlat version under-retrieved — see Pitfalls.)
 - `globe_markers_seed.sql` — UPSERT the 3 seed markers
 - `resume_seed.sql` — idempotent sync of `projects` + `experience` with the canonical resume
+- `contact_submissions_migration.sql` — contact composer rate-limit/log table (`contact_submissions`), service-role RLS
 
 The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 
@@ -184,6 +201,7 @@ app/
   admin/rag-actions.ts— backfillPrimaryEmbeddings, list/upload/delete secondary docs
   admin/auth-helper.ts— shared requireAuth
   api/chat/route.ts   — HyDE → match_primary + match_secondary → gpt-4o-mini stream
+  api/contact/route.ts — honeypot + validation + rate-limit + Resend HTTP API send
   auth/callback/route.ts — exchanges PKCE code, redirects to /?auth=ok or /?auth_error=…
 
 components/
@@ -199,6 +217,10 @@ components/
   SecondaryContextPanel — edit-mode: secondary docs + backfill
   HeroConnect           — photo + 3 social buttons + beams
   SocialIcons           — shared GitHub/LinkedIn/Email SVGs
+  ContactComposer       — draggable/resizable floating email window (non-modal, lazy-init centering)
+  ContactComposerProvider — context: isOpen/open/close for the composer
+  RichTextEditor        — contentEditable + execCommand toolbar (bold/italic/underline/etc.)
+  DeferredOverlays      — mounts ContactComposer once (dynamic, ssr:false)
   ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
 
 lib/
@@ -207,6 +229,7 @@ lib/
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
   embeddings.ts       — embed wrapper, chunker, row→text builders, upsert helpers
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
+  sanitize-html.ts    — allowlist HTML sanitizer + htmlToText (unit-tested via node:test)
 
 docs/plans/*          — all done: phase1 design/dev, inline-editing, theme, rag-pipeline, bento-globe, passwordless-otp
 docs/explanations/rag-pipeline.md — RAG deep dive
@@ -250,6 +273,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 - **OTP length is per-project configurable** (default 8 now, was 6). The panel accepts 6–10; don't hard-code one length.
 - **Resend SMTP** sends from `auth@rithvik.ai`; the built-in mailer is bypassed. If deliverability degrades: Resend logs → DNS health (`dig TXT resend._domainkey.rithvik.ai`) → Supabase SMTP test ping.
 - **OTP rate limit is per-email, not per-tab** — 4 sends/hour share one bucket; the 5th throws "Email rate limit exceeded." Wait 15 min or reuse an earlier code.
+- **Resend can only send FROM a verified `rithvik.ai` address** — the visitor's email goes in `reply_to`, never `from` (SPF/DKIM would reject otherwise). The contact composer uses the Resend HTTP API via `fetch` (no SDK, no nodemailer); this path is entirely separate from the Supabase Auth SMTP path.
 
 ## Where to look first when something breaks
 
