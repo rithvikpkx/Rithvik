@@ -8,10 +8,11 @@ export default function BuffettLink() {
     <a
       className="buffett-link"
       href="/buffett"
+      aria-describedby="buffett-tip"
       aria-label="For Warren Buffett — a plain HTML version of this site"
     >
       For Warren Buffett
-      <span className="buffett-tip" role="tooltip">
+      <span id="buffett-tip" className="buffett-tip" role="tooltip">
         Inspired by the official berkshire hathaway website
       </span>
     </a>
