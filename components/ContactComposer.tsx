@@ -136,13 +136,19 @@ export default function ContactComposer({ toAddress }: Props) {
     setStatus("confirm");
   };
 
-  // Show the result only once BOTH the animation has finished AND the request
-  // has settled — a slow network won't show success early, a fast one won't cut
-  // the animation short.
+  // Resolve only once BOTH the animation has finished AND the request has
+  // settled. On success there's no confirmation screen — the window has already
+  // faded out under the particles, so we just clear the form (fresh next open)
+  // and close. On failure we drop back to the form with the error.
   const finalize = () => {
     if (!animDone.current || !sendResult.current) return;
-    setStatus(sendResult.current);
     setSendRect(null);
+    if (sendResult.current === "success") {
+      reset();   // clear the cached form values so reopening starts blank
+      close();
+    } else {
+      setStatus(sendResult.current);
+    }
   };
 
   // Step 2: play the send animation and fire the request; reconcile in finalize.
@@ -182,7 +188,7 @@ export default function ContactComposer({ toAddress }: Props) {
     <div className="composer-overlay" role="dialog" aria-label="Email Rithvik">
       <div
         ref={panelRef}
-        className="composer-panel"
+        className={`composer-panel${status === "sending" ? " composer-panel--sending" : ""}`}
         style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
         <div className="composer-shine" aria-hidden="true" />
@@ -206,15 +212,7 @@ export default function ContactComposer({ toAddress }: Props) {
           <button type="button" className="composer-close" onClick={close} aria-label="Close">×</button>
         </div>
 
-        {status === "success" ? (
-          <div className="composer-success">
-            <p>Sent — I&apos;ll get back to you.</p>
-            <div className="composer-success-actions">
-              <button type="button" onClick={reset}>Send another</button>
-              <button type="button" onClick={close}>Close</button>
-            </div>
-          </div>
-        ) : status === "confirm" || status === "sending" ? (
+        {status === "confirm" || status === "sending" ? (
           <div className="composer-confirm">
             <p className="composer-confirm-q">Send this email?</p>
             <p className="composer-confirm-note">

@@ -2911,6 +2911,16 @@ a { color: inherit; text-decoration: none; }
   isolation: isolate;
   transition: opacity 0.18s ease;
 }
+/* On send, the window fades away while the particle animation plays over it —
+   the dense particles make the fade barely noticeable, then the window closes. */
+.composer-panel--sending {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.5s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-panel--sending { transition: none; }
+}
 .composer-header {
   display: flex;
   align-items: center;

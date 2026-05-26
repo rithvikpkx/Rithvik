@@ -2,40 +2,15 @@
 import { useEffect, useRef } from "react";
 
 interface Props {
-  /** Panel rect the particles emanate from (the message area). */
+  /** Panel rect the particles materialize from. */
   rect: DOMRect;
   onDone: () => void;
 }
 
-const COUNT = 150;
-const DEMAT_MS = 500;          // dematerialize
-const MORPH_MS = 700;          // morph into airplane
-const FLY_MS = 1000;           // fly off
-const TOTAL = DEMAT_MS + MORPH_MS + FLY_MS;
+const COUNT = 650;          // dense enough that the window fading out underneath is barely visible
+const DURATION = 1700;      // ms
 
-const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-const easeIn = (t: number) => t * t;
-
-// A paper-airplane silhouette as points sampled along its edges so particles
-// settle into a recognizable plane. Coordinates in a -1..1 box (nose right).
-function airplanePoints(n: number, scale: number): { x: number; y: number }[] {
-  const verts: [number, number][] = [
-    [1, 0], [-1, -0.7], [-0.35, 0],
-    [-1, 0.7], [1, 0], [-0.35, 0],
-  ];
-  const pts: { x: number; y: number }[] = [];
-  for (let i = 0; i < n; i++) {
-    const seg = (i / n) * (verts.length - 1);
-    const a = verts[Math.floor(seg)];
-    const b = verts[Math.min(Math.floor(seg) + 1, verts.length - 1)];
-    const f = seg - Math.floor(seg);
-    pts.push({
-      x: (a[0] + (b[0] - a[0]) * f) * scale,
-      y: (a[1] + (b[1] - a[1]) * f) * scale,
-    });
-  }
-  return pts;
-}
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /** Reads a CSS custom property to a color string, falling back to a default. */
 function tokenColor(name: string, fallback: string): string {
@@ -47,9 +22,6 @@ function tokenColor(name: string, fallback: string): string {
 export default function SendAnimation({ rect, onDone }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const done = useRef(onDone);
-
-  // Keep the ref current so the rAF closure always calls the latest onDone
-  // without needing it as an effect dependency (which would restart the animation).
   useEffect(() => { done.current = onDone; });
 
   useEffect(() => {
@@ -68,56 +40,48 @@ export default function SendAnimation({ rect, onDone }: Props) {
     ctx.scale(dpr, dpr);
 
     const accent = tokenColor("--accent", "#9c40ff");
+    const glow = tokenColor("--accent-glow", accent);
     const text = tokenColor("--text", "#ffffff");
+    const palette = [accent, accent, glow, text];
 
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const targets = airplanePoints(COUNT, Math.min(rect.width, 220) * 0.35);
-
-    const parts = Array.from({ length: COUNT }, (_, i) => ({
-      sx: rect.left + Math.random() * rect.width,
-      sy: rect.top + Math.random() * rect.height,
-      jx: (Math.random() - 0.5) * 40,
-      jy: (Math.random() - 0.5) * 40,
-      tx: targets[i].x,
-      ty: targets[i].y,
-      size: 1 + Math.random() * 2,
-      color: Math.random() < 0.5 ? accent : text,
-    }));
-
-    const flyDX = window.innerWidth - cx + 200;
-    const flyDY = -(cy + 200);
+    // Particles fill the panel, then drift up and out the top of the screen,
+    // fading as they rise. A per-particle delay staggers the materialize.
+    const parts = Array.from({ length: COUNT }, () => {
+      const sx = rect.left + Math.random() * rect.width;
+      const sy = rect.top + Math.random() * rect.height;
+      return {
+        sx, sy,
+        rise: sy + 100 + Math.random() * 160,   // travel far enough to clear the top edge
+        drift: (Math.random() - 0.5) * 50,       // gentle sideways drift
+        wobAmp: 3 + Math.random() * 10,
+        wobFreq: 1 + Math.random() * 3,
+        phase: Math.random() * Math.PI * 2,
+        delay: Math.random() * 0.25,             // stagger the rise
+        size: 0.8 + Math.random() * 2.4,
+        color: palette[(Math.random() * palette.length) | 0],
+      };
+    });
 
     let raf = 0;
     const start = performance.now();
     const frame = (now: number) => {
-      const elapsed = now - start;
+      const gt = (now - start) / DURATION;       // 0..1
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
       for (const p of parts) {
-        let x: number, y: number, alpha = 1;
-        if (elapsed < DEMAT_MS) {
-          const t = elapsed / DEMAT_MS;
-          x = p.sx + p.jx * t;
-          y = p.sy + p.jy * t;
-        } else if (elapsed < DEMAT_MS + MORPH_MS) {
-          const t = easeInOut((elapsed - DEMAT_MS) / MORPH_MS);
-          x = (p.sx + p.jx) + (cx + p.tx - (p.sx + p.jx)) * t;
-          y = (p.sy + p.jy) + (cy + p.ty - (p.sy + p.jy)) * t;
-        } else {
-          const t = easeIn(Math.min((elapsed - DEMAT_MS - MORPH_MS) / FLY_MS, 1));
-          x = cx + p.tx + flyDX * t;
-          y = cy + p.ty + flyDY * t;
-          alpha = 1 - t;
-        }
-        ctx.globalAlpha = Math.max(0, alpha);
+        const te = Math.min(Math.max((gt - p.delay) / (1 - p.delay), 0), 1);
+        if (te <= 0) continue;
+        const e = easeOut(te);
+        const x = p.sx + p.drift * e + Math.sin(p.phase + te * p.wobFreq * Math.PI * 2) * p.wobAmp;
+        const y = p.sy - p.rise * e;
+        const fadeIn = Math.min(te / 0.12, 1);
+        const fadeOut = te < 0.45 ? 1 : 1 - (te - 0.45) / 0.55;
+        ctx.globalAlpha = Math.max(0, fadeIn * fadeOut);
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(x, y, p.size, 0, Math.PI * 2);
         ctx.fill();
       }
-
-      if (elapsed < TOTAL) {
+      if (now - start < DURATION) {
         raf = requestAnimationFrame(frame);
       } else {
         done.current();
