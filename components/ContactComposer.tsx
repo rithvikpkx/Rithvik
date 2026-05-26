@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useContactComposer } from "./ContactComposerProvider";
 import RichTextEditor from "./RichTextEditor";
+import SendAnimation from "./SendAnimation";
 
 const MIN_W = 360, MIN_H = 420, MAX_W = 760, MAX_H = 820;
 const DEFAULT = { w: 460, h: 580 };
@@ -48,6 +49,9 @@ export default function ContactComposer({ toAddress }: Props) {
   const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [copied, setCopied] = useState(false);
+  const animDone = useRef(false);
+  const sendResult = useRef<Status | null>(null);
+  const [sendRect, setSendRect] = useState<DOMRect | null>(null);
 
   // Esc closes.
   useEffect(() => {
@@ -131,8 +135,20 @@ export default function ContactComposer({ toAddress }: Props) {
     setStatus("confirm");
   };
 
-  // Step 2: actually send, after they've confirmed the address.
+  // Show the result only once BOTH the animation has finished AND the request
+  // has settled — a slow network won't show success early, a fast one won't cut
+  // the animation short.
+  const finalize = () => {
+    if (!animDone.current || !sendResult.current) return;
+    setStatus(sendResult.current);
+    setSendRect(null);
+  };
+
+  // Step 2: play the send animation and fire the request; reconcile in finalize.
   const confirmSend = async () => {
+    animDone.current = false;
+    sendResult.current = null;
+    setSendRect(panelRef.current?.getBoundingClientRect() ?? null);
     setStatus("sending");
     try {
       const res = await fetch("/api/contact", {
@@ -140,12 +156,14 @@ export default function ContactComposer({ toAddress }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from, subject, bodyHtml, honeypot }),
       });
-      if (res.ok) { setStatus("success"); return; }
-      setStatus(res.status === 429 ? "rate-limited" : "error");
+      sendResult.current = res.ok ? "success" : res.status === 429 ? "rate-limited" : "error";
     } catch {
-      setStatus("error");
+      sendResult.current = "error";
     }
+    finalize();
   };
+
+  const onAnimDone = () => { animDone.current = true; finalize(); };
 
   if (!isOpen) return null;
 
@@ -159,6 +177,9 @@ export default function ContactComposer({ toAddress }: Props) {
         style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
         <div className="composer-shine" aria-hidden="true" />
+        {status === "sending" && sendRect && (
+          <SendAnimation rect={sendRect} onDone={onAnimDone} />
+        )}
         <div className="composer-header" onPointerDown={startDrag} title="Drag to move">
           <span className="composer-title">Email Rithvik</span>
           <span className="composer-grip" aria-hidden="true">

@@ -3141,6 +3141,16 @@ a { color: inherit; text-decoration: none; }
     linear-gradient(135deg, transparent 50%, var(--muted, rgba(255, 255, 255, 0.4)) 50%);
 }
 
+/* Send animation canvas — covers the viewport so the airplane can fly off. */
+.composer-send-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 90;   /* above the composer (70) */
+}
+
 /* Mobile: full-screen sheet — drag/resize disabled, inline size overridden. */
 @media (max-width: 640px) {
   .composer-overlay { pointer-events: auto; background: rgba(0, 0, 0, 0.4); }
