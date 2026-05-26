@@ -13,23 +13,6 @@
 
 INSERT INTO themes (slug, name, tokens, sort_order)
 VALUES (
-  'monokai-pro-light',
-  'Monokai Pro Light (Filter Sun)',
-  '{
-    "bg":           "#f7f1e1",
-    "bg-soft":      "#efe7d6",
-    "text":         "#29232b",
-    "muted":        "#b9a8a9",
-    "accent":       "#ce4770",
-    "accent-glow":  "rgba(206,71,112,0.16)",
-    "green":        "#5b8313"
-  }'::jsonb,
-  3
-)
-ON CONFLICT (slug) DO NOTHING;
-
-INSERT INTO themes (slug, name, tokens, sort_order)
-VALUES (
   'high-contrast-light',
   'High Contrast Light',
   '{
@@ -103,8 +86,6 @@ ON CONFLICT (slug) DO NOTHING;
 UPDATE themes SET sort_order = CASE slug
   WHEN 'github-light'         THEN 0
   WHEN 'rithvik-light'        THEN 1
-  WHEN 'atom-one-light'       THEN 2
-  WHEN 'monokai-pro-light'    THEN 3
   WHEN 'high-contrast-light'  THEN 4
   -- Dark group, Rithvik themes first; then existing relative order; new last.
   WHEN 'rithvik-dark'         THEN 10
