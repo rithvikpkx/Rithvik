@@ -15,10 +15,10 @@ export default function FadeIn({ children, delay = 0, className }: FadeInProps) 
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, filter: "blur(10px)", y: 18 }}
-      whileInView={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.65, ease: "easeOut", delay }}
+      transition={{ duration: 0.5, ease: "easeOut", delay }}
     >
       {children}
     </motion.div>
