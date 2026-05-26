@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useContactComposer } from "./ContactComposerProvider";
 import RichTextEditor from "./RichTextEditor";
 
@@ -9,7 +9,7 @@ const SIZE_KEY = "contact-composer-size";
 const DRAG_THRESHOLD = 4;  // px before a pointerdown counts as a drag
 const MOBILE_BP = 640;
 
-type Status = "idle" | "sending" | "success" | "error" | "rate-limited";
+type Status = "idle" | "confirm" | "sending" | "success" | "error" | "rate-limited";
 
 function clamp(n: number, lo: number, hi: number) { return Math.min(hi, Math.max(lo, n)); }
 
@@ -29,6 +29,7 @@ interface Props { toAddress: string; }
 
 export default function ContactComposer({ toAddress }: Props) {
   const { isOpen, close } = useContactComposer();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [size, setSize] = useState(loadSize);
   // Center on the viewport at mount. A lazy initializer (not an effect) keeps
@@ -61,22 +62,34 @@ export default function ContactComposer({ toAddress }: Props) {
     try { localStorage.setItem(SIZE_KEY, JSON.stringify(size)); } catch { /* ignore */ }
   }, [size]);
 
-  // Drag via the header. Capture nothing on pointerdown — only move once past
-  // the threshold, so header buttons (close) still click cleanly.
+  // Drag via the header. Move the panel with a GPU-composited transform applied
+  // straight to the DOM (no React state per move → smooth), then bake the offset
+  // into the resting position once on pointerup. Capture nothing on pointerdown
+  // and only engage past a threshold so the header close button still clicks.
   const startDrag = (e: React.PointerEvent) => {
     if (window.innerWidth < MOBILE_BP) return;        // sheet mode: no drag
+    const el = panelRef.current;
+    if (!el) return;
     const startX = e.clientX, startY = e.clientY;
-    const origin = pos;
-    let dragging = false;
+    let dx = 0, dy = 0, dragging = false;
     const move = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX, dy = ev.clientY - startY;
+      dx = ev.clientX - startX; dy = ev.clientY - startY;
       if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
-      dragging = true;
-      setPos({ x: origin.x + dx, y: origin.y + dy });
+      if (!dragging) { dragging = true; el.style.willChange = "transform"; }
+      el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (!dragging) return;
+      // Bake the offset into left/top directly AND clear the transform in the
+      // same frame (no flash before React re-renders), then sync React state.
+      const nx = pos.x + dx, ny = pos.y + dy;
+      el.style.left = `${nx}px`;
+      el.style.top = `${ny}px`;
+      el.style.transform = "";
+      el.style.willChange = "";
+      setPos({ x: nx, y: ny });
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -111,8 +124,15 @@ export default function ContactComposer({ toAddress }: Props) {
 
   const reset = () => { setFrom(""); setSubject(""); setBodyHtml(""); setStatus("idle"); };
 
-  const submit = async (e: React.FormEvent) => {
+  // Step 1: Send asks the user to verify their return address first — a wrong
+  // "From" means the reply never reaches them.
+  const requestConfirm = (e: React.FormEvent) => {
     e.preventDefault();
+    setStatus("confirm");
+  };
+
+  // Step 2: actually send, after they've confirmed the address.
+  const confirmSend = async () => {
     setStatus("sending");
     try {
       const res = await fetch("/api/contact", {
@@ -129,12 +149,12 @@ export default function ContactComposer({ toAddress }: Props) {
 
   if (!isOpen) return null;
 
-  const sending = status === "sending";
-  const canSend = Boolean(from.trim() && subject.trim() && bodyHtml.trim()) && !sending;
+  const canSend = Boolean(from.trim() && subject.trim() && bodyHtml.trim());
 
   return (
     <div className="composer-overlay" role="dialog" aria-label="Email Rithvik">
       <div
+        ref={panelRef}
         className="composer-panel"
         style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
@@ -151,8 +171,27 @@ export default function ContactComposer({ toAddress }: Props) {
               <button type="button" onClick={close}>Close</button>
             </div>
           </div>
+        ) : status === "confirm" || status === "sending" ? (
+          <div className="composer-confirm">
+            <p className="composer-confirm-q">Send this email?</p>
+            <p className="composer-confirm-note">
+              I&apos;ll reply to <strong className="composer-confirm-email">{from}</strong>. Please
+              double-check it&apos;s correct — if it&apos;s wrong, I won&apos;t be able to reach you back.
+            </p>
+            <div className="composer-confirm-actions">
+              <button type="button" onClick={() => setStatus("idle")} disabled={status === "sending"}>
+                Back
+              </button>
+              <button
+                type="button" className="composer-send" onClick={confirmSend}
+                disabled={status === "sending"}
+              >
+                {status === "sending" ? "Sending…" : "Confirm & send"}
+              </button>
+            </div>
+          </div>
         ) : (
-          <form className="composer-form" onSubmit={submit}>
+          <form className="composer-form" onSubmit={requestConfirm}>
             <div className="composer-field composer-to">
               <label>To</label>
               <span className="composer-to-addr">{toAddress}</span>
@@ -177,7 +216,7 @@ export default function ContactComposer({ toAddress }: Props) {
               />
             </div>
 
-            <RichTextEditor onChange={setBodyHtml} />
+            <RichTextEditor initialHtml={bodyHtml} onChange={setBodyHtml} />
 
             {/* Honeypot: off-screen, hidden from real users; bots fill it. */}
             <input
@@ -195,7 +234,7 @@ export default function ContactComposer({ toAddress }: Props) {
 
             <div className="composer-actions">
               <button type="submit" className="composer-send" disabled={!canSend}>
-                {sending ? "Sending…" : "Send"}
+                Send
               </button>
             </div>
           </form>
