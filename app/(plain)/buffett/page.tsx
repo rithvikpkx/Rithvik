@@ -9,7 +9,7 @@ import type {
 // Match the homepage ISR cadence so content stays in sync.
 export const revalidate = 60;
 
-interface Building { title: string; description: string; tags: string[] }
+interface Building { title: string; description: string }
 
 function parseSafe<T>(json: string | undefined, fallback: T): T {
   if (!json) return fallback;
@@ -41,7 +41,9 @@ export default async function Buffett() {
     ((contentRes.data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
   );
   const education = ((eduRes.data ?? []) as EducationRow[]).filter((e) => e.published);
-  const projects = ((projRes.data ?? []) as Project[]).filter((p) => p.published);
+  // Mirror the homepage exactly: Projects.tsx and Experience.tsx show all rows
+  // regardless of `published`; only Education filters. Keeps /buffett seamless.
+  const projects = (projRes.data ?? []) as Project[];
   const experience = (expRes.data ?? []) as ExperienceRow[];
 
   const name =
@@ -126,11 +128,14 @@ export default async function Buffett() {
             <h3>{p.title}{p.badge ? ` — ${p.badge}` : ""}</h3>
             <Body desc={p.description} />
             {p.tags?.length ? <p className="tags">{p.tags.join(" · ")}</p> : null}
-            {Object.keys(p.links ?? {}).length ? (
-              <p>{Object.entries(p.links).map(([k, v], i) => (
-                <span key={k}>{i > 0 ? " · " : ""}<a href={v}>{k}</a></span>
-              ))}</p>
-            ) : null}
+            {(() => {
+              const links = p.links ?? {};
+              return Object.keys(links).length ? (
+                <p>{Object.entries(links).map(([k, v], i) => (
+                  <span key={k}>{i > 0 ? " · " : ""}<a href={v}>{k}</a></span>
+                ))}</p>
+              ) : null;
+            })()}
           </div>
         ))}
       </section>
