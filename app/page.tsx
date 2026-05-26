@@ -6,8 +6,7 @@ import Projects from "@/components/Projects";
 import Experience from "@/components/Experience";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import RagBot from "@/components/RagBot";
-import SecondaryContextPanel from "@/components/SecondaryContextPanel";
+import DeferredOverlays from "@/components/DeferredOverlays";
 import { serverClient } from "@/lib/supabase";
 import type { GlobeMarker } from "@/lib/types";
 
@@ -63,8 +62,7 @@ export default async function Home() {
         />
       </main>
       <Footer />
-      <SecondaryContextPanel />
-      <RagBot />
+      <DeferredOverlays />
     </>
   );
 }
