@@ -3148,7 +3148,7 @@ a { color: inherit; text-decoration: none; }
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 90;   /* above the composer (70) */
+  z-index: 90;   /* above the panel; both live inside .composer-overlay (z 70) */
 }
 
 /* Mobile: full-screen sheet — drag/resize disabled, inline size overridden. */

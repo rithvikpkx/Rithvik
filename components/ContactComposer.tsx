@@ -165,6 +165,14 @@ export default function ContactComposer({ toAddress }: Props) {
 
   const onAnimDone = () => { animDone.current = true; finalize(); };
 
+  // If the window is closed mid-flow, drop the transient send state so reopening
+  // doesn't replay a stale animation. Render-phase (self-terminating once status
+  // is idle) rather than an effect, to avoid the set-state-in-effect lint rule.
+  if (!isOpen && (status === "sending" || status === "confirm")) {
+    setStatus("idle");
+    setSendRect(null);
+  }
+
   if (!isOpen) return null;
 
   const canSend = Boolean(from.trim() && subject.trim() && bodyHtml.trim());
@@ -177,9 +185,6 @@ export default function ContactComposer({ toAddress }: Props) {
         style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
       >
         <div className="composer-shine" aria-hidden="true" />
-        {status === "sending" && sendRect && (
-          <SendAnimation rect={sendRect} onDone={onAnimDone} />
-        )}
         <div className="composer-header" onPointerDown={startDrag} title="Drag to move">
           <span className="composer-title">Email Rithvik</span>
           <span className="composer-grip" aria-hidden="true">
@@ -279,6 +284,12 @@ export default function ContactComposer({ toAddress }: Props) {
 
         <div className="composer-resize" onPointerDown={startResize} aria-hidden="true" />
       </div>
+
+      {/* Sibling of the panel (not a child) so the panel's overflow:hidden /
+          isolation / drag transform can never clip the off-screen fly-off. */}
+      {status === "sending" && sendRect && (
+        <SendAnimation rect={sendRect} onDone={onAnimDone} />
+      )}
     </div>
   );
 }
