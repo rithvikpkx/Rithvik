@@ -52,6 +52,7 @@ export default function ContactComposer({ toAddress }: Props) {
   const animDone = useRef(false);
   const sendResult = useRef<Status | null>(null);
   const [sendRect, setSendRect] = useState<DOMRect | null>(null);
+  const [prevOpen, setPrevOpen] = useState(isOpen);
 
   // Esc closes.
   useEffect(() => {
@@ -165,12 +166,12 @@ export default function ContactComposer({ toAddress }: Props) {
 
   const onAnimDone = () => { animDone.current = true; finalize(); };
 
-  // If the window is closed mid-flow, drop the transient send state so reopening
-  // doesn't replay a stale animation. Render-phase (self-terminating once status
-  // is idle) rather than an effect, to avoid the set-state-in-effect lint rule.
-  if (!isOpen && (status === "sending" || status === "confirm")) {
-    setStatus("idle");
-    setSendRect(null);
+  // Start every open from a clean slate so a prior send's terminal/transient
+  // state never lingers (also prevents a stale animation replay). Render-phase
+  // and self-terminating, so it doesn't trip the set-state-in-effect lint rule.
+  if (prevOpen !== isOpen) {
+    setPrevOpen(isOpen);
+    if (isOpen && status !== "idle") { setStatus("idle"); setSendRect(null); }
   }
 
   if (!isOpen) return null;
