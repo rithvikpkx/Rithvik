@@ -1175,3 +1175,554 @@ git push origin main
 - **Deviation from spec — modality:** the spec said "focus trap / aria-modal"; this plan implements a **non-modal** floating window (overlay passes pointer events through) because a draggable window the user moves around to see content underneath is non-modal by nature. Mobile is effectively modal (full-screen sheet with backdrop). Esc closes; the From field autofocuses. If the user prefers a true modal, swap the overlay to `pointer-events: auto` + add a focus trap.
 - **Copy fallback:** lives on the composer's "To" row (not duplicated in Hero/Contact), satisfying "keep copy as fallback" with minimal surface-area churn.
 - **Type consistency:** `useContactComposer()` → `{ isOpen, open, close }` used identically in Tasks 5/7/9. `sanitizeEmailHtml`/`htmlToText` signatures match across Tasks 3/4. `ContactComposer` prop `toAddress` matches the mount in Task 9.
+
+---
+
+# Phase 2 — Polish & delivery additions
+
+> **Status:** spec / not yet implemented. Phase 1 is built, on `dev`. These build on top of it.
+
+**Goal:** Make the composer window pop and feel alive, give the user clear affordances (draggable, peek-through), add a delightful send animation, and improve email delivery so the sender gets a copy and Rithvik can reply-all to thread.
+
+**Decisions locked during brainstorming:**
+- **Email copies:** send ONE email to Rithvik's inbox with the sender **CC'd** (Resend `cc`). The sender receives that exact copy — which *is* their confirmation — and Rithvik replies-all to thread with them. No separate/duplicate confirmation email. (`reply_to` = sender is kept too, so a plain reply still reaches them.)
+- **Send animation:** the message **dematerializes into particles**, the particles **morph into a paper airplane**, which then **flies off with a trail**, after which the success state fades in. Canvas + rAF, dep-free. Honors `prefers-reduced-motion` (skips straight to success). "Dematerialize" = particles emanate from the message-body region and scatter (not a literal pixel-capture of the text — that would need a heavy rasterizer).
+- **Rainbow border:** reuse the RAG `.rag-shine` technique (a masked radial-gradient 1px ring overlay, animated via `background-position`) as `.composer-shine`. The panel surface stays theme-aware; only the border ring is the fixed purple/orange gradient.
+
+**Files touched:**
+- Modify: `app/api/contact/route.ts` (add `cc`)
+- Modify: `components/ContactComposer.tsx` (shine overlay, drag hint, peek button, send-animation wiring)
+- Create: `components/SendAnimation.tsx` (canvas particle → airplane → fly-off)
+- Modify: `app/globals.css` (shine, drag grip, peek, animation overlay)
+- Modify: `CLAUDE.md` (document Phase 2)
+
+---
+
+### Task P2.1: CC the sender (confirmation + threading)
+
+**Files:**
+- Modify: `app/api/contact/route.ts`
+
+This single change satisfies BOTH "send the user a confirmation" and "CC the sender so I can reply-all to thread." The sender's copy is the confirmation.
+
+- [ ] **Step 1: Add `cc` to the Resend payload**
+
+In `app/api/contact/route.ts`, the `fetch` body currently is:
+
+```ts
+    body: JSON.stringify({
+      from: process.env.CONTACT_FROM!,
+      to: process.env.CONTACT_TO!,
+      reply_to: sender,
+      subject: `[rithvik.ai] ${subject.trim()}`,
+      html: headerLine + cleanHtml,
+      text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}`,
+    }),
+```
+
+Change it to CC the sender:
+
+```ts
+    body: JSON.stringify({
+      from: process.env.CONTACT_FROM!,
+      to: process.env.CONTACT_TO!,
+      cc: [sender],            // sender gets a copy (their confirmation) + reply-all threads them in
+      reply_to: sender,        // plain reply still reaches the sender even if CC is stripped
+      subject: `[rithvik.ai] ${subject.trim()}`,
+      html: headerLine + cleanHtml,
+      text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}`,
+    }),
+```
+
+Note: the sender already sees `CONTACT_TO` (it's the composer's "To" address), so CC'ing exposes nothing new. `sender` is already validated (`EMAIL_RE`) and HTML-escaped where rendered.
+
+- [ ] **Step 2: Verify**
+
+Run: `node_modules/.bin/tsc --noEmit` → clean. `node_modules/.bin/eslint app/api/contact/route.ts` → clean.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/api/contact/route.ts
+git commit -m "feat(composer): CC the sender so they get a copy and Rithvik can reply-all"
+```
+
+---
+
+### Task P2.2: Rainbow shine border
+
+**Files:**
+- Modify: `app/globals.css`
+- Modify: `components/ContactComposer.tsx`
+
+- [ ] **Step 1: Add the shine overlay CSS**
+
+Append to the composer block in `app/globals.css` (after the `.composer-panel` rule). The panel already has `overflow: hidden`; add `isolation: isolate` to it and the shine overlay:
+
+```css
+/* Rainbow shine border — mirrors .rag-shine: a radial gradient masked into a
+   1px ring, animated by shifting background-position. Makes the window pop off
+   the content beneath it. */
+.composer-panel { isolation: isolate; }
+.composer-shine {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    transparent,
+    transparent,
+    rgba(156, 64, 255, 0.85),
+    rgba(255, 170, 64, 0.85),
+    transparent,
+    transparent
+  );
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: rag-shine 14s linear infinite;   /* reuse the existing keyframes */
+  z-index: 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .composer-shine { animation: none; }
+}
+```
+
+(Reuses the existing `@keyframes rag-shine` defined earlier in the file — do not redefine it.)
+
+- [ ] **Step 2: Render the overlay inside the panel**
+
+In `components/ContactComposer.tsx`, add the shine as the FIRST child of `.composer-panel`, before the header:
+
+```tsx
+      <div
+        ref={panelRef}
+        className="composer-panel"
+        style={{ left: pos.x, top: pos.y, width: size.w, height: size.h }}
+      >
+        <div className="composer-shine" aria-hidden="true" />
+        <div className="composer-header" onPointerDown={startDrag}>
+```
+
+Because the header/form are normal-flow children and the shine is `position:absolute; z-index:2; pointer-events:none`, content stays interactive and the ring floats on top of the border.
+
+- [ ] **Step 3: Verify + commit**
+
+```bash
+node_modules/.bin/tsc --noEmit
+git add app/globals.css components/ContactComposer.tsx
+git commit -m "feat(composer): rainbow shine border (mirrors RAG UI)"
+```
+
+---
+
+### Task P2.3: Drag hint
+
+**Files:**
+- Modify: `components/ContactComposer.tsx`
+- Modify: `app/globals.css`
+
+A subtle grip glyph centered in the header signals draggability, plus a `grab`/`grabbing` cursor and a `title` tooltip.
+
+- [ ] **Step 1: Add the grip element to the header**
+
+In `components/ContactComposer.tsx`, update the header to include a grip between the title and close button:
+
+```tsx
+        <div className="composer-header" onPointerDown={startDrag} title="Drag to move">
+          <span className="composer-title">Email Rithvik</span>
+          <span className="composer-grip" aria-hidden="true">
+            <i></i><i></i><i></i>
+          </span>
+          <button type="button" className="composer-close" onClick={close} aria-label="Close">×</button>
+        </div>
+```
+
+- [ ] **Step 2: Style the grip + grab cursor**
+
+In `app/globals.css`, replace the `.composer-header { … cursor: move … }` declaration's cursor with `grab`, and add the grip styles:
+
+```css
+.composer-header { cursor: grab; }
+.composer-header:active { cursor: grabbing; }
+/* Three dots: a quiet, conventional "draggable" affordance. */
+.composer-grip {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+  margin-right: 10px;
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+.composer-header:hover .composer-grip { opacity: 0.8; }
+.composer-grip i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted, currentColor);
+}
+```
+
+(The existing `.composer-header` rule sets `justify-content: space-between`; with the grip using `margin-left:auto` the title stays left, grip + close sit right. If layout looks off, change the header to `justify-content: flex-start` — the `margin-left:auto` on the grip already pushes it and the close button to the right edge.)
+
+- [ ] **Step 3: Verify + commit**
+
+```bash
+node_modules/.bin/tsc --noEmit
+git add components/ContactComposer.tsx app/globals.css
+git commit -m "feat(composer): subtle drag-handle grip + grab cursor"
+```
+
+---
+
+### Task P2.4: Peek-through (hover to see content beneath)
+
+**Files:**
+- Modify: `components/ContactComposer.tsx`
+- Modify: `app/globals.css`
+
+An "eye" button in the header; hovering (or focusing) it drops the whole panel's opacity dramatically so the user can glance at what's underneath, then restores on leave. Implemented with CSS `:has()` (no JS state needed) plus a `transition` for smoothness.
+
+- [ ] **Step 1: Add the peek button to the header**
+
+In `components/ContactComposer.tsx`, add the eye button just before the close button:
+
+```tsx
+          <button
+            type="button"
+            className="composer-peek"
+            aria-label="Hold to peek at the page behind"
+            title="Peek at the page behind"
+          >
+            {/* eye icon */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+```
+
+- [ ] **Step 2: Add the peek CSS**
+
+In `app/globals.css`:
+
+```css
+.composer-peek {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--muted, var(--text));
+  cursor: pointer;
+  padding: 0 4px;
+}
+.composer-peek:hover { color: var(--text); }
+.composer-panel { transition: opacity 0.18s ease; }
+/* While the peek control is hovered/focused, fade the whole window so the user
+   can glance at the page beneath without moving or closing it. */
+.composer-panel:has(.composer-peek:hover),
+.composer-panel:has(.composer-peek:focus-visible) {
+  opacity: 0.12;
+}
+```
+
+(`:has()` is supported in all current evergreen browsers. The panel stays interactive at low opacity — moving off the eye restores it.)
+
+- [ ] **Step 3: Verify + commit**
+
+```bash
+node_modules/.bin/tsc --noEmit
+git add components/ContactComposer.tsx app/globals.css
+git commit -m "feat(composer): peek-through control to glance at the page behind"
+```
+
+---
+
+### Task P2.5: Send animation (particles → paper airplane → fly-off)
+
+**Files:**
+- Create: `components/SendAnimation.tsx`
+- Modify: `components/ContactComposer.tsx`
+- Modify: `app/globals.css`
+
+A canvas overlay. Phase 1 (0–0.5s): particles appear scattered across the panel body and jitter (dematerialize). Phase 2 (0.5–1.2s): particles ease to target points that form a paper-airplane silhouette (morph). Phase 3 (1.2–2.2s): the whole formation translates along an arc up-and-right off the viewport, leaving a fading trail. On finish → `onDone()`. Reduced-motion → `onDone()` immediately.
+
+- [ ] **Step 1: Create `components/SendAnimation.tsx`**
+
+```tsx
+"use client";
+import { useEffect, useRef } from "react";
+
+interface Props {
+  /** Panel rect the particles emanate from (the message area). */
+  rect: DOMRect;
+  onDone: () => void;
+}
+
+const COUNT = 150;
+const DEMAT_MS = 500;          // dematerialize
+const MORPH_MS = 700;          // morph into airplane
+const FLY_MS = 1000;           // fly off
+const TOTAL = DEMAT_MS + MORPH_MS + FLY_MS;
+
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+const easeIn = (t: number) => t * t;
+
+// A paper-airplane silhouette as normalized [0..1] points; sampled along its
+// edges so particles settle into a recognizable plane. Centered on (0.5,0.5).
+function airplanePoints(n: number, scale: number): { x: number; y: number }[] {
+  // Edges of a classic paper plane (nose right). Coordinates in a -1..1 box.
+  const verts: [number, number][] = [
+    [1, 0], [-1, -0.7], [-0.35, 0],   // top wing
+    [-1, 0.7], [1, 0], [-0.35, 0],    // bottom wing + keel
+  ];
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const seg = (i / n) * (verts.length - 1);
+    const a = verts[Math.floor(seg)];
+    const b = verts[Math.min(Math.floor(seg) + 1, verts.length - 1)];
+    const f = seg - Math.floor(seg);
+    pts.push({
+      x: (a[0] + (b[0] - a[0]) * f) * scale,
+      y: (a[1] + (b[1] - a[1]) * f) * scale,
+    });
+  }
+  return pts;
+}
+
+/** Reads a CSS custom property to an rgb string, falling back to a default. */
+function tokenColor(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+export default function SendAnimation({ rect, onDone }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    // Respect reduced motion: skip the show.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onDone();
+      return;
+    }
+    const canvas = canvasRef.current;
+    if (!canvas) { onDone(); return; }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) { onDone(); return; }
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    const accent = tokenColor("--accent", "#9c40ff");
+    const text = tokenColor("--text", "#ffffff");
+
+    // Formation center starts at the panel center; airplane targets are relative.
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const targets = airplanePoints(COUNT, Math.min(rect.width, 220) * 0.35);
+
+    const parts = Array.from({ length: COUNT }, (_, i) => ({
+      // scatter origin: random within the message rect
+      sx: rect.left + Math.random() * rect.width,
+      sy: rect.top + Math.random() * rect.height,
+      jx: (Math.random() - 0.5) * 40,   // dematerialize jitter
+      jy: (Math.random() - 0.5) * 40,
+      tx: targets[i].x,
+      ty: targets[i].y,
+      size: 1 + Math.random() * 2,
+      color: Math.random() < 0.5 ? accent : text,
+    }));
+
+    // Flight path: ease up and to the right, off-screen.
+    const flyDX = window.innerWidth - cx + 200;
+    const flyDY = -(cy + 200);
+
+    let raf = 0;
+    const start = performance.now();
+    const frame = (now: number) => {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      let fx = cx, fy = cy, alpha = 1;
+      for (const p of parts) {
+        let x: number, y: number;
+        if (elapsed < DEMAT_MS) {
+          const t = elapsed / DEMAT_MS;
+          x = p.sx + p.jx * t;
+          y = p.sy + p.jy * t;
+          alpha = 1;
+        } else if (elapsed < DEMAT_MS + MORPH_MS) {
+          const t = easeInOut((elapsed - DEMAT_MS) / MORPH_MS);
+          x = (p.sx + p.jx) + (cx + p.tx - (p.sx + p.jx)) * t;
+          y = (p.sy + p.jy) + (cy + p.ty - (p.sy + p.jy)) * t;
+        } else {
+          const t = easeIn(Math.min((elapsed - DEMAT_MS - MORPH_MS) / FLY_MS, 1));
+          x = cx + p.tx + flyDX * t;
+          y = cy + p.ty + flyDY * t;
+          alpha = 1 - t;            // fade as it leaves
+          fx = cx + flyDX * t; fy = cy + flyDY * t;
+        }
+        ctx.globalAlpha = Math.max(0, alpha);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // (fx, fy used implicitly via per-particle math; kept for readability.)
+      void fx; void fy;
+
+      if (elapsed < TOTAL) {
+        raf = requestAnimationFrame(frame);
+      } else {
+        onDone();
+      }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <canvas ref={canvasRef} className="composer-send-canvas" aria-hidden="true" />;
+}
+```
+
+NOTE on the `eslint-disable`: if the repo's lint flags it as *unused* (the rule may not fire), remove the directive. The effect intentionally runs once; `rect`/`onDone` are captured at mount.
+
+- [ ] **Step 2: Canvas overlay CSS**
+
+In `app/globals.css`:
+
+```css
+/* Send animation canvas — covers the viewport so the airplane can fly off. */
+.composer-send-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 90;   /* above the composer (70) */
+}
+```
+
+- [ ] **Step 3: Wire it into the send flow in `components/ContactComposer.tsx`**
+
+The animation plays during `"sending"`, and the success/error view only resolves once BOTH the animation has finished AND the request has settled. Add two refs and a `finalize`, and capture the panel rect when sending starts.
+
+Add refs near the other state:
+
+```tsx
+  const animDone = useRef(false);
+  const sendResult = useRef<Status | null>(null);
+  const [sendRect, setSendRect] = useState<DOMRect | null>(null);
+```
+
+Replace `confirmSend` with:
+
+```tsx
+  // Show the result only when the animation has finished AND the request settled.
+  const finalize = () => {
+    if (!animDone.current || !sendResult.current) return;
+    setStatus(sendResult.current);
+    setSendRect(null);
+  };
+
+  const confirmSend = async () => {
+    animDone.current = false;
+    sendResult.current = null;
+    setSendRect(panelRef.current?.getBoundingClientRect() ?? null);
+    setStatus("sending");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from, subject, bodyHtml, honeypot }),
+      });
+      sendResult.current = res.ok ? "success" : res.status === 429 ? "rate-limited" : "error";
+    } catch {
+      sendResult.current = "error";
+    }
+    finalize();
+  };
+
+  const onAnimDone = () => { animDone.current = true; finalize(); };
+```
+
+Render the animation overlay when sending (add inside the panel, e.g. right after `.composer-shine`):
+
+```tsx
+        {status === "sending" && sendRect && (
+          <SendAnimation rect={sendRect} onDone={onAnimDone} />
+        )}
+```
+
+Add the import at the top: `import SendAnimation from "./SendAnimation";`
+
+Behavior check: on "Confirm & send" the confirm view stays (buttons disabled, "Sending…"), the canvas plays over everything; when both the fetch and the animation are done, the view switches to success (or error/rate-limited, which renders the form again with the message). Reduced-motion users skip the animation (`onDone` fires immediately) and just wait on the fetch.
+
+- [ ] **Step 4: Verify**
+
+```bash
+node_modules/.bin/tsc --noEmit
+node_modules/.bin/eslint components/SendAnimation.tsx components/ContactComposer.tsx
+command npm run build
+```
+All clean; build succeeds.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add components/SendAnimation.tsx components/ContactComposer.tsx app/globals.css
+git commit -m "feat(composer): particle→paper-airplane send animation"
+```
+
+---
+
+### Task P2.6: Docs, verification, preview
+
+**Files:**
+- Modify: `CLAUDE.md`
+
+- [ ] **Step 1: Update `CLAUDE.md`** — in the inline-email-composer architecture subsection, note: the rainbow `.composer-shine` border (mirrors RAG), the drag-grip + grab cursor, the `:has()`-based peek-through control, the `SendAnimation` canvas (particles → airplane → fly-off, reduced-motion aware), and that the route now CCs the sender (their copy is the confirmation; reply-all threads them in).
+
+- [ ] **Step 2: Full gates**
+
+```bash
+node_modules/.bin/tsc --noEmit
+node_modules/.bin/eslint .
+command npm run build
+```
+All clean; `eslint .` stays at 0 errors.
+
+- [ ] **Step 3: Commit + push**
+
+```bash
+git add CLAUDE.md
+git commit -m "docs: document inline email composer Phase 2 additions"
+git push origin dev
+```
+
+- [ ] **Step 4: Preview test (manual — needs the dev preview + live RESEND_API_KEY)**
+
+1. Window has the animated rainbow border and pops off the page.
+2. Header shows the grip dots; cursor is grab/grabbing; dragging is still smooth.
+3. Hovering the eye drops the window to ~12% opacity so you can see the page behind; leaving restores it.
+4. Send → confirm → "Confirm & send" plays the particle→airplane→fly-off animation, then success.
+5. **Email:** the message arrives in Rithvik's inbox with the **sender CC'd**; the **sender also receives the copy** (confirmation); hitting **reply-all** addresses the sender and threads from that email.
+6. Reduced-motion (OS setting): shine/animation are static/skipped; send still works.
+
+---
+
+## Phase 2 self-review notes
+
+- **Confirmation == CC:** the single CC'd email is the sender's confirmation; no second email is sent (decided during brainstorming). This satisfies both the "confirmation email" and "CC the sender" requests with one send.
+- **Animation correctness:** success/error is gated on BOTH animation completion and request settlement (two refs + `finalize`), so a slow network doesn't show success early and a fast network doesn't cut the animation. Reduced-motion short-circuits `onDone`.
+- **`:has()` peek:** no JS state; the panel stays interactive at low opacity so the user can keep typing while peeking. If a target browser lacks `:has()` (none current), the window simply won't fade — graceful.
+- **Shine reuses `@keyframes rag-shine`** — do not duplicate the keyframes; only add the `.composer-shine` rule.
+- **Type consistency:** `SendAnimation` prop `rect: DOMRect`, `onDone: () => void`; `sendResult` reuses the `Status` union (`"success" | "error" | "rate-limited"`).
