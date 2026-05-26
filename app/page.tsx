@@ -6,10 +6,13 @@ import Projects from "@/components/Projects";
 import Experience from "@/components/Experience";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import RagBot from "@/components/RagBot";
-import SecondaryContextPanel from "@/components/SecondaryContextPanel";
+import DeferredOverlays from "@/components/DeferredOverlays";
 import { serverClient } from "@/lib/supabase";
 import type { GlobeMarker } from "@/lib/types";
+
+// Match the layout's ISR window so the homepage data (site_content, projects,
+// experience, education) is cached and regenerated on the same 60s cadence.
+export const revalidate = 60;
 
 function parseSafe<T>(json: string | undefined, fallback: T): T {
   if (!json) return fallback;
@@ -59,8 +62,7 @@ export default async function Home() {
         />
       </main>
       <Footer />
-      <SecondaryContextPanel />
-      <RagBot />
+      <DeferredOverlays />
     </>
   );
 }

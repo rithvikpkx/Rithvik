@@ -33,14 +33,15 @@ const container = {
   visible: { transition: { staggerChildren: 0.12 } },
 };
 const item = {
-  hidden: { opacity: 0, filter: "blur(10px)", y: 18 },
-  visible: { opacity: 1, filter: "blur(0px)", y: 0, transition: { duration: 0.65, ease: "easeOut" as const } },
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
 };
-// Connect cluster fades/de-blurs in but does NOT translate — a `y` shift would
-// move its layout box mid-animation, leaving the ref-measured beams stale.
+// Connect cluster fades in but does NOT translate — a `y` shift would move its
+// layout box mid-animation, leaving the ref-measured beams (HeroConnect) stale.
+// Opacity-only keeps the beam endpoints fixed; no blur to avoid per-frame raster.
 const connectCol = {
-  hidden: { opacity: 0, filter: "blur(10px)" },
-  visible: { opacity: 1, filter: "blur(0px)", transition: { duration: 0.8, ease: "easeOut" as const, delay: 0.35 } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.7, ease: "easeOut" as const, delay: 0.35 } },
 };
 
 interface Props {

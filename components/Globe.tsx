@@ -180,6 +180,14 @@ export function Globe({ markers, className }: GlobeProps) {
     window.addEventListener("resize", onResize);
     onResize();
 
+    // Pause the render loop when the globe is off-screen or the tab is hidden.
+    // The rAF stays scheduled (cheap) but we skip the expensive cobe update +
+    // per-marker projection until the globe is actually visible — mirrors the
+    // FlickeringGrid pattern and stops idle GPU/CPU burn.
+    let onScreen = true;
+    let tabVisible = !document.hidden;
+    const isActive = () => onScreen && tabVisible;
+
     // Cobe v2 has no onRender callback; drive rotation by calling update()
     // from a requestAnimationFrame loop. We keep a ref to the current globe
     // so the loop and theme-swap rebuild can swap instances without restarting.
@@ -192,6 +200,10 @@ export function Globe({ markers, className }: GlobeProps) {
 
     let raf = 0;
     const tick = () => {
+      if (!isActive()) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
       // Idle: ease the drag spring toward 0 so the globe drifts back to the
       // US-centered rest pose (phi = 0). ~0.96 per frame at 60fps = ~3s settle
       // time, which reads as "gentle" without feeling sluggish.
@@ -238,6 +250,15 @@ export function Globe({ markers, className }: GlobeProps) {
     };
     raf = requestAnimationFrame(tick);
 
+    const io = new IntersectionObserver(
+      ([entry]) => { onScreen = entry.isIntersecting; },
+      { threshold: 0 },
+    );
+    io.observe(canvas);
+
+    const onVisibility = () => { tabVisible = !document.hidden; };
+    document.addEventListener("visibilitychange", onVisibility);
+
     setTimeout(() => { canvas.style.opacity = "1"; }, 0);
 
     const themeObserver = new MutationObserver((muts) => {
@@ -253,6 +274,8 @@ export function Globe({ markers, className }: GlobeProps) {
 
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
       themeObserver.disconnect();
       globeRef.current.destroy();
       window.removeEventListener("resize", onResize);
