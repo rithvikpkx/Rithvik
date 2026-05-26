@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 
@@ -9,7 +9,6 @@ type Step = "email" | "code";
 export default function InlineLoginPanel() {
   const { panelOpen, closePanel, requestOtp, verifyOtpCode } = useEditMode();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -18,16 +17,19 @@ export default function InlineLoginPanel() {
   const [loading, setLoading] = useState(false);
 
   // Surface callback errors handed off by /auth/callback?auth_error=...
+  // Read straight from window.location (client-only, runs once on mount) rather
+  // than useSearchParams() — the latter forces a Suspense boundary during the
+  // static prerender the ISR build does for /_not-found, which would error.
   useEffect(() => {
-    const authError = searchParams.get("auth_error");
+    const url = new URL(window.location.href);
+    const authError = url.searchParams.get("auth_error");
     if (authError) {
       setError(authError);
       // Strip the param so refreshes don't keep replaying the error.
-      const url = new URL(window.location.href);
       url.searchParams.delete("auth_error");
       router.replace(url.pathname + url.search);
     }
-  }, [searchParams, router]);
+  }, [router]);
 
   // Reset state when the panel closes so the next open starts fresh.
   useEffect(() => {

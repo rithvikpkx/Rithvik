@@ -18,11 +18,12 @@ const siteUrl = "https://rithvik.ai";
 const description =
   "CS + Math student at Purdue University building AI systems, full-stack apps, and ambitious technical projects.";
 
-// Themes can be added/updated directly in Supabase (outside the inline-edit
-// flow that calls revalidatePath). Marking the root layout dynamic ensures
-// new theme rows appear immediately without requiring a redeploy. The cost
-// is one extra Supabase fetch per request, which is negligible.
-export const dynamic = "force-dynamic";
+// ISR: cache the rendered tree and regenerate at most once per 60s. Inline
+// edits call revalidatePath("/") in app/admin/actions.ts, so editor changes
+// appear instantly; raw SQL theme inserts (outside that flow) appear within
+// 60s — without paying 5 uncached Supabase round-trips on every visit, which
+// is what force-dynamic cost us.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

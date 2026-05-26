@@ -11,6 +11,10 @@ import SecondaryContextPanel from "@/components/SecondaryContextPanel";
 import { serverClient } from "@/lib/supabase";
 import type { GlobeMarker } from "@/lib/types";
 
+// Match the layout's ISR window so the homepage data (site_content, projects,
+// experience, education) is cached and regenerated on the same 60s cadence.
+export const revalidate = 60;
+
 function parseSafe<T>(json: string | undefined, fallback: T): T {
   if (!json) return fallback;
   try { return JSON.parse(json) as T; } catch { return fallback; }
