@@ -57,6 +57,8 @@ export default function FlickeringGrid({
       }
     }
 
+    const rgbPrefix = `rgba(${r},${g},${b},`;
+
     function draw() {
       if (!visible) {
         animId = requestAnimationFrame(draw);
@@ -76,7 +78,9 @@ export default function FlickeringGrid({
 
           opacities[i] += (targets[i] - opacities[i]) * 0.15;
 
-          ctx!.fillStyle = `rgba(${r},${g},${b},${opacities[i].toFixed(3)})`;
+          // Prefix is constant; only the alpha varies. Avoids rebuilding the
+          // template + toFixed allocation for every cell every frame.
+          ctx!.fillStyle = rgbPrefix + opacities[i] + ")";
           ctx!.fillRect(
             c   * (squareSize + gridGap),
             row * (squareSize + gridGap),
