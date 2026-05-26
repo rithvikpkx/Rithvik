@@ -15,6 +15,13 @@ function clientIp(req: Request): string {
   return (fwd?.split(",")[0] ?? "").trim() || "unknown";
 }
 
+// Escape HTML-significant chars. The email regex permits <, >, " in the local
+// part, so the sender address must be escaped before interpolating into HTML.
+function esc(s: string): string {
+  return s.replace(/[<>"'&]/g, (c) =>
+    ({ "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "&": "&amp;" })[c] as string);
+}
+
 export async function POST(req: Request) {
   let body: Payload;
   try {
@@ -62,7 +69,7 @@ export async function POST(req: Request) {
   // rithvik.ai address; the visitor goes in reply_to so "reply" reaches them.
   const sender = from.trim();
   const headerLine =
-    `<p style="color:#888;font-size:13px;margin:0 0 8px">Sent from rithvik.ai by ${sender}</p><hr>`;
+    `<p style="color:#888;font-size:13px;margin:0 0 8px">Sent from rithvik.ai by ${esc(sender)}</p><hr>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
