@@ -41,9 +41,9 @@ export default function Contact({
   }, [h, s, g, li, em, isEditing]);
 
   const links = [
-    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   isCopy: false },
-    { href: linkedinUrl, label: "LinkedIn", Icon: LinkedinIcon, key: "contact.link.linkedin", setter: setLinkedinUrl, isCopy: false },
-    { href: emailUrl,    label: "Email",    Icon: EmailIcon,    key: "contact.link.email",    setter: setEmailUrl,    isCopy: true  },
+    { href: githubUrl,   label: "GitHub",   Icon: GithubIcon,   key: "contact.link.github",   setter: setGithubUrl,   opensComposer: false },
+    { href: linkedinUrl, label: "LinkedIn", Icon: LinkedinIcon, key: "contact.link.linkedin", setter: setLinkedinUrl, opensComposer: false },
+    { href: emailUrl,    label: "Email",    Icon: EmailIcon,    key: "contact.link.email",    setter: setEmailUrl,    opensComposer: true  },
   ];
 
   return (
@@ -61,13 +61,13 @@ export default function Contact({
       </FadeIn>
 
       <FadeIn delay={0.15} className="contact-links">
-        {links.map(({ href, label, Icon, key, setter, isCopy }, i) => (
+        {links.map(({ href, label, Icon, key, setter, opensComposer }, i) => (
           <div
             key={label}
             className={"contact-link-wrap" + (isEditing ? " contact-link-editing" : "")}
             style={{ "--pulse-delay": `${i * 0.55}s` } as React.CSSProperties}
           >
-            {isCopy ? (
+            {opensComposer ? (
               <button type="button" onClick={open} className="contact-link" aria-label="Email Rithvik">
                 <Icon />
                 {label}
