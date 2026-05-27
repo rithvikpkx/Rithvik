@@ -46,9 +46,10 @@ export default async function Buffett() {
   const projects = (projRes.data ?? []) as Project[];
   const experience = (expRes.data ?? []) as ExperienceRow[];
 
-  // The hero stores a stylised, first-name-only display name; the plain page
-  // shows the full name (also used in the footer copyright).
-  const name = "Rithvik Praveen Kumar";
+  // Full name from the DB (hero.name.line1 + line2); falls back if unset.
+  const name =
+    [content["hero.name.line1"], content["hero.name.line2"]].filter(Boolean).join(" ") ||
+    "Rithvik Praveen Kumar";
   const tagline = content["hero.tagline"] ?? "";
   const subLine = content["hero.sub_line"] ?? "";
   const building = parseSafe<Building | undefined>(content["bento.building"], undefined);
