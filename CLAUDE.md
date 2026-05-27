@@ -12,6 +12,7 @@ Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithv
 - **LangChain** (`@langchain/openai`) → **OpenAI** `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back — see Pitfalls.
 - **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2`, which crashed on Vercel — see Pitfalls)
 - Deployed on **Vercel**: `dev` → preview, `main` → production
+- **Performance** (`next.config.ts` + `docs/plans/performance-improvement.md`): homepage uses **ISR** (`export const revalidate = 60` in `app/(site)/layout.tsx` and `app/(site)/page.tsx`), NOT `force-dynamic` (see Pitfalls); `next/image` with AVIF/WebP formats for the hero photo; `optimizePackageImports: ["motion"]` to tree-shake the motion barrel; the globe rAF and the RAG/composer overlays are deferred/paused (see their sections).
 
 Node 22, npm. `npm run dev` / `build` / `lint`.
 
@@ -53,7 +54,13 @@ Two long-lived branches, both wired to Vercel:
 
 ### Page composition
 
-`app/page.tsx` is a server component: fetches `site_content` once, passes typed props to client section components. Sections (`Hero`, `Bento`, `Education`, `Projects`, `Experience`, `Contact`) render identically for visitors but adapt to edit mode via `useEditMode()`.
+The app uses **two Next.js root layouts via route groups**: `app/(site)/` holds the themed portfolio, and `app/(plain)/` holds a deliberately bare layout for the `/buffett` easter-egg page (see Buffett mode). There is **no** top-level `app/layout.tsx` — crossing between the groups is a full document load.
+
+`app/(site)/page.tsx` is a server component: fetches `site_content` once, passes typed props to client section components. Sections (`Hero`, `Bento`, `Education`, `Projects`, `Experience`, `Contact`) render identically for visitors but adapt to edit mode via `useEditMode()`.
+
+### Buffett mode (`/buffett`)
+
+A bare-HTML homage to berkshirehathaway.com, reached via the **For Warren Buffett** link near the theme dial (`components/BuffettLink.tsx`, with a hover tooltip). It lives in its own root layout `app/(plain)/layout.tsx` (own `<html>`/`<body>`, all styling inline, no providers/theme/JS). `app/(plain)/buffett/page.tsx` is a server component that pulls the **same** Supabase data as the homepage and renders it as plain semantic HTML, mirroring the homepage's published-visibility (Education filtered by `published`; Projects/Experience not). Internal `/` links use plain `<a>` for a full nav across the layout boundary — the page disables `@next/next/no-html-link-for-pages` file-wide for that reason (a line-level directive kept getting detached by editor auto-formatting).
 
 ### Server / client section split
 
@@ -63,17 +70,19 @@ Table-backed sections (`Projects`, `Experience`, `Education`) use two files:
 
 `site_content`-only sections (`Hero`, `Bento`, `Contact`) are single client components taking content as props, swapping to `EditableText` when editing.
 
+Project/Experience descriptions are stored **one bullet per line** (newline-separated, no dash prefix) and rendered by `components/DescriptionBlock.tsx` — a list when multi-line, a plain `<p>` for a single line (bullet marker is CSS, `.desc-bullets` in `globals.css`). `supabase/bulletize_descriptions.sql` is the migration that converted the old prose blurbs.
+
 ### Theme system (`lib/themes.ts`, `components/Theme{Provider,StyleInjector,Dial}.tsx`)
 
 Themes are rows in the `themes` table with a `tokens` JSONB column. **Only the primary palette is per-theme**: `bg, bg-soft, text, muted, accent, accent-glow, green` (+ optional `font`). Surface tokens are **derived in CSS via `color-mix()`** — `--card`/`--card-hover`/`--border`/`--border-hover` mix `--text` into transparent; `--nav-glass`/`--panel-glass` mix `--bg`. So **adding a theme is one DB row** — define 7 tokens, every surface adapts, no CSS changes.
 
-The dial fans out **14 themes**: 3 Rithvik-branded (Dark, Light, Terminal) + 11 editor themes (One Dark Pro, Dracula, GitHub Dark/Light, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Atom One Light).
+The dial fans out the `themes` rows ordered by `sort_order`, **all light themes first, then dark** (`sort_order` 0–4 light, 10–22 dark). Current set: light — GitHub Light (the default), Rithvik Light, High Contrast Light; dark — Rithvik Dark, Rithvik Terminal, One Dark Pro, Dracula, GitHub Dark, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Monokai Pro (Filter Octagon), High Contrast Dark, Tokyo Night Horizon. (Monokai Pro Light and Atom One Light were removed.)
 
-At SSR, `ThemeStyleInjector` emits one `<style id="theme-tokens">` with `:root[data-theme="<slug>"]{…}` for every theme. Active theme is set on `<html data-theme>` by (1) a hardcoded `rithvik-dark` default in JSX, then (2) an inline boot script that reads `localStorage[rithvik-theme]` and overwrites the attribute before first paint (no FOUC).
+At SSR, `ThemeStyleInjector` emits one `<style id="theme-tokens">` with `:root[data-theme="<slug>"]{…}` for every theme. Active theme is set on `<html data-theme>` by (1) a hardcoded `github-light` default in JSX (`DEFAULT_THEME_SLUG` in `lib/themes.ts`), then (2) an inline boot script that reads `localStorage[rithvik-theme]` and overwrites the attribute before first paint (no FOUC).
 
 `ThemeProvider` exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip**: writes localStorage, swaps `<html data-theme>`, updates `currentSlug`. No page-wide transition animation (see Pitfalls — two were rolled back).
 
-**Root layout is `force-dynamic`** so theme rows inserted directly into Supabase appear on the next load without a redeploy (see Pitfalls).
+**The homepage uses ISR (`export const revalidate = 60`)**, not `force-dynamic` (see Pitfalls). Inline edits call `revalidatePath("/")` so editor changes appear instantly; theme rows inserted directly into Supabase (raw SQL/dashboard) appear within 60s without a redeploy.
 
 ### Theme transition + first-visit wiggle
 
@@ -85,14 +94,14 @@ A one-time dial **wiggle** (in `ThemeDial.tsx` + `.is-wiggling` in `globals.css`
 
 The Location tile is an interactive cobe globe. Markers live as a JSON array in `site_content` under `bento.globe_markers` (one chunk, not per-marker), each `{ id, city, region, country, lat, lng, timezone (IANA), kind: "home"|"current"|"default" }`. Seeds: Boston (home, `--accent`), West Lafayette (default, dim accent), San Francisco (current, `--green`).
 
-- **No animation loop** — cobe v2 renders once and exposes `update(opts)`. `Globe.tsx` owns a `requestAnimationFrame` loop pushing `{phi, width, height}` every frame, which also positions the DOM marker overlay. See Pitfalls.
+- **No animation loop** — cobe v2 renders once and exposes `update(opts)`. `Globe.tsx` owns a `requestAnimationFrame` loop pushing `{phi, width, height}` every frame, which also positions the DOM marker overlay. See Pitfalls. The loop **pauses when the globe scrolls off-screen (`IntersectionObserver`) or the tab is hidden (`visibilitychange`)** so it doesn't burn CPU/GPU below the fold (a perf-plan change).
 - **Theme reactivity** — reads `--bg`/`--text`/`--accent` via `getComputedStyle`, converts each to a [0,1] RGB triple through an offscreen 1×1 canvas (parses any CSS color incl. `oklch`). On `data-theme` change (MutationObserver) the instance is destroyed and rebuilt (cobe can't live-mutate colors). `dark` flag derives from `--bg` luminance, so new themes need zero JS.
 - **Hover/tooltip** — canvas has no DOM hit testing, so per-frame a projection helper maps each marker's (lat,lng)→(x,y) using the same `phi` and fixed `theta: 0.3` and positions an absolutely-placed `<button>`. Back-hemisphere markers (post-rotation z ≥ 0) get `opacity:0` + `pointer-events:none`. Tooltip is driven from the rAF loop (`tooltipRef`) so it tracks rotation live; content is `Intl.DateTimeFormat`-driven (city local time + tz short code).
 - **Editing** — `MarkerEditorPanel.tsx` mounts only in edit mode; Save calls `updateGlobeMarkers` (`app/admin/actions.ts`), which validates (lat/lng range, IANA tz via `new Intl.DateTimeFormat` in try/catch, kind enum) then delegates to `upsertSiteContent`. For `bento.globe_markers`, the async `buildSiteContentText` → `buildGlobeMarkersText` joins the `education` table to produce a "he attends Purdue" clause for any default marker whose city matches a school name (case-insensitive substring).
 
 ### Hero connect cluster (`components/HeroConnect.tsx`, `ui/animated-beam.tsx`, `SocialIcons.tsx`)
 
-The hero is a two-column grid (`.hero-content`): text left, "connect cluster" right. The cluster is the profile photo (`public/images/rithvik.jpeg`) above three circular social buttons (GitHub/LinkedIn/Email) joined by animated beams pulsing **upward** into the photo.
+The hero is a two-column grid (`.hero-content`): text left, "connect cluster" right. The cluster is the profile photo (`public/images/rithvik.jpeg`, served via `next/image` with `fill`/`priority`) above three circular social buttons (GitHub/LinkedIn/Email) joined by animated beams pulsing **upward** into the photo.
 
 - `HeroConnect.tsx` owns the refs and renders three `<AnimatedBeam>` sharing `delay`/`duration`/`repeatDelay` (unison pulse). Buttons mirror `contact.link.*` (read-only here — URLs are edited in Contact); Email copies to clipboard.
 - `ui/animated-beam.tsx` — vendored MagicUI, `cn` helper stripped, `prefers-reduced-motion` gate added, plus a **`vertical` prop** (upstream only animates horizontal beams — see Pitfalls).
@@ -116,12 +125,12 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 
 Visitors can email Rithvik directly from the site via a draggable, resizable, theme-aware floating window — no mailto, no clipboard copy required.
 
-- **`ContactComposerProvider.tsx`** — context exposing `useContactComposer()` → `{ isOpen, open, close }`. Wraps the page tree in `app/page.tsx`. Both the Hero connect-cluster email button and the Contact-section email button call `open()`.
+- **`ContactComposerProvider.tsx`** — context exposing `useContactComposer()` → `{ isOpen, open, close }`. Wraps the page tree in `app/(site)/page.tsx`. Both the Hero connect-cluster email button and the Contact-section email button call `open()`.
 - **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` uses `pointer-events:none` so the site stays interactive behind it; only the panel itself captures events. Draggable via the header; resizable from the bottom-right handle; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the initial centered position (not an effect — avoids the `react-hooks/set-state-in-effect` lint rule), so `left/top/width/height` are always present inline and the CSS needs no centering logic. On mobile (≤640px) a media query overrides to a full-screen sheet with `!important`. Esc closes; From field autofocuses. The "To" row shows the destination address with a **copy-address fallback** button (replacing the old clipboard-only email button).
 - **`RichTextEditor.tsx`** — contentEditable body editor with a toolbar (bold/italic/underline/strikethrough/bullet list/numbered list/link) via `document.execCommand` — deprecated but dep-free, matching `SimpleMarkdown`'s philosophy.
 - **`lib/sanitize-html.ts`** — allowlist HTML sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:` hrefs) never survive; drops `<script>`/`<style>` blocks entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via Node's built-in `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`). Required adding `allowImportingTsExtensions: true` to `tsconfig.json` (valid because `noEmit` is true).
 - **`app/api/contact/route.ts`** — POST handler. **Honeypot**: a hidden field filled → fake 200, silently dropped. Validates email/subject/body, **re-sanitizes body server-side** (client sanitization is convenience, server is the gate). **Rate limit**: 3 sends/hour per IP via the `contact_submissions` table (checks recent rows before sending). Sends via the Resend HTTP API (`fetch`) from `CONTACT_FROM` (`contact@rithvik.ai`) to `CONTACT_TO`, with the visitor's address as `reply_to` — visitor address never goes in `from` (SPF/DKIM would reject). The sender display name is HTML-escaped before header interpolation. Logs each successful send to `contact_submissions`.
-- **`components/DeferredOverlays.tsx`** — mounts `ContactComposer` once (dynamic, `ssr:false`), deriving `toAddress` from `contact.link.email` in `site_content`.
+- **`components/DeferredOverlays.tsx`** — mounts the non-critical overlay widgets `RagBot`, `SecondaryContextPanel`, and `ContactComposer`, all `dynamic(..., { ssr:false })`, so they're split out of the initial bundle (a perf-plan change — they used to be direct `page.tsx` children). Derives the composer's `toAddress` from `contact.link.email` in `site_content`.
 
 **Phase 2 polish:**
 - **Rainbow shine border** — `.composer-shine` overlay mirrors `.rag-shine`: a 1px masked radial-gradient ring using the existing `@keyframes rag-shine`. The panel surface stays theme-aware; only the ring is a fixed purple/orange gradient. `prefers-reduced-motion` disables the animation.
@@ -136,7 +145,7 @@ Visitors can email Rithvik directly from the site via a draggable, resizable, th
 
 ### RAG bot (`components/RagBot.tsx`, `SimpleMarkdown.tsx`, `SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
-A floating **"Ask RAG"** launcher (bottom-right, mounted in `page.tsx`) — deliberately attention-grabbing (animated gradient text in a halo'd pill) — opens a glass chat panel streaming from `/api/chat`. A second launcher (`SecondaryContextPanel`) appears only in edit mode to manage secondary knowledge.
+A floating **"Ask RAG"** launcher (bottom-right, mounted via `DeferredOverlays` — lazy, `ssr:false`) — deliberately attention-grabbing (animated gradient text in a halo'd pill) — opens a glass chat panel streaming from `/api/chat`. A second launcher (`SecondaryContextPanel`) appears only in edit mode to manage secondary knowledge.
 
 **Panel UI:**
 - **Theme-independent** — launcher/panel/bubbles/chips/input use private `--rag-*` tokens (hardcoded in `.rag-launcher`), so it looks identical on every theme (gradient/shine effects need a fixed dark base).
@@ -174,7 +183,7 @@ Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVIC
 All in the Supabase public schema:
 
 - `projects`, `experience`, `education` (single-row Purdue today)
-- `site_content` — key/value for editable text + structured JSON: `hero.tagline`, `hero.sub_line`, `bento.{building,stack,interests}`, `bento.globe_markers` (JSON array, see globe section), `contact.{headline,sub}`, optional `contact.link.{github,linkedin,email}`. The Growth bento tile is hardcoded in `components/Bento.tsx`, not a row.
+- `site_content` — key/value for editable text + structured JSON: `hero.tagline`, `hero.sub_line`, `hero.name.{line1,line2}`, `bento.{building,stack,interests}`, `bento.globe_markers` (JSON array, see globe section), `contact.{headline,sub}`, optional `contact.link.{github,linkedin,email}`. The Growth bento tile is hardcoded in `components/Bento.tsx`, not a row.
 - `themes` — `{ slug, name, tokens(JSONB), sort_order, published }`
 - `primary_embeddings` — pgvector for live content; auto-upserted on edits; respects `published` (except `site_content`). Service-role only.
 - `secondary_documents` — uploaded-file metadata.
@@ -188,21 +197,28 @@ RLS: content tables are `SELECT`-public, writes via service-role in server actio
 - `stage3_migration.sql` — education table + site_content seed
 - `themes_migration.sql` — themes table + Dark/Light/Terminal (idempotent)
 - `themes_add_terminal.sql` — UPSERT just the Terminal row
-- `themes_add_editor_themes.sql` — the 11 editor themes (idempotent, sort 10–31)
+- `themes_add_editor_themes.sql` — the editor themes (idempotent; the Atom One Light INSERT was later removed)
 - `rag_pipeline_migration.sql` — pgvector + the 3 RAG tables + **HNSW** indexes + `match_primary`/`match_secondary` RPCs + RLS + Storage bucket. Apply once. (An earlier IVFFlat version under-retrieved — see Pitfalls.)
 - `globe_markers_seed.sql` — UPSERT the 3 seed markers
-- `resume_seed.sql` — idempotent sync of `projects` + `experience` with the canonical resume
+- `resume_seed.sql` — idempotent sync of `projects` + `experience` with the canonical resume (holds the **old prose** descriptions — re-applying it overwrites the bullet form)
+- `bulletize_descriptions.sql` — rewrites `projects`/`experience` descriptions into newline-separated bullet lines (rendered by `DescriptionBlock`); re-embed primary content after applying
 - `contact_submissions_migration.sql` — contact composer rate-limit/log table (`contact_submissions`), service-role RLS
+- `themes_add_more_themes.sql` — adds Monokai Pro (Octagon), High Contrast Dark/Light, Tokyo Night Horizon; reorders all themes light-first (light 0–4, dark 10–22) with GitHub Light as the default
+- `themes_remove_themes.sql` — removes Monokai Pro Light + Atom One Light
+- `seed_missing_site_content.sql` — upserts `hero.name.line2`, `contact.link.github`, `contact.link.email` (previously only component fallbacks; now DB-backed so /buffett + RAG see them)
 
 The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 
 ## File layout cheat sheet
 
 ```
+next.config.ts        — AVIF/WebP image formats + optimizePackageImports:["motion"]
 app/
-  layout.tsx          — force-dynamic root: themes fetch, ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial
-  page.tsx            — fetches site_content + parses globe markers; renders sections + RagBot + SecondaryContextPanel
-  globals.css         — tokens, dial, bento (globe/markers/growth), rag chat (theme-independent), OTP login
+  (site)/layout.tsx   — ISR root (revalidate=60) for the themed site: themes fetch, ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial + BuffettLink
+  (site)/page.tsx     — ISR (revalidate=60): fetches site_content + parses globe markers; renders sections + DeferredOverlays  → "/"
+  (plain)/layout.tsx  — bare second root layout (own <html>/<body>, inline CSS, no providers/theme/JS) for /buffett
+  (plain)/buffett/page.tsx — plain-HTML homage page (server component, same DB data, no animations)  → "/buffett"
+  globals.css         — tokens, dial, bento (globe/markers/growth), rag chat (theme-independent), OTP login, composer (mobile sheet inset between nav + RAG), buffett link/tooltip
   icon.tsx / apple-icon.tsx / opengraph-image.tsx — dynamic favicon / iOS icon / OG image
   admin/actions.ts    — server actions for all tables (incl. updateGlobeMarkers)
   admin/rag-actions.ts— backfillPrimaryEmbeddings, list/upload/delete secondary docs
@@ -228,7 +244,9 @@ components/
   ContactComposerProvider — context: isOpen/open/close for the composer
   RichTextEditor        — contentEditable + execCommand toolbar (bold/italic/underline/etc.)
   SendAnimation         — viewport canvas: particle dematerialise → paper-airplane fly-off (~2.2s); sibling of composer panel
-  DeferredOverlays      — mounts ContactComposer once (dynamic, ssr:false)
+  DescriptionBlock      — renders a project/experience description as a bullet list (multi-line) or <p> (single line)
+  DeferredOverlays      — mounts RagBot + SecondaryContextPanel + ContactComposer (all dynamic, ssr:false)
+  BuffettLink           — easter-egg "For Warren Buffett" link to /buffett + hover tooltip (rendered in (site) layout)
   ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
 
 lib/
@@ -239,7 +257,7 @@ lib/
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
   sanitize-html.ts    — allowlist HTML sanitizer + htmlToText (unit-tested via node:test)
 
-docs/plans/*          — all done: phase1 design/dev, inline-editing, theme, rag-pipeline, bento-globe, passwordless-otp
+docs/plans/*          — phase1 design/dev, inline-editing, theme, rag-pipeline, bento-globe, passwordless-otp, inline-email-composer, performance-improvement (all implemented)
 docs/explanations/rag-pipeline.md — RAG deep dive
 ```
 
@@ -252,7 +270,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 - **React's `onWheel` is passive** — `preventDefault()` no-ops. Attach via `addEventListener("wheel", h, { passive: false })` in a `useEffect` for dial cycling.
 - **Auto-rotating the dial on first visit was rejected as invasive** — visitors hadn't asked for a color change. The subtle one-time wiggle replaced it. Discoverability nudges should affect the affordance, not the underlying state.
 - **An edit-mode-only component mounted outside `<EditModeProvider>` 500s the whole route** — `useEditMode()` throws with no provider, crashing SSR for every visitor. Mount such components INSIDE the provider (it wraps `{children}`, not the dial siblings).
-- **`force-dynamic` on the root layout is required** when content can change via direct DB writes (themes via raw SQL/dashboard). Without it the homepage is static and stale until the next deploy; server actions revalidate via `revalidatePath("/")` but raw writes don't.
+- **The homepage uses ISR (`revalidate = 60`), not `force-dynamic`.** `force-dynamic` was dropped because it cost ~5 uncached Supabase round-trips on every visit. With ISR, server-action edits call `revalidatePath("/")` and appear instantly; raw DB writes (themes via SQL/dashboard) take up to 60s to surface — a deliberate trade for not hitting Supabase per-request. (`force-dynamic` was the original choice precisely so raw writes appeared immediately; ISR keeps that property for the inline-edit path and bounds it to 60s for raw writes.)
 - **cobe v2 has no `onRender`.** Many online snippets are v1, which drove its own rAF. v2 renders once on construction and exposes only `update(opts)`; all motion must come from a caller-owned rAF loop. Don't `as any` to fake `onRender` — it compiles but the globe freezes.
 - **MagicUI `AnimatedBeam` only animates horizontal beams** — upstream sweeps the gradient along X. Vertical beams need the local `vertical` prop (sweeps Y). Trail length = the `y1`–`y2` gap; sweep speed = `duration`.
 - **`KineticText` must use `block` flow, not `flex flex-wrap`.** With flex, `flex-wrap` breaks between any two letter-spans, splitting words mid-word. `block` only breaks on whitespace (and its space is non-breaking).
@@ -289,7 +307,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 - **Theme not switching** → console for `ThemeProvider` errors; check `localStorage[rithvik-theme]`; force `document.documentElement.dataset.theme` in devtools to isolate CSS.
 - **Edit-mode save redirects to `/admin/login`** → browser client isn't `createBrowserClient` (cookie mismatch).
 - **Dial rotation doesn't animate** → `.theme-strip-option` lost its `transition: transform …`, or pills regained a `view-transition-name`.
-- **Theme missing from the dial** → reapply the relevant themes migration; verify `SELECT slug,name,sort_order FROM themes`. Layout is `force-dynamic` so DB rows should appear immediately; a pre-`force-dynamic` preview would need a redeploy.
+- **Theme missing from the dial** → reapply the relevant themes migration; verify `SELECT slug,name,sort_order FROM themes`. The homepage is ISR (`revalidate = 60`), so a raw SQL insert appears within 60s (or instantly after any inline edit's `revalidatePath`); wait out the window or redeploy if it still seems missing.
 - **RAG hallucinating wildly** → guard didn't fire but the right chunk is missing/low-ranked. Manually embed the question and query `match_primary` with `match_count=17`; if buried at rank 8+, check Vercel logs for `[rag] hyde failed`. Recovery: re-embed primary.
 - **RAG returns the canned refusal** for known facts → `[rag] empty-context guard fired` in logs means BOTH retrievals hit 0 rows. Verify the index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.
 - **RAG 500 "Embedding failed"** → `OPENAI_API_KEY` missing/exhausted (embeddings, HyDE, captioning, AND chat all use OpenAI / `gpt-4o-mini`).

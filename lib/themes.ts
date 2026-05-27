@@ -35,7 +35,7 @@ export type ThemeTokenKey = (typeof THEMABLE_TOKENS)[number];
 export type ThemeTokens = Partial<Record<ThemeTokenKey, string>>;
 
 /** Slug used when no theme is saved in localStorage. */
-export const DEFAULT_THEME_SLUG = "rithvik-dark";
+export const DEFAULT_THEME_SLUG = "github-light";
 
 /** localStorage key for the user's persisted choice. */
 export const THEME_STORAGE_KEY = "rithvik-theme";
@@ -74,13 +74,24 @@ export const DEFAULT_TERMINAL_TOKENS: ThemeTokens = {
   font:          "var(--mono)",
 };
 
+/** GitHub Light — the default theme; tokens mirror themes_add_editor_themes.sql. */
+export const DEFAULT_GITHUB_LIGHT_TOKENS: ThemeTokens = {
+  bg:            "#ffffff",
+  "bg-soft":     "#f6f8fa",
+  text:          "#1f2328",
+  muted:         "#656d76",
+  accent:        "#0969da",
+  "accent-glow": "rgba(9,105,218,0.18)",
+  green:         "#1a7f37",
+};
+
 /** Fallback theme list used if the themes table is empty (migration not run). */
 export const FALLBACK_THEMES: Theme[] = [
   {
-    id: "fallback-dark",
-    slug: "rithvik-dark",
-    name: "Rithvik Dark",
-    tokens: DEFAULT_DARK_TOKENS as Record<string, string>,
+    id: "fallback-github-light",
+    slug: "github-light",
+    name: "GitHub Light",
+    tokens: DEFAULT_GITHUB_LIGHT_TOKENS as Record<string, string>,
     sort_order: 0,
     published: true,
     created_at: "",
@@ -97,11 +108,21 @@ export const FALLBACK_THEMES: Theme[] = [
     updated_at: "",
   },
   {
+    id: "fallback-dark",
+    slug: "rithvik-dark",
+    name: "Rithvik Dark",
+    tokens: DEFAULT_DARK_TOKENS as Record<string, string>,
+    sort_order: 10,
+    published: true,
+    created_at: "",
+    updated_at: "",
+  },
+  {
     id: "fallback-terminal",
     slug: "rithvik-terminal",
     name: "Rithvik Terminal",
     tokens: DEFAULT_TERMINAL_TOKENS as Record<string, string>,
-    sort_order: 2,
+    sort_order: 11,
     published: true,
     created_at: "",
     updated_at: "",

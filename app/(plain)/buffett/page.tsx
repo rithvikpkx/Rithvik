@@ -1,0 +1,245 @@
+/* eslint-disable @next/next/no-html-link-for-pages --
+   /buffett lives in a separate root layout; next/link client-nav would skip that
+   layout's bootstrap, so the internal "/" links use a plain <a> for a full load.
+   File-level so editor reformatting can't detach an inline directive. */
+import { serverClient } from "@/lib/supabase";
+import type { Project, Experience as ExperienceRow, Education as EducationRow, GlobeMarker } from "@/lib/types";
+
+// Match the homepage ISR cadence so content stays in sync.
+export const revalidate = 60;
+
+interface Building {
+	title: string;
+	description: string;
+}
+
+function parseSafe<T>(json: string | undefined, fallback: T): T {
+	if (!json) return fallback;
+	try {
+		return JSON.parse(json) as T;
+	} catch {
+		return fallback;
+	}
+}
+
+// Descriptions are stored one bullet per line (see DescriptionBlock).
+function bullets(desc: string): string[] {
+	return (desc ?? "")
+		.split("\n")
+		.map((l) => l.trim())
+		.filter(Boolean);
+}
+
+function Body({ desc }: { desc: string }) {
+	const lines = bullets(desc);
+	if (lines.length > 1)
+		return (
+			<ul>
+				{lines.map((l, i) => (
+					<li key={i}>{l}</li>
+				))}
+			</ul>
+		);
+	if (lines.length === 1) return <p>{lines[0]}</p>;
+	return null;
+}
+
+export default async function Buffett() {
+	const sb = serverClient();
+	const [contentRes, eduRes, projRes, expRes] = await Promise.all([
+		sb.from("site_content").select("key, value"),
+		sb.from("education").select("*").order("sort_order"),
+		sb.from("projects").select("*").order("sort_order"),
+		sb.from("experience").select("*").order("sort_order"),
+	]);
+
+	const content = Object.fromEntries(
+		((contentRes.data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
+	);
+	const education = ((eduRes.data ?? []) as EducationRow[]).filter((e) => e.published);
+	// Mirror the homepage exactly: Projects.tsx and Experience.tsx show all rows
+	// regardless of `published`; only Education filters. Keeps /buffett seamless.
+	const projects = (projRes.data ?? []) as Project[];
+	const experience = (expRes.data ?? []) as ExperienceRow[];
+
+	// Full name from the DB (hero.name.line1 + line2); falls back if unset.
+	const name =
+		[content["hero.name.line1"], content["hero.name.line2"]].filter(Boolean).join(" ") || "Rithvik Praveen Kumar";
+	const tagline = content["hero.tagline"] ?? "";
+	const subLine = content["hero.sub_line"] ?? "";
+	const building = parseSafe<Building | undefined>(content["bento.building"], undefined);
+	const stack = parseSafe<string[]>(content["bento.stack"], []);
+	const interests = parseSafe<string[]>(content["bento.interests"], []);
+	const markers = parseSafe<GlobeMarker[]>(content["bento.globe_markers"], []);
+	const current = markers.find((m) => m.kind === "current") ?? markers.find((m) => m.kind === "home");
+	const location = current ? [current.city, current.region, current.country].filter(Boolean).join(", ") : "";
+
+	// Mirror the homepage's fallbacks (Hero.tsx / Contact.tsx) — these keys aren't
+	// in site_content, so the live site uses these defaults too.
+	const github = content["contact.link.github"] ?? "https://github.com/rithvikpkx";
+	const linkedin = content["contact.link.linkedin"];
+	const email = (content["contact.link.email"] ?? "mailto:rithvikpkx@gmail.com").replace(/^mailto:/, "");
+	const contactHeadline = content["contact.headline"] ?? "";
+	const contactSub = content["contact.sub"] ?? "";
+
+	return (
+		<>
+			<p className="return">
+				<a href="/">&larr; Return to the full site</a>
+			</p>
+
+			<header className="bh-header">
+				<h1>{name}</h1>
+				{tagline ? <p className="addr">{tagline}</p> : null}
+				{location ? <p className="addr">{location}</p> : null}
+				<p className="addr">Personal Home Page</p>
+			</header>
+
+			<hr />
+
+			<nav className="index" aria-label="Sections">
+				<ul>
+					<li>
+						<a href="#about">About</a>
+					</li>
+					<li>
+						<a href="#education">Education</a>
+					</li>
+					<li>
+						<a href="#projects">Projects</a>
+					</li>
+				</ul>
+				<ul>
+					<li>
+						<a href="#experience">Experience</a>
+					</li>
+					<li>
+						<a href="#contact">Contact</a>
+					</li>
+					<li>
+						<a href={github}>GitHub</a>
+					</li>
+					{linkedin ? (
+						<li>
+							<a href={linkedin}>LinkedIn</a>
+						</li>
+					) : null}
+				</ul>
+			</nav>
+
+			<hr />
+
+			<section id="about">
+				<h2>About</h2>
+				{tagline ? <p>{tagline}</p> : null}
+				{subLine ? <p>{subLine}</p> : null}
+				{building ? (
+					<>
+						<h3>{building.title}</h3>
+						<p>{building.description}</p>
+					</>
+				) : null}
+				{stack.length ? (
+					<p>
+						<strong>Stack:</strong> {stack.join(", ")}
+					</p>
+				) : null}
+				{interests.length ? (
+					<p>
+						<strong>Interests:</strong> {interests.join(", ")}
+					</p>
+				) : null}
+			</section>
+
+			<hr />
+
+			<section id="education">
+				<h2>Education</h2>
+				{education.map((e) => (
+					<div key={e.id} className="entry">
+						<h3>{e.school_url ? <a href={e.school_url}>{e.school}</a> : e.school}</h3>
+						<p>{e.degree}</p>
+						{e.concentrations?.length ? <p>Concentrations: {e.concentrations.join(", ")}</p> : null}
+					</div>
+				))}
+			</section>
+
+			<hr />
+
+			<section id="projects">
+				<h2>Projects</h2>
+				{projects.map((p) => (
+					<div key={p.id} className="entry">
+						<h3>
+							{p.title}
+							{p.badge ? ` — ${p.badge}` : ""}
+						</h3>
+						<Body desc={p.description} />
+						{p.tags?.length ? <p className="tags">{p.tags.join(" · ")}</p> : null}
+						{(() => {
+							const links = p.links ?? {};
+							return Object.keys(links).length ? (
+								<p>
+									{Object.entries(links).map(([k, v], i) => (
+										<span key={k}>
+											{i > 0 ? " · " : ""}
+											<a href={v}>{k}</a>
+										</span>
+									))}
+								</p>
+							) : null;
+						})()}
+					</div>
+				))}
+			</section>
+
+			<hr />
+
+			<section id="experience">
+				<h2>Experience</h2>
+				{experience.map((x) => (
+					<div key={x.id} className="entry">
+						<h3>
+							{x.role}
+							{x.org ? <> — {x.org_url ? <a href={x.org_url}>{x.org}</a> : x.org}</> : null}
+						</h3>
+						<p className="meta">{[x.date_range, x.location].filter(Boolean).join(" · ")}</p>
+						<Body desc={x.description} />
+						{x.tags?.length ? <p className="tags">{x.tags.join(" · ")}</p> : null}
+					</div>
+				))}
+			</section>
+
+			<hr />
+
+			<section id="contact">
+				<h2>Contact</h2>
+				{contactHeadline ? <p>{contactHeadline}</p> : null}
+				{contactSub ? <p>{contactSub}</p> : null}
+				<ul>
+					<li>
+						<a href={github}>GitHub</a>
+					</li>
+					{linkedin ? (
+						<li>
+							<a href={linkedin}>LinkedIn</a>
+						</li>
+					) : null}
+					<li>Email: {email}</li>
+				</ul>
+			</section>
+
+			<hr />
+
+			<footer className="bh-footer">
+				<p>
+					<a href="/">&larr; Return to the full experience</a>
+				</p>
+				<p>
+					Copyright &copy; {new Date().getFullYear()} {name}.
+				</p>
+				<p className="note">Inspired by the official Berkshire Hathaway website.</p>
+			</footer>
+		</>
+	);
+}

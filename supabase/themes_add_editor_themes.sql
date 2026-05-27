@@ -165,20 +165,3 @@ VALUES (
   30
 )
 ON CONFLICT (slug) DO NOTHING;
-
-INSERT INTO themes (slug, name, tokens, sort_order)
-VALUES (
-  'atom-one-light',
-  'Atom One Light',
-  '{
-    "bg":           "#fafafa",
-    "bg-soft":      "#f0f0f0",
-    "text":         "#383a42",
-    "muted":        "#a0a1a7",
-    "accent":       "#4078f2",
-    "accent-glow":  "rgba(64,120,242,0.18)",
-    "green":        "#50a14f"
-  }'::jsonb,
-  31
-)
-ON CONFLICT (slug) DO NOTHING;
