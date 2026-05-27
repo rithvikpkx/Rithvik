@@ -46,9 +46,9 @@ export default async function Buffett() {
   const projects = (projRes.data ?? []) as Project[];
   const experience = (expRes.data ?? []) as ExperienceRow[];
 
-  const name =
-    [content["hero.name.line1"], content["hero.name.line2"]].filter(Boolean).join(" ") ||
-    "Rithvik Praveen Kumar";
+  // The hero stores a stylised, first-name-only display name; the plain page
+  // shows the full name (also used in the footer copyright).
+  const name = "Rithvik Praveen Kumar";
   const tagline = content["hero.tagline"] ?? "";
   const subLine = content["hero.sub_line"] ?? "";
   const building = parseSafe<Building | undefined>(content["bento.building"], undefined);
@@ -60,9 +60,11 @@ export default async function Buffett() {
     ? [current.city, current.region, current.country].filter(Boolean).join(", ")
     : "";
 
-  const github = content["contact.link.github"];
+  // Mirror the homepage's fallbacks (Hero.tsx / Contact.tsx) — these keys aren't
+  // in site_content, so the live site uses these defaults too.
+  const github = content["contact.link.github"] ?? "https://github.com/rithvikpkx";
   const linkedin = content["contact.link.linkedin"];
-  const email = content["contact.link.email"];
+  const email = (content["contact.link.email"] ?? "mailto:rithvikpkx@gmail.com").replace(/^mailto:/, "");
   const contactHeadline = content["contact.headline"] ?? "";
   const contactSub = content["contact.sub"] ?? "";
 
@@ -89,9 +91,8 @@ export default async function Buffett() {
         <ul>
           <li><a href="#experience">Experience</a></li>
           <li><a href="#contact">Contact</a></li>
-          {github ? <li><a href={github}>GitHub</a></li> : null}
+          <li><a href={github}>GitHub</a></li>
           {linkedin ? <li><a href={linkedin}>LinkedIn</a></li> : null}
-          {email ? <li><a href={`mailto:${email}`}>Email</a></li> : null}
         </ul>
       </nav>
 
@@ -161,9 +162,9 @@ export default async function Buffett() {
         {contactHeadline ? <p>{contactHeadline}</p> : null}
         {contactSub ? <p>{contactSub}</p> : null}
         <ul>
-          {github ? <li><a href={github}>GitHub</a></li> : null}
+          <li><a href={github}>GitHub</a></li>
           {linkedin ? <li><a href={linkedin}>LinkedIn</a></li> : null}
-          {email ? <li><a href={`mailto:${email}`}>{email}</a></li> : null}
+          <li>Email: {email}</li>
         </ul>
       </section>
 
