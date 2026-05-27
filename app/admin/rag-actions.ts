@@ -279,7 +279,14 @@ export async function reembedSecondaryDocuments(): Promise<{
       if (delErr) throw new Error(`delete failed: ${delErr.message}`);
 
       const { error: insErr } = await db.from("secondary_embeddings").insert(newRows);
-      if (insErr) throw new Error(`insert failed: ${insErr.message}`);
+      if (insErr) {
+        // DELETE already committed — this doc now has zero embeddings and is unretrievable.
+        console.error(`[rag] reembedSecondaryDocuments: insert failed for "${doc.filename}" after delete committed`, insErr);
+        errors.push(
+          `${doc.filename}: embeddings were replaced but re-insert failed — this document now has NO embeddings; re-run "Re-chunk all secondary docs" to recover (${insErr.message})`
+        );
+        continue;
+      }
 
       totalDocuments++;
       totalChunks += chunks.length;

@@ -110,6 +110,7 @@ export default function SecondaryContextPanel() {
         setBusy(null);
         busyClearTimerRef.current = null;
       }, 4000);
+      // refresh so the per-doc chunk counts in the list reflect the re-chunk
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -179,7 +180,7 @@ export default function SecondaryContextPanel() {
 
             <div className="ctx-footer">
               <button className="ctx-backfill" onClick={handleBackfill}>Re-embed all primary content</button>
-              <button className="ctx-backfill" onClick={handleRechunk}>Re-chunk secondary docs</button>
+              <button className="ctx-backfill" onClick={handleRechunk}>Re-chunk all secondary docs</button>
               {busy  && <p className="ctx-status">{busy}</p>}
               {error && <p className="ctx-error">{error}</p>}
             </div>
