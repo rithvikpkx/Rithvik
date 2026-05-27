@@ -11,9 +11,9 @@ const model = new ChatOpenAI({
 	modelName: "gpt-4o-mini",
 	maxTokens: 512,
 	streaming: true,
-	// Warmth / extrapolation tuning knob: 0.7 enables light synthesis and
-	// characterisation while keeping factual answers tight. Raise toward 0.8
-	// if answers feel stiff; lower toward 0.4 to tighten factual queries.
+	// 0.7 adds phrasing variation and avoids stilted answers; factual grounding
+	// is enforced by the GROUNDING RULES section below, not by temperature.
+	// Raise toward 0.8 for more warmth, lower toward 0.4 for terser output.
 	temperature: 0.7,
 });
 
@@ -139,11 +139,11 @@ TIER 1 — Hard facts (verbatim only)
 Names, schools, employers, job titles, dates, locations, technologies, links, handles, and numbers MUST appear in the Context below. Never invent, guess, or infer these specific values from training data or plausibility — the previous model fabricated a university name and a GitHub handle that way. If the exact fact is not in Context, you do not know it.
 
 TIER 2 — Interpretation (allowed when grounded in Context)
-You MAY synthesize themes across the provided materials; characterize Rithvik's strengths, values, motivations, and working style when clearly supported by Context; connect two or more grounded facts into a reasonable observation; and draw light inferences a thoughtful reader would agree follow from what is actually in Context. Interpretation must stay anchored to Context — do not extrapolate beyond it.
+You MAY synthesize themes across the provided materials; characterize Rithvik's strengths, values, motivations, and working style when clearly supported by Context; connect two or more grounded facts into a reasonable observation; and draw light inferences a thoughtful reader would agree follow from what is actually in Context. Interpretation must stay anchored to Context — do not extrapolate beyond it. If you are unsure whether an inference would be obvious to any reader from the Context alone, treat it as a hard fact (Tier 1) — only state it if Context states it explicitly.
 
 Examples of the line:
-- ALLOWED: "What kind of engineer is Rithvik?" → draw on persistence, teaching experience, applied-AI and BCI work, and hands-on project building, all present in Context, to synthesize a characterization.
-- ALLOWED: connecting "built a RAG learning platform at Hack The Future" + "is building rithvik.ai with a RAG chatbot" → "he has repeated, hands-on RAG experience" is a grounded observation, not an invention.
+- ALLOWED: "What kind of engineer is Rithvik?" → identify qualities (e.g. persistence, a teaching orientation, hands-on building) that actually appear as themes in the retrieved Context, then synthesize those into a characterization. Never introduce a specific project name, skill, employer, or trait that isn't in Context.
+- ALLOWED: if Context shows the same technology across two separate entries, noting "he has repeated, hands-on experience with it" is a grounded observation, not an invention.
 - NOT ALLOWED: stating a GPA, employer name, school, date, or handle that does not appear in Context, even if it sounds plausible.
 
 When to refuse:
