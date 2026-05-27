@@ -23,8 +23,7 @@ export const CHUNK_HARD_MAX = 1200;
 const SEPARATORS: string[] = ["\n\n", "\n", ". ", "? ", "! ", " "];
 
 /**
- * Snap a tail-of-previous-chunk overlap region backward to the nearest word
- * boundary so no token is split mid-word.  Returns the final overlap string.
+ * Skip ahead to the first space so the overlap starts on a whole word.
  */
 function snapToWordBoundary(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
@@ -52,10 +51,9 @@ export function chunkText(text: string, maxChars = CHUNK_TARGET): string[] {
   const normalized = text.trim();
   if (!normalized) return [];
 
-  // Respect a caller-supplied maxChars by treating it as the target for this
-  // call only — we swap the module constant temporarily via a local alias.
-  // (The only real-world caller passes no maxChars, so this is pure compat.)
-  const target = maxChars;
+  // Use the caller-supplied value (clamped) as the greedy-pack target;
+  // CHUNK_HARD_MAX remains the fixed recursion guard.
+  const target = Math.min(maxChars, CHUNK_HARD_MAX);
 
   // Run the recursive split using the module-level CHUNK_HARD_MAX cap.
   // We produce raw, non-overlapping chunks first, then inject overlap below.
@@ -68,7 +66,9 @@ export function chunkText(text: string, maxChars = CHUNK_TARGET): string[] {
   const result: string[] = [rawChunks[0]];
   for (let i = 1; i < rawChunks.length; i++) {
     const prev = rawChunks[i - 1];
-    const overlap = snapToWordBoundary(prev, CHUNK_OVERLAP);
+    // Cap overlap so that overlap + " " + rawChunk[i] never exceeds CHUNK_HARD_MAX.
+    const maxOverlap = Math.max(0, CHUNK_HARD_MAX - rawChunks[i].length - 1);
+    const overlap = snapToWordBoundary(prev, Math.min(CHUNK_OVERLAP, maxOverlap));
     // Prepend the overlap only if it's non-empty and not already present.
     result.push(overlap ? overlap + " " + rawChunks[i] : rawChunks[i]);
   }
@@ -77,9 +77,9 @@ export function chunkText(text: string, maxChars = CHUNK_TARGET): string[] {
 }
 
 /**
- * Internal variant of splitRecursive that accepts a caller-specified target
- * so `chunkText(text, maxChars)` can honor the maxChars override.
- * Mirrors splitRecursive but threads the target through the greedy-pack step.
+ * Recursive helper for chunkText. Splits text at SEPARATORS[sepIdx], greedily
+ * packs pieces up to `target` chars, and recurses into pieces that still
+ * exceed CHUNK_HARD_MAX.
  */
 function splitRecursiveWithTarget(text: string, sepIdx: number, target: number): string[] {
   if (text.length <= CHUNK_HARD_MAX) return [text];

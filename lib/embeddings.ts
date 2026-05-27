@@ -83,7 +83,6 @@ export async function generateHypotheticalAnswer(question: string): Promise<stri
   }
 }
 
-
 /** Builds the embed text for a project row as natural prose. Statement-form
  *  text embeds closer to question-form queries than label-prefixed lines do. */
 export function buildProjectText(p: Project): string {

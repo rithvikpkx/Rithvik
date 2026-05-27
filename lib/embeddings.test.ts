@@ -105,3 +105,51 @@ test("empty input returns empty array", () => {
   assert.deepEqual(chunkText("   "), []);
   assert.deepEqual(chunkText("\n\n  \n"), []);
 });
+
+// ------------------------------------------------------------------
+// 7. Overlap-over-cap edge: raw chunks near CHUNK_HARD_MAX must not grow
+//    past CHUNK_HARD_MAX after overlap injection.
+// ------------------------------------------------------------------
+test("overlap injection never pushes a chunk past CHUNK_HARD_MAX", () => {
+  // Two ~1200-char blobs of 30-char words separated by a single space.
+  // Each blob is separator-free, so it becomes one raw chunk right at the cap.
+  // Naively prepending 150 chars of overlap would produce a 1351-char chunk.
+  const word30 = "w".repeat(29); // 29 chars + space = 30 chars/word
+  const wordsPerBlob = Math.ceil(CHUNK_HARD_MAX / 30); // ~40 words ≈ 1200 chars
+  const blob = Array.from({ length: wordsPerBlob }, () => word30).join(" ")
+    + " "
+    + Array.from({ length: wordsPerBlob }, () => word30).join(" ");
+  const chunks = chunkText(blob);
+  assert.ok(chunks.length > 1, "expected multiple chunks from two large blobs");
+  for (const chunk of chunks) {
+    assert.ok(
+      chunk.length <= CHUNK_HARD_MAX,
+      `overlap-inflated chunk of length ${chunk.length} exceeds CHUNK_HARD_MAX (${CHUNK_HARD_MAX})`,
+    );
+  }
+});
+
+// ------------------------------------------------------------------
+// 8. maxChars compat parameter: chunkText(blob, 300) uses 300 as the
+//    greedy-pack target and never exceeds CHUNK_HARD_MAX.  Because maxChars
+//    is a soft pack target (not an overlap cap), post-overlap chunks may
+//    slightly exceed maxChars but must never exceed CHUNK_HARD_MAX, and there
+//    should be more chunks than the default 900-char run.
+// ------------------------------------------------------------------
+test("maxChars parameter produces more chunks and stays within CHUNK_HARD_MAX", () => {
+  const blob = makeBlob(500); // well over 1200 chars
+  const chunksDefault = chunkText(blob);
+  const chunksSmall = chunkText(blob, 300);
+  // Smaller target → more chunks.
+  assert.ok(
+    chunksSmall.length > chunksDefault.length,
+    `expected more chunks with maxChars=300 (${chunksSmall.length}) than with default (${chunksDefault.length})`,
+  );
+  // Hard invariant still holds.
+  for (const chunk of chunksSmall) {
+    assert.ok(
+      chunk.length <= CHUNK_HARD_MAX,
+      `chunk of length ${chunk.length} exceeds CHUNK_HARD_MAX (${CHUNK_HARD_MAX}): "${chunk.slice(0, 60)}..."`,
+    );
+  }
+});
