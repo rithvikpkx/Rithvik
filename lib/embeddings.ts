@@ -4,6 +4,9 @@
  * Supabase client and OPENAI_API_KEY).
  */
 import { adminClient } from "@/lib/supabase";
+// Re-export the pure splitter so callers (rag-actions.ts) import from here
+// without needing to know about the dependency-free sub-module.
+export { chunkText, CHUNK_TARGET, CHUNK_OVERLAP, CHUNK_HARD_MAX } from "@/lib/chunk-text";
 import type { Project, Experience, Education, GlobeMarker } from "@/lib/types";
 
 const EMBED_MODEL = "text-embedding-3-small";
@@ -78,35 +81,6 @@ export async function generateHypotheticalAnswer(question: string): Promise<stri
     console.warn("[rag] hyde threw; falling back to raw question:", e instanceof Error ? e.message : e);
     return question;
   }
-}
-
-/**
- * Greedy paragraph-aware chunker. Splits on blank lines first, then merges
- * paragraphs until adding the next one would exceed maxChars. Designed for
- * essays / PDFs — primary content rarely needs chunking and bypasses this.
- *
- * 1500 chars is well under text-embedding-3-small's 8191-token input limit
- * but gives enough overlap for paragraph-level semantic search.
- */
-export function chunkText(text: string, maxChars = 1500): string[] {
-  const paragraphs = text
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const chunks: string[] = [];
-  let buf = "";
-  for (const p of paragraphs) {
-    if (!buf) { buf = p; continue; }
-    if (buf.length + 2 + p.length <= maxChars) {
-      buf += "\n\n" + p;
-    } else {
-      chunks.push(buf);
-      buf = p;
-    }
-  }
-  if (buf) chunks.push(buf);
-  return chunks.length ? chunks : (text.trim() ? [text.slice(0, maxChars)] : []);
 }
 
 /** Builds the embed text for a project row as natural prose. Statement-form

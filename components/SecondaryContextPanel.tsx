@@ -6,6 +6,7 @@ import {
   uploadSecondaryDocument,
   deleteSecondaryDocument,
   backfillPrimaryEmbeddings,
+  reembedSecondaryDocuments,
   type SecondaryDocRow,
 } from "@/app/admin/rag-actions";
 import { useEditMode } from "./EditModeProvider";
@@ -96,6 +97,27 @@ export default function SecondaryContextPanel() {
     }
   }
 
+  async function handleRechunk() {
+    if (!confirm("Re-chunk and re-embed all secondary documents? Existing secondary embeddings will be replaced.")) return;
+    setError(null);
+    setBusy("Re-chunking secondary docs…");
+    try {
+      const report = await reembedSecondaryDocuments();
+      const summary = `Re-chunked ${report.documents} doc(s) into ${report.chunks} chunk(s).`;
+      setBusy(report.errors.length ? `${summary} ${report.errors.length} error(s).` : summary);
+      if (busyClearTimerRef.current !== null) clearTimeout(busyClearTimerRef.current);
+      busyClearTimerRef.current = setTimeout(() => {
+        setBusy(null);
+        busyClearTimerRef.current = null;
+      }, 4000);
+      // refresh so the per-doc chunk counts in the list reflect the re-chunk
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(null);
+    }
+  }
+
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
@@ -158,6 +180,7 @@ export default function SecondaryContextPanel() {
 
             <div className="ctx-footer">
               <button className="ctx-backfill" onClick={handleBackfill}>Re-embed all primary content</button>
+              <button className="ctx-backfill" onClick={handleRechunk}>Re-chunk all secondary docs</button>
               {busy  && <p className="ctx-status">{busy}</p>}
               {error && <p className="ctx-error">{error}</p>}
             </div>

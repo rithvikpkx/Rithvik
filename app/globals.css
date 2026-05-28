@@ -1355,12 +1355,19 @@ a { color: inherit; text-decoration: none; }
 .edit-bar {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Center within the space LEFT of the bottom-right Context + Ask RAG cluster
+     (Ask RAG at right:26, Context at right:174) so the bar can never overlap it.
+     left/right + margin-inline:auto + width:max-content centers in that region. */
+  left: 16px;
+  right: 320px;
+  margin-inline: auto;
+  width: max-content;
+  max-width: calc(100vw - 360px);
   z-index: 150;
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   padding: 9px 18px;
   background: var(--panel-glass);
   backdrop-filter: blur(24px) saturate(180%);
@@ -1399,6 +1406,11 @@ a { color: inherit; text-decoration: none; }
 .edit-bar-hint {
   color: var(--muted);
   font-size: 0.74rem;
+  /* Truncate rather than overflow when the reserved width gets tight. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .edit-bar-exit {
@@ -1420,6 +1432,17 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 640px) {
+  /* Too narrow to sit beside the launchers — re-center full width and lift
+     the bar above the Context + Ask RAG row instead. */
+  .edit-bar {
+    left: 50%;
+    right: auto;
+    bottom: 84px;
+    transform: translateX(-50%);
+    margin-inline: 0;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
   .edit-bar-hint { display: none; }
   .edit-bar-sep { display: none; }
 }

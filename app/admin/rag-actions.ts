@@ -197,6 +197,108 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
   };
 }
 
+/**
+ * Re-chunks and re-embeds every secondary document using the current chunkText
+ * splitter, downloading each original file from Storage in place. Embed-before-
+ * delete ensures a mid-way failure leaves the old embeddings intact.
+ * Returns a report with counts and any per-doc error messages.
+ */
+export async function reembedSecondaryDocuments(): Promise<{
+  documents: number; chunks: number; errors: string[];
+}> {
+  await requireAuth();
+  const db = adminClient();
+  const errors: string[] = [];
+  let totalDocuments = 0;
+  let totalChunks = 0;
+
+  const { data: docs, error: listErr } = await db
+    .from("secondary_documents")
+    .select("id, filename, mime_type, storage_path");
+  if (listErr) throw new Error(listErr.message);
+
+  for (const doc of docs ?? []) {
+    try {
+      // Download original bytes from Storage
+      const { data: blob, error: dlErr } = await db.storage
+        .from("secondary")
+        .download(doc.storage_path);
+      if (dlErr || !blob) {
+        errors.push(`${doc.filename}: download failed – ${dlErr?.message ?? "null blob"}`);
+        continue;
+      }
+      const bytes = Buffer.from(await blob.arrayBuffer());
+
+      // Re-extract text or image caption
+      const extracted = await extractText(bytes, doc.mime_type);
+      if (extracted.kind === "unsupported") {
+        errors.push(`${doc.filename}: ${extracted.reason}`);
+        continue;
+      }
+
+      // Produce chunks (image → single caption; text → splitter)
+      let chunks: string[];
+      if (extracted.kind === "image") {
+        chunks = [await captionImage(extracted.bytes, extracted.mime)];
+      } else {
+        chunks = chunkText(extracted.text);
+      }
+      if (chunks.length === 0) {
+        errors.push(`${doc.filename}: no extractable text found`);
+        continue;
+      }
+      if (chunks.length > MAX_CHUNKS_PER_DOC) {
+        errors.push(`${doc.filename}: produces ${chunks.length} chunks (cap is ${MAX_CHUNKS_PER_DOC})`);
+        continue;
+      }
+
+      // Embed each chunk first — if this fails we haven't touched existing embeddings yet
+      const newRows: {
+        document_id: string;
+        chunk_index: number;
+        content: string;
+        metadata: { filename: string; mime_type: string };
+        embedding: number[];
+      }[] = [];
+      for (let i = 0; i < chunks.length; i++) {
+        const embedding = await embedText(chunks[i]);
+        newRows.push({
+          document_id: doc.id,
+          chunk_index: i,
+          content: chunks[i],
+          metadata: { filename: doc.filename, mime_type: doc.mime_type },
+          embedding,
+        });
+      }
+
+      // Replace old embeddings only after all new embeddings are ready
+      const { error: delErr } = await db
+        .from("secondary_embeddings")
+        .delete()
+        .eq("document_id", doc.id);
+      if (delErr) throw new Error(`delete failed: ${delErr.message}`);
+
+      const { error: insErr } = await db.from("secondary_embeddings").insert(newRows);
+      if (insErr) {
+        // DELETE already committed — this doc now has zero embeddings and is unretrievable.
+        console.error(`[rag] reembedSecondaryDocuments: insert failed for "${doc.filename}" after delete committed`, insErr);
+        errors.push(
+          `${doc.filename}: embeddings were replaced but re-insert failed — this document now has NO embeddings; re-run "Re-chunk all secondary docs" to recover (${insErr.message})`
+        );
+        continue;
+      }
+
+      totalDocuments++;
+      totalChunks += chunks.length;
+    } catch (e) {
+      errors.push(`${doc.filename}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  revalidatePath("/");
+  return { documents: totalDocuments, chunks: totalChunks, errors };
+}
+
 /** Removes the document, all its embeddings (via FK cascade), and the
  *  underlying Storage object. */
 export async function deleteSecondaryDocument(id: string): Promise<void> {

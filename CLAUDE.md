@@ -126,18 +126,18 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 Visitors can email Rithvik directly from the site via a draggable, resizable, theme-aware floating window — no mailto, no clipboard copy required.
 
 - **`ContactComposerProvider.tsx`** — context exposing `useContactComposer()` → `{ isOpen, open, close }`. Wraps the page tree in `app/(site)/page.tsx`. Both the Hero connect-cluster email button and the Contact-section email button call `open()`.
-- **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` uses `pointer-events:none` so the site stays interactive behind it; only the panel itself captures events. Draggable via the header; resizable from the bottom-right handle; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the initial centered position (not an effect — avoids the `react-hooks/set-state-in-effect` lint rule), so `left/top/width/height` are always present inline and the CSS needs no centering logic. On mobile (≤640px) a media query overrides to a full-screen sheet with `!important`. Esc closes; From field autofocuses. The "To" row shows the destination address with a **copy-address fallback** button (replacing the old clipboard-only email button).
+- **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` is `pointer-events:none` so the site stays interactive; only the panel captures events. Draggable via header; resizable from bottom-right; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the centered start position (not an effect — avoids `react-hooks/set-state-in-effect`), so `left/top/width/height` are always inline. Mobile (≤640px) overrides to a full-screen sheet with `!important`. Esc closes; From autofocuses; the "To" row has a **copy-address fallback** button.
 - **`RichTextEditor.tsx`** — contentEditable body editor with a toolbar (bold/italic/underline/strikethrough/bullet list/numbered list/link) via `document.execCommand` — deprecated but dep-free, matching `SimpleMarkdown`'s philosophy.
-- **`lib/sanitize-html.ts`** — allowlist HTML sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:` hrefs) never survive; drops `<script>`/`<style>` blocks entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via Node's built-in `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`). Required adding `allowImportingTsExtensions: true` to `tsconfig.json` (valid because `noEmit` is true).
-- **`app/api/contact/route.ts`** — POST handler. **Honeypot**: a hidden field filled → fake 200, silently dropped. Validates email/subject/body, **re-sanitizes body server-side** (client sanitization is convenience, server is the gate). **Rate limit**: 3 sends/hour per IP via the `contact_submissions` table (checks recent rows before sending). Sends via the Resend HTTP API (`fetch`) from `CONTACT_FROM` (`contact@rithvik.ai`) to `CONTACT_TO`, with the visitor's address as `reply_to` — visitor address never goes in `from` (SPF/DKIM would reject). The sender display name is HTML-escaped before header interpolation. Logs each successful send to `contact_submissions`.
-- **`components/DeferredOverlays.tsx`** — mounts the non-critical overlay widgets `RagBot`, `SecondaryContextPanel`, and `ContactComposer`, all `dynamic(..., { ssr:false })`, so they're split out of the initial bundle (a perf-plan change — they used to be direct `page.tsx` children). Derives the composer's `toAddress` from `contact.link.email` in `site_content`.
+- **`lib/sanitize-html.ts`** — allowlist sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:`) never survive; drops `<script>`/`<style>` entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`), which needed `allowImportingTsExtensions: true` in `tsconfig.json` (valid under `noEmit`).
+- **`app/api/contact/route.ts`** — POST handler. **Honeypot**: hidden field filled → fake 200, dropped. Validates email/subject/body, **re-sanitizes body server-side** (server is the gate). **Rate limit**: 3 sends/hr/IP via `contact_submissions`. Sends via Resend HTTP API (`fetch`) from `CONTACT_FROM` to `CONTACT_TO`, visitor address in `reply_to` only (never `from` — SPF/DKIM). Sender display name HTML-escaped before header interpolation. Logs each send.
+- **`components/DeferredOverlays.tsx`** — mounts `RagBot`, `SecondaryContextPanel`, `ContactComposer`, all `dynamic(..., { ssr:false })`, split out of the initial bundle. Derives composer `toAddress` from `contact.link.email`.
 
 **Phase 2 polish:**
-- **Rainbow shine border** — `.composer-shine` overlay mirrors `.rag-shine`: a 1px masked radial-gradient ring using the existing `@keyframes rag-shine`. The panel surface stays theme-aware; only the ring is a fixed purple/orange gradient. `prefers-reduced-motion` disables the animation.
-- **Drag hint** — a three-dot `.composer-grip` in the header with `cursor: grab`/`grabbing` and a "Drag to move" tooltip.
-- **Peek-through** — a `.composer-peek` eye button in the header; pure CSS `:has(.composer-peek:hover, :focus-visible)` drops `.composer-panel` to `opacity: 0.12` so the user can glance at content behind while writing. No JS state.
-- **Send animation** — `components/SendAnimation.tsx`: a viewport-covering `<canvas>` that dematerializes particles from the message area, morphs them into a paper-airplane silhouette, and flies the formation off-screen (~2.2s rAF loop). Rendered as a **sibling** of `.composer-panel` (not a child) so the panel's `overflow:hidden`/`isolation`/drag-transform can't clip the fly-off. Honors `prefers-reduced-motion` (skips to `onDone` immediately). Success/error is gated on BOTH the animation finishing AND the request settling — two refs + a `finalize()` in `ContactComposer` — so a slow network never flashes success early and a fast network never cuts the animation short.
-- **CC sender** — `/api/contact` now includes `cc: [sender]` so the visitor receives a copy and Rithvik can reply-all to thread. `reply_to: sender` is kept alongside it.
+- **Rainbow shine border** — `.composer-shine` mirrors `.rag-shine`: a 1px masked radial-gradient ring (`@keyframes rag-shine`); panel surface stays theme-aware, ring is fixed purple/orange. `prefers-reduced-motion` disables it.
+- **Drag hint** — three-dot `.composer-grip` in the header, `cursor: grab`/`grabbing` + "Drag to move" tooltip.
+- **Peek-through** — `.composer-peek` eye button; pure CSS `:has(...:hover, :focus-visible)` drops the panel to `opacity: 0.12` to glance behind. No JS.
+- **Send animation** — `components/SendAnimation.tsx`: viewport `<canvas>` dematerializing particles into a paper-airplane fly-off (~2.2s rAF). Rendered as a **sibling** of `.composer-panel` so `overflow:hidden`/`isolation`/drag-transform can't clip it (see Pitfalls). Honors `prefers-reduced-motion`. Success/error gated on BOTH animation finishing AND request settling (two refs + `finalize()`) so neither a slow nor fast network desyncs.
+- **CC sender** — `/api/contact` sets `cc: [sender]` (visitor gets a copy, reply-all threads) alongside `reply_to: sender`.
 
 **DB:** `contact_submissions` table (id, created_at, ip, from_email, subject, status) — service-role only, RLS enabled with no anon policies. Migration: `supabase/contact_submissions_migration.sql`.
 
@@ -304,24 +304,20 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 
 ## Where to look first when something breaks
 
-- **Theme not switching** → console for `ThemeProvider` errors; check `localStorage[rithvik-theme]`; force `document.documentElement.dataset.theme` in devtools to isolate CSS.
-- **Edit-mode save redirects to `/admin/login`** → browser client isn't `createBrowserClient` (cookie mismatch).
-- **Dial rotation doesn't animate** → `.theme-strip-option` lost its `transition: transform …`, or pills regained a `view-transition-name`.
-- **Theme missing from the dial** → reapply the relevant themes migration; verify `SELECT slug,name,sort_order FROM themes`. The homepage is ISR (`revalidate = 60`), so a raw SQL insert appears within 60s (or instantly after any inline edit's `revalidatePath`); wait out the window or redeploy if it still seems missing.
-- **RAG hallucinating wildly** → guard didn't fire but the right chunk is missing/low-ranked. Manually embed the question and query `match_primary` with `match_count=17`; if buried at rank 8+, check Vercel logs for `[rag] hyde failed`. Recovery: re-embed primary.
-- **RAG returns the canned refusal** for known facts → `[rag] empty-context guard fired` in logs means BOTH retrievals hit 0 rows. Verify the index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.
-- **RAG 500 "Embedding failed"** → `OPENAI_API_KEY` missing/exhausted (embeddings, HyDE, captioning, AND chat all use OpenAI / `gpt-4o-mini`).
-- **RAG stale after edits** → check Vercel logs for `[rag] … embed skipped:`. Recovery: edit mode → SecondaryContextPanel → "Re-embed all primary content".
-- **PDF upload crashes the server bundle on Vercel** → `pdf-parse` crept back in (DOMMatrix at module eval). Must use `unpdf`; `pdf-parse` MUST NOT be in `package.json`.
-- **Secondary upload "MIME … not supported"** → add the type to `TEXT_MIMES`/`IMAGE_MIMES` or add an extractor branch in `lib/file-extractors.ts`.
-- **Secondary upload "File produces N chunks (cap is 200)"** → split the file.
-- **`match_primary`/`match_secondary` not found** → `rag_pipeline_migration.sql` wasn't applied (or to the wrong project). Re-apply (idempotent).
-- **Secondary panel missing** → it self-gates on `useEditMode().isEditing`; log in first.
-- **`[rag] match_secondary rpc error:`** → table/RPC missing; reapply migration (chat degrades gracefully to the working source).
-- **`[rag] hyde failed`** → OpenAI 429/401; retrieval falls back to the raw question (lower quality on question-form queries).
-- **OTP email never arrives** → Resend logs first (delivered? → spam/DNS); if Resend shows nothing, Supabase didn't hand off → check SMTP settings/key/test ping; a 422 in auth logs means the email isn't in `auth.users` or `shouldCreateUser:false` rejected it.
-- **Magic link → Supabase error page** instead of `/auth/callback` → redirect URL not allow-listed; add it (or a wildcard), then re-request (links bake in the redirect at send time).
-- **Magic link clicks but the new tab doesn't enter edit mode** → `?auth=ok` was stripped early or the callback didn't reach success. Check `/auth/callback` logs; usually about preserving the marker.
-- **OTP code rejected right after typing** → length mismatch; confirm Supabase OTP length is 6–10 (widen `InlineLoginPanel.tsx` if >10).
-- **"Email rate limit exceeded"** → the 4/hr/email cap; wait 15 min or reuse an unexpired code.
-- **`requireAuth()` redirects after a working OTP** → cookie-scope mismatch; reconfirm `lib/supabase.ts` uses `createBrowserClient`.
+- **Theme not switching** → `ThemeProvider` console errors; check `localStorage[rithvik-theme]`; force `data-theme` in devtools to isolate CSS.
+- **Edit-mode save / `requireAuth()` redirects to login** → browser client isn't `createBrowserClient` (cookie mismatch in `lib/supabase.ts`).
+- **Dial rotation doesn't animate** → `.theme-strip-option` lost `transition: transform …`, or pills regained `view-transition-name`.
+- **Theme missing from the dial** → reapply themes migration; `SELECT slug,name,sort_order FROM themes`. ISR means raw SQL inserts surface within 60s (instant after any inline edit's `revalidatePath`).
+- **RAG hallucinating wildly** → right chunk missing/low-ranked. Embed the question, query `match_primary` with `match_count=17`; if buried, check logs for `[rag] hyde failed`. Recovery: re-embed primary.
+- **RAG canned refusal for known facts** → `[rag] empty-context guard fired` = both retrievals hit 0 rows. Verify index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.
+- **RAG 500 "Embedding failed"** → `OPENAI_API_KEY` missing/exhausted (embeddings, HyDE, captioning, chat all use OpenAI).
+- **RAG stale after edits** → logs for `[rag] … embed skipped:`. Recovery: SecondaryContextPanel → "Re-embed all primary content".
+- **`[rag] hyde failed`** → OpenAI 429/401; retrieval falls back to raw question. **`[rag] match_secondary rpc error:`** → reapply migration (chat degrades to working source).
+- **PDF upload crashes Vercel bundle** → `pdf-parse` crept back in (DOMMatrix). Use `unpdf`; `pdf-parse` MUST NOT be in `package.json`.
+- **Secondary upload "MIME not supported"** → add to `TEXT_MIMES`/`IMAGE_MIMES` or add extractor in `lib/file-extractors.ts`. **"N chunks (cap 200)"** → split the file.
+- **`match_primary`/`match_secondary` not found** → `rag_pipeline_migration.sql` not applied (or wrong project). Re-apply (idempotent).
+- **Secondary panel missing** → self-gates on `useEditMode().isEditing`; log in first.
+- **OTP email never arrives** → Resend logs first (delivered? → spam/DNS); if empty, Supabase didn't hand off → SMTP settings/key. 422 in auth logs = email not in `auth.users` or `shouldCreateUser:false` rejected it.
+- **Magic link → Supabase error page** → redirect URL not allow-listed; add wildcard, re-request.
+- **Magic link doesn't enter edit mode in new tab** → `?auth=ok` stripped early or callback failed; check `/auth/callback` logs.
+- **OTP code rejected** → length mismatch; confirm Supabase OTP length 6–10. **"Email rate limit exceeded"** → 4/hr/email cap; wait 15 min or reuse a code.
