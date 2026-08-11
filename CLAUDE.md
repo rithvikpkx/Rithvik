@@ -115,7 +115,7 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 - **Resend SMTP** sends from `auth@rithvik.ai` (SPF/DKIM/return-path DNS on Vercel); the built-in mailer is bypassed. The Magic Link **email template is customized** to render both `{{ .Token }}` and `{{ .ConfirmationURL }}` — the default omits the token, leaving the code path empty.
 - **OTP length** is whatever Supabase generates (default 8 in newer projects); the panel input accepts 6–10 digits.
 - **Session policy**: per-tab via `sessionStorage[rithvik-tab-auth]`; closing the tab clears it. The Supabase session itself isn't signed out on "exit edit mode".
-- **Allow-list**: `NEXT_PUBLIC_ADMIN_EMAIL` is checked client-side before the Supabase call — instant feedback + avoids burning the OTP rate limit. Belt-and-suspenders on top of `shouldCreateUser: false`.
+- **Allow-list**: two layers. `NEXT_PUBLIC_ADMIN_EMAIL` is checked client-side before the Supabase call — instant feedback + avoids burning the OTP rate limit. The one that actually enforces anything is `requireAuth()`, which compares the session email against server-only `ADMIN_EMAIL` (falling back to the `NEXT_PUBLIC_` one) and **fails closed if neither is set**. A Supabase session only proves *someone* signed in to the project, not that Rithvik did — never treat "has a session" as "is admin".
 - **Magic-link landing**: callback redirects to `/?auth=ok`; `EditModeProvider` detects the marker on mount, pre-arms `tabAuth`, flips `isEditing`, strips the param via `history.replaceState` (without the marker the in-tab SDK fires `INITIAL_SESSION`, which the per-tab policy filters out, leaving the new tab unauthenticated).
 - Components: `InlineLoginPanel` (top-right two-step card), `EditBar` (bottom "Exit editing"), `EditableText` (contentEditable, saves on blur, Esc reverts, Enter blurs unless multiline), `EditableTagList` (chip editor).
 - Server actions in `app/admin/actions.ts` (`create/update/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`, `updateGlobeMarkers`) all call `requireAuth()` + `revalidatePath("/")`.
@@ -137,7 +137,7 @@ Visitors can email Rithvik directly from the site via a draggable, resizable, th
 - **Drag hint** — three-dot `.composer-grip` in the header, `cursor: grab`/`grabbing` + "Drag to move" tooltip.
 - **Peek-through** — `.composer-peek` eye button; pure CSS `:has(...:hover, :focus-visible)` drops the panel to `opacity: 0.12` to glance behind. No JS.
 - **Send animation** — `components/SendAnimation.tsx`: viewport `<canvas>` dematerializing particles into a paper-airplane fly-off (~2.2s rAF). Rendered as a **sibling** of `.composer-panel` so `overflow:hidden`/`isolation`/drag-transform can't clip it. Honors `prefers-reduced-motion`. Success/error gated on BOTH animation finishing AND request settling (two refs + `finalize()`) so neither a slow nor fast network desyncs.
-- **CC sender** — `/api/contact` sets `cc: [sender]` (visitor gets a copy, reply-all threads) alongside `reply_to: sender`.
+- **No CC to sender** — `/api/contact` sets `reply_to: sender` only. It used to `cc: [sender]`, but `from` is unverified visitor input, so cc'ing it made the route a small open relay: anyone could have rithvik.ai deliver arbitrary (sanitized) HTML to an address of their choosing, on the same domain that sends auth mail. Don't reinstate the CC without verifying the address first.
 
 **DB:** `contact_submissions` table (id, created_at, ip, from_email, subject, status) — service-role only, RLS enabled with no anon policies. Migration: `supabase/contact_submissions_migration.sql`.
 
@@ -162,6 +162,7 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 - `secondary_embeddings` — chunks from files uploaded via `SecondaryContextPanel`, tied to `secondary_documents` (filename/mime/path). PDF → `unpdf`, DOCX → `mammoth`, text → UTF-8, images → `gpt-4o-mini` caption. Per-file chunk cap 200. `match_secondary` mirrors primary.
 
 `app/api/chat/route.ts` per turn:
+0. **Guard rails first** — malformed JSON → 400; `message` capped at 500 chars; client-supplied `messages` history is filtered to well-formed `user`/`assistant` turns, clamped to the last 5 at 2000 chars each (it lands in the system prompt AND replays as real turns, so an uncapped history is both a cost amplifier and a way to forge an assistant turn); then a **30/hr/IP limit** via `chat_requests`, recorded *before* the work so bursts and failures both count. All of this runs before any OpenAI spend — the endpoint is public and each accepted turn costs three API calls.
 1. **HyDE** — `generateHypotheticalAnswer` gets a 1–2 sentence statement; question + hypothetical are embedded together so question-form queries retrieve statement-form chunks.
 2. **Parallel retrieval** — `Promise.allSettled` over `match_primary` + `match_secondary`, top 10 each; a failed source falls back to `[]`.
 3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
@@ -170,7 +171,7 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 
 Secondary originals live in the private `secondary` Storage bucket. RLS denies anon access to all three RAG tables; the chat route + server actions reach them via `adminClient()` (service-role).
 
-Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`. `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
+Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL` (server-only; the one `requireAuth()` enforces — falls back to the `NEXT_PUBLIC_` one, fails closed if both are unset). `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
 
 **One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn — well under $1/month at our traffic.
 
@@ -190,7 +191,11 @@ All in the Supabase public schema:
 - `secondary_embeddings` — pgvector for secondary chunks; FK to `secondary_documents` `on delete cascade`.
 - `contact_submissions` — rate-limit window + contact log for the inline email composer (id, created_at, ip, from_email, subject, status). Service-role only; RLS enabled with no anon policies.
 
-RLS: content tables are `SELECT`-public, writes via service-role in server actions only; the three RAG tables are service-role for read+write.
+- `chat_requests` — per-IP rate-limit window for `/api/chat` (id, created_at, ip). Service-role only. A counter, not a log: rows outside the window are disposable.
+
+RLS: content tables are `SELECT`-public (each gated on `published` where the column exists), **writes via service-role in server actions only — no table carries a write policy**; the RAG tables + `contact_submissions` + `chat_requests` are service-role for read+write.
+
+> `projects`/`experience`/`site_content` once carried `FOR ALL USING (auth.role() = 'authenticated')`, which is true for *any* signed-in user of the project — combined with open signups that let anyone rewrite the site through PostgREST with the public anon key, bypassing every app-layer guard. `supabase/tighten_content_rls.sql` removed them. **Never add a write policy keyed on `auth.role()`**; the service role bypasses RLS, so server actions need no policy at all.
 
 ### Migrations (apply via `supabase db query --linked -f supabase/<file>.sql`)
 
@@ -206,6 +211,8 @@ RLS: content tables are `SELECT`-public, writes via service-role in server actio
 - `themes_add_more_themes.sql` — adds Monokai Pro (Octagon), High Contrast Dark/Light, Tokyo Night Horizon; reorders all themes light-first (light 0–4, dark 10–22) with GitHub Light as the default
 - `themes_remove_themes.sql` — removes Monokai Pro Light + Atom One Light
 - `seed_missing_site_content.sql` — upserts `hero.name.line2`, `contact.link.github`, `contact.link.email` (previously only component fallbacks; now DB-backed so /buffett + RAG see them)
+- `tighten_content_rls.sql` — **security**: drops the `auth.role() = 'authenticated'` write policies on `projects`/`experience`/`site_content` (see the RLS note above). Idempotent.
+- `chat_rate_limit_migration.sql` — `chat_requests` table for the `/api/chat` per-IP limit, plus tightens `education`'s public-read to `published = true` (drafts were readable via the anon API)
 
 The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 

@@ -19,7 +19,10 @@ const model = new ChatOpenAI({
 
 const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the RagBot client slice
+const MAX_HISTORY_CHARS = 2000; // per-turn cap; history is client-supplied, so it needs its own bound
 const MATCH_COUNT_PER_SOURCE = 10; // top-N chunks pulled per store
+const RATE_LIMIT = 30; // chat turns per IP per window
+const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const CANNED_NO_CONTEXT_REPLY =
 	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
 
@@ -37,13 +40,41 @@ function streamText(text: string): Response {
 	});
 }
 
-export async function POST(req: Request) {
-	const body = (await req.json()) as {
-		message: string;
-		messages?: { role: "user" | "assistant"; content: string }[];
-	};
+/** Best-effort client IP from Vercel's forwarding header. Mirrors /api/contact. */
+function clientIp(req: Request): string {
+	const fwd = req.headers.get("x-forwarded-for");
+	return (fwd?.split(",")[0] ?? "").trim() || "unknown";
+}
 
-	const { message, messages: history = [] } = body;
+/** Keep only well-formed turns and clamp each one. `messages` arrives from the
+ *  client, so without this a caller could stuff megabytes into the system
+ *  prompt (cost amplification) or forge an assistant turn saying anything. */
+function sanitizeHistory(raw: unknown): { role: "user" | "assistant"; content: string }[] {
+	if (!Array.isArray(raw)) return [];
+	const ok = (m: unknown): m is { role: "user" | "assistant"; content: string } => {
+		if (!m || typeof m !== "object") return false;
+		const { role, content } = m as { role?: unknown; content?: unknown };
+		return (
+			(role === "user" || role === "assistant") &&
+			typeof content === "string" &&
+			content.trim().length > 0
+		);
+	};
+	return raw
+		.filter(ok)
+		.slice(-MAX_HISTORY_MESSAGES)
+		.map((m) => ({ role: m.role, content: m.content.slice(0, MAX_HISTORY_CHARS) }));
+}
+
+export async function POST(req: Request) {
+	let body: { message?: unknown; messages?: unknown };
+	try {
+		body = (await req.json()) as { message?: unknown; messages?: unknown };
+	} catch {
+		return new Response("Invalid request.", { status: 400 });
+	}
+
+	const message = body.message;
 
 	// Input validation
 	if (!message || typeof message !== "string" || message.trim().length === 0) {
@@ -52,6 +83,25 @@ export async function POST(req: Request) {
 	if (message.length > MAX_INPUT_LENGTH) {
 		return new Response(`Message must be ${MAX_INPUT_LENGTH} characters or fewer.`, { status: 400 });
 	}
+
+	const history = sanitizeHistory(body.messages);
+
+	// Rate limit BEFORE spending anything on OpenAI — this endpoint is public and
+	// each accepted turn costs three API calls (HyDE, embedding, completion).
+	const ip = clientIp(req);
+	const db = adminClient();
+	const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+	const { count } = await db
+		.from("chat_requests")
+		.select("id", { count: "exact", head: true })
+		.eq("ip", ip)
+		.gte("created_at", since);
+	if ((count ?? 0) >= RATE_LIMIT) {
+		return new Response("You've hit the message limit for now — try again later.", { status: 429 });
+	}
+	// Record the attempt before doing the work, so concurrent bursts can't all
+	// slip through the check and a failed turn still counts against the window.
+	await db.from("chat_requests").insert({ ip });
 
 	// HyDE (Hypothetical Document Embeddings): generate a plausible 1-2 sentence
 	// statement-form answer to the user's question, then embed BOTH the question
@@ -68,7 +118,6 @@ export async function POST(req: Request) {
 	// Retrieve top-N from each source in parallel.
 	// primary_embeddings: live website content (auto-synced from inline edits).
 	// secondary_embeddings: user-uploaded materials (essays, docs, image captions).
-	const db = adminClient();
 	const [primaryRes, secondaryRes] = await Promise.allSettled([
 		db.rpc("match_primary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
 		db.rpc("match_secondary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
@@ -196,9 +245,17 @@ ${contextBlock}`;
 	const readable = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
-			for await (const chunk of stream) {
-				const text = typeof chunk.content === "string" ? chunk.content : "";
-				if (text) controller.enqueue(encoder.encode(text));
+			try {
+				for await (const chunk of stream) {
+					const text = typeof chunk.content === "string" ? chunk.content : "";
+					if (text) controller.enqueue(encoder.encode(text));
+				}
+			} catch (e) {
+				// Headers are already sent, so we can't switch to an error status —
+				// append a visible note instead of truncating mid-sentence and
+				// leaving the user staring at a half-answer.
+				console.error("[rag] stream failed mid-response:", e instanceof Error ? e.message : e);
+				controller.enqueue(encoder.encode("\n\n_(response interrupted — please try again)_"));
 			}
 			controller.close();
 		},

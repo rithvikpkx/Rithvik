@@ -65,9 +65,26 @@ export async function POST(req: Request) {
     return Response.json({ error: "rate-limited" }, { status: 429 });
   }
 
+  const sender = from.trim();
+
+  // Reserve the rate-limit slot BEFORE sending. Counting only successful sends
+  // (the old order) meant concurrent requests all passed the check above, and a
+  // 502 from Resend cost the caller nothing — both made the limit easy to walk
+  // past. The row is marked 'sent' or 'failed' once we know the outcome.
+  const { data: logRow } = await db
+    .from("contact_submissions")
+    .insert({ ip, from_email: sender, subject: subject.trim(), status: "pending" })
+    .select("id")
+    .single();
+
   // Send via the Resend HTTP API (fetch — no SDK). from MUST be a verified
   // rithvik.ai address; the visitor goes in reply_to so "reply" reaches them.
-  const sender = from.trim();
+  //
+  // Deliberately NOT cc'ing the sender: `from` is unverified attacker-controlled
+  // input, so cc'ing it turned this route into a small open relay — anyone could
+  // have rithvik.ai deliver arbitrary sanitized HTML to an address of their
+  // choosing, burning domain reputation on the same domain that sends auth mail.
+  // reply_to still threads the visitor in as soon as Rithvik replies.
   const headerLine =
     `<p style="color:#888;font-size:13px;margin:0 0 8px">Sent from rithvik.ai by ${esc(sender)}</p><hr>`;
   const res = await fetch("https://api.resend.com/emails", {
@@ -79,24 +96,25 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       from: process.env.CONTACT_FROM!,
       to: process.env.CONTACT_TO!,
-      cc: [sender],            // sender gets a copy (their confirmation) + reply-all threads them in
-      reply_to: sender,        // plain reply still reaches the sender even if CC is stripped
+      reply_to: sender,        // reply reaches the visitor
       subject: `[rithvik.ai] ${subject.trim()}`,
       html: headerLine + cleanHtml,
       text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}`,
     }),
   });
 
+  // Settle the reserved row. Best-effort: the outcome is already decided, so a
+  // logging hiccup must not change what we return to the caller.
+  const settle = async (status: string) => {
+    if (logRow?.id) await db.from("contact_submissions").update({ status }).eq("id", logRow.id);
+  };
+
   if (!res.ok) {
     console.error("[contact] resend send failed:", res.status, await res.text());
+    await settle("failed");
     return Response.json({ error: "Could not send right now." }, { status: 502 });
   }
 
-  // Log for the rate-limit window + as a record. Best-effort: the email already
-  // sent, so a logging hiccup must not fail the request.
-  await db.from("contact_submissions").insert({
-    ip, from_email: sender, subject: subject.trim(), status: "sent",
-  });
-
+  await settle("sent");
   return Response.json({ ok: true });
 }

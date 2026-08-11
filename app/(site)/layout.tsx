@@ -16,6 +16,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 const siteUrl = "https://rithvik.ai";
+// Kept in sync with the `alt` export in app/opengraph-image.tsx.
+const ogAlt = "Rithvik Praveen Kumar — CS + Math @ Purdue";
 const description =
   "CS + Math student at Purdue University building AI systems, full-stack apps, and ambitious technical projects.";
 
@@ -40,11 +42,16 @@ export const metadata: Metadata = {
     title: "Rithvik Praveen Kumar",
     description,
     locale: "en_US",
+    // Declaring openGraph explicitly suppresses the app/opengraph-image.tsx
+    // file convention, so the homepage was shipping with NO preview image at
+    // all. Point at the route by hand; metadataBase makes it absolute.
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Rithvik Praveen Kumar",
     description,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: siteUrl },
