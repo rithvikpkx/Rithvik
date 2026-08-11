@@ -2760,8 +2760,27 @@ a { color: inherit; text-decoration: none; }
   transition: background 0.2s;
 }
 .ctx-backfill:hover { background: var(--card-hover); }
+/* A long-running re-embed disables its trigger; make that visible so the
+   operator waits instead of clicking again and starting a concurrent run. */
+.ctx-backfill:disabled,
+.ctx-upload-btn:disabled { opacity: 0.5; cursor: progress; }
+.ctx-backfill:disabled:hover,
+.ctx-upload-btn:disabled:hover { background: var(--card); }
 .ctx-status { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
 .ctx-error  { font-size: 0.72rem; color: var(--accent); font-family: var(--mono); }
+/* Per-item failures from a batch run. Scrolls rather than growing the panel
+   unbounded — a bad re-chunk can report one line per document. */
+.ctx-details {
+  margin: 0; padding: 6px 8px 6px 20px;
+  max-height: 140px; overflow-y: auto;
+  list-style: disc;
+  font-family: var(--mono); font-size: 0.68rem; line-height: 1.45;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 6px;
+}
+.ctx-details li { overflow-wrap: anywhere; }
 
 /* ===== GLOBE MARKER EDITOR ===== */
 .globe-editor {

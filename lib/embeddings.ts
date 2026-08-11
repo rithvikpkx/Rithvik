@@ -34,6 +34,50 @@ export async function embedText(text: string): Promise<number[]> {
   return v;
 }
 
+// OpenAI's embeddings endpoint accepts an array of inputs. Keeping batches
+// well under the 2048-element array limit — at ~900 chars/chunk this is roughly
+// 14k tokens per request, comfortably inside the per-request token budget.
+const EMBED_BATCH_SIZE = 64;
+
+/** Embeds many texts in as few round-trips as possible. A 134-chunk document
+ *  costs 3 requests here versus 134 with embedText in a loop — the difference
+ *  between a re-chunk run finishing and a serverless function timing out
+ *  mid-write. Returns embeddings in the same order as the input. */
+export async function embedTexts(texts: string[]): Promise<number[][]> {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
+  if (texts.length === 0) return [];
+
+  const out: number[][] = [];
+  for (let start = 0; start < texts.length; start += EMBED_BATCH_SIZE) {
+    const batch = texts.slice(start, start + EMBED_BATCH_SIZE);
+    const res = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ model: EMBED_MODEL, input: batch }),
+    });
+    if (!res.ok) throw new Error(`Embedding failed (${res.status}): ${await res.text()}`);
+    const json = (await res.json()) as { data: { embedding: number[]; index: number }[] };
+    // Sort by `index` rather than trusting response order — a mismatch here
+    // would silently pair each chunk with another chunk's vector.
+    const sorted = [...json.data].sort((a, b) => a.index - b.index);
+    if (sorted.length !== batch.length) {
+      throw new Error(`Embedding batch returned ${sorted.length} vectors for ${batch.length} inputs`);
+    }
+    for (const d of sorted) {
+      if (d.embedding.length !== EMBED_DIM) {
+        throw new Error(`Unexpected embedding dim: ${d.embedding.length}`);
+      }
+      out.push(d.embedding);
+    }
+  }
+  return out;
+}
+
 const HYDE_PROMPT = `You generate hypothetical answers to questions about Rithvik Praveen Kumar — a CS + Math student at Purdue University who builds AI and full-stack projects. The hypothetical answer is used purely to improve retrieval (it gets embedded and matched against real content); it does NOT need to be factually accurate. Write 1-2 natural sentences in third-person statement form, as if you were writing a portfolio bio about Rithvik. Output ONLY the answer, no preamble.
 
 Examples:

@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/supabase";
 import {
   embedPrimary, buildProjectText, buildExperienceText,
   buildEducationText, buildSiteContentText,
-  chunkText, embedText,
+  chunkText, embedTexts,
 } from "@/lib/embeddings";
 import { extractText, captionImage } from "@/lib/file-extractors";
 import { revalidatePath } from "next/cache";
@@ -167,18 +167,19 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
       throw new Error(`File produces ${chunks.length} chunks (cap is ${MAX_CHUNKS_PER_DOC}). Split into smaller files.`);
     }
 
-    // 4) Embed + insert each chunk
-    for (let i = 0; i < chunks.length; i++) {
-      const embedding = await embedText(chunks[i]);
-      const { error: embErr } = await db.from("secondary_embeddings").insert({
+    // 4) Embed all chunks (batched — a 200-chunk file is ~4 round-trips, not
+    //    200 serial ones) and insert them in one statement.
+    const vectors = await embedTexts(chunks);
+    const { error: embErr } = await db.from("secondary_embeddings").insert(
+      chunks.map((content, i) => ({
         document_id: doc.id,
         chunk_index: i,
-        content: chunks[i],
+        content,
         metadata: { filename: file.name, mime_type: mime },
-        embedding,
-      });
-      if (embErr) throw new Error(`Embedding insert failed: ${embErr.message}`);
-    }
+        embedding: vectors[i],
+      })),
+    );
+    if (embErr) throw new Error(`Embedding insert failed: ${embErr.message}`);
   } catch (e) {
     // Roll back the doc row (cascade deletes any partial embeddings) + storage
     await db.from("secondary_documents").delete().eq("id", doc.id);
@@ -199,9 +200,21 @@ export async function uploadSecondaryDocument(formData: FormData): Promise<Secon
 
 /**
  * Re-chunks and re-embeds every secondary document using the current chunkText
- * splitter, downloading each original file from Storage in place. Embed-before-
- * delete ensures a mid-way failure leaves the old embeddings intact.
- * Returns a report with counts and any per-doc error messages.
+ * splitter, downloading each original file from Storage in place.
+ *
+ * Failure model, in order of when things can go wrong:
+ *  - embedding fails  → nothing has been written yet; old embeddings intact.
+ *  - upsert fails     → rows are replaced per-index, so the document still has
+ *                       a full set (some new, some old); never empty.
+ *  - trim fails       → new chunks are all present, plus a stale tail. Degraded
+ *                       retrieval, not data loss. Reported, not thrown.
+ * There is deliberately no point at which the document has zero embeddings —
+ * the previous delete-then-insert order had exactly that window, and a timeout
+ * or failed insert landing inside it made the document unretrievable for good.
+ *
+ * Returns a report with counts and any per-doc error messages. Callers MUST
+ * surface `errors` verbatim, not just its length — partial failures are only
+ * ever reported here.
  */
 export async function reembedSecondaryDocuments(): Promise<{
   documents: number; chunks: number; errors: string[];
@@ -252,40 +265,41 @@ export async function reembedSecondaryDocuments(): Promise<{
         continue;
       }
 
-      // Embed each chunk first — if this fails we haven't touched existing embeddings yet
-      const newRows: {
-        document_id: string;
-        chunk_index: number;
-        content: string;
-        metadata: { filename: string; mime_type: string };
-        embedding: number[];
-      }[] = [];
-      for (let i = 0; i < chunks.length; i++) {
-        const embedding = await embedText(chunks[i]);
-        newRows.push({
-          document_id: doc.id,
-          chunk_index: i,
-          content: chunks[i],
-          metadata: { filename: doc.filename, mime_type: doc.mime_type },
-          embedding,
-        });
-      }
+      // Embed every chunk first — if this fails we haven't touched existing
+      // embeddings yet. Batched, so a 134-chunk doc is ~3 round-trips not 134.
+      const vectors = await embedTexts(chunks);
+      const newRows = chunks.map((content, i) => ({
+        document_id: doc.id,
+        chunk_index: i,
+        content,
+        metadata: { filename: doc.filename, mime_type: doc.mime_type },
+        embedding: vectors[i],
+      }));
 
-      // Replace old embeddings only after all new embeddings are ready
-      const { error: delErr } = await db
+      // Overwrite in place, THEN drop any leftover tail — never delete first.
+      // The old order (delete-all, then insert-all) left a window where the
+      // document had zero embeddings; a timeout or a failed insert landing in
+      // that window made it permanently unretrievable. Upserting on the
+      // (document_id, chunk_index) unique key means every index is replaced
+      // atomically per row, so the worst case is a doc that briefly carries new
+      // chunks plus a stale tail — degraded, never empty, and self-healing on
+      // the next run.
+      const { error: upErr } = await db
+        .from("secondary_embeddings")
+        .upsert(newRows, { onConflict: "document_id,chunk_index" });
+      if (upErr) throw new Error(`upsert failed: ${upErr.message}`);
+
+      // Trim indices left over from a longer previous chunking.
+      const { error: trimErr } = await db
         .from("secondary_embeddings")
         .delete()
-        .eq("document_id", doc.id);
-      if (delErr) throw new Error(`delete failed: ${delErr.message}`);
-
-      const { error: insErr } = await db.from("secondary_embeddings").insert(newRows);
-      if (insErr) {
-        // DELETE already committed — this doc now has zero embeddings and is unretrievable.
-        console.error(`[rag] reembedSecondaryDocuments: insert failed for "${doc.filename}" after delete committed`, insErr);
-        errors.push(
-          `${doc.filename}: embeddings were replaced but re-insert failed — this document now has NO embeddings; re-run "Re-chunk all secondary docs" to recover (${insErr.message})`
-        );
-        continue;
+        .eq("document_id", doc.id)
+        .gte("chunk_index", chunks.length);
+      if (trimErr) {
+        // Non-fatal: the new chunks are all in place, there are just extra
+        // stale ones past the end. Retrieval still works; flag it for a re-run.
+        console.warn(`[rag] trim of stale tail chunks failed for "${doc.filename}"`, trimErr);
+        errors.push(`${doc.filename}: re-embedded OK, but stale trailing chunks remain (${trimErr.message})`);
       }
 
       totalDocuments++;

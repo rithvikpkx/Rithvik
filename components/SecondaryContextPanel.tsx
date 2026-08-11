@@ -27,6 +27,13 @@ export default function SecondaryContextPanel() {
   const [docs, setDocs] = useState<SecondaryDocRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);          // upload status text
   const [error, setError] = useState<string | null>(null);
+  // Separate from `busy`, which doubles as the post-run summary message: this
+  // is strictly "an action is in flight", and it's what gates the buttons. A
+  // second click used to launch a concurrent run over the same documents.
+  const [running, setRunning] = useState(false);
+  // Per-item failures from a batch run. These were previously reduced to a bare
+  // count, which hid messages like "this document now has NO embeddings".
+  const [details, setDetails] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const busyClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,8 +58,12 @@ export default function SecondaryContextPanel() {
   }
 
   async function handleFiles(files: FileList | File[]) {
+    if (running) return;
     setError(null);
+    setDetails([]);
+    setRunning(true);
     const list = Array.from(files);
+    const failures: string[] = [];
     for (const file of list) {
       setBusy(`Uploading ${file.name}…`);
       try {
@@ -60,61 +71,86 @@ export default function SecondaryContextPanel() {
         fd.set("file", file);
         await uploadSecondaryDocument(fd);
       } catch (e) {
-        setError(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
+        // Collect rather than overwrite — a multi-file drop used to surface
+        // only whichever file happened to fail last.
+        failures.push(`${file.name}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
-    setBusy(null);
+    setDetails(failures);
+    setBusy(failures.length ? `Uploaded ${list.length - failures.length}/${list.length}. See below.` : null);
+    setRunning(false);
     await refresh();
   }
 
   async function handleDelete(id: string, filename: string) {
+    if (running) return;
     if (!confirm(`Delete "${filename}" from RAG context?`)) return;
     setError(null);
+    setRunning(true);
     setBusy(`Deleting ${filename}…`);
     try { await deleteSecondaryDocument(id); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     setBusy(null);
+    setRunning(false);
     await refresh();
   }
 
+  /** Shows a run's summary. A clean run fades after 4s; one with per-item
+   *  failures stays put and lists them, because those messages are the only
+   *  place a partial failure is ever reported. */
+  function reportRun(summary: string, errors: string[]) {
+    setDetails(errors);
+    if (errors.length) {
+      setBusy(`${summary} ${errors.length} error(s) — see below.`);
+      return;
+    }
+    setBusy(summary);
+    if (busyClearTimerRef.current !== null) clearTimeout(busyClearTimerRef.current);
+    busyClearTimerRef.current = setTimeout(() => {
+      setBusy(null);
+      busyClearTimerRef.current = null;
+    }, 4000);
+  }
+
   async function handleBackfill() {
+    if (running) return;
     if (!confirm("Re-embed all primary content? Existing primary embeddings will be replaced.")) return;
     setError(null);
+    setDetails([]);
+    setRunning(true);
     setBusy("Re-embedding primary content…");
     try {
       const report = await backfillPrimaryEmbeddings();
       const total = report.projects + report.experience + report.education + report.site_content;
-      const summary = `Re-embedded ${total} primary rows (${report.projects}p / ${report.experience}e / ${report.education}ed / ${report.site_content}s).`;
-      setBusy(report.errors.length ? `${summary} ${report.errors.length} error(s).` : summary);
-      if (busyClearTimerRef.current !== null) clearTimeout(busyClearTimerRef.current);
-      busyClearTimerRef.current = setTimeout(() => {
-        setBusy(null);
-        busyClearTimerRef.current = null;
-      }, 4000);
+      reportRun(
+        `Re-embedded ${total} primary rows (${report.projects}p / ${report.experience}e / ${report.education}ed / ${report.site_content}s).`,
+        report.errors,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(null);
+    } finally {
+      setRunning(false);
     }
   }
 
   async function handleRechunk() {
+    if (running) return;
     if (!confirm("Re-chunk and re-embed all secondary documents? Existing secondary embeddings will be replaced.")) return;
     setError(null);
+    setDetails([]);
+    setRunning(true);
     setBusy("Re-chunking secondary docs…");
     try {
       const report = await reembedSecondaryDocuments();
-      const summary = `Re-chunked ${report.documents} doc(s) into ${report.chunks} chunk(s).`;
-      setBusy(report.errors.length ? `${summary} ${report.errors.length} error(s).` : summary);
-      if (busyClearTimerRef.current !== null) clearTimeout(busyClearTimerRef.current);
-      busyClearTimerRef.current = setTimeout(() => {
-        setBusy(null);
-        busyClearTimerRef.current = null;
-      }, 4000);
+      reportRun(`Re-chunked ${report.documents} doc(s) into ${report.chunks} chunk(s).`, report.errors);
       // refresh so the per-doc chunk counts in the list reflect the re-chunk
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(null);
+    } finally {
+      setRunning(false);
     }
   }
 
@@ -157,7 +193,7 @@ export default function SecondaryContextPanel() {
                 accept=".txt,.md,.pdf,.docx,image/*"
                 onChange={(e) => e.target.files && handleFiles(e.target.files)}
               />
-              <button className="ctx-upload-btn" onClick={() => fileInputRef.current?.click()}>
+              <button className="ctx-upload-btn" onClick={() => fileInputRef.current?.click()} disabled={running}>
                 + Upload files
               </button>
               <p className="ctx-hint">Drag-and-drop or click — PDF, DOCX, TXT, MD, images.</p>
@@ -179,10 +215,19 @@ export default function SecondaryContextPanel() {
             </ul>
 
             <div className="ctx-footer">
-              <button className="ctx-backfill" onClick={handleBackfill}>Re-embed all primary content</button>
-              <button className="ctx-backfill" onClick={handleRechunk}>Re-chunk all secondary docs</button>
+              <button className="ctx-backfill" onClick={handleBackfill} disabled={running}>
+                Re-embed all primary content
+              </button>
+              <button className="ctx-backfill" onClick={handleRechunk} disabled={running}>
+                Re-chunk all secondary docs
+              </button>
               {busy  && <p className="ctx-status">{busy}</p>}
               {error && <p className="ctx-error">{error}</p>}
+              {details.length > 0 && (
+                <ul className="ctx-details">
+                  {details.map((d, i) => <li key={i}>{d}</li>)}
+                </ul>
+              )}
             </div>
           </motion.div>
         )}

@@ -160,6 +160,8 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 
 - `primary_embeddings` — one row per `projects`/`experience`/`education`/`site_content` record, auto-upserted on inline edit, wrapped in `safeEmbed` (save first, embed second; failures don't undo saves). `projects`/`experience`/`education` go through `syncPrimary(...)`, which respects `published` (false → embedding deleted, matching backfill's filter); `site_content` has no `published` and always embeds via `embedPrimary`. `match_primary(query_embedding, match_count)` returns top-N by cosine. Chunk text is **statement-form prose with a Rithvik name anchor** ("Rithvik Praveen Kumar studies at Purdue…"); dotted labels like `[bento.stack]` are mapped to readable phrases so the text carries real meaning.
 - `secondary_embeddings` — chunks from files uploaded via `SecondaryContextPanel`, tied to `secondary_documents` (filename/mime/path). PDF → `unpdf`, DOCX → `mammoth`, text → UTF-8, images → `gpt-4o-mini` caption. Per-file chunk cap 200. `match_secondary` mirrors primary.
+  - **Writes never delete first.** `reembedSecondaryDocuments` upserts on the `(document_id, chunk_index)` unique key, then trims indices past the new length. The old delete-all-then-insert-all order left a window where a document had zero embeddings; a timeout or failed insert inside it lost the document permanently. Keep that ordering.
+  - Embedding is **batched** via `embedTexts` (64 per request) — a 134-chunk doc is ~3 OpenAI round-trips, not 134. This is what keeps a re-chunk run inside the serverless timeout; there is no `maxDuration` anywhere in the repo.
 
 `app/api/chat/route.ts` per turn:
 0. **Guard rails first** — malformed JSON → 400; `message` capped at 500 chars; client-supplied `messages` history is filtered to well-formed `user`/`assistant` turns, clamped to the last 5 at 2000 chars each (it lands in the system prompt AND replays as real turns, so an uncapped history is both a cost amplifier and a way to forge an assistant turn); then a **30/hr/IP limit** via `chat_requests`, recorded *before* the work so bursts and failures both count. All of this runs before any OpenAI spend — the endpoint is public and each accepted turn costs three API calls.
@@ -228,7 +230,7 @@ app/
   globals.css         — tokens, dial, bento (globe/markers/growth), rag chat (theme-independent), OTP login, composer (mobile sheet inset between nav + RAG), buffett link/tooltip
   icon.tsx / apple-icon.tsx / opengraph-image.tsx — dynamic favicon / iOS icon / OG image
   admin/actions.ts    — server actions for all tables (incl. updateGlobeMarkers)
-  admin/rag-actions.ts— backfillPrimaryEmbeddings, list/upload/delete secondary docs
+  admin/rag-actions.ts— backfillPrimaryEmbeddings, reembedSecondaryDocuments, list/upload/delete secondary docs
   admin/auth-helper.ts— shared requireAuth
   api/chat/route.ts   — HyDE → match_primary + match_secondary → gpt-4o-mini stream
   api/contact/route.ts — honeypot + validation + rate-limit + Resend HTTP API send
@@ -260,7 +262,8 @@ lib/
   supabase.ts         — clients (browser = createBrowserClient)
   themes.ts           — token list, fallbacks, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
-  embeddings.ts       — embed wrapper, chunker, row→text builders, upsert helpers
+  embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
+  chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
   sanitize-html.ts    — allowlist HTML sanitizer + htmlToText (unit-tested via node:test)
 
