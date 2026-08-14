@@ -97,7 +97,28 @@ export async function POST(req: Request) {
 		.eq("ip", ip)
 		.gte("created_at", since);
 	if ((count ?? 0) >= RATE_LIMIT) {
-		return new Response("You've hit the message limit for now — try again later.", { status: 429 });
+		// Tell the client when the window actually reopens: the oldest request
+		// still inside it ages out first. Only queried on the limited path, so
+		// the normal path still costs one round-trip.
+		const { data: oldest } = await db
+			.from("chat_requests")
+			.select("created_at")
+			.eq("ip", ip)
+			.gte("created_at", since)
+			.order("created_at", { ascending: true })
+			.limit(1)
+			.maybeSingle();
+		const resetAt = oldest?.created_at
+			? new Date(oldest.created_at).getTime() + RATE_WINDOW_MS
+			: Date.now() + RATE_WINDOW_MS;
+		const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+		return new Response("You've reached the message limit. Please try again later.", {
+			status: 429,
+			headers: {
+				"Retry-After": String(retryAfter),
+				"Content-Type": "text/plain; charset=utf-8",
+			},
+		});
 	}
 	// Record the attempt before doing the work, so concurrent bursts can't all
 	// slip through the check and a failed turn still counts against the window.

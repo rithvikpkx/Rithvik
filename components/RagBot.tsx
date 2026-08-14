@@ -48,11 +48,27 @@ const SIZE = {
 
 const STORAGE_KEY = "rag-panel-size";
 
+/** Seconds → a human countdown. The window is an hour, so minutes are the
+ *  useful unit until the last stretch, where a live second count reassures the
+ *  visitor that something is actually happening. */
+function formatCooldown(totalSeconds: number): string {
+  if (totalSeconds <= 60) return `${totalSeconds}s`;
+  const mins = Math.ceil(totalSeconds / 60);
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem ? `${hours}h ${rem}m` : `${hours}h`;
+}
+
 export default function RagBot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  // Epoch ms until which the composer stays locked after a 429. Derived from the
+  // server's Retry-After so the countdown matches the real window, not a guess.
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
   // Lazy initializer reads persisted size once. Safe under SSR — the panel
   // isn't rendered until the user clicks the launcher post-hydration, so any
   // size difference between SSR and client doesn't affect initial markup.
@@ -85,6 +101,24 @@ export default function RagBot() {
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 250);
   }, [open]);
+
+  // Tick the rate-limit countdown once a second, and release the composer the
+  // moment the window reopens. Interval only exists while a cooldown is active.
+  useEffect(() => {
+    if (cooldownUntil === null) return;
+    const tick = () => {
+      const left = Math.ceil((cooldownUntil - Date.now()) / 1000);
+      if (left <= 0) {
+        setCooldownUntil(null);
+        setCooldownLeft(0);
+      } else {
+        setCooldownLeft(left);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
 
   /** Drag the top-left corner to resize. Because the panel is anchored to
    *  bottom-right, dragging up/left grows it; down/right shrinks it. */
@@ -124,7 +158,9 @@ export default function RagBot() {
 
   async function handleSend() {
     const text = input.trim();
-    if (!text || loading) return;
+    // cooldownUntil also gates the button and Enter key; checked here too so no
+    // path can spend a request while the window is closed.
+    if (!text || loading || cooldownUntil !== null) return;
 
     setInput("");
     setLoading(true);
@@ -152,7 +188,20 @@ export default function RagBot() {
         body: JSON.stringify({ message: text, messages: history }),
       });
 
-      if (!res.ok || !res.body) throw new Error("Request failed");
+      if (!res.ok) {
+        // Surface the server's own message rather than a generic failure. The
+        // 400s ("too long", "required") and the 429 are all actionable, and
+        // telling a rate-limited visitor to "try again" is the wrong advice —
+        // each retry writes another chat_requests row and digs them deeper.
+        const serverMessage = (await res.text().catch(() => "")).trim();
+        if (res.status === 429) {
+          // Retry-After is in seconds; fall back to the full window if absent.
+          const secs = Number(res.headers.get("Retry-After")) || 3600;
+          setCooldownUntil(Date.now() + secs * 1000);
+        }
+        throw new Error(serverMessage || "Something went wrong. Please try again.");
+      }
+      if (!res.body) throw new Error("Something went wrong. Please try again.");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -170,13 +219,11 @@ export default function RagBot() {
           return updated;
         });
       }
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Please try again.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
-          role: "bot",
-          content: "Something went wrong. Please try again.",
-        };
+        updated[updated.length - 1] = { role: "bot", content: msg };
         return updated;
       });
     } finally {
@@ -282,21 +329,30 @@ export default function RagBot() {
               </div>
             )}
 
+            {cooldownUntil !== null && (
+              <p className="rag-cooldown" role="status">
+                Message limit reached — try again in {formatCooldown(cooldownLeft)}.
+              </p>
+            )}
+
             <div className="rag-input-row">
               <input
                 ref={inputRef}
                 type="text"
                 className="rag-input"
-                placeholder="Ask me anything about Rithvik..."
+                // Matches MAX_INPUT_LENGTH in app/api/chat/route.ts so the
+                // server's 400 is unreachable by ordinary typing.
+                maxLength={500}
+                placeholder={cooldownUntil !== null ? "Message limit reached…" : "Ask me anything about Rithvik..."}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={loading}
+                disabled={loading || cooldownUntil !== null}
               />
               <button
                 className="rag-send"
                 onClick={handleSend}
-                disabled={loading || !input.trim()}
+                disabled={loading || cooldownUntil !== null || !input.trim()}
                 aria-label="Send"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
