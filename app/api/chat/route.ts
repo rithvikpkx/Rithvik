@@ -2,6 +2,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { adminClient } from "@/lib/supabase";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
+import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
 
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
@@ -260,6 +261,13 @@ ${contextBlock}`;
 
 	const messages = [new SystemMessage(systemPrompt), ...prior, new HumanMessage(message)];
 
+	// Kick off follow-up generation NOW, in parallel with the answer. At 160 max
+	// tokens it lands well before the answer finishes streaming, so awaiting it
+	// at the end costs no perceptible latency. It sees the same context block the
+	// answer is grounded in, so it can only propose answerable questions — but it
+	// deliberately does NOT see the answer, which would force it to run serially.
+	const suggestionsPromise = generateSuggestions(message, contextBlock);
+
 	// Stream the response and pipe tokens directly to the client
 	const stream = await model.stream(messages);
 
@@ -278,6 +286,22 @@ ${contextBlock}`;
 				console.error("[rag] stream failed mid-response:", e instanceof Error ? e.message : e);
 				controller.enqueue(encoder.encode("\n\n_(response interrupted — please try again)_"));
 			}
+
+			// Trailer: sentinel + JSON payload, appended after the answer. The
+			// client splits on the sentinel and parses what follows. generateSuggestions
+			// never throws, but guard anyway — a suggestions problem must never be
+			// able to truncate an answer the user already has.
+			try {
+				const suggestions = await suggestionsPromise;
+				if (suggestions.length > 0) {
+					controller.enqueue(
+						encoder.encode(SUGGESTIONS_SENTINEL + JSON.stringify({ suggestions })),
+					);
+				}
+			} catch (e) {
+				console.warn("[rag] suggestions trailer skipped:", e instanceof Error ? e.message : e);
+			}
+
 			controller.close();
 		},
 	});

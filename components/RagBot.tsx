@@ -2,10 +2,17 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import SimpleMarkdown from "./SimpleMarkdown";
+import { splitStream } from "@/lib/suggestion-protocol";
+import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 
 interface Message {
   role: "user" | "bot";
   content: string;
+  /** Follow-ups offered after this bot turn. Kept per-message (not just for the
+   *  latest turn) so the exported transcript can include every round's chips. */
+  suggestions?: string[];
+  /** Error / rate-limit notice — exported as such rather than as an answer. */
+  isNotice?: boolean;
 }
 
 const WELCOME: Message = {
@@ -69,6 +76,14 @@ export default function RagBot() {
   // server's Retry-After so the countdown matches the real window, not a guess.
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [cooldownLeft, setCooldownLeft] = useState(0);
+  // Esc hides the ghost for the current turn without clearing the chips. Stored
+  // as the message count it was dismissed at, so the next turn re-arms it for
+  // free — no effect, and therefore no cascading render.
+  const [ghostDismissedAt, setGhostDismissedAt] = useState<number | null>(null);
+  // Below this width there's no Tab key, so the ghost can't be accepted —
+  // all three suggestions render as chips instead.
+  const [isNarrow, setIsNarrow] = useState(false);
+  const [copied, setCopied] = useState(false);
   // Lazy initializer reads persisted size once. Safe under SSR — the panel
   // isn't rendered until the user clicks the launcher post-hydration, so any
   // size difference between SSR and client doesn't affect initial markup.
@@ -102,6 +117,16 @@ export default function RagBot() {
     if (open) setTimeout(() => inputRef.current?.focus(), 250);
   }, [open]);
 
+  // Track the narrow breakpoint for the ghost-vs-chips split. Matches the
+  // ≤640px rule the composer's mobile sheet already uses.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const apply = () => setIsNarrow(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
   // Tick the rate-limit countdown once a second, and release the composer the
   // moment the window reopens. Interval only exists while a cooldown is active.
   useEffect(() => {
@@ -119,6 +144,28 @@ export default function RagBot() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [cooldownUntil]);
+
+  // Only the most recent turn's suggestions are live — older chips would
+  // compete with the current ones. Suppressed while streaming and during a
+  // cooldown, where acting on them is impossible anyway. Every turn's
+  // suggestions stay on their own message for the transcript export.
+  const lastMessage = messages[messages.length - 1];
+  const activeSuggestions =
+    loading || cooldownUntil !== null || lastMessage?.role !== "bot" || lastMessage.isNotice
+      ? []
+      : lastMessage.suggestions ?? [];
+
+  // Desktop: the first is ghost text, the rest are chips. Narrow viewports have
+  // no Tab key, so everything becomes a chip. The ghost hides as soon as there's
+  // input, which is what makes "click a chip to fill" feel coherent.
+  const ghostSuggestion =
+    !isNarrow &&
+    ghostDismissedAt !== messages.length &&
+    !input.trim() &&
+    activeSuggestions.length > 0
+      ? activeSuggestions[0]
+      : null;
+  const chipSuggestions = isNarrow ? activeSuggestions : activeSuggestions.slice(1);
 
   /** Drag the top-left corner to resize. Because the panel is anchored to
    *  bottom-right, dragging up/left grows it; down/right shrinks it. */
@@ -206,24 +253,37 @@ export default function RagBot() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
 
+      // Accumulate the whole stream: the answer and the trailing suggestions
+      // payload share one text/plain body, separated by a sentinel. splitStream
+      // withholds any partially-arrived sentinel so it never renders.
+      let acc = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
+        acc += decoder.decode(value, { stream: true });
+        const { answer } = splitStream(acc);
         setMessages((prev) => {
           const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: "bot",
-            content: updated[updated.length - 1].content + chunk,
-          };
+          updated[updated.length - 1] = { role: "bot", content: answer };
           return updated;
         });
       }
+
+      const { answer, suggestions } = splitStream(acc);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "bot",
+          content: answer,
+          suggestions: suggestions ?? undefined,
+        };
+        return updated;
+      });
     } catch (e) {
       const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Please try again.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "bot", content: msg };
+        updated[updated.length - 1] = { role: "bot", content: msg, isNotice: true };
         return updated;
       });
     } finally {
@@ -231,7 +291,71 @@ export default function RagBot() {
     }
   }
 
+  /** True once the visitor has actually exchanged anything worth exporting —
+   *  the welcome message alone doesn't count. */
+  const hasTranscript = messages.some((m) => m.role === "user");
+
+  /** Downloads the conversation as a Markdown file, suggestions included. */
+  function handleDownloadTranscript() {
+    const now = Date.now();
+    const md = buildTranscriptMarkdown(messages, now);
+    const url = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = transcriptFilename(now);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // Revoke on the next tick — revoking synchronously can cancel the download
+    // in some browsers before it has read the blob.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  /** Copies the same Markdown to the clipboard. Offered alongside the download
+   *  rather than as a fallback — pasting into a doc is a different need than
+   *  saving a file. */
+  async function handleCopyTranscript() {
+    const md = buildTranscriptMarkdown(messages, Date.now());
+    try {
+      await navigator.clipboard.writeText(md);
+    } catch {
+      // Clipboard API needs a secure context and permission; fall back to the
+      // legacy path so the button still does something on older/edge setups.
+      const ta = document.createElement("textarea");
+      ta.value = md;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch { /* nothing more to try */ }
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  /** Puts a suggestion in the input without sending it, so the visitor can edit
+   *  it or cycle to another chip before committing. */
+  function applySuggestion(text: string) {
+    setInput(text);
+    inputRef.current?.focus();
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
+    // Tab / → accepts the ghost suggestion when the field is empty. Accepting
+    // clears the ghost, so a second Tab moves focus normally — no keyboard trap.
+    if ((e.key === "Tab" || e.key === "ArrowRight") && ghostSuggestion && !input) {
+      e.preventDefault();
+      // No focus call here: the keypress came from the input, so it already has
+      // focus. Only the chips need applySuggestion's focus side-effect.
+      setInput(ghostSuggestion);
+      return;
+    }
+    if (e.key === "Escape" && ghostSuggestion && !input) {
+      e.preventDefault();
+      setGhostDismissedAt(messages.length);
+      return;
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -290,6 +414,37 @@ export default function RagBot() {
                 <span className="rag-title rag-gradient-text">RAG</span>
                 <span className="rag-subtitle">Rithvik Augmented Generation</span>
               </div>
+              {hasTranscript && (
+                <>
+                  <button
+                    className="rag-header-btn"
+                    onClick={handleCopyTranscript}
+                    title="Copy transcript as Markdown"
+                    aria-label="Copy transcript as Markdown"
+                  >
+                    {copied ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" width="15" height="15">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                        <rect x="9" y="9" width="11" height="11" rx="2" />
+                        <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    className="rag-header-btn"
+                    onClick={handleDownloadTranscript}
+                    title="Download transcript (.md)"
+                    aria-label="Download transcript as Markdown file"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                      <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 19h16" />
+                    </svg>
+                  </button>
+                </>
+              )}
               <button className="rag-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
             </div>
 
@@ -329,6 +484,26 @@ export default function RagBot() {
               </div>
             )}
 
+            {chipSuggestions.length > 0 && (
+              <div className="rag-suggests" aria-label="Suggested follow-up questions">
+                <span className="rag-suggests-label">Suggested</span>
+                {chipSuggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className="rag-suggest-chip"
+                    onClick={() => applySuggestion(s)}
+                    title="Put this in the message box (doesn't send)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11" aria-hidden="true">
+                      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+                    </svg>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {cooldownUntil !== null && (
               <p className="rag-cooldown" role="status">
                 Message limit reached — try again in {formatCooldown(cooldownLeft)}.
@@ -343,7 +518,15 @@ export default function RagBot() {
                 // Matches MAX_INPUT_LENGTH in app/api/chat/route.ts so the
                 // server's 400 is unreachable by ordinary typing.
                 maxLength={500}
-                placeholder={cooldownUntil !== null ? "Message limit reached…" : "Ask me anything about Rithvik..."}
+                // The ghost suggestion rides the native placeholder. Because it
+                // only ever shows while the field is empty, this is visually
+                // identical to an overlay and costs none of the font-metric or
+                // scroll-sync fragility a mirrored div would.
+                placeholder={
+                  cooldownUntil !== null
+                    ? "Message limit reached…"
+                    : ghostSuggestion ?? "Ask me anything about Rithvik..."
+                }
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -360,6 +543,12 @@ export default function RagBot() {
                 </svg>
               </button>
             </div>
+
+            {ghostSuggestion && (
+              <p className="rag-ghost-hint" aria-hidden="true">
+                <kbd>Tab</kbd> to use suggestion
+              </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
