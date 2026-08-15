@@ -5,6 +5,8 @@ import {
   normalizeSuggestions,
   containsGrounding,
   normalizeForMatch,
+  isRedundant,
+  questionSimilarity,
   SUGGESTIONS_SENTINEL as S,
   MAX_SUGGESTION_CHARS,
 } from "./suggestion-protocol.ts";
@@ -53,6 +55,55 @@ test("short evidence must match in full", () => {
 
 test("normalizeForMatch strips punctuation and collapses space", () => {
   assert.equal(normalizeForMatch("  He's  built —  a LOT!  "), "he s built a lot");
+});
+
+// ── redundancy against what has already been asked ──────────────────────────
+
+const SHIPPING = "What does Rithvik think about shipping fast vs building properly?";
+
+test("rejects the exact question just asked (production regression)", () => {
+  // The ghost text suggested this back verbatim right after it was answered.
+  assert.ok(isRedundant(SHIPPING, [SHIPPING]));
+});
+
+test("rejects a reworded version of an asked question", () => {
+  assert.ok(isRedundant("How does Rithvik weigh shipping fast against building properly?", [SHIPPING]));
+});
+
+test("rejects regardless of punctuation and casing drift", () => {
+  assert.ok(isRedundant("what does rithvik think about SHIPPING FAST vs BUILDING PROPERLY", [SHIPPING]));
+});
+
+test("keeps a genuinely different question about a shared topic", () => {
+  assert.ok(!isRedundant("What does Rithvik believe are key goals in software design?", [SHIPPING]));
+});
+
+test("keeps related-but-distinct questions", () => {
+  const asked = ["What projects has Rithvik worked on?"];
+  assert.ok(!isRedundant("What technologies does Rithvik use in his projects?", asked));
+});
+
+test("checks against every earlier turn, not just the last", () => {
+  const asked = ["What does Rithvik study?", SHIPPING, "What is Rithvik's GPA?"];
+  assert.ok(isRedundant(SHIPPING, asked));
+});
+
+test("name and question scaffolding alone never make two questions redundant", () => {
+  // Both are "What does Rithvik ..." about him — only stopwords in common.
+  assert.ok(!isRedundant("What does Rithvik study?", ["What does Rithvik build?"]));
+});
+
+test("empty candidate is treated as redundant", () => {
+  assert.ok(isRedundant("   ", ["anything"]));
+});
+
+test("nothing asked yet means nothing is redundant", () => {
+  assert.ok(!isRedundant(SHIPPING, []));
+});
+
+test("questionSimilarity is 1 for identical and 0 for disjoint", () => {
+  assert.equal(questionSimilarity(SHIPPING, SHIPPING), 1);
+  assert.equal(questionSimilarity("What is his GPA?", "Which languages does he write?"), 0);
 });
 
 const payload = (arr: string[]) => S + JSON.stringify({ suggestions: arr });

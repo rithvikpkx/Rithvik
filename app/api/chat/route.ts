@@ -266,7 +266,11 @@ ${contextBlock}`;
 	// at the end costs no perceptible latency. It sees the same context block the
 	// answer is grounded in, so it can only propose answerable questions — but it
 	// deliberately does NOT see the answer, which would force it to run serially.
-	const suggestionsPromise = generateSuggestions(message, contextBlock);
+	// Prior user turns are passed so suggestions can't repeat a question the
+	// visitor has already asked — enforced in generateSuggestions, not trusted
+	// to the model.
+	const askedBefore = recentHistory.filter((m) => m.role === "user").map((m) => m.content);
+	const suggestionsPromise = generateSuggestions(message, contextBlock, askedBefore);
 
 	// Stream the response and pipe tokens directly to the client
 	const stream = await model.stream(messages);

@@ -28,6 +28,7 @@ import { embedTexts } from "@/lib/embeddings";
 import {
   normalizeSuggestions,
   containsGrounding,
+  isRedundant,
   MAX_SUGGESTION_CHARS,
   WANTED_SUGGESTIONS,
 } from "@/lib/suggestion-protocol";
@@ -38,9 +39,9 @@ const MODEL = "gpt-4o-mini";
 /** Kept tight on purpose. Each candidate costs a question AND a verbatim quote,
  *  and this call has to finish inside the answer's streaming window (~2.5s) to
  *  stay free. At 8 candidates with long quotes the turn went 2.4s -> 6.3s. */
-const MAX_TOKENS = 260;
+const MAX_TOKENS = 340;
 /** Enough slack for the gates to reject a couple without leaving us short. */
-const CANDIDATES = 4;
+const CANDIDATES = 6;
 /** Quotes long enough to be verifiable, short enough to generate fast. */
 const EVIDENCE_MAX_WORDS = 15;
 /** Chunks pulled per store when simulating the answer's retrieval. Mirrors the
@@ -131,9 +132,14 @@ async function keepRetrievable(candidates: Candidate[]): Promise<string[]> {
 export async function generateSuggestions(
   question: string,
   contextBlock: string,
+  askedQuestions: string[] = [],
 ): Promise<string[]> {
   if (!process.env.OPENAI_API_KEY) return [];
   if (!contextBlock.trim()) return [];   // nothing grounded to suggest from
+
+  // Everything the visitor has already asked, current turn included.
+  const asked = [question, ...askedQuestions].filter((q) => q.trim().length > 0);
+  const askedBlock = asked.map((q) => `- ${q}`).join("\n");
 
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -151,7 +157,13 @@ export async function generateSuggestions(
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Current question: ${question}\n\nContext:\n${contextBlock}` },
+          {
+            role: "user",
+            content:
+              `Already asked in this conversation — do NOT propose any of these, ` +
+              `or a reworded version of them:\n${askedBlock}\n\n` +
+              `Context:\n${contextBlock}`,
+          },
         ],
       }),
     });
@@ -167,15 +179,20 @@ export async function generateSuggestions(
     const candidates = parseCandidates(parsed.suggestions);
     if (candidates.length === 0) return [];
 
+    // Gate 0: never suggest something already asked. The prompt asks for this
+    // too, but the model reliably ignores it — it once handed back the visitor's
+    // exact question as the ghost suggestion immediately after answering it.
+    const fresh = candidates.filter((c) => !isRedundant(c.question, asked));
+
     // Gate 1: the quoted evidence must really be in the context we gave it.
-    const grounded = candidates.filter((c) => containsGrounding(contextBlock, c.evidence));
+    const grounded = fresh.filter((c) => containsGrounding(contextBlock, c.evidence));
 
     // Gate 2: the evidence must survive a fresh retrieval for that question.
     const retrievable = await keepRetrievable(grounded);
 
     const final = normalizeSuggestions(retrievable);
     console.log(
-      `[rag] suggestions: ${candidates.length} proposed -> ${grounded.length} grounded -> ${retrievable.length} retrievable -> ${final.length} shown`,
+      `[rag] suggestions: ${candidates.length} proposed -> ${fresh.length} fresh -> ${grounded.length} grounded -> ${retrievable.length} retrievable -> ${final.length} shown`,
     );
     return final;
   } catch (e) {
