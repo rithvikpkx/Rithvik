@@ -182,16 +182,22 @@ export function containsGrounding(haystack: string, evidence: string): boolean {
  * `suggestions` is null until the payload has fully arrived and parsed; the
  * answer is always correct regardless.
  */
-export function splitStream(acc: string): { answer: string; suggestions: string[] | null } {
+export function splitStream(acc: string): {
+  answer: string;
+  suggestions: string[] | null;
+  /** Raw actions payload. Left unparsed here so this module stays free of the
+   *  action types; the caller runs it through normalizeActions(). */
+  actions: unknown;
+} {
   const idx = acc.indexOf(SUGGESTIONS_SENTINEL);
   if (idx !== -1) {
     const answer = acc.slice(0, idx);
     const raw = acc.slice(idx + SUGGESTIONS_SENTINEL.length);
     try {
-      const parsed = JSON.parse(raw) as { suggestions?: unknown };
-      return { answer, suggestions: normalizeSuggestions(parsed.suggestions) };
+      const parsed = JSON.parse(raw) as { suggestions?: unknown; actions?: unknown };
+      return { answer, suggestions: normalizeSuggestions(parsed.suggestions), actions: parsed.actions };
     } catch {
-      return { answer, suggestions: null };   // payload still arriving, or malformed
+      return { answer, suggestions: null, actions: null };   // still arriving, or malformed
     }
   }
 
@@ -199,8 +205,8 @@ export function splitStream(acc: string): { answer: string; suggestions: string[
   const maxKeep = Math.min(SUGGESTIONS_SENTINEL.length - 1, acc.length);
   for (let keep = maxKeep; keep > 0; keep--) {
     if (acc.endsWith(SUGGESTIONS_SENTINEL.slice(0, keep))) {
-      return { answer: acc.slice(0, acc.length - keep), suggestions: null };
+      return { answer: acc.slice(0, acc.length - keep), suggestions: null, actions: null };
     }
   }
-  return { answer: acc, suggestions: null };
+  return { answer: acc, suggestions: null, actions: null };
 }

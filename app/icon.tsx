@@ -1,12 +1,16 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const size = { width: 64, height: 64 };
+/** 96×96, NOT 64. Google only accepts a search-result favicon whose dimensions
+ *  are a multiple of 48px — at 64 it silently discards the icon and shows the
+ *  generic globe instead. 96 is the smallest multiple that still looks crisp on
+ *  retina tabs. Don't "optimise" this back down. */
+export const size = { width: 96, height: 96 };
 export const contentType = "image/png";
 
 /** Browser-tab favicon: bold "R." in the default-theme accent color on the
- *  default-theme bg, mirroring the "Rithvik." brand mark in the hero. Rendered
- *  at 64×64 so retina tabs stay crisp; Next.js cache-busts via build hash. */
+ *  default-theme bg, mirroring the "Rithvik." brand mark in the hero.
+ *  Next.js cache-busts via build hash. */
 export default function Icon() {
   return new ImageResponse(
     (
@@ -18,12 +22,12 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#08080e",
-          borderRadius: 12,
+          borderRadius: 18,
           color: "#c2305e",
           fontFamily: "system-ui, sans-serif",
           fontWeight: 900,
           letterSpacing: "-0.04em",
-          fontSize: 44,
+          fontSize: 66,
           lineHeight: 1,
         }}
       >

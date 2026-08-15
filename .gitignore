@@ -1,5 +1,6 @@
 .claude/
 ideas.md
+nibbles.md
 node_modules
 .next
 tsconfig.tsbuildinfo

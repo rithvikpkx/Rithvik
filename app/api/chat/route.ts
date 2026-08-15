@@ -4,6 +4,8 @@ import { adminClient } from "@/lib/supabase";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
+import { deriveActions, isDeclineAnswer } from "@/lib/chat-actions";
+import { loadActionLinks } from "@/lib/action-links";
 
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
@@ -186,10 +188,21 @@ export async function POST(req: Request) {
 	// an empty array — we'd rather answer from one source than 500 the request.
 	// Both failure modes are logged so a missing match_* RPC or RLS regression
 	// doesn't go silent.
+	// match_primary also returns source_table / source_id / metadata / similarity.
+	// Those are what let actions be derived deterministically, so the row shape is
+	// kept whole here rather than narrowed to `content`.
+	type RetrievedRow = {
+		content: string;
+		source_table?: string;
+		source_id?: string;
+		metadata?: Record<string, unknown> | null;
+		similarity?: number;
+	};
+
 	function unpack(
 		label: string,
 		res: PromiseSettledResult<{ data: unknown; error: { message: string } | null }>,
-	): { content: string }[] {
+	): RetrievedRow[] {
 		if (res.status === "rejected") {
 			console.error(`[rag] ${label} rpc threw:`, res.reason instanceof Error ? res.reason.message : res.reason);
 			return [];
@@ -198,7 +211,7 @@ export async function POST(req: Request) {
 			console.error(`[rag] ${label} rpc error:`, res.value.error.message);
 			return [];
 		}
-		return (res.value.data as { content: string }[] | null) ?? [];
+		return (res.value.data as RetrievedRow[] | null) ?? [];
 	}
 
 	const primaryChunks = unpack("match_primary", primaryRes);
@@ -301,6 +314,31 @@ ${contextBlock}`;
 	// Enforced in generateSuggestions rather than trusted to the model.
 	const askedBefore = recentHistory.filter((m) => m.role === "user").map((m) => m.content);
 
+	// Started now so the lookup overlaps the answer stream rather than adding to it.
+	const actionLinksPromise = loadActionLinks();
+
+	// Actions are decided from a SEPARATE retrieval on the bare question.
+	//
+	// The main embedding above includes the HyDE hypothetical, which is
+	// deliberately Rithvik-flavoured and so drags unrelated questions into the
+	// corpus: measured on the live data, "who won the world cup?" scores 0.732
+	// that way — higher than a genuine question about a project. Excellent for
+	// recall, useless as a relevance gate. On the bare question the on-topic and
+	// off-topic bands separate cleanly (see ACTION_SIMILARITY_FLOOR).
+	//
+	// One extra embedding + one RPC, both overlapping the answer stream, so the
+	// turn is no slower.
+	const actionChunksPromise = (async (): Promise<RetrievedRow[]> => {
+		try {
+			const bare = await embedText(message);
+			const { data, error } = await db.rpc("match_primary", { query_embedding: bare, match_count: 3 });
+			if (error) return [];
+			return (data as RetrievedRow[] | null) ?? [];
+		} catch {
+			return [];   // actions are a nicety; never let this affect the answer
+		}
+	})();
+
 	// Stream the response and pipe tokens directly to the client
 	const stream = await makeModel(temperature).stream(messages);
 
@@ -343,8 +381,17 @@ ${contextBlock}`;
 					answerText,
 					offered,
 				);
-				if (suggestions.length > 0) {
-					controller.enqueue(encoder.encode(JSON.stringify({ suggestions })));
+				// Derived from retrieval metadata, so no model is involved and the
+				// URLs come from the database rather than from generated text.
+				// No actions behind a refusal or an off-topic redirect: there is
+				// nothing on the page to point at.
+				const gateChunks = await actionChunksPromise;
+				const relevance = gateChunks[0]?.similarity ?? 0;
+				const actions = isDeclineAnswer(answerText)
+					? []
+					: deriveActions(primaryChunks, await actionLinksPromise, message, relevance);
+				if (suggestions.length > 0 || actions.length > 0) {
+					controller.enqueue(encoder.encode(JSON.stringify({ suggestions, actions })));
 				}
 			} catch (e) {
 				console.warn("[rag] suggestions trailer skipped:", e instanceof Error ? e.message : e);
