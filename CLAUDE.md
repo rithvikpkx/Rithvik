@@ -154,6 +154,11 @@ A floating **"Ask RAG"** launcher (bottom-right, mounted via `DeferredOverlays` 
 - **`SimpleMarkdown`** — hand-rolled, dep-free: bold/italic/inline+fenced code, links, headings, bullet/numbered lists, paragraphs with soft `<br>`. The system prompt's FORMATTING section keeps model output sparing so the renderer gets clean input.
 - **Starter chips** appear only on the welcome screen with precomputed Q+A pairs (`STARTERS` in `RagBot.tsx`) — clicking is instant, no API call. **Maintenance:** update `STARTERS` if schools/stack/contact change significantly.
 - **Suggested follow-ups** (post-answer) are a *different control* from starter chips and are styled to look it (`.rag-suggest-chip`: transparent, dashed border, pencil glyph, "Suggested" label). Starter chips **send instantly**; suggestion chips **only fill the input** and wait for the visitor to send. Identical-looking controls with opposite behaviour would be a trap — keep them visually distinct. On desktop the first suggestion becomes ghost text via the input's native `placeholder` (Tab or → accepts, Esc dismisses); ≤640px has no Tab key, so all three render as chips. Ghost text only ever shows while the input is empty, which is why a `placeholder` works and no mirrored-div overlay is needed.
+- **Bot actions** (`lib/chat-actions.ts`) — up to 2 solid buttons above the chips: open a project/org/school link, scroll+highlight a section, or open the email composer. A **third** control type, styled distinctly on purpose: starter chips SEND, suggestion chips DRAFT into the box, actions DO something.
+  - **Derived deterministically from retrieval metadata — no model, no extra LLM call.** `match_primary` already returns `source_table`/`source_id`/`metadata`/`similarity`; `source_table` maps to an anchor and `metadata.slug` to a DB row.
+  - **The model never supplies a URL.** Actions name a record; `lib/action-links.ts` resolves the URL from published DB rows and `safeUrl()` allows only `http(s)`. A model-authored link behind a button would be a phishing vector, and secondary documents are a prompt-injection surface.
+  - **Relevance gate uses a SEPARATE bare-question retrieval**, never the HyDE embedding. HyDE writes a Rithvik-flavoured hypothetical for *any* input, so off-topic questions land inside the corpus: measured, "who won the world cup?" scores **0.732** with HyDE (above a real project question) but **0.099** without. Bare-question bands are cleanly separated — on-topic ≥0.619, off-topic ≤0.191 — hence `ACTION_SIMILARITY_FLOOR = 0.45`. The HyDE chunks still choose *what* to point at, so the button matches what the answer discussed. Actions are also suppressed when the answer is a refusal/redirect (`isDeclineAnswer`).
+  - Scroll targets: `#about`, `#bento`, `#education`, `#experience-<slug>`, `#project-<slug>`. Adding a section means adding an `id` **and** a mapping in `deriveActions`.
 - **Transcript export** — header buttons copy the conversation as Markdown or download it as `rag-chat-<stamp>.md`, suggestions included. Built by `lib/transcript.ts` (pure, unit-tested). Suggestions are stored per-message, not just for the latest turn, so the export captures every round.
 
 > Deep dive: `docs/explanations/rag-pipeline.md`. This is the quick reference.
@@ -292,6 +297,9 @@ lib/
   chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
   suggestion-protocol.ts — chat stream wire format: sentinel + splitStream (shared client/server, tested)
   rag-settings.ts     — runtime-tunable RAG settings (temperature clamp, never-embedded `rag.` prefix); tested
+  chat-actions.ts     — deterministic bot actions from retrieval metadata + URL allowlist (tested)
+  action-links.ts     — server-only: loads the allowed URLs from published DB rows
+  scroll-highlight.ts — scrollIntoView + temporary highlight ring for the "show me" action
   suggestions.ts      — server-only: generates grounded follow-ups (parallel to the answer)
   transcript.ts       — pure Markdown transcript builder for the export button (tested)
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner

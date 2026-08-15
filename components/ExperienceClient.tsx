@@ -98,7 +98,7 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
       <div className="timeline">
         <div className="timeline-beam"><TimelineBeam /></div>
         {entries.map(({ slug, org, date_range, role, description, tags }, i) => (
-          <FadeIn key={slug} delay={i * 0.1} className="timeline-entry">
+          <FadeIn key={slug} id={`experience-${slug}`} delay={i * 0.1} className="timeline-entry">
             <div className="timeline-dot" />
             <div className="timeline-content">
               <div className="timeline-header">

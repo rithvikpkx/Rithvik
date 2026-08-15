@@ -73,8 +73,9 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
     await upsertSiteContent("bento.building", JSON.stringify(u));
   };
 
+  // `id` is a scroll target for the RAG bot's "show me on the page" action.
   return (
-    <section className="bento-section">
+    <section className="bento-section" id="bento">
       <motion.div
         className="bento-grid"
         variants={grid}

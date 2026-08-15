@@ -100,6 +100,9 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
         {projects.map(({ slug, badge, title, description, tags, links }, i) => (
           <motion.a
             key={slug}
+            // Scroll target for the RAG bot, which points at a specific project
+            // rather than the whole section.
+            id={`project-${slug}`}
             href={primaryLink(links)}
             target="_blank"
             rel="noopener noreferrer"

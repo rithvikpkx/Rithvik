@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "motion/react";
 import SimpleMarkdown from "./SimpleMarkdown";
 import { splitStream, SUGGESTIONS_SENTINEL } from "@/lib/suggestion-protocol";
 import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
+import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
+import { scrollToAndHighlight } from "@/lib/scroll-highlight";
+import { useContactComposer } from "./ContactComposerProvider";
 
 interface Message {
   role: "user" | "bot";
@@ -11,6 +14,9 @@ interface Message {
   /** Follow-ups offered after this bot turn. Kept per-message (not just for the
    *  latest turn) so the exported transcript can include every round's chips. */
   suggestions?: string[];
+  /** Things the bot can do for this turn (open a link, point at a section,
+   *  open the composer). Derived server-side from retrieval metadata. */
+  actions?: ChatAction[];
   /** Error / rate-limit notice — exported as such rather than as an answer. */
   isNotice?: boolean;
 }
@@ -68,6 +74,9 @@ function formatCooldown(totalSeconds: number): string {
 }
 
 export default function RagBot() {
+  // RagBot renders inside ContactComposerProvider (via DeferredOverlays), so the
+  // composer is directly reachable — no plumbing needed for the email action.
+  const { open: openComposer } = useContactComposer();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
@@ -152,7 +161,13 @@ export default function RagBot() {
   // compete with the current ones. Suppressed while streaming and during a
   // cooldown, where acting on them is impossible anyway. Every turn's
   // suggestions stay on their own message for the transcript export.
+  // Actions belong to the latest bot turn, same lifetime as the chips.
   const lastMessage = messages[messages.length - 1];
+  const activeActions =
+    loading || cooldownUntil !== null || lastMessage?.role !== "bot" || lastMessage.isNotice
+      ? []
+      : lastMessage.actions ?? [];
+
   const activeSuggestions =
     loading || cooldownUntil !== null || lastMessage?.role !== "bot" || lastMessage.isNotice
       ? []
@@ -311,13 +326,15 @@ export default function RagBot() {
         }
       }
 
-      const { answer, suggestions } = splitStream(acc);
+      const { answer, suggestions, actions } = splitStream(acc);
+      const parsedActions = normalizeActions(actions);
       setMessages((prev) => {
         const updated = [...prev];
         updated[botIndex] = {
           role: "bot",
           content: answer,
           suggestions: suggestions ?? undefined,
+          actions: parsedActions.length ? parsedActions : undefined,
         };
         return updated;
       });
@@ -374,6 +391,22 @@ export default function RagBot() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  }
+
+  /** Runs a scroll/composer action. `open_link` is a real anchor rather than a
+   *  handler — browsers block programmatic window.open without a user gesture,
+   *  so an auto-open would silently fail. */
+  function runAction(action: ChatAction) {
+    if (action.type === "open_composer") {
+      openComposer();
+      return;
+    }
+    if (action.type === "scroll_to") {
+      // At ≤640px the panel covers the page, so scrolling behind it would show
+      // the visitor nothing. Close it first; the launcher stays available.
+      if (isNarrow) setOpen(false);
+      scrollToAndHighlight(action.target);
+    }
   }
 
   /** Moves a suggestion into the prompt field without sending it. The one it
@@ -525,6 +558,34 @@ export default function RagBot() {
                     {s.q}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {activeActions.length > 0 && (
+              <div className="rag-actions" aria-label="Things you can do">
+                {activeActions.map((a) =>
+                  a.type === "open_link" ? (
+                    <a
+                      key={`${a.type}-${a.url}`}
+                      className="rag-action"
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {a.label}
+                      <span aria-hidden="true"> ↗</span>
+                    </a>
+                  ) : (
+                    <button
+                      key={`${a.type}-${a.label}`}
+                      type="button"
+                      className="rag-action"
+                      onClick={() => runAction(a)}
+                    >
+                      {a.label}
+                    </button>
+                  ),
+                )}
               </div>
             )}
 
