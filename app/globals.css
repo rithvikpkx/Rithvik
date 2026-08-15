@@ -2530,6 +2530,106 @@ a { color: inherit; text-decoration: none; }
 }
 .rag-chip:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ===== SUGGESTED FOLLOW-UPS =====
+   Deliberately NOT styled like .rag-chip. Starter chips send instantly with a
+   precomputed answer; these only fill the input and wait for the visitor to
+   send. Same-looking controls with opposite behaviour would be a trap, so
+   these read as lighter and carry a pencil glyph + "Suggested" label. */
+.rag-suggests {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px 0;
+  flex-shrink: 0;
+}
+.rag-suggests-label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rag-muted);
+  opacity: 0.75;
+}
+.rag-suggest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font-family: var(--font);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--rag-muted);
+  background: transparent;                 /* vs. the starter chip's filled card */
+  border: 1px dashed var(--rag-border);    /* dashed = "drafts into the box"     */
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.rag-suggest-chip svg { flex-shrink: 0; opacity: 0.7; }
+.rag-suggest-chip:hover {
+  color: var(--rag-text);
+  border-color: rgba(156, 64, 255, 0.45);
+  border-style: solid;
+  background: var(--rag-card);
+}
+.rag-suggest-chip:focus-visible {
+  outline: 2px solid rgba(156, 64, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* Tab affordance under the composer, shown only while a ghost suggestion is up. */
+.rag-ghost-hint {
+  margin: 0;
+  padding: 0 18px 10px;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--rag-muted);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.rag-ghost-hint kbd {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  border: 1px solid var(--rag-border);
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin-right: 2px;
+}
+
+/* Header icon buttons (copy / download transcript). */
+.rag-header-btn {
+  background: none;
+  border: none;
+  color: var(--rag-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  line-height: 0;
+  transition: color 0.2s, background 0.2s;
+}
+.rag-header-btn:hover { color: var(--rag-text); background: var(--rag-card); }
+.rag-header-btn:focus-visible {
+  outline: 2px solid rgba(156, 64, 255, 0.55);
+  outline-offset: 1px;
+}
+
+/* Rate-limit notice above the composer. Sits inside the panel's private
+   --rag-* token system so it reads identically on every site theme. */
+.rag-cooldown {
+  margin: 0;
+  padding: 8px 18px 0;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.4;
+  color: var(--rag-muted);
+  flex-shrink: 0;
+}
 .rag-input-row {
   display: flex;
   gap: 8px;
@@ -2537,6 +2637,9 @@ a { color: inherit; text-decoration: none; }
   border-top: 1px solid var(--rag-border);
   flex-shrink: 0;
 }
+/* A locked composer should look locked, not merely unresponsive. */
+.rag-input:disabled,
+.rag-send:disabled { opacity: 0.45; cursor: not-allowed; }
 .rag-input {
   flex: 1;
   background: var(--rag-card);

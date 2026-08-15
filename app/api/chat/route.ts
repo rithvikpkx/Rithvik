@@ -2,6 +2,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 import { adminClient } from "@/lib/supabase";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
+import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
 
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
@@ -97,7 +98,28 @@ export async function POST(req: Request) {
 		.eq("ip", ip)
 		.gte("created_at", since);
 	if ((count ?? 0) >= RATE_LIMIT) {
-		return new Response("You've hit the message limit for now — try again later.", { status: 429 });
+		// Tell the client when the window actually reopens: the oldest request
+		// still inside it ages out first. Only queried on the limited path, so
+		// the normal path still costs one round-trip.
+		const { data: oldest } = await db
+			.from("chat_requests")
+			.select("created_at")
+			.eq("ip", ip)
+			.gte("created_at", since)
+			.order("created_at", { ascending: true })
+			.limit(1)
+			.maybeSingle();
+		const resetAt = oldest?.created_at
+			? new Date(oldest.created_at).getTime() + RATE_WINDOW_MS
+			: Date.now() + RATE_WINDOW_MS;
+		const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+		return new Response("You've reached the message limit. Please try again later.", {
+			status: 429,
+			headers: {
+				"Retry-After": String(retryAfter),
+				"Content-Type": "text/plain; charset=utf-8",
+			},
+		});
 	}
 	// Record the attempt before doing the work, so concurrent bursts can't all
 	// slip through the check and a failed turn still counts against the window.
@@ -239,6 +261,13 @@ ${contextBlock}`;
 
 	const messages = [new SystemMessage(systemPrompt), ...prior, new HumanMessage(message)];
 
+	// Kick off follow-up generation NOW, in parallel with the answer. At 160 max
+	// tokens it lands well before the answer finishes streaming, so awaiting it
+	// at the end costs no perceptible latency. It sees the same context block the
+	// answer is grounded in, so it can only propose answerable questions — but it
+	// deliberately does NOT see the answer, which would force it to run serially.
+	const suggestionsPromise = generateSuggestions(message, contextBlock);
+
 	// Stream the response and pipe tokens directly to the client
 	const stream = await model.stream(messages);
 
@@ -257,6 +286,24 @@ ${contextBlock}`;
 				console.error("[rag] stream failed mid-response:", e instanceof Error ? e.message : e);
 				controller.enqueue(encoder.encode("\n\n_(response interrupted — please try again)_"));
 			}
+
+			// Emit the sentinel the INSTANT the answer is complete, before waiting
+			// on suggestions. It doubles as an "answer finished" marker, so the
+			// client can re-enable the composer immediately instead of sitting
+			// disabled for the ~1.5s the verified-suggestion pass still needs.
+			controller.enqueue(encoder.encode(SUGGESTIONS_SENTINEL));
+
+			// Then the payload. generateSuggestions never throws, but guard anyway —
+			// a suggestions problem must never truncate an answer the user has.
+			try {
+				const suggestions = await suggestionsPromise;
+				if (suggestions.length > 0) {
+					controller.enqueue(encoder.encode(JSON.stringify({ suggestions })));
+				}
+			} catch (e) {
+				console.warn("[rag] suggestions trailer skipped:", e instanceof Error ? e.message : e);
+			}
+
 			controller.close();
 		},
 	});

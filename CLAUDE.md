@@ -153,6 +153,8 @@ A floating **"Ask RAG"** launcher (bottom-right, mounted via `DeferredOverlays` 
 - **Resizable** from the top-left corner: clamped 320×420 → 720×820, persisted to `localStorage[rag-panel-size]`, hydrated via lazy `useState` (SSR-safe — panel only renders post-click).
 - **`SimpleMarkdown`** — hand-rolled, dep-free: bold/italic/inline+fenced code, links, headings, bullet/numbered lists, paragraphs with soft `<br>`. The system prompt's FORMATTING section keeps model output sparing so the renderer gets clean input.
 - **Starter chips** appear only on the welcome screen with precomputed Q+A pairs (`STARTERS` in `RagBot.tsx`) — clicking is instant, no API call. **Maintenance:** update `STARTERS` if schools/stack/contact change significantly.
+- **Suggested follow-ups** (post-answer) are a *different control* from starter chips and are styled to look it (`.rag-suggest-chip`: transparent, dashed border, pencil glyph, "Suggested" label). Starter chips **send instantly**; suggestion chips **only fill the input** and wait for the visitor to send. Identical-looking controls with opposite behaviour would be a trap — keep them visually distinct. On desktop the first suggestion becomes ghost text via the input's native `placeholder` (Tab or → accepts, Esc dismisses); ≤640px has no Tab key, so all three render as chips. Ghost text only ever shows while the input is empty, which is why a `placeholder` works and no mirrored-div overlay is needed.
+- **Transcript export** — header buttons copy the conversation as Markdown or download it as `rag-chat-<stamp>.md`, suggestions included. Built by `lib/transcript.ts` (pure, unit-tested). Suggestions are stored per-message, not just for the latest turn, so the export captures every round.
 
 > Deep dive: `docs/explanations/rag-pipeline.md`. This is the quick reference.
 
@@ -170,12 +172,25 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
 4. **Context block** — `## Recent conversation` (last 5 turns), `## What's on the website` (primary), `## Background materials` (secondary).
 5. **Chat completion** — streams from `gpt-4o-mini` (NOT DeepSeek). Top-of-prompt CRITICAL GROUNDING RULES forbid inventing facts; recent turns are passed as real `Human`/`AI` messages, used for continuity only.
+6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) runs **in parallel** with step 5 and resolves before the answer finishes, so it adds no wait. It deliberately does NOT see the answer; making it serial would add dead air.
+
+**Why suggestions are verified, not just generated.** A suggestion is written against the context retrieved for the *current* question (C1), but clicking it triggers a **fresh retrieval** (C2). "Answerable from C1" does not imply "answerable from C2" — and the model also invents plausible-adjacent questions ("how does he balance studies and projects?") that nothing in the corpus answers. Both dead-end into the canned refusal, which is worse than showing nothing. So every candidate passes two **deterministic** gates (no judge model):
+   1. **Evidence** — the model must quote the span in C1 that answers it, and `containsGrounding()` verifies that quote really appears in C1. Kills inventions.
+   2. **Retrieval** — embed the candidate (one batched `embedTexts` call) and run the same `match_*` lookup the answer will run, then confirm the evidence comes back in C2. Kills the C1/C2 mismatch.
+
+   `containsGrounding` uses 6-word shingle matching, not exact substring — models paraphrase even when told to quote verbatim. It is deliberately conservative: a false negative costs one suggestion, a false positive costs the visitor a dead end. Each run logs `[rag] suggestions: N proposed -> N grounded -> N retrievable -> N shown`; watch that funnel if chips stop appearing.
+
+   **Tuning is latency-bound**: each candidate costs a question *and* a quote, and this call must finish inside the answer's streaming window. At 8 candidates with long quotes a turn went 2.4s → 6.3s. `CANDIDATES = 4` / `EVIDENCE_MAX_WORDS = 15` / `MAX_TOKENS = 260` keeps it under the answer. Raise them and you pay for it directly.
+
+   Returns `[]` on any failure; a suggestions problem must never affect the answer.
+
+**Stream wire format** (`lib/suggestion-protocol.ts`, shared by route + panel): the answer streams as `text/plain`, then a trailer ` RAG_SUGGESTIONS {"suggestions":[…]}` is appended after the model stream closes. NUL bytes can't occur in model prose, and **the route emits the sentinel, not the model**, so it can't be forgotten or malformed. `splitStream()` withholds any partially-arrived sentinel so a half-delivered marker never flashes on screen. Both files are pure and unit-tested (`node --experimental-strip-types --test lib/*.test.ts`). The empty-context guard (step 3) returns via `streamText()` and carries no trailer.
 
 Secondary originals live in the private `secondary` Storage bucket. RLS denies anon access to all three RAG tables; the chat route + server actions reach them via `adminClient()` (service-role).
 
 Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL` (server-only; the one `requireAuth()` enforces — falls back to the `NEXT_PUBLIC_` one, fails closed if both are unset). `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
 
-**One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn — well under $1/month at our traffic.
+**One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn (the follow-up call adds ~$0.00002) — well under $1/month at our traffic.
 
 ### Supabase browser-client gotcha
 
@@ -264,6 +279,9 @@ lib/
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
   embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
   chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
+  suggestion-protocol.ts — chat stream wire format: sentinel + splitStream (shared client/server, tested)
+  suggestions.ts      — server-only: generates grounded follow-ups (parallel to the answer)
+  transcript.ts       — pure Markdown transcript builder for the export button (tested)
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
   sanitize-html.ts    — allowlist HTML sanitizer + htmlToText (unit-tested via node:test)
 
