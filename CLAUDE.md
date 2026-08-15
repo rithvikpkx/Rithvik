@@ -172,7 +172,17 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
 4. **Context block** — `## Recent conversation` (last 5 turns), `## What's on the website` (primary), `## Background materials` (secondary).
 5. **Chat completion** — streams from `gpt-4o-mini` (NOT DeepSeek). Top-of-prompt CRITICAL GROUNDING RULES forbid inventing facts; recent turns are passed as real `Human`/`AI` messages, used for continuity only.
-6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) is fired **in parallel** with step 5 using the same context block, so it costs no perceptible latency (~160 max tokens, lands well before the answer). It deliberately does NOT see the answer; making it serial would add ~0.5–1s of dead air. It's prompted to only propose questions the retrieved context can answer — a suggestion leading to the canned refusal is worse than none. Returns `[]` on any failure; a suggestions problem must never affect the answer.
+6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) runs **in parallel** with step 5 and resolves before the answer finishes, so it adds no wait. It deliberately does NOT see the answer; making it serial would add dead air.
+
+**Why suggestions are verified, not just generated.** A suggestion is written against the context retrieved for the *current* question (C1), but clicking it triggers a **fresh retrieval** (C2). "Answerable from C1" does not imply "answerable from C2" — and the model also invents plausible-adjacent questions ("how does he balance studies and projects?") that nothing in the corpus answers. Both dead-end into the canned refusal, which is worse than showing nothing. So every candidate passes two **deterministic** gates (no judge model):
+   1. **Evidence** — the model must quote the span in C1 that answers it, and `containsGrounding()` verifies that quote really appears in C1. Kills inventions.
+   2. **Retrieval** — embed the candidate (one batched `embedTexts` call) and run the same `match_*` lookup the answer will run, then confirm the evidence comes back in C2. Kills the C1/C2 mismatch.
+
+   `containsGrounding` uses 6-word shingle matching, not exact substring — models paraphrase even when told to quote verbatim. It is deliberately conservative: a false negative costs one suggestion, a false positive costs the visitor a dead end. Each run logs `[rag] suggestions: N proposed -> N grounded -> N retrievable -> N shown`; watch that funnel if chips stop appearing.
+
+   **Tuning is latency-bound**: each candidate costs a question *and* a quote, and this call must finish inside the answer's streaming window. At 8 candidates with long quotes a turn went 2.4s → 6.3s. `CANDIDATES = 4` / `EVIDENCE_MAX_WORDS = 15` / `MAX_TOKENS = 260` keeps it under the answer. Raise them and you pay for it directly.
+
+   Returns `[]` on any failure; a suggestions problem must never affect the answer.
 
 **Stream wire format** (`lib/suggestion-protocol.ts`, shared by route + panel): the answer streams as `text/plain`, then a trailer ` RAG_SUGGESTIONS {"suggestions":[…]}` is appended after the model stream closes. NUL bytes can't occur in model prose, and **the route emits the sentinel, not the model**, so it can't be forgotten or malformed. `splitStream()` withholds any partially-arrived sentinel so a half-delivered marker never flashes on screen. Both files are pure and unit-tested (`node --experimental-strip-types --test lib/*.test.ts`). The empty-context guard (step 3) returns via `streamText()` and carries no trailer.
 

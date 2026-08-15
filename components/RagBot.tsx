@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import SimpleMarkdown from "./SimpleMarkdown";
-import { splitStream } from "@/lib/suggestion-protocol";
+import { splitStream, SUGGESTIONS_SENTINEL } from "@/lib/suggestion-protocol";
 import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 
 interface Message {
@@ -80,6 +80,9 @@ export default function RagBot() {
   // as the message count it was dismissed at, so the next turn re-arms it for
   // free — no effect, and therefore no cascading render.
   const [ghostDismissedAt, setGhostDismissedAt] = useState<number | null>(null);
+  // Which suggestion the visitor has moved into the prompt field. Tagged with
+  // the turn it belongs to so a new answer resets the choice without an effect.
+  const [pick, setPick] = useState<{ turn: number; idx: number } | null>(null);
   // Below this width there's no Tab key, so the ghost can't be accepted —
   // all three suggestions render as chips instead.
   const [isNarrow, setIsNarrow] = useState(false);
@@ -155,17 +158,33 @@ export default function RagBot() {
       ? []
       : lastMessage.suggestions ?? [];
 
-  // Desktop: the first is ghost text, the rest are chips. Narrow viewports have
-  // no Tab key, so everything becomes a chip. The ghost hides as soon as there's
-  // input, which is what makes "click a chip to fill" feel coherent.
-  const ghostSuggestion =
+  // All suggestions stay visible at all times: exactly one occupies the prompt
+  // field (as ghost text while the field is empty, as real text once picked)
+  // and the others are chips. Picking a chip therefore SWAPS — the one leaving
+  // the field becomes a chip again, so the visitor is always choosing among the
+  // full set rather than watching options disappear.
+  const trimmedInput = input.trim();
+  const selectedIdx =
+    pick?.turn === messages.length && pick.idx < activeSuggestions.length ? pick.idx : 0;
+
+  // Ghost only renders on desktop (no Tab key on narrow) and only while the
+  // field is empty — which is why the native placeholder is enough.
+  const ghostIdx =
     !isNarrow &&
     ghostDismissedAt !== messages.length &&
-    !input.trim() &&
+    trimmedInput === "" &&
     activeSuggestions.length > 0
-      ? activeSuggestions[0]
-      : null;
-  const chipSuggestions = isNarrow ? activeSuggestions : activeSuggestions.slice(1);
+      ? selectedIdx
+      : -1;
+  const ghostSuggestion = ghostIdx >= 0 ? activeSuggestions[ghostIdx] : null;
+
+  // Whichever suggestion is in the field is excluded from the chips. When the
+  // visitor types something of their own it matches nothing, so all of them
+  // come back as chips.
+  const occupiedIdx = trimmedInput === "" ? ghostIdx : activeSuggestions.indexOf(trimmedInput);
+  const chipItems = activeSuggestions
+    .map((text, idx) => ({ text, idx }))
+    .filter(({ idx }) => idx !== occupiedIdx);
 
   /** Drag the top-left corner to resize. Because the panel is anchored to
    *  bottom-right, dragging up/left grows it; down/right shrinks it. */
@@ -222,6 +241,11 @@ export default function RagBot() {
         content: m.content,
       }));
 
+    // Index of the placeholder this turn streams into. Targeting a fixed index
+    // rather than "the last message" keeps a late-arriving trailer from writing
+    // onto a newer turn once the composer is freed early.
+    const botIndex = messages.length + 1;
+
     setMessages((prev) => [
       ...prev,
       { role: "user", content: text },
@@ -257,6 +281,7 @@ export default function RagBot() {
       // payload share one text/plain body, separated by a sentinel. splitStream
       // withholds any partially-arrived sentinel so it never renders.
       let acc = "";
+      let answerDone = false;
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -264,15 +289,22 @@ export default function RagBot() {
         const { answer } = splitStream(acc);
         setMessages((prev) => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: "bot", content: answer };
+          updated[botIndex] = { role: "bot", content: answer };
           return updated;
         });
+        // The sentinel means the answer is complete; the verified-suggestion
+        // pass may still be running. Free the composer now rather than making
+        // the visitor wait on chips they may not even use.
+        if (!answerDone && acc.includes(SUGGESTIONS_SENTINEL)) {
+          answerDone = true;
+          setLoading(false);
+        }
       }
 
       const { answer, suggestions } = splitStream(acc);
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = {
+        updated[botIndex] = {
           role: "bot",
           content: answer,
           suggestions: suggestions ?? undefined,
@@ -283,7 +315,7 @@ export default function RagBot() {
       const msg = e instanceof Error && e.message ? e.message : "Something went wrong. Please try again.";
       setMessages((prev) => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "bot", content: msg, isNotice: true };
+        updated[botIndex] = { role: "bot", content: msg, isNotice: true };
         return updated;
       });
     } finally {
@@ -334,9 +366,11 @@ export default function RagBot() {
     setTimeout(() => setCopied(false), 1800);
   }
 
-  /** Puts a suggestion in the input without sending it, so the visitor can edit
-   *  it or cycle to another chip before committing. */
-  function applySuggestion(text: string) {
+  /** Moves a suggestion into the prompt field without sending it. The one it
+   *  displaces returns to the chip row, so all suggestions stay reachable and
+   *  the visitor can cycle freely before committing. */
+  function applySuggestion(idx: number, text: string) {
+    setPick({ turn: messages.length, idx });
     setInput(text);
     inputRef.current?.focus();
   }
@@ -484,15 +518,15 @@ export default function RagBot() {
               </div>
             )}
 
-            {chipSuggestions.length > 0 && (
+            {chipItems.length > 0 && (
               <div className="rag-suggests" aria-label="Suggested follow-up questions">
                 <span className="rag-suggests-label">Suggested</span>
-                {chipSuggestions.map((s) => (
+                {chipItems.map(({ text: s, idx }) => (
                   <button
                     key={s}
                     type="button"
                     className="rag-suggest-chip"
-                    onClick={() => applySuggestion(s)}
+                    onClick={() => applySuggestion(idx, s)}
                     title="Put this in the message box (doesn't send)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11" aria-hidden="true">

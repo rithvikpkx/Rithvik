@@ -3,9 +3,57 @@ import assert from "node:assert/strict";
 import {
   splitStream,
   normalizeSuggestions,
+  containsGrounding,
+  normalizeForMatch,
   SUGGESTIONS_SENTINEL as S,
   MAX_SUGGESTION_CHARS,
 } from "./suggestion-protocol.ts";
+
+const CONTEXT =
+  "Rithvik Praveen Kumar volunteered with Habitat for Humanity developing software " +
+  "to streamline their e-commerce operations. He studies at Purdue University, where " +
+  "he is pursuing a B.S. in Computer Science and Mathematics.";
+
+test("grounding accepts a verbatim quote", () => {
+  assert.ok(containsGrounding(CONTEXT, "volunteered with Habitat for Humanity developing software to streamline"));
+});
+
+test("grounding survives punctuation and case drift", () => {
+  assert.ok(containsGrounding(CONTEXT, "Volunteered with HABITAT for Humanity, developing software!"));
+});
+
+test("grounding survives the model trimming a clause", () => {
+  // Only the tail of the real sentence — still a 6-word run present in context.
+  assert.ok(containsGrounding(CONTEXT, "software to streamline their e-commerce operations"));
+});
+
+test("grounding survives collapsed whitespace and newlines", () => {
+  assert.ok(containsGrounding(CONTEXT, "he   is\n\npursuing a B.S. in Computer  Science"));
+});
+
+test("grounding REJECTS a plausible-adjacent invention", () => {
+  // The real failure from production: studies and projects both appear, but
+  // nothing states how he balances them.
+  assert.ok(!containsGrounding(CONTEXT, "He balances his studies and his projects carefully each week"));
+});
+
+test("grounding rejects evidence from a different subject entirely", () => {
+  assert.ok(!containsGrounding(CONTEXT, "He measures the impact of his community work with surveys"));
+});
+
+test("grounding rejects empty evidence and empty haystack", () => {
+  assert.ok(!containsGrounding(CONTEXT, ""));
+  assert.ok(!containsGrounding("", "anything at all here"));
+});
+
+test("short evidence must match in full", () => {
+  assert.ok(containsGrounding(CONTEXT, "Purdue University"));
+  assert.ok(!containsGrounding(CONTEXT, "Stanford University"));
+});
+
+test("normalizeForMatch strips punctuation and collapses space", () => {
+  assert.equal(normalizeForMatch("  He's  built —  a LOT!  "), "he s built a lot");
+});
 
 const payload = (arr: string[]) => S + JSON.stringify({ suggestions: arr });
 

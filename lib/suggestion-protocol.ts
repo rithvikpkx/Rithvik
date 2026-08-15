@@ -43,6 +43,42 @@ export function normalizeSuggestions(raw: unknown): string[] {
   return out;
 }
 
+/** Lowercase, strip punctuation, collapse whitespace — so a grounding check
+ *  isn't defeated by a stray comma or a line break inside a chunk. */
+export function normalizeForMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Words in a shingle. Long enough that a match means real overlap, short
+ *  enough to survive the model trimming a clause off its quoted evidence. */
+const SHINGLE = 6;
+
+/**
+ * True when `evidence` is genuinely supported by `haystack`.
+ *
+ * Exact substring matching is too strict — models paraphrase even when told to
+ * quote verbatim — so this slides a SHINGLE-word window over the evidence and
+ * passes if any window appears in the haystack. Evidence shorter than a full
+ * window must appear in its entirety.
+ *
+ * Deliberately conservative: a false negative costs one suggestion, a false
+ * positive costs the visitor a dead-end question.
+ */
+export function containsGrounding(haystack: string, evidence: string): boolean {
+  const hay = normalizeForMatch(haystack);
+  const words = normalizeForMatch(evidence).split(" ").filter(Boolean);
+  if (words.length === 0 || hay.length === 0) return false;
+  if (words.length <= SHINGLE) return hay.includes(words.join(" "));
+  for (let i = 0; i + SHINGLE <= words.length; i++) {
+    if (hay.includes(words.slice(i, i + SHINGLE).join(" "))) return true;
+  }
+  return false;
+}
+
 /**
  * Splits an accumulated stream into the visible answer and the suggestions.
  *

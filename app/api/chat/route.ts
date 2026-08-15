@@ -287,16 +287,18 @@ ${contextBlock}`;
 				controller.enqueue(encoder.encode("\n\n_(response interrupted — please try again)_"));
 			}
 
-			// Trailer: sentinel + JSON payload, appended after the answer. The
-			// client splits on the sentinel and parses what follows. generateSuggestions
-			// never throws, but guard anyway — a suggestions problem must never be
-			// able to truncate an answer the user already has.
+			// Emit the sentinel the INSTANT the answer is complete, before waiting
+			// on suggestions. It doubles as an "answer finished" marker, so the
+			// client can re-enable the composer immediately instead of sitting
+			// disabled for the ~1.5s the verified-suggestion pass still needs.
+			controller.enqueue(encoder.encode(SUGGESTIONS_SENTINEL));
+
+			// Then the payload. generateSuggestions never throws, but guard anyway —
+			// a suggestions problem must never truncate an answer the user has.
 			try {
 				const suggestions = await suggestionsPromise;
 				if (suggestions.length > 0) {
-					controller.enqueue(
-						encoder.encode(SUGGESTIONS_SENTINEL + JSON.stringify({ suggestions })),
-					);
+					controller.enqueue(encoder.encode(JSON.stringify({ suggestions })));
 				}
 			} catch (e) {
 				console.warn("[rag] suggestions trailer skipped:", e instanceof Error ? e.message : e);
