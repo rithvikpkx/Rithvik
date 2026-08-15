@@ -11,7 +11,7 @@ Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithv
 - **cobe** v2 for the WebGL globe in Bento (we drive our own rAF loop — v2 has no `onRender`)
 - **LangChain** (`@langchain/openai`) → **OpenAI** `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back (it ignored grounding rules; `gpt-4o-mini` follows them reliably).
 - **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2`, which crashed on Vercel with `DOMMatrix is not defined`; `pdf-parse` must stay out of `package.json`)
-- Deployed on **Vercel**: `dev` → preview, `main` → production
+- Deployed on **Vercel**: `dev` → preview, `main` → production. **The apex `rithvik.ai` is the serving host and `www` 307s to it** — a Vercel domain setting, not code. `siteUrl` in `app/(site)/layout.tsx` (→ `metadataBase` + `alternates.canonical`) must keep pointing at the apex to match. It was the other way round once, and Google ended up caching the favicon under `www` while indexing the apex, which is why search results showed a blank globe. Don't "fix" `siteUrl` to `www`.
 - **Performance** (`next.config.ts` + `docs/plans/performance-improvement.md`): homepage uses **ISR** (`export const revalidate = 60` in `app/(site)/layout.tsx` and `app/(site)/page.tsx`), NOT `force-dynamic` (which cost ~5 uncached Supabase round-trips per visit); `next/image` with AVIF/WebP formats for the hero photo; `optimizePackageImports: ["motion"]` to tree-shake the motion barrel; the globe rAF and the RAG/composer overlays are deferred/paused (see their sections).
 
 Node 22, npm. `npm run dev` / `build` / `lint`.
