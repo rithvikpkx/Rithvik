@@ -9,6 +9,7 @@ import {
   reembedSecondaryDocuments,
   type SecondaryDocRow,
 } from "@/app/admin/rag-actions";
+import { getRagTemperature, updateRagTemperature } from "@/app/admin/actions";
 import { useEditMode } from "./EditModeProvider";
 
 /**
@@ -34,6 +35,11 @@ export default function SecondaryContextPanel() {
   // Per-item failures from a batch run. These were previously reduced to a bare
   // count, which hid messages like "this document now has NO embeddings".
   const [details, setDetails] = useState<string[]>([]);
+  // Answer temperature, loaded from site_content. null until the first fetch so
+  // the slider doesn't flash the default before the real value arrives.
+  const [temp, setTemp] = useState<number | null>(null);
+  const [tempSaved, setTempSaved] = useState(false);
+  const tempSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const busyClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,8 +58,27 @@ export default function SecondaryContextPanel() {
     };
   }, []);
 
+  /** Persists the temperature after the slider settles, so dragging doesn't fire
+   *  a write per pixel. */
+  function onTempChange(next: number) {
+    setTemp(next);
+    setTempSaved(false);
+    if (tempSaveTimer.current !== null) clearTimeout(tempSaveTimer.current);
+    tempSaveTimer.current = setTimeout(async () => {
+      try {
+        await updateRagTemperature(next);
+        setTempSaved(true);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    }, 400);
+  }
+
   async function refresh() {
-    try { setDocs(await listSecondaryDocuments()); }
+    try {
+      setDocs(await listSecondaryDocuments());
+      setTemp(await getRagTemperature());
+    }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }
 
@@ -213,6 +238,33 @@ export default function SecondaryContextPanel() {
                 </li>
               ))}
             </ul>
+
+            {temp !== null && (
+              <div className="ctx-setting">
+                <div className="ctx-setting-head">
+                  <label htmlFor="rag-temp">Answer temperature</label>
+                  <span className="ctx-setting-value">
+                    {temp.toFixed(2)}
+                    {tempSaved && <span className="ctx-setting-saved"> saved</span>}
+                  </span>
+                </div>
+                <input
+                  id="rag-temp"
+                  type="range"
+                  min={0}
+                  max={1.2}
+                  step={0.05}
+                  value={temp}
+                  onChange={(e) => onTempChange(Number(e.target.value))}
+                  className="ctx-slider"
+                />
+                <p className="ctx-setting-hint">
+                  Low is terse and repetitive; high is varied and free-flowing. Affects wording,
+                  not what the bot is allowed to claim — grounding rules handle that. Applies
+                  to the next message; no redeploy needed.
+                </p>
+              </div>
+            )}
 
             <div className="ctx-footer">
               <button className="ctx-backfill" onClick={handleBackfill} disabled={running}>

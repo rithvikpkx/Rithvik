@@ -241,6 +241,13 @@ export default function RagBot() {
         content: m.content,
       }));
 
+    // Chips shown over the last couple of bot turns, so the server can pick
+    // fresh angles instead of recycling the same three questions.
+    const recentlyOffered = messages
+      .filter((m) => m.role === "bot" && m.suggestions?.length)
+      .slice(-2)
+      .flatMap((m) => m.suggestions ?? []);
+
     // Index of the placeholder this turn streams into. Targeting a fixed index
     // rather than "the last message" keeps a late-arriving trailer from writing
     // onto a newer turn once the composer is freed early.
@@ -256,7 +263,10 @@ export default function RagBot() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, messages: history }),
+        // `offered` lets the server avoid re-proposing chips the visitor has
+        // just seen — without it two consecutive turns can produce identical
+        // suggestion rows.
+        body: JSON.stringify({ message: text, messages: history, offered: recentlyOffered }),
       });
 
       if (!res.ok) {

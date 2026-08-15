@@ -103,6 +103,34 @@ export function questionSimilarity(a: string, b: string): number {
 export const REDUNDANT_THRESHOLD = 0.55;
 
 /**
+ * Cosine cutoff for "the same question, different words".
+ *
+ * Calibrated against real embeddings of repeats and non-repeats pulled from a
+ * production transcript. Word overlap misses semantic rewordings ("use AI in
+ * his workflow" vs "view AI tools in his workflow" scores 0.50 lexically but
+ * 0.925 semantically), so the two signals are unioned.
+ *
+ * The bands genuinely overlap — the loosest repeat measured 0.772 while the
+ * closest distinct pair measured 0.809 — so this sits above BOTH at 0.86.
+ * Deliberately conservative: it will let an occasional loose reword through
+ * rather than suppress a legitimately different question.
+ */
+export const REDUNDANT_COSINE = 0.86;
+
+/** Cosine similarity of two equal-length vectors. */
+export function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+/**
  * True when a candidate repeats something already asked this conversation.
  *
  * The prompt asks the model not to restate the current question; it does anyway

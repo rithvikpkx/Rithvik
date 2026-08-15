@@ -8,6 +8,7 @@ import {
 import { extractText, captionImage } from "@/lib/file-extractors";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "./auth-helper";
+import { RAG_SETTING_PREFIX } from "@/lib/rag-settings";
 
 /**
  * Re-embed every primary row from scratch. Wipes primary_embeddings, then
@@ -56,6 +57,9 @@ export async function backfillPrimaryEmbeddings(): Promise<{
 
   const { data: site } = await db.from("site_content").select("*");
   for (const row of site ?? []) {
+    // Settings rows (rag.*) are configuration, not content. Embedding them
+    // would let the bot retrieve its own temperature as a fact about Rithvik.
+    if (row.key.startsWith(RAG_SETTING_PREFIX)) continue;
     try {
       await embedPrimary("site_content", row.key, await buildSiteContentText(row.key, row.value), { key: row.key });
       counts.site_content++;

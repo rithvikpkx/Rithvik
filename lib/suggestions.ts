@@ -29,6 +29,8 @@ import {
   normalizeSuggestions,
   containsGrounding,
   isRedundant,
+  cosineSimilarity,
+  REDUNDANT_COSINE,
   MAX_SUGGESTION_CHARS,
   WANTED_SUGGESTIONS,
 } from "@/lib/suggestion-protocol";
@@ -95,10 +97,12 @@ function parseCandidates(raw: unknown): Candidate[] {
  * improves recall — if the plain question already surfaces the evidence, the
  * HyDE-augmented lookup almost certainly will too.
  */
-async function keepRetrievable(candidates: Candidate[]): Promise<string[]> {
+async function keepRetrievable(
+  candidates: Candidate[],
+  vectors: number[][],
+): Promise<string[]> {
   if (candidates.length === 0) return [];
   const db = adminClient();
-  const vectors = await embedTexts(candidates.map((c) => c.question));
 
   const checks = await Promise.allSettled(
     candidates.map(async (c, i) => {
@@ -133,13 +137,31 @@ export async function generateSuggestions(
   question: string,
   contextBlock: string,
   askedQuestions: string[] = [],
+  answerJustGiven = "",
+  recentlyOffered: string[] = [],
 ): Promise<string[]> {
   if (!process.env.OPENAI_API_KEY) return [];
   if (!contextBlock.trim()) return [];   // nothing grounded to suggest from
 
   // Everything the visitor has already asked, current turn included.
   const asked = [question, ...askedQuestions].filter((q) => q.trim().length > 0);
+  // Chips shown in the last couple of turns. Without this the same three
+  // questions get re-offered every turn — two consecutive turns produced
+  // byte-identical chip rows — which makes the bot feel stuck in a loop.
+  const offered = recentlyOffered.filter((q) => q.trim().length > 0);
+  // One list for the gates; the prompt distinguishes them for clarity.
+  const avoid = [...asked, ...offered];
   const askedBlock = asked.map((q) => `- ${q}`).join("\n");
+  const offeredBlock = offered.length
+    ? `\n\nAlready offered as suggestions recently — pick different angles:\n` +
+      offered.map((q) => `- ${q}`).join("\n")
+    : "";
+  // The answer is the single best signal for "don't suggest this" — most of the
+  // observed repeats were questions the answer had already fully covered.
+  const answerBlock = answerJustGiven.trim()
+    ? `\n\nThe answer the visitor just received (do NOT propose anything this ` +
+      `already covers):\n${answerJustGiven.trim().slice(0, 2000)}`
+    : "";
 
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -161,8 +183,10 @@ export async function generateSuggestions(
             role: "user",
             content:
               `Already asked in this conversation — do NOT propose any of these, ` +
-              `or a reworded version of them:\n${askedBlock}\n\n` +
-              `Context:\n${contextBlock}`,
+              `or a reworded version of them:\n${askedBlock}` +
+              offeredBlock +
+              answerBlock +
+              `\n\nContext:\n${contextBlock}`,
           },
         ],
       }),
@@ -179,20 +203,43 @@ export async function generateSuggestions(
     const candidates = parseCandidates(parsed.suggestions);
     if (candidates.length === 0) return [];
 
-    // Gate 0: never suggest something already asked. The prompt asks for this
-    // too, but the model reliably ignores it — it once handed back the visitor's
-    // exact question as the ghost suggestion immediately after answering it.
-    const fresh = candidates.filter((c) => !isRedundant(c.question, asked));
+    // Gate 0a: cheap lexical repeat check, no network.
+    const lexFresh = candidates.filter((c) => !isRedundant(c.question, avoid));
 
     // Gate 1: the quoted evidence must really be in the context we gave it.
-    const grounded = fresh.filter((c) => containsGrounding(contextBlock, c.evidence));
+    // Runs before the embedding call so we never pay to embed a candidate that
+    // is already disqualified.
+    const grounded = lexFresh.filter((c) => containsGrounding(contextBlock, c.evidence));
+    if (grounded.length === 0) {
+      console.log(`[rag] suggestions: ${candidates.length} proposed -> 0 survived lexical/grounding gates`);
+      return [];
+    }
+
+    // ONE embedding call covers both remaining gates: candidate vectors are
+    // reused for the retrieval simulation, and the asked-question vectors let
+    // us catch semantic rewordings that share no vocabulary.
+    const all = await embedTexts([...grounded.map((c) => c.question), ...avoid]);
+    const candidateVecs = all.slice(0, grounded.length);
+    const askedVecs = all.slice(grounded.length);
+
+    // Gate 0b: semantically the same question as one already asked.
+    const semFresh: Candidate[] = [];
+    const semVecs: number[][] = [];
+    grounded.forEach((c, i) => {
+      const worst = askedVecs.reduce((m, v) => Math.max(m, cosineSimilarity(candidateVecs[i], v)), 0);
+      if (worst < REDUNDANT_COSINE) {
+        semFresh.push(c);
+        semVecs.push(candidateVecs[i]);
+      }
+    });
 
     // Gate 2: the evidence must survive a fresh retrieval for that question.
-    const retrievable = await keepRetrievable(grounded);
+    const retrievable = await keepRetrievable(semFresh, semVecs);
 
     const final = normalizeSuggestions(retrievable);
     console.log(
-      `[rag] suggestions: ${candidates.length} proposed -> ${fresh.length} fresh -> ${grounded.length} grounded -> ${retrievable.length} retrievable -> ${final.length} shown`,
+      `[rag] suggestions: ${candidates.length} proposed -> ${lexFresh.length} lex-fresh -> ` +
+        `${grounded.length} grounded -> ${semFresh.length} sem-fresh -> ${retrievable.length} retrievable -> ${final.length} shown`,
     );
     return final;
   } catch (e) {
