@@ -2885,6 +2885,28 @@ a { color: inherit; text-decoration: none; }
 }
 .ctx-details li { overflow-wrap: anywhere; }
 
+/* ===== CONTEXT PANEL: RUNTIME SETTINGS ===== */
+.ctx-setting {
+  padding: 10px 0 2px;
+  border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+.ctx-setting-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text);
+}
+.ctx-setting-value { color: var(--muted); }
+.ctx-setting-saved { color: var(--green); }
+.ctx-slider {
+  width: 100%;
+  margin: 8px 0 4px;
+  accent-color: var(--accent);   /* themes the thumb + track without custom parts */
+  cursor: pointer;
+}
+.ctx-setting-hint {
+  margin: 0;
+  font-size: 0.66rem; line-height: 1.45; color: var(--muted);
+}
+
 /* ===== GLOBE MARKER EDITOR ===== */
 .globe-editor {
   position: absolute;

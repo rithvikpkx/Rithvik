@@ -172,15 +172,16 @@ Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved 
 3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
 4. **Context block** — `## Recent conversation` (last 5 turns), `## What's on the website` (primary), `## Background materials` (secondary).
 5. **Chat completion** — streams from `gpt-4o-mini` (NOT DeepSeek). Top-of-prompt CRITICAL GROUNDING RULES forbid inventing facts; recent turns are passed as real `Human`/`AI` messages, used for continuity only.
-6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) runs **in parallel** with step 5 and resolves before the answer finishes, so it adds no wait. It deliberately does NOT see the answer; making it serial would add dead air.
+6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) runs **after** the answer and is given the answer text, because generating them blind was why the bot kept offering questions the answer had already covered. This costs nothing user-visible: the sentinel is emitted the instant the answer completes, so the composer is already unlocked and only the chips arrive slightly later.
 
 **Why suggestions are verified, not just generated.** A suggestion is written against the context retrieved for the *current* question (C1), but clicking it triggers a **fresh retrieval** (C2). "Answerable from C1" does not imply "answerable from C2" — and the model also invents plausible-adjacent questions ("how does he balance studies and projects?") that nothing in the corpus answers. Both dead-end into the canned refusal, which is worse than showing nothing. So every candidate passes two **deterministic** gates (no judge model):
+   0. **Freshness** — drops candidates repeating anything already asked OR offered as a chip in the last two turns. Two signals, unioned, because neither alone suffices: `isRedundant()` (≥0.55 Jaccard on content words) catches lexical repeats, and cosine ≥`REDUNDANT_COSINE` (0.86) on the candidate's embedding catches semantic rewordings that share no vocabulary ("use AI in his workflow" vs "view AI tools in his workflow" scores 0.50 lexically, 0.925 semantically). Calibrated against a real transcript: the bands genuinely overlap (loosest repeat 0.772, closest distinct pair 0.809), so 0.86 sits above both and errs toward letting a loose reword through rather than suppressing a real question. The asked-question vectors ride the SAME batched `embedTexts` call as the retrieval gate, so this costs no extra round trip.
    1. **Evidence** — the model must quote the span in C1 that answers it, and `containsGrounding()` verifies that quote really appears in C1. Kills inventions.
    2. **Retrieval** — embed the candidate (one batched `embedTexts` call) and run the same `match_*` lookup the answer will run, then confirm the evidence comes back in C2. Kills the C1/C2 mismatch.
 
-   `containsGrounding` uses 6-word shingle matching, not exact substring — models paraphrase even when told to quote verbatim. It is deliberately conservative: a false negative costs one suggestion, a false positive costs the visitor a dead end. Each run logs `[rag] suggestions: N proposed -> N grounded -> N retrievable -> N shown`; watch that funnel if chips stop appearing.
+   `containsGrounding` uses 6-word shingle matching, not exact substring — models paraphrase even when told to quote verbatim. It is deliberately conservative: a false negative costs one suggestion, a false positive costs the visitor a dead end. Each run logs `[rag] suggestions: N proposed -> N lex-fresh -> N grounded -> N sem-fresh -> N retrievable -> N shown`; watch that funnel if chips stop appearing.
 
-   **Tuning is latency-bound**: each candidate costs a question *and* a quote, and this call must finish inside the answer's streaming window. At 8 candidates with long quotes a turn went 2.4s → 6.3s. `CANDIDATES = 4` / `EVIDENCE_MAX_WORDS = 15` / `MAX_TOKENS = 260` keeps it under the answer. Raise them and you pay for it directly.
+   **Tuning is latency-bound**: each candidate costs a question *and* a quote, and this call must finish inside the answer's streaming window. At 8 candidates with long quotes a turn went 2.4s → 6.3s. `CANDIDATES = 6` / `EVIDENCE_MAX_WORDS = 15` / `MAX_TOKENS = 340` keeps it under the answer. Raise them and you pay for it directly.
 
    Returns `[]` on any failure; a suggestions problem must never affect the answer.
 
@@ -191,6 +192,16 @@ Secondary originals live in the private `secondary` Storage bucket. RLS denies a
 Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL` (server-only; the one `requireAuth()` enforces — falls back to the `NEXT_PUBLIC_` one, fails closed if both are unset). `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
 
 **One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn (the follow-up call adds ~$0.00002) — well under $1/month at our traffic.
+
+### RAG runtime settings
+
+`rag.temperature` lives in `site_content` and is edited from the **Context panel** slider in edit mode — no redeploy. `app/api/chat/route.ts` reads it alongside retrieval (so the read is free) and builds the `ChatOpenAI` per request; unset/blank falls back to 0.7, and everything is clamped to 0–1.2 (above that `gpt-4o-mini` degrades).
+
+Two traps this design exists to avoid:
+- **Never write it via `upsertSiteContent`** — that embeds what it writes, which would put "Site content (rag.temperature): 0.9" into `primary_embeddings` and let the bot retrieve its own settings as a fact. `updateRagTemperature` writes directly, and `backfillPrimaryEmbeddings` skips any key under the `rag.` prefix.
+- **Constants live in `lib/rag-settings.ts`, not in `app/admin/actions.ts`** — a `"use server"` module may only export async functions, and exporting a plain `const` from one is a build error that `tsc` does not catch. Only the Next compiler does, so it surfaces as a 500 at runtime.
+
+Temperature changes phrasing variety, **not** how much the model may extrapolate — that is governed by the TIER 1/TIER 2 grounding rules. Raising it makes answers more varied, not more speculative.
 
 ### Supabase browser-client gotcha
 
@@ -280,6 +291,7 @@ lib/
   embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
   chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
   suggestion-protocol.ts — chat stream wire format: sentinel + splitStream (shared client/server, tested)
+  rag-settings.ts     — runtime-tunable RAG settings (temperature clamp, never-embedded `rag.` prefix); tested
   suggestions.ts      — server-only: generates grounded follow-ups (parallel to the answer)
   transcript.ts       — pure Markdown transcript builder for the export button (tested)
   file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner

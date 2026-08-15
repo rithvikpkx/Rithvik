@@ -7,6 +7,7 @@ import {
 } from "@/lib/embeddings";
 import { requireAuth } from "./auth-helper";
 import type { GlobeMarker, GlobeMarkerKind } from "@/lib/types";
+import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 
 type PublishableRow = { id: string; published: boolean };
 
@@ -195,6 +196,37 @@ export async function deleteEducation(id: string) {
   if (error) throw new Error(error.message);
   revalidate();
   await safeEmbed(`education ${id} delete`, () => deletePrimary("education", id));
+}
+
+/**
+ * Sets the RAG answer temperature. Deliberately NOT routed through
+ * upsertSiteContent: that embeds whatever it writes, which would put
+ * "Site content (rag.temperature): 0.9" into primary_embeddings and let the
+ * bot retrieve its own settings as context.
+ */
+export async function updateRagTemperature(value: number): Promise<void> {
+  await requireAuth();
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error("Temperature must be a number.");
+  }
+  const clamped = clampTemperature(value);
+  const { error } = await adminClient()
+    .from("site_content")
+    .upsert({ key: TEMPERATURE_KEY, value: String(clamped) }, { onConflict: "key" });
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+/** Current temperature for the settings UI. Falls back to the default when the
+ *  row is absent or unparseable. */
+export async function getRagTemperature(): Promise<number> {
+  await requireAuth();
+  const { data } = await adminClient()
+    .from("site_content")
+    .select("value")
+    .eq("key", TEMPERATURE_KEY)
+    .maybeSingle();
+  return data?.value === undefined ? TEMP_DEFAULT : clampTemperature(data.value);
 }
 
 const VALID_KINDS: ReadonlySet<GlobeMarkerKind> = new Set(["home", "current", "default"]);

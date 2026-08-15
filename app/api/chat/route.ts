@@ -3,20 +3,46 @@ import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages
 import { adminClient } from "@/lib/supabase";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
+import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
 // Michigan, fictional GitHub handles). Cost is comparable for our traffic.
-const model = new ChatOpenAI({
-	apiKey: process.env.OPENAI_API_KEY!,
-	modelName: "gpt-4o-mini",
-	maxTokens: 512,
-	streaming: true,
-	// 0.7 adds phrasing variation and avoids stilted answers; factual grounding
-	// is enforced by the GROUNDING RULES section below, not by temperature.
-	// Raise toward 0.8 for more warmth, lower toward 0.4 for terser output.
-	temperature: 0.7,
-});
+/** Built per request because the temperature is editable at runtime from the
+ *  Context panel (stored in site_content as `rag.temperature`). Constructing a
+ *  ChatOpenAI is just assembling a config object — no connection is opened —
+ *  so this is not worth caching.
+ *
+ *  Temperature governs phrasing variety, NOT how much the model may extrapolate.
+ *  What it is allowed to assert is enforced by the GROUNDING RULES below; raising
+ *  this makes answers more varied and free-flowing, not more speculative. */
+function makeModel(temperature: number) {
+	return new ChatOpenAI({
+		apiKey: process.env.OPENAI_API_KEY!,
+		modelName: "gpt-4o-mini",
+		maxTokens: 512,
+		streaming: true,
+		temperature,
+	});
+}
+
+
+/** Reads the operator-set temperature, clamped. Never throws: a settings read
+ *  failing must not take the chat down. */
+async function readTemperature(
+	db: ReturnType<typeof adminClient>,
+): Promise<number> {
+	try {
+		const { data } = await db
+			.from("site_content")
+			.select("value")
+			.eq("key", TEMPERATURE_KEY)
+			.maybeSingle();
+		return data?.value === undefined ? TEMP_DEFAULT : clampTemperature(data.value);
+	} catch {
+		return TEMP_DEFAULT;
+	}
+}
 
 const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the RagBot client slice
@@ -68,9 +94,9 @@ function sanitizeHistory(raw: unknown): { role: "user" | "assistant"; content: s
 }
 
 export async function POST(req: Request) {
-	let body: { message?: unknown; messages?: unknown };
+	let body: { message?: unknown; messages?: unknown; offered?: unknown };
 	try {
-		body = (await req.json()) as { message?: unknown; messages?: unknown };
+		body = (await req.json()) as { message?: unknown; messages?: unknown; offered?: unknown };
 	} catch {
 		return new Response("Invalid request.", { status: 400 });
 	}
@@ -86,6 +112,13 @@ export async function POST(req: Request) {
 	}
 
 	const history = sanitizeHistory(body.messages);
+	// Client-supplied, so capped the same way history is.
+	const offered = Array.isArray(body.offered)
+		? body.offered
+				.filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+				.slice(-6)
+				.map((s) => s.slice(0, 200))
+		: [];
 
 	// Rate limit BEFORE spending anything on OpenAI — this endpoint is public and
 	// each accepted turn costs three API calls (HyDE, embedding, completion).
@@ -140,10 +173,13 @@ export async function POST(req: Request) {
 	// Retrieve top-N from each source in parallel.
 	// primary_embeddings: live website content (auto-synced from inline edits).
 	// secondary_embeddings: user-uploaded materials (essays, docs, image captions).
-	const [primaryRes, secondaryRes] = await Promise.allSettled([
+	// Temperature rides along with retrieval so the settings read costs nothing.
+	const [primaryRes, secondaryRes, tempRes] = await Promise.allSettled([
 		db.rpc("match_primary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
 		db.rpc("match_secondary", { query_embedding: embedding, match_count: MATCH_COUNT_PER_SOURCE }),
+		readTemperature(db),
 	]);
+	const temperature = tempRes.status === "fulfilled" ? tempRes.value : TEMP_DEFAULT;
 
 	// Pull rows from each settled result. A rejected promise (network / thrown)
 	// or a fulfilled response with a Supabase in-band `error` both fall back to
@@ -261,23 +297,24 @@ ${contextBlock}`;
 
 	const messages = [new SystemMessage(systemPrompt), ...prior, new HumanMessage(message)];
 
-	// Kick off follow-up generation NOW, in parallel with the answer. At 160 max
-	// tokens it lands well before the answer finishes streaming, so awaiting it
-	// at the end costs no perceptible latency. It sees the same context block the
-	// answer is grounded in, so it can only propose answerable questions — but it
-	// deliberately does NOT see the answer, which would force it to run serially.
-	const suggestionsPromise = generateSuggestions(message, contextBlock);
+	// Prior user turns, so suggestions can't repeat a question already asked.
+	// Enforced in generateSuggestions rather than trusted to the model.
+	const askedBefore = recentHistory.filter((m) => m.role === "user").map((m) => m.content);
 
 	// Stream the response and pipe tokens directly to the client
-	const stream = await model.stream(messages);
+	const stream = await makeModel(temperature).stream(messages);
 
 	const readable = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
+			let answerText = "";
 			try {
 				for await (const chunk of stream) {
 					const text = typeof chunk.content === "string" ? chunk.content : "";
-					if (text) controller.enqueue(encoder.encode(text));
+					if (text) {
+						answerText += text;
+						controller.enqueue(encoder.encode(text));
+					}
 				}
 			} catch (e) {
 				// Headers are already sent, so we can't switch to an error status —
@@ -293,10 +330,19 @@ ${contextBlock}`;
 			// disabled for the ~1.5s the verified-suggestion pass still needs.
 			controller.enqueue(encoder.encode(SUGGESTIONS_SENTINEL));
 
-			// Then the payload. generateSuggestions never throws, but guard anyway —
-			// a suggestions problem must never truncate an answer the user has.
+			// Suggestions run AFTER the answer, not alongside it, so they can see
+			// what was just said. Generating them blind was the reason the bot kept
+			// offering questions the answer had already covered. This costs nothing
+			// user-visible: the sentinel above already freed the composer, so only
+			// the chips arrive slightly later.
 			try {
-				const suggestions = await suggestionsPromise;
+				const suggestions = await generateSuggestions(
+					message,
+					contextBlock,
+					askedBefore,
+					answerText,
+					offered,
+				);
 				if (suggestions.length > 0) {
 					controller.enqueue(encoder.encode(JSON.stringify({ suggestions })));
 				}

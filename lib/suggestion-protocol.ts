@@ -57,6 +57,99 @@ export function normalizeForMatch(s: string): string {
  *  enough to survive the model trimming a clause off its quoted evidence. */
 const SHINGLE = 6;
 
+/** Question scaffolding that appears in nearly every suggestion and would
+ *  otherwise inflate every similarity score. "rithvik" and "he" are in here for
+ *  the same reason: every question is about him, so they carry no signal. */
+const STOPWORDS = new Set([
+  "what", "which", "who", "whom", "whose", "when", "where", "why", "how",
+  "is", "are", "was", "were", "be", "been", "being", "do", "does", "did",
+  "has", "have", "had", "can", "could", "will", "would", "should", "may",
+  "the", "a", "an", "and", "or", "but", "if", "of", "to", "in", "on", "at",
+  "for", "from", "with", "about", "into", "over", "after", "before",
+  "he", "him", "his", "she", "her", "they", "them", "their", "it", "its",
+  "rithvik", "praveen", "kumar", "that", "this", "these", "those", "as", "by",
+  // Opinion verbs and comparators. "What does he THINK about X vs Y" and "how
+  // does he WEIGH X AGAINST Y" are the same question; without these the shared
+  // topic (X, Y) gets diluted by framing words and the reword slips through.
+  "think", "thinks", "believe", "believes", "feel", "feels", "consider",
+  "considers", "weigh", "weighs", "view", "views", "opinion", "approach",
+  "vs", "versus", "against", "between", "toward", "towards", "prefer", "prefers",
+]);
+
+/** Content words only — the tokens that actually distinguish one question
+ *  from another. */
+function contentTokens(s: string): Set<string> {
+  return new Set(
+    normalizeForMatch(s)
+      .split(" ")
+      .filter((w) => w.length > 1 && !STOPWORDS.has(w)),
+  );
+}
+
+/** Jaccard overlap of content words, 0–1. Cheap, deterministic, and good
+ *  enough to catch "the same question reworded" without an embedding call. */
+export function questionSimilarity(a: string, b: string): number {
+  const A = contentTokens(a);
+  const B = contentTokens(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let shared = 0;
+  for (const t of A) if (B.has(t)) shared++;
+  return shared / (A.size + B.size - shared);
+}
+
+/** Above this, two questions are treated as the same question. Tuned so
+ *  "what projects has he worked on" and "what technologies does he use in his
+ *  projects" stay distinct (0.4) while a reword of the same question does not. */
+export const REDUNDANT_THRESHOLD = 0.55;
+
+/**
+ * Cosine cutoff for "the same question, different words".
+ *
+ * Calibrated against real embeddings of repeats and non-repeats pulled from a
+ * production transcript. Word overlap misses semantic rewordings ("use AI in
+ * his workflow" vs "view AI tools in his workflow" scores 0.50 lexically but
+ * 0.925 semantically), so the two signals are unioned.
+ *
+ * The bands genuinely overlap — the loosest repeat measured 0.772 while the
+ * closest distinct pair measured 0.809 — so this sits above BOTH at 0.86.
+ * Deliberately conservative: it will let an occasional loose reword through
+ * rather than suppress a legitimately different question.
+ */
+export const REDUNDANT_COSINE = 0.86;
+
+/** Cosine similarity of two equal-length vectors. */
+export function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+/**
+ * True when a candidate repeats something already asked this conversation.
+ *
+ * The prompt asks the model not to restate the current question; it does anyway
+ * — a visitor asked "what does Rithvik think about shipping fast vs building
+ * properly?" and got that exact question back as the ghost suggestion. So this
+ * is enforced rather than requested.
+ */
+export function isRedundant(
+  candidate: string,
+  asked: string[],
+  threshold: number = REDUNDANT_THRESHOLD,
+): boolean {
+  const c = normalizeForMatch(candidate);
+  if (!c) return true;
+  return asked.some(
+    (q) => normalizeForMatch(q) === c || questionSimilarity(candidate, q) >= threshold,
+  );
+}
+
 /**
  * True when `evidence` is genuinely supported by `haystack`.
  *
