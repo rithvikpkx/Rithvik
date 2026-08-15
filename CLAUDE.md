@@ -145,58 +145,61 @@ Visitors can email Rithvik directly from the site via a draggable, resizable, th
 
 ### RAG bot (`components/RagBot.tsx`, `SimpleMarkdown.tsx`, `SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
 
-A floating **"Ask RAG"** launcher (bottom-right, mounted via `DeferredOverlays` — lazy, `ssr:false`) — deliberately attention-grabbing (animated gradient text in a halo'd pill) — opens a glass chat panel streaming from `/api/chat`. A second launcher (`SecondaryContextPanel`) appears only in edit mode to manage secondary knowledge.
+Floating **"Ask RAG"** launcher (bottom-right, lazy via `DeferredOverlays`) opens a glass panel streaming from `/api/chat`. `SecondaryContextPanel` is a second launcher, edit-mode only.
 
-**Panel UI:**
-- **Theme-independent** — launcher/panel/bubbles/chips/input use private `--rag-*` tokens (hardcoded in `.rag-launcher`), so it looks identical on every theme (gradient/shine effects need a fixed dark base).
-- **Shine border** (`.rag-shine`, masked radial gradient).
-- **Resizable** from the top-left corner: clamped 320×420 → 720×820, persisted to `localStorage[rag-panel-size]`, hydrated via lazy `useState` (SSR-safe — panel only renders post-click).
-- **`SimpleMarkdown`** — hand-rolled, dep-free: bold/italic/inline+fenced code, links, headings, bullet/numbered lists, paragraphs with soft `<br>`. The system prompt's FORMATTING section keeps model output sparing so the renderer gets clean input.
-- **Starter chips** appear only on the welcome screen with precomputed Q+A pairs (`STARTERS` in `RagBot.tsx`) — clicking is instant, no API call. **Maintenance:** update `STARTERS` if schools/stack/contact change significantly.
-- **Suggested follow-ups** (post-answer) are a *different control* from starter chips and are styled to look it (`.rag-suggest-chip`: transparent, dashed border, pencil glyph, "Suggested" label). Starter chips **send instantly**; suggestion chips **only fill the input** and wait for the visitor to send. Identical-looking controls with opposite behaviour would be a trap — keep them visually distinct. On desktop the first suggestion becomes ghost text via the input's native `placeholder` (Tab or → accepts, Esc dismisses); ≤640px has no Tab key, so all three render as chips. Ghost text only ever shows while the input is empty, which is why a `placeholder` works and no mirrored-div overlay is needed.
-- **Bot actions** (`lib/chat-actions.ts`) — up to 2 solid buttons above the chips: open a project/org/school link, scroll+highlight a section, or open the email composer. A **third** control type, styled distinctly on purpose: starter chips SEND, suggestion chips DRAFT into the box, actions DO something.
-  - **Derived deterministically from retrieval metadata — no model, no extra LLM call.** `match_primary` already returns `source_table`/`source_id`/`metadata`/`similarity`; `source_table` maps to an anchor and `metadata.slug` to a DB row.
-  - **The model never supplies a URL.** Actions name a record; `lib/action-links.ts` resolves the URL from published DB rows and `safeUrl()` allows only `http(s)`. A model-authored link behind a button would be a phishing vector, and secondary documents are a prompt-injection surface.
-  - **Relevance gate uses a SEPARATE bare-question retrieval**, never the HyDE embedding. HyDE writes a Rithvik-flavoured hypothetical for *any* input, so off-topic questions land inside the corpus: measured, "who won the world cup?" scores **0.732** with HyDE (above a real project question) but **0.099** without. Bare-question bands are cleanly separated — on-topic ≥0.619, off-topic ≤0.191 — hence `ACTION_SIMILARITY_FLOOR = 0.45`. The HyDE chunks still choose *what* to point at, so the button matches what the answer discussed. Actions are also suppressed when the answer is a refusal/redirect (`isDeclineAnswer`).
-  - Scroll targets: `#about`, `#bento`, `#education`, `#experience-<slug>`, `#project-<slug>`. Adding a section means adding an `id` **and** a mapping in `deriveActions`.
-- **Transcript export** — header buttons copy the conversation as Markdown or download it as `rag-chat-<stamp>.md`, suggestions included. Built by `lib/transcript.ts` (pure, unit-tested). Suggestions are stored per-message, not just for the latest turn, so the export captures every round.
+> Deep dives: `docs/explanations/rag-pipeline.md` (retrieval), `docs/plans/feat-agentic-actions.md` (actions + the calibration data behind the thresholds). This is the quick reference.
 
-> Deep dive: `docs/explanations/rag-pipeline.md`. This is the quick reference.
+**Panel UI**
+- **Theme-independent**: private `--rag-*` tokens on `.rag-launcher` — the gradient/shine effects need a fixed dark base, so it looks identical on every site theme.
+- Resizable from the top-left, clamped 320×420 → 720×820, persisted to `localStorage[rag-panel-size]` via lazy `useState`.
+- `SimpleMarkdown` is hand-rolled and dep-free, and returns **React elements, never `dangerouslySetInnerHTML`** — so model output can't inject HTML.
+- **Three control types, styled differently because they behave differently:**
 
-Two parallel pgvector stores, both **HNSW** (NOT IVFFlat, which under-retrieved with `lists` ≫ rows):
+| Control | Behaviour |
+|---|---|
+| Starter chips (`.rag-chip`, welcome screen only) | **Send instantly** — precomputed Q+A in `STARTERS`, no API call. Update if schools/stack/contact drift. |
+| Suggestion chips (`.rag-suggest-chip`, dashed) | **Fill the input, never send.** Picking one swaps: the displaced suggestion returns to the row. |
+| Action buttons (`.rag-action`, solid) | **Do something** — open a link, scroll+highlight, open the composer. |
 
-- `primary_embeddings` — one row per `projects`/`experience`/`education`/`site_content` record, auto-upserted on inline edit, wrapped in `safeEmbed` (save first, embed second; failures don't undo saves). `projects`/`experience`/`education` go through `syncPrimary(...)`, which respects `published` (false → embedding deleted, matching backfill's filter); `site_content` has no `published` and always embeds via `embedPrimary`. `match_primary(query_embedding, match_count)` returns top-N by cosine. Chunk text is **statement-form prose with a Rithvik name anchor** ("Rithvik Praveen Kumar studies at Purdue…"); dotted labels like `[bento.stack]` are mapped to readable phrases so the text carries real meaning.
-- `secondary_embeddings` — chunks from files uploaded via `SecondaryContextPanel`, tied to `secondary_documents` (filename/mime/path). PDF → `unpdf`, DOCX → `mammoth`, text → UTF-8, images → `gpt-4o-mini` caption. Per-file chunk cap 200. `match_secondary` mirrors primary.
-  - **Writes never delete first.** `reembedSecondaryDocuments` upserts on the `(document_id, chunk_index)` unique key, then trims indices past the new length. The old delete-all-then-insert-all order left a window where a document had zero embeddings; a timeout or failed insert inside it lost the document permanently. Keep that ordering.
-  - Embedding is **batched** via `embedTexts` (64 per request) — a 134-chunk doc is ~3 OpenAI round-trips, not 134. This is what keeps a re-chunk run inside the serverless timeout; there is no `maxDuration` anywhere in the repo.
+  Identical-looking controls with opposite behaviour would be a trap; keep them distinct.
+- **Ghost text is the input's native `placeholder`**, not an overlay — it only ever shows while the field is empty, which removes all font-metric and scroll-sync fragility. Tab or → accepts, Esc dismisses. ≤640px has no Tab key, so everything renders as chips.
+- **Transcript export** — header buttons copy or download `rag-chat-<stamp>.md` including each turn's suggestions (`lib/transcript.ts`, pure + tested). Suggestions are stored per-message so every round is captured.
+
+**Bot actions** (`lib/chat-actions.ts`, `lib/action-links.ts`) — max 2 per turn, always a button, never automatic.
+- **Derived deterministically from retrieval metadata: no model, no extra LLM call.** `match_primary` returns `source_table`/`metadata`/`similarity`; `source_table` → anchor, `metadata.slug` → DB row.
+- **The model never supplies a URL.** Actions name a record; `action-links.ts` resolves it from published rows and `safeUrl()` permits only `http(s)`; scroll targets must match `/^[a-zA-Z0-9_-]+$/`. A model-authored link behind a button is a phishing vector, and secondary documents are a prompt-injection surface.
+- **Gate on a SEPARATE bare-question retrieval, never the HyDE embedding.** HyDE writes a Rithvik-flavoured hypothetical for *any* input, so off-topic questions land inside the corpus — "who won the world cup?" scores 0.732 with HyDE, 0.099 without. `ACTION_SIMILARITY_FLOOR` applies to the bare-question score; the HyDE chunks still choose *what* to point at, so the button matches what the answer discussed. Also suppressed behind a refusal (`isDeclineAnswer`).
+- Scroll targets: `#about`, `#bento`, `#education`, `#experience-<slug>`, `#project-<slug>`. A new section needs an `id` **and** a mapping in `deriveActions`.
+
+**Two pgvector stores**, both **HNSW** (NOT IVFFlat — it under-retrieved with `lists` ≫ rows):
+- `primary_embeddings` — one row per `projects`/`experience`/`education`/`site_content` record, auto-upserted on inline edit inside `safeEmbed` (save first, embed second). `syncPrimary` respects `published`; `site_content` has no such column and always embeds. Chunk text is statement-form prose with a name anchor ("Rithvik Praveen Kumar studies at Purdue…"); dotted keys map to readable phrases.
+- `secondary_embeddings` — uploaded files (PDF `unpdf`, DOCX `mammoth`, text UTF-8, images captioned). Per-file cap 200 chunks. **The only place `chunkText` runs** — primary rows are already chunk-sized.
+  - **Writes never delete first.** `reembedSecondaryDocuments` upserts on `(document_id, chunk_index)` then trims the tail. The old delete-then-insert order left a window with zero embeddings; a timeout inside it lost the document permanently.
+  - Embedding is **batched** (`embedTexts`, 64/request) — that is what keeps a re-chunk inside the serverless timeout. There is no `maxDuration` in the repo.
 
 `app/api/chat/route.ts` per turn:
-0. **Guard rails first** — malformed JSON → 400; `message` capped at 500 chars; client-supplied `messages` history is filtered to well-formed `user`/`assistant` turns, clamped to the last 5 at 2000 chars each (it lands in the system prompt AND replays as real turns, so an uncapped history is both a cost amplifier and a way to forge an assistant turn); then a **30/hr/IP limit** via `chat_requests`, recorded *before* the work so bursts and failures both count. All of this runs before any OpenAI spend — the endpoint is public and each accepted turn costs three API calls.
-1. **HyDE** — `generateHypotheticalAnswer` gets a 1–2 sentence statement; question + hypothetical are embedded together so question-form queries retrieve statement-form chunks.
-2. **Parallel retrieval** — `Promise.allSettled` over `match_primary` + `match_secondary`, top 10 each; a failed source falls back to `[]`.
-3. **Empty-context guard** — if BOTH return zero rows, short-circuit the LLM and stream the canned refusal. Logs `[rag] empty-context guard fired`.
-4. **Context block** — `## Recent conversation` (last 5 turns), `## What's on the website` (primary), `## Background materials` (secondary).
-5. **Chat completion** — streams from `gpt-4o-mini` (NOT DeepSeek). Top-of-prompt CRITICAL GROUNDING RULES forbid inventing facts; recent turns are passed as real `Human`/`AI` messages, used for continuity only.
-6. **Follow-up suggestions** — `generateSuggestions` (`lib/suggestions.ts`) runs **after** the answer and is given the answer text, because generating them blind was why the bot kept offering questions the answer had already covered. This costs nothing user-visible: the sentinel is emitted the instant the answer completes, so the composer is already unlocked and only the chips arrive slightly later.
+0. **Guard rails before any spend** — malformed JSON → 400; `message` ≤500 chars; client `messages` filtered and clamped to 5 turns × 2000 chars (history enters the system prompt *and* replays as real turns, so uncapped it is both a cost amplifier and a way to forge an assistant turn); then 30/hr/IP via `chat_requests`, recorded *before* the work so bursts and failures both count. The 429 carries `Retry-After`.
+1. **HyDE** — question + hypothetical embedded together, so question-form queries match statement-form chunks.
+2. **Parallel retrieval** — `match_primary` + `match_secondary`, top 10 each; a failed source falls back to `[]`.
+3. **Empty-context guard** — both empty → canned refusal, no LLM call. Returns via `streamText()`, so it carries no trailer.
+4. **Context block** — recent conversation / website / background materials.
+5. **Stream** from `gpt-4o-mini` (NOT DeepSeek) at the runtime temperature.
+6. **Suggestions + actions**, then the trailer.
 
-**Why suggestions are verified, not just generated.** A suggestion is written against the context retrieved for the *current* question (C1), but clicking it triggers a **fresh retrieval** (C2). "Answerable from C1" does not imply "answerable from C2" — and the model also invents plausible-adjacent questions ("how does he balance studies and projects?") that nothing in the corpus answers. Both dead-end into the canned refusal, which is worse than showing nothing. So every candidate passes two **deterministic** gates (no judge model):
-   0. **Freshness** — drops candidates repeating anything already asked OR offered as a chip in the last two turns. Two signals, unioned, because neither alone suffices: `isRedundant()` (≥0.55 Jaccard on content words) catches lexical repeats, and cosine ≥`REDUNDANT_COSINE` (0.86) on the candidate's embedding catches semantic rewordings that share no vocabulary ("use AI in his workflow" vs "view AI tools in his workflow" scores 0.50 lexically, 0.925 semantically). Calibrated against a real transcript: the bands genuinely overlap (loosest repeat 0.772, closest distinct pair 0.809), so 0.86 sits above both and errs toward letting a loose reword through rather than suppressing a real question. The asked-question vectors ride the SAME batched `embedTexts` call as the retrieval gate, so this costs no extra round trip.
-   1. **Evidence** — the model must quote the span in C1 that answers it, and `containsGrounding()` verifies that quote really appears in C1. Kills inventions.
-   2. **Retrieval** — embed the candidate (one batched `embedTexts` call) and run the same `match_*` lookup the answer will run, then confirm the evidence comes back in C2. Kills the C1/C2 mismatch.
+**Suggestions are verified, not just generated.** A candidate is written against the context for the *current* question (C1) but answered against a **fresh retrieval** (C2), and the model also invents plausible-adjacent questions nothing in the corpus answers. Both dead-end into the canned refusal, which is worse than showing nothing. Three deterministic gates, no judge model:
+0. **Freshness** — drops repeats of anything asked or offered in the last two turns. Lexical (Jaccard) **and** cosine (`REDUNDANT_COSINE`), unioned: neither alone works, because a reworded question can share no vocabulary with the original. Asked-question vectors ride the same batched `embedTexts` call as gate 2.
+1. **Evidence** — the model must quote the span answering it, verified present in C1 by `containsGrounding()` (6-word shingles, because models paraphrase even when told to quote verbatim).
+2. **Retrieval** — embed the candidate, run the same `match_*` the answer will run, confirm the evidence comes back.
 
-   `containsGrounding` uses 6-word shingle matching, not exact substring — models paraphrase even when told to quote verbatim. It is deliberately conservative: a false negative costs one suggestion, a false positive costs the visitor a dead end. Each run logs `[rag] suggestions: N proposed -> N lex-fresh -> N grounded -> N sem-fresh -> N retrievable -> N shown`; watch that funnel if chips stop appearing.
+Generated **after** the answer and given the answer text — generating blind was why it kept offering questions the answer had just covered. Costs nothing visible, since the sentinel has already unlocked the composer. Watch `[rag] suggestions: N proposed -> N lex-fresh -> N grounded -> N sem-fresh -> N retrievable -> N shown` if chips stop appearing. **Tuning is latency-bound**: each candidate costs a question *and* a quote, and the call must finish inside the answer's stream — 8 candidates with long quotes took a turn from 2.4s to 6.3s. Returns `[]` on any failure; a suggestions problem must never affect the answer.
 
-   **Tuning is latency-bound**: each candidate costs a question *and* a quote, and this call must finish inside the answer's streaming window. At 8 candidates with long quotes a turn went 2.4s → 6.3s. `CANDIDATES = 6` / `EVIDENCE_MAX_WORDS = 15` / `MAX_TOKENS = 340` keeps it under the answer. Raise them and you pay for it directly.
+**Stream wire format** (`lib/suggestion-protocol.ts`, shared by route + panel): the answer streams as `text/plain`, then a NUL-delimited sentinel — emitted **the instant the answer completes**, so it doubles as an "answer finished" marker and the composer unlocks without waiting on chips — followed by `{"suggestions":[…],"actions":[…]}`. **The route emits the sentinel, not the model**, so it cannot be forgotten or malformed. `splitStream()` withholds a partially-arrived sentinel so a half-delivered marker never flashes.
 
-   Returns `[]` on any failure; a suggestions problem must never affect the answer.
+Secondary originals live in the private `secondary` Storage bucket. RLS denies anon on all three RAG tables; the route reaches them via `adminClient()`.
 
-**Stream wire format** (`lib/suggestion-protocol.ts`, shared by route + panel): the answer streams as `text/plain`, then a trailer ` RAG_SUGGESTIONS {"suggestions":[…]}` is appended after the model stream closes. NUL bytes can't occur in model prose, and **the route emits the sentinel, not the model**, so it can't be forgotten or malformed. `splitStream()` withholds any partially-arrived sentinel so a half-delivered marker never flashes on screen. Both files are pure and unit-tested (`node --experimental-strip-types --test lib/*.test.ts`). The empty-context guard (step 3) returns via `streamText()` and carries no trailer.
+Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL` (server-only; the one `requireAuth()` enforces — falls back to the `NEXT_PUBLIC_` one, fails closed if both are unset). `DEEPSEEK_API_KEY` is dead code. Composer adds `RESEND_API_KEY`, `CONTACT_FROM`, `CONTACT_TO`.
 
-Secondary originals live in the private `secondary` Storage bucket. RLS denies anon access to all three RAG tables; the chat route + server actions reach them via `adminClient()` (service-role).
-
-Env (`.env.local`, see `.env.local.example`): `OPENAI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL` (server-only; the one `requireAuth()` enforces — falls back to the `NEXT_PUBLIC_` one, fails closed if both are unset). `DEEPSEEK_API_KEY` is dead code (kept in the example only). Contact composer adds three server-only vars: `RESEND_API_KEY`, `CONTACT_FROM` (sending address, e.g. `contact@rithvik.ai`), `CONTACT_TO` (Rithvik's inbox).
-
-**One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then enter edit mode → "Re-embed all primary content" in `SecondaryContextPanel`. After that, inline edits keep primary in sync automatically. **Cost** ~$0.0008/turn (the follow-up call adds ~$0.00002) — well under $1/month at our traffic.
+**One-time setup:** apply `supabase/rag_pipeline_migration.sql`, then edit mode → "Re-embed all primary content". **Cost** ~$0.0008/turn.
 
 ### RAG runtime settings
 
@@ -233,16 +236,12 @@ RLS: content tables are `SELECT`-public (each gated on `published` where the col
 ### Migrations (apply via `supabase db query --linked -f supabase/<file>.sql`)
 
 - `stage3_migration.sql` — education table + site_content seed
-- `themes_migration.sql` — themes table + Dark/Light/Terminal (idempotent)
-- `themes_add_terminal.sql` — UPSERT just the Terminal row
-- `themes_add_editor_themes.sql` — the editor themes (idempotent; the Atom One Light INSERT was later removed)
 - `rag_pipeline_migration.sql` — pgvector + the 3 RAG tables + **HNSW** indexes + `match_primary`/`match_secondary` RPCs + RLS + Storage bucket. Apply once. (An earlier IVFFlat version under-retrieved.)
 - `globe_markers_seed.sql` — UPSERT the 3 seed markers
 - `resume_seed.sql` — idempotent sync of `projects` + `experience` with the canonical resume (holds the **old prose** descriptions — re-applying it overwrites the bullet form)
 - `bulletize_descriptions.sql` — rewrites `projects`/`experience` descriptions into newline-separated bullet lines (rendered by `DescriptionBlock`); re-embed primary content after applying
 - `contact_submissions_migration.sql` — contact composer rate-limit/log table (`contact_submissions`), service-role RLS
-- `themes_add_more_themes.sql` — adds Monokai Pro (Octagon), High Contrast Dark/Light, Tokyo Night Horizon; reorders all themes light-first (light 0–4, dark 10–22) with GitHub Light as the default
-- `themes_remove_themes.sql` — removes Monokai Pro Light + Atom One Light
+- `themes_*.sql` (5 files: `themes_migration`, `_add_terminal`, `_add_editor_themes`, `_add_more_themes`, `_remove_themes`) — seeded the theme set in that order, all idempotent. The live list is whatever is in the `themes` table; adding a theme is one row, not a migration.
 - `seed_missing_site_content.sql` — upserts `hero.name.line2`, `contact.link.github`, `contact.link.email` (previously only component fallbacks; now DB-backed so /buffett + RAG see them)
 - `tighten_content_rls.sql` — **security**: drops the `auth.role() = 'authenticated'` write policies on `projects`/`experience`/`site_content` (see the RLS note above). Idempotent.
 - `chat_rate_limit_migration.sql` — `chat_requests` table for the `/api/chat` per-IP limit, plus tightens `education`'s public-read to `published = true` (drafts were readable via the anon API)
