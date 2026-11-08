@@ -2,6 +2,8 @@
 
 Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithvik Praveen Kumar** at [rithvik.ai](https://rithvik.ai) — a showcase plus a playground for live inline editing and an AI chatbot.
 
+> **In progress: the v4 overhaul.** Read `docs/plans/v4-overhaul.md` first. It holds every owner decision, the research digests, the agent (TUI chat) spec, the 12 design systems, the scan findings and the wave plan. Mockup sources: `docs/mockups/v4/` (published at https://claude.ai/artifact/SaunHuCP7ADViTosm7uLQL), previous `docs/mockups/v3/`. The sections below describe the **current production** site, which v4 will change (e.g. the Bento grid and the floating RAG launcher are being replaced).
+
 ## Stack
 
 - **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)

@@ -1,0 +1,135 @@
+"""Build mockup/assets.js from downloaded internet assets (run with python3 -I).
+
+Inputs (all under scratchpad/dl): lucide-static SVGs, Simple Icons SVGs + data,
+Bootstrap Icons linkedin, world-atlas land-110m TopoJSON, cli-spinners JSON,
+the ANSI Shadow FIGlet font, and tools/commits.txt (daily commit counts).
+"""
+import json, math, re, sys, datetime, pathlib
+
+S = pathlib.Path(sys.argv[1])
+DL = S / "dl"
+OUT = S / "mockup" / "assets.js"
+
+def inner(svg):
+    """Strip the outer <svg> element, keep its children."""
+    m = re.search(r"<svg[^>]*>(.*)</svg>", svg, re.S)
+    body = m.group(1) if m else ""
+    return re.sub(r"\s+", " ", body).strip()
+
+# Lucide line icons (stroke icons, 24 grid)
+icons = {p.stem: inner(p.read_text()) for p in sorted((DL / "lucide").glob("*.svg"))}
+
+# Simple Icons brand logos (filled paths, 24 grid) + official brand hex
+data = json.loads((DL / "si" / "si-data.json").read_text())
+hexes = {d["slug"]: d["hex"] for d in data if "slug" in d}
+titles = {d["slug"]: d["title"] for d in data if "slug" in d}
+logos = {}
+for p in sorted((DL / "si").glob("*.svg")):
+    if p.stem == "linkedin-bi":
+        continue
+    d = re.search(r'<path d="([^"]+)"', p.read_text())
+    if d:
+        logos[p.stem] = {"d": d.group(1), "hex": hexes.get(p.stem, "888888"), "title": titles.get(p.stem, p.stem)}
+li = (DL / "si" / "linkedin-bi.svg").read_text()
+logos["linkedin"] = {"svg16": inner(li), "hex": "0A66C2", "title": "LinkedIn"}
+
+# Natural Earth land (world-atlas land-110m) -> dots on a Fibonacci sphere
+topo = json.loads((DL / "geo" / "land-110m.json").read_text())
+sc, tr = topo["transform"]["scale"], topo["transform"]["translate"]
+arcs = []
+for arc in topo["arcs"]:
+    x = y = 0
+    pts = []
+    for dx, dy in arc:
+        x += dx; y += dy
+        pts.append((x * sc[0] + tr[0], y * sc[1] + tr[1]))
+    arcs.append(pts)
+
+def ring(idx):
+    pts = []
+    for i in idx:
+        a = arcs[i] if i >= 0 else list(reversed(arcs[~i]))
+        pts.extend(a if not pts else a[1:])
+    return pts
+
+polys = []
+for g in topo["objects"]["land"]["geometries"]:
+    parts = g["arcs"] if g["type"] == "MultiPolygon" else [g["arcs"]]
+    for poly in parts:
+        polys.append([ring(r) for r in poly])
+
+def in_ring(r, lon, lat):
+    """Ray-casting point-in-ring test in lon/lat space."""
+    c, j = False, len(r) - 1
+    for i in range(len(r)):
+        xi, yi = r[i]; xj, yj = r[j]
+        if (yi > lat) != (yj > lat) and lon < (xj - xi) * (lat - yi) / (yj - yi + 1e-12) + xi:
+            c = not c
+        j = i
+    return c
+
+def inside(lon, lat):
+    """True when the point is inside an outer ring and outside all of that polygon's holes."""
+    return any(in_ring(p[0], lon, lat) and not any(in_ring(h, lon, lat) for h in p[1:]) for p in polys)
+
+N = 5200
+dots = []
+for i in range(N):
+    y = 1 - (i / (N - 1)) * 2
+    lat = math.degrees(math.asin(y))
+    lon = (math.degrees(i * 2.399963229728653) % 360) - 180
+    if lat < -60:
+        continue
+    if inside(lon, lat):
+        dots.append([round(lat, 1), round(lon, 1)])
+
+# cli-spinners frames
+spin = json.loads((DL / "spin" / "spinners.json").read_text())
+spinners = {k: spin[k] for k in ("dots", "star", "line") if k in spin}
+
+# FIGlet (ANSI Shadow): minimal full-width renderer
+flf = (DL / "figlet" / "ANSI Shadow.flf").read_text(encoding="utf-8").split("\n")
+hdr = flf[0].split()
+hard, height, comments = hdr[0][-1], int(hdr[1]), int(hdr[5])
+glyphs, line = {}, 1 + comments
+for code in range(32, 127):
+    rows = []
+    for _ in range(height):
+        raw = flf[line]; line += 1
+        end = raw.rstrip()[-1] if raw.rstrip() else "@"
+        rows.append(raw.rstrip().rstrip(end).replace(hard, " "))
+    glyphs[chr(code)] = rows
+
+def fig(text):
+    out = [""] * height
+    for ch in text.upper():
+        g = glyphs.get(ch, glyphs[" "])
+        w = max(len(r) for r in g)
+        for i in range(height):
+            out[i] += g[i].ljust(w)
+    while out and not out[-1].strip():
+        out.pop()
+    return [r.rstrip() for r in out]
+
+banner = {"wide": [fig("Rithvik"), fig("Praveen Kumar")], "narrow": [fig("Rithvik"), fig("Praveen"), fig("Kumar")]}
+
+# Real commit history -> week columns x weekday rows (GitHub-style)
+counts = {}
+for ln in (S / "tools" / "commits.txt").read_text().split("\n"):
+    if ln.strip():
+        d, n = ln.split(); counts[d] = int(n)
+first = min(datetime.date.fromisoformat(d) for d in counts)
+start = first - datetime.timedelta(days=(first.weekday() + 1) % 7)
+end = datetime.date(2026, 11, 8)
+days = []
+d = start
+while d <= end:
+    days.append([d.isoformat(), counts.get(d.isoformat(), 0)])
+    d += datetime.timedelta(days=1)
+
+assets = {"icons": icons, "logos": logos, "land": dots, "spinners": spinners, "banner": banner, "commits": days,
+          "credits": {"sf": "Crissy Field and the Golden Gate Bridge, public domain, Wikimedia Commons",
+                      "purdue": "Engineering Fountain, Purdue University, by Julian Herzog, CC BY 4.0, Wikimedia Commons"}}
+OUT.write_text("/* Generated by tools/build_assets.py from downloaded internet assets: lucide-static 1.70.0 (ISC), simple-icons 16.37.0 (CC0), bootstrap-icons 1.13.2 (MIT), world-atlas 2.0.2 (Natural Earth, public domain), cli-spinners 3.4.0 (MIT), FIGlet ANSI Shadow font, real git history. */\nwindow.ASSETS = " + json.dumps(assets, separators=(",", ":"), ensure_ascii=False) + ";\n")
+print("icons", len(icons), "logos", len(logos), "land dots", len(dots), "commit days", len(days), "bytes", OUT.stat().st_size)
+print("\n".join(banner["wide"][0]))

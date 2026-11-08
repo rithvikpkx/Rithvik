@@ -1,0 +1,360 @@
+<title>rithvik.ai v4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@400..700&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="systems-1.css">
+<link rel="stylesheet" href="systems-2.css">
+<link rel="stylesheet" href="systems-3.css">
+<script>
+/* Pre-paint boot: restore design, palette, mode and effects before first paint. */
+(function () {
+  var d = document.documentElement, g = function (k, v) { try { return localStorage.getItem(k) || v; } catch (e) { return v; } };
+  d.dataset.system = g("rv4-system", "classic");
+  d.dataset.palette = g("rv4-palette", "github-light");
+  d.dataset.mode = g("rv4-mode", "light");
+  if (g("rv4-lite", "0") === "1") d.classList.add("lite");
+})();
+</script>
+
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
+  <filter id="lg-refract" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB"><feImage id="lg-map" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/><feDisplacementMap in="SourceGraphic" in2="map" scale="0.06" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="rgbsplit"><feOffset in="SourceGraphic" dx="-1" result="r"/><feOffset in="SourceGraphic" dx="1" result="b"/><feBlend in="r" in2="b" mode="screen"/></filter>
+  <filter id="halftone"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="1" result="n"/><feComponentTransfer in="n"><feFuncA type="discrete" tableValues="0 0 0 1"/></feComponentTransfer><feComposite in="SourceGraphic" operator="in"/></filter>
+</svg>
+
+<!-- Decoration layer: every slot any design uses; each design turns on its own -->
+<div class="bg-layer" aria-hidden="true">
+  <i class="deco blob b1"></i><i class="deco blob b2"></i><i class="deco blob b3"></i>
+  <i class="deco halftone"></i>
+  <i class="deco grid"></i>
+  <i class="deco ruled"></i>
+  <i class="deco sun"></i>
+  <span class="deco floor"><i></i></span>
+  <i class="deco grain"></i>
+  <i class="deco vignette"></i>
+  <canvas class="deco rain" id="rain"></canvas>
+  <div class="deco taskbar"><span class="tb-start">rithvik.ai</span><span class="tb-tasks"><span class="tb-task">Portfolio</span><span class="tb-task">Agent</span></span><span class="tb-clock" id="tb-clock">12:00</span></div>
+</div>
+<i class="deco frame" aria-hidden="true"></i>
+<i class="deco scan" aria-hidden="true"></i>
+<canvas class="deco blobs" id="blobs" aria-hidden="true"></canvas>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Nav -->
+<header class="nav-wrap" id="nav-wrap">
+  <nav class="nav" aria-label="Primary">
+    <a class="brand" href="#home" aria-label="Rithvik Praveen Kumar, home"><span class="logo-slot" data-logo="nav"></span></a>
+    <ul class="nav-links">
+      <li><a href="#work" data-route="work" class="roll">Work</a></li>
+      <li><a href="#about" data-route="about" class="roll">About</a></li>
+      <li><a href="#play" data-route="play" class="roll">Play</a></li>
+    </ul>
+    <div class="nav-tools">
+      <button class="nav-design" type="button" id="nav-design" aria-label="Change design"><span class="nd-dot" aria-hidden="true"></span><span class="nd-name" id="nd-name">GitHub Light</span><kbd>T</kbd></button>
+      <button class="nav-ask" type="button" data-agent aria-label="Ask the agent"><span>Ask</span><kbd>⌘K</kbd></button>
+      <a class="btn sm" href="#resume" data-route="resume">Resume</a>
+    </div>
+  </nav>
+</header>
+
+<div id="main" class="views">
+
+<!-- ════════════════ HOME ════════════════ -->
+<main class="view" data-view="home" id="view-home">
+
+  <section class="hero" aria-labelledby="hero-name">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 class="hero-name kinetic" id="hero-name" aria-label="Rithvik Praveen Kumar"><span class="k-line" data-text="Rithvik"></span><span class="k-line" data-text="Praveen Kumar"></span></h1>
+        <pre class="ascii-name" id="ascii-name" aria-hidden="true"></pre>
+        <p class="hero-status"><span class="live-dot" aria-hidden="true"></span>CS + Math at Purdue · open to SWE and AI internships</p>
+        <p class="hero-line">I build <span class="ph" id="ph">brain-computer interfaces</span>, computer vision, and ML small enough for a microcontroller.</p>
+        <div class="hero-ctas">
+          <a class="btn magnetic" href="#resume" data-route="resume">View resume</a>
+          <button class="btn ghost" type="button" data-agent>Ask a question</button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="portrait-stage" id="portrait-stage">
+          <svg class="ouro-flat" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="540 38"/><path d="M100 4 l11 6 -11 6 z" fill="currentColor"/></svg>
+          <div class="portrait"><img src="rithvik.jpeg" alt="Portrait of Rithvik Praveen Kumar" width="540" height="540" id="portrait-img"><pre class="ascii-portrait" id="ascii-portrait" aria-hidden="true"></pre></div>
+          <canvas class="ouro-3d" id="ouro3d" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="wrap">
+      <dl class="profile" aria-label="Profile">
+        <div class="pf"><dt>Based in</dt><dd>West Lafayette, IN<span class="pf-sub">Now in San Francisco · <span data-clock="America/Los_Angeles">--:--</span></span></dd></div>
+        <div class="pf"><dt>Studying</dt><dd>B.S. Computer Science + Mathematics<span class="pf-sub">Purdue University</span></dd></div>
+        <div class="pf"><dt>Focus</dt><dd>Brain-computer interfaces<span class="pf-sub">Computer vision · TinyML</span></dd></div>
+        <div class="pf"><dt>Latest</dt><dd>Undergraduate Researcher<span class="pf-sub">Snowball Lab, Purdue · 2026</span></dd></div>
+        <div class="pf"><dt>Open to</dt><dd>SWE and AI internships<span class="pf-sub">{{season and dates}}</span></dd></div>
+        <div class="pf"><dt>Resume</dt><dd><span><a href="#resume" data-route="resume">View</a> · <button type="button" class="linkish" data-download>Download PDF</button></span><span class="pf-sub">Synced from Google Docs</span></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="work-home" aria-labelledby="work-h">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title" id="work-h">Work</h2><p class="sec-dek">Hardware, vision and ML, from EEG headsets to AWS pipelines.</p><a class="sec-more" href="#work" data-route="work">All six projects</a></header>
+      <div class="feature-grid" id="feature-grid"></div>
+    </div>
+  </section>
+
+  <section class="section" id="experience" aria-labelledby="exp-h">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title" id="exp-h">Experience</h2></header>
+      <ol class="ledger" id="ledger"></ol>
+    </div>
+  </section>
+
+  <section class="section" id="education" aria-labelledby="edu-h">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title" id="edu-h">Education</h2></header>
+      <div class="edu-row panel" data-label="EDUCATION" data-title="purdue.txt" data-fig="E">
+        <img class="edu-logo" src="purdue.png" alt="" width="56" height="56">
+        <div class="edu-main"><p class="edu-school">Purdue University</p><p class="edu-degree">B.S. Computer Science + Mathematics</p></div>
+        <p class="edu-meta"><span>Software Engineering · AI/ML</span><span>Expected {{graduation}}</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title" id="faq-h">Questions</h2></header>
+      <div class="faq" id="faq-list"></div>
+    </div>
+  </section>
+
+  <section class="section contact" id="contact" aria-labelledby="contact-h">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title" id="contact-h">Contact</h2><p class="sec-dek">Internships, research, or a project that needs another engineer.</p></header>
+      <div class="contact-row">
+        <div class="contact-email"><span class="label">Email</span><code id="email">rithvikpkx@gmail.com</code><button class="btn ghost sm" type="button" data-copy="rithvikpkx@gmail.com">Copy</button></div>
+        <div class="contact-actions">
+          <a class="btn magnetic" href="#resume" data-route="resume">View resume</a>
+          <button class="btn ghost" type="button" id="open-composer">Write to me</button>
+          <a class="icon-link" href="https://github.com/rithvikpkx" target="_blank" rel="noopener" aria-label="GitHub" data-logo-icon="github"></a>
+          <a class="icon-link" href="https://www.linkedin.com/" target="_blank" rel="noopener" aria-label="LinkedIn" data-logo-icon="linkedin"></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════ WORK ════════════════ -->
+<main class="view" data-view="work" id="view-work" hidden>
+  <section class="section page-top">
+    <div class="wrap">
+      <header class="sec-head"><h1 class="sec-title">Work</h1><p class="sec-dek">Six projects across brain-computer interfaces, computer vision, applied ML and tools for non-profits.</p></header>
+      <div class="work-list" id="work-list"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════ CASE ════════════════ -->
+<main class="view" data-view="case" id="view-case" hidden>
+  <article class="case" id="case"></article>
+</main>
+
+<!-- ════════════════ ABOUT ════════════════ -->
+<main class="view" data-view="about" id="view-about" hidden>
+  <section class="section page-top">
+    <div class="wrap about-grid">
+      <header class="sec-head"><h1 class="sec-title">About</h1></header>
+      <div class="about-bio">
+        <p>I study computer science and math at Purdue. I like work that sits close to hardware: reading brain signals, finding people in video, and fitting models onto microcontrollers.</p>
+        <p>Right now I research TinyML at the Snowball Lab. Before that I built a RAG learning platform for a non-profit, and spent two years teaching kids to code through game development.</p>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="now">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title">Now</h2></header>
+      <div class="now panel" data-label="NOW" data-title="now.txt" data-fig="1">
+        <div class="now-text">
+          <p class="now-city"><span class="live-dot" aria-hidden="true"></span>San Francisco</p>
+          <p class="now-time"><span data-clock="America/Los_Angeles">--:--</span> local</p>
+          <dl class="kv"><div><dt>Building</dt><dd>rithvik.ai v4</dd></div><div><dt>Researching</dt><dd>TinyML on Edge Impulse</dd></div><div><dt>Learning</dt><dd>Energy-harvesting sensors</dd></div></dl>
+        </div>
+        <canvas id="globe" class="globe" width="320" height="320" role="img" aria-label="Globe: Boston, West Lafayette and San Francisco"></canvas>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title">Stack</h2></header>
+      <div class="stack" id="stack"></div>
+    </div>
+  </section>
+  <section class="section" id="colophon">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title">Colophon</h2><p class="sec-dek">How this site is built.</p></header>
+      <div class="colophon">
+        <ol class="steps"><li><b>Ask</b> A question goes to the agent</li><li><b>Rewrite</b> Follow-ups become standalone questions</li><li><b>Retrieve</b> Full profile plus pgvector search</li><li><b>Answer</b> Streams with cited sources</li><li><b>Act</b> Opens a project, the resume, or the composer</li></ol>
+        <ul class="log" id="log"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════ PLAY ════════════════ -->
+<main class="view" data-view="play" id="view-play" hidden>
+  <section class="section page-top">
+    <div class="wrap">
+      <header class="sec-head"><h1 class="sec-title">Play</h1><p class="sec-dek">A record to scratch, games to beat me at, and every design this site can wear.</p></header>
+
+      <div class="records panel" id="records" data-label="RECORDS" data-title="records.exe" data-fig="2">
+        <div class="rec-stage">
+          <div class="rec-platter">
+            <div class="rec-disc" id="rec-disc" role="slider" tabindex="0" aria-label="Record. Drag, or use the arrow keys, to scratch" aria-valuemin="0" aria-valuemax="72" aria-valuenow="0" aria-valuetext="0:00">
+              <div class="rec-spin" id="rec-spin">
+                <img class="rec-photo" src="assets/record.jpg" alt="" width="960" height="960" draggable="false">
+                <div class="rec-label"><span class="logo-slot" data-logo="label"></span><span class="rl-title">Chili Pepper</span><span class="rl-sub">Fred Longshaw · 1927</span><span class="rl-side">Side A · 78</span></div>
+              </div>
+              <i class="rec-sheen" aria-hidden="true"></i>
+              <i class="rec-spindle" aria-hidden="true"></i>
+            </div>
+          </div>
+          <svg class="rec-arm" id="rec-arm" viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <linearGradient id="arm-metal" x1="0" x2="1"><stop offset="0" stop-color="#f4f4f6"/><stop offset=".5" stop-color="#c4c4ca"/><stop offset="1" stop-color="#8e8e95"/></linearGradient>
+              <radialGradient id="arm-pivot" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#bdbdc3"/><stop offset="1" stop-color="#6d6d74"/></radialGradient>
+            </defs>
+            <g class="arm">
+              <rect x="89.6" y="-1.5" width="7" height="9" rx="2" fill="#5c5c62"/>
+              <path d="M90 12 L83 30 L69 64" fill="none" stroke="url(#arm-metal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M69 64 L63.5 71.5" fill="none" stroke="url(#arm-metal)" stroke-width="2" stroke-linecap="round"/>
+              <g transform="rotate(36 61 74)"><rect x="56" y="71" width="10" height="6" rx="1.4" fill="#1f1f23"/><rect x="57" y="76.4" width="3" height="1.6" rx=".4" fill="#c9a25b"/></g>
+              <circle cx="90" cy="12" r="7" fill="url(#arm-pivot)"/>
+              <circle cx="90" cy="12" r="2.6" fill="#55555b"/>
+            </g>
+          </svg>
+        </div>
+        <div class="rec-side">
+          <div class="rec-pill-wrap">
+            <div class="goo" aria-hidden="true"><i class="goo-pill"></i><i class="goo-btn"></i></div>
+            <div class="rec-pill">
+              <span class="rp-disc" aria-hidden="true"><img src="assets/record.jpg" alt="" width="40" height="40"></span>
+              <span class="rp-meta"><b>Chili Pepper</b><span>Fred Longshaw, 1927</span></span>
+              <span class="rp-time"><span id="rp-pos">0:00</span><span class="rp-bar" id="rp-bar"><i id="rp-prog"></i></span><span id="rp-dur">1:12</span></span>
+            </div>
+            <button class="rec-play" id="rec-play" type="button" aria-pressed="false" aria-label="Play"><span class="ic-play" data-icon="play"></span><span class="ic-pause" data-icon="pause"></span></button>
+          </div>
+          <p class="rec-hint">Drag the record to scratch. Arrow keys work too.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="games">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title">Games</h2><p class="sec-dek">Small games from rithvik.si, scored against mine.</p><a class="sec-more" href="https://rithvik.si" target="_blank" rel="noopener">rithvik.si</a></header>
+      <div class="games" id="games-grid"></div>
+      <div class="game-frame panel" id="game-frame" hidden data-label="GAME" data-title="game.exe" data-fig="3">
+        <div class="gf-bar"><span class="gf-url" id="gf-url">typeracer.rithvik.si</span><a class="gf-open" href="https://rithvik.si" target="_blank" rel="noopener">Open on rithvik.si</a><button class="icon-btn gf-close" type="button" id="gf-close" aria-label="Close game"><span data-icon="x"></span></button></div>
+        <div class="gf-body" id="gf-body"></div>
+      </div>
+    </div>
+  </section>
+  <section class="section" id="designs">
+    <div class="wrap">
+      <header class="sec-head"><h2 class="sec-title">Designs</h2><p class="sec-dek">Same site, twelve designs. Pick one.</p></header>
+      <div class="designs" id="designs-grid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════ RESUME ════════════════ -->
+<main class="view" data-view="resume" id="view-resume" hidden>
+  <section class="section page-top">
+    <div class="wrap">
+      <header class="sec-head resume-head"><h1 class="sec-title">Resume</h1><p class="sec-dek">Synced from Google Docs</p>
+        <div class="resume-actions"><span class="admin-only"><button class="btn ghost sm" type="button" id="rs-sync">Sync now</button><button class="btn ghost sm" type="button" id="rs-upload">Upload override</button></span><button class="btn" type="button" data-download>Download PDF</button></div>
+      </header>
+      <div class="pdf-viewport"><div class="pdf-page" id="pdf-page"></div></div>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════ CHAT (full screen) ════════════════ -->
+<main class="view" data-view="chat" id="view-chat" hidden>
+  <div class="chat-full-slot" id="chat-full-slot"></div>
+</main>
+
+<footer class="footer" id="footer">
+  <div class="wrap footer-grid">
+    <div class="ft-sign"><span class="logo-slot" data-logo="footer"></span><p class="signature">Rithvik Praveen Kumar</p></div>
+    <nav class="ft-links" aria-label="Footer"><a href="#work" data-route="work">Work</a><a href="#about" data-route="about">About</a><a href="#play" data-route="play">Play</a><a href="#resume" data-route="resume">Resume</a><a href="#chat" data-route="chat">Agent</a></nav>
+    <ul class="clocks"><li><b data-clock="America/New_York">--:--</b><span>Boston</span></li><li><b data-clock="America/Indiana/Indianapolis">--:--</b><span>West Lafayette</span></li><li><b data-clock="America/Los_Angeles">--:--</b><span>San Francisco</span></li></ul>
+    <p class="buffett-line">Prefer plain HTML? <a href="#home" id="buffett-link">Read the Warren Buffett edition</a></p>
+    <p class="credits">Components adapted from Skiper UI and Aceternity UI. Record photo: 12-inch LP by Evan-Amos, public domain, via Wikimedia Commons. Music: Chili Pepper by Fred Longshaw (1927), public domain. Icons: Lucide, Simple Icons, Bootstrap Icons. Map: Natural Earth.</p>
+  </div>
+</footer>
+</div>
+
+<!-- ════════════════ Agent (TUI chat) ════════════════ -->
+<div class="agent" id="agent" data-open="false">
+  <section class="agent-panel" id="agent-panel" aria-label="Rithvik's agent" hidden>
+    <header class="agent-head">
+      <span class="agent-title"><span class="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
+      <span class="agent-model">gpt-4o-mini</span>
+      <span class="agent-actions">
+        <button type="button" class="icon-btn sm" id="agent-full" aria-label="Full screen (⌘⏎)" title="Full screen"><span data-icon="maximize-2"></span></button>
+        <button type="button" class="icon-btn sm" id="agent-close" aria-label="Close (Esc)" title="Close"><span data-icon="chevron-down"></span></button>
+      </span>
+    </header>
+    <div class="agent-log" id="agent-log" role="log" aria-live="polite"></div>
+    <div class="agent-palette" id="agent-palette" role="listbox" aria-label="Commands" hidden></div>
+    <div class="agent-status" id="agent-status"></div>
+  </section>
+  <form class="agent-bar" id="agent-bar" autocomplete="off">
+    <span class="ab-prompt" aria-hidden="true">❯</span>
+    <label for="agent-input" class="sr-only">Ask about Rithvik</label>
+    <input id="agent-input" class="ab-input" type="text" placeholder="Ask about Rithvik, or type / for commands" maxlength="500">
+    <kbd class="ab-kbd" aria-hidden="true">⌘K</kbd>
+    <button class="ab-send" id="ab-send" type="submit" aria-label="Send"><span data-icon="arrow-up"></span></button>
+  </form>
+</div>
+
+<!-- Composer -->
+<div class="composer-wrap" id="composer-wrap" hidden>
+  <form class="composer panel" id="composer" data-label="NEW MESSAGE" data-title="New message" data-fig="M" novalidate>
+    <header class="cmp-head"><b>New message</b><button type="button" class="icon-btn sm" id="cmp-close" aria-label="Close"><span data-icon="x"></span></button></header>
+    <div class="cmp-row"><label for="cmp-to">To</label><input class="field" id="cmp-to" value="rithvikpkx@gmail.com" readonly></div>
+    <div class="cmp-row"><label for="cmp-from">From</label><input class="field" id="cmp-from" type="email" placeholder="you@company.com" autocomplete="email" aria-describedby="err-from"><p class="field-err" id="err-from" hidden>Add your email so I can reply</p></div>
+    <div class="cmp-row"><label for="cmp-subj">Subject</label><input class="field" id="cmp-subj" type="text" placeholder="Internship opportunity"></div>
+    <div class="cmp-row grow"><label for="cmp-body" class="sr-only">Message</label><textarea class="field" id="cmp-body" rows="6" placeholder="Hi Rithvik," aria-describedby="err-body"></textarea><p class="field-err" id="err-body" hidden>Write a message first</p></div>
+    <footer class="cmp-foot"><span class="cmp-note">Goes straight to my inbox</span><button class="btn" type="submit">Send</button></footer>
+  </form>
+</div>
+
+<!-- Theme dial -->
+<aside class="dial" id="dial" aria-label="Design and palette selector">
+  <div class="dial-shell" id="dial-shell">
+    <div class="dial-dormant" aria-hidden="true"><i class="dd d1"></i><i class="dd d2"></i><i class="dd d3"></i></div>
+    <div class="dial-open">
+      <p class="dial-group" id="dial-group">Designs</p>
+      <div class="dial-fan" id="dial-fan" role="radiogroup" aria-label="Designs and palettes" tabindex="0"></div>
+      <div class="dial-tools">
+        <button type="button" class="dt" id="dt-mode" aria-label="Light or dark variant" title="Light / dark"><span id="dt-mode-ic" data-icon="moon"></span></button>
+        <button type="button" class="dt" id="dt-dice" aria-label="Random design" title="Random design (T)"><span data-icon="shuffle"></span></button>
+        <button type="button" class="dt" id="dt-lite" aria-label="Reduce effects" aria-pressed="false" title="Reduce effects"><span data-icon="zap-off"></span></button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="toast-wrap"><div class="toast" id="toast" role="status" aria-live="polite" hidden></div></div>
+
+<div class="mock-bar" aria-label="Mockup controls">
+  <span class="mb-label">Mockup v4</span>
+  <button type="button" class="mb-btn" id="mb-admin" aria-pressed="false">Admin</button>
+  <button type="button" class="mb-btn" id="mb-replay">Replay entrance</button>
+</div>
+
+<script src="assets.js"></script>
+<script src="app.js"></script>
