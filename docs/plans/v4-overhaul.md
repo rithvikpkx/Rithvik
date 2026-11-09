@@ -1,6 +1,12 @@
 # rithvik.ai overhaul: handoff
 
-Status (2026-11-08): **APPROVED for development.** The owner approved the v7 direction (minus Relief) and
+Status (2026-11-09, end of session): **Steps 0–3 done + review round 1 merged on `dev`** (preview
+https://rithvik-git-dev-rithvikpkx-7614s-projects.vercel.app). NEXT SESSION: (1) collect the owner's results from the
+logged-in checklist (inline editing, admin bar, /admin, Share, meeting email, tracking on phone) and his queued
+"general UI/UX fixups"; (2) fix; (3) Step 4 verification; (4) merge to main only on "merge to main", then run the
+launch-day tasks (enable `rithvik-uptime` pg_cron job; verify Production env vars). Work is done by parallel subagents
+in worktrees — propose model + effort per stream and get the owner's OK before launching (memory: subagent-model-choice).
+Earlier status (2026-11-08): **APPROVED for development.** The owner approved the v7 direction (minus Relief) and
 asked to start building it into the real site on `dev` (Vercel preview). Next session: start at
 "Development plan" → Step 0. Nothing merges to `main` without the owner saying "merge to main".
 
