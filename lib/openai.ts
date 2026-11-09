@@ -30,9 +30,9 @@ export type ChatOpts = {
   signal?: AbortSignal;
 };
 
-/** gpt-5 family and o-series are reasoning models. */
+/** gpt-5 and later families and the o-series are reasoning models. */
 export function isReasoningModel(model: string): boolean {
-  return /^(gpt-5|o\d)/.test(model);
+  return /^(gpt-([5-9]|\d{2,})|o\d)/.test(model);
 }
 
 /** Builds the request body for either model family. Pure, so the per-family rules are tested. */
