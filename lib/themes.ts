@@ -129,16 +129,27 @@ export const FALLBACK_THEMES: Theme[] = [
   },
 ];
 
-/** Converts a tokens map to a CSS rule body: "--bg: ...; --text: ...;". */
+const SLUG_RE = /^[a-z0-9-]+$/;
+// Colors, lengths, var()/calc(), font stacks. Excludes ; { } < > \ @ so a value can't leave its declaration.
+const VALUE_RE = /^[a-zA-Z0-9#%.,()\s\-_+/'"]+$/;
+
+/** True if a token value is safe to interpolate into a <style> block. */
+function isSafeTokenValue(v: unknown): v is string {
+  return typeof v === "string" && VALUE_RE.test(v) && !/url\s*\(/i.test(v);
+}
+
+/** Converts a tokens map to a CSS rule body, skipping any invalid key or value. */
 export function tokensToCss(tokens: Record<string, string>): string {
   return Object.entries(tokens)
+    .filter(([key, value]) => SLUG_RE.test(key) && isSafeTokenValue(value))
     .map(([key, value]) => `  --${key}: ${value};`)
     .join("\n");
 }
 
-/** Builds the full <style> body for every theme as data-theme selectors. */
+/** Builds the full <style> body for every theme as data-theme selectors; themes with an invalid slug are skipped. */
 export function buildThemeStyleSheet(themes: Theme[]): string {
   return themes
+    .filter((t) => SLUG_RE.test(t.slug))
     .map((t) => `:root[data-theme="${t.slug}"] {\n${tokensToCss(t.tokens)}\n}`)
     .join("\n\n");
 }

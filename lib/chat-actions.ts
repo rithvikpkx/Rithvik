@@ -94,19 +94,19 @@ const LINK_LABELS: Record<string, string> = {
   paper: "Read the paper",
 };
 
-/** Accepts only plain web links. Blocks javascript:, data:, mailto: and any
- *  malformed value that might have reached the DB.
+/** Accepts only plain web links (or the `protocols` the caller opts into, e.g. mailto: for
+ *  chat markdown). Blocks javascript:, data: and any malformed value that might have reached the DB.
  *
  *  Returns the CANONICAL form, not the input: `new URL().toString()` normalises
  *  (notably adding a trailing slash to a bare origin), which is deliberate —
  *  canonicalising also neutralises obfuscated spellings of a host. */
-export function safeUrl(raw: unknown): string | null {
+export function safeUrl(raw: unknown, protocols: string[] = ["http:", "https:"]): string | null {
   if (typeof raw !== "string") return null;
   const s = raw.trim();
   if (!s) return null;
   try {
     const u = new URL(s);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (!protocols.includes(u.protocol)) return null;
     return u.toString();
   } catch {
     return null;
