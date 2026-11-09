@@ -422,3 +422,9 @@
 @media (prefers-reduced-motion: reduce) { :root[data-design="glyph"] .gl-caret, :root[data-design="glyph"] .gl-led { animation: none; } }
 :root[data-design="glyph"].lite .gl-caret, :root[data-design="glyph"].lite .gl-led { animation: none; }
 :root[data-design="glyph"].lite .gl-msg, :root[data-design="glyph"].lite .gl-prog, :root[data-design="glyph"].lite .gl-cmd { transition: none; }
+
+/* "I am Rithvik" header button: a status-bar segment, like the keys hint beside it */
+:root[data-design="glyph"] .gl-iam { text-transform: lowercase; }
+:root[data-design="glyph"] .gl-iam .iam-ic { color: var(--gl-hue); width: 14px; height: 14px; }
+@media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-iam:hover { color: var(--gl-fg); } }
+@media (max-width: 640px) { :root[data-design="glyph"] .gl-iam { padding: 0 12px; } }

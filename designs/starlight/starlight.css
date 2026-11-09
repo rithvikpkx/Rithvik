@@ -439,3 +439,8 @@
   :root[data-design="starlight"] .sl-ring { display: none; }
 }
 :root[data-design="starlight"] .kg-svg:focus { outline: none; }
+
+/* "I am Rithvik" header button: a CRT key, same family as the phosphor switch */
+:root[data-design="starlight"] .sl-iam { height: 32px; padding: 0 12px; font-size: 10.5px; gap: 8px; cursor: pointer; }
+:root[data-design="starlight"] .sl-iam .iam-ic { width: 13px; height: 13px; }
+@media (max-width: 640px) { :root[data-design="starlight"] .sl-iam { width: 30px; height: 30px; padding: 0; } }

@@ -421,3 +421,7 @@
 :root[data-design="thermal"] .ab-paper { border-radius: 3px; }
 :root[data-design="thermal"] .g-title { font-weight: 500; }
 :root[data-design="thermal"] .tr-text { font-family: var(--th-mono); }
+
+/* "I am Rithvik" header button: a sensor tag in the nav */
+:root[data-design="thermal"] .th-iam .iam-ic { width: 14px; height: 14px; color: var(--th-hot); }
+@media (max-width: 640px) { :root[data-design="thermal"] .th-nb.th-iam { display: inline-flex; width: 32px; padding: 0; justify-content: center; } }

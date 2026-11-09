@@ -5,7 +5,10 @@ import type { Session } from "@supabase/supabase-js";
 const TAB_AUTH_KEY = "rithvik-tab-auth";
 
 interface EditModeCtx {
-  isEditing: boolean;
+  isEditing: boolean; // signed in as the admin: the admin bar is available
+  inlineOn: boolean; // inline text editing switched on (admin bar toggle)
+  setInlineOn: (on: boolean) => void;
+  barHidden: boolean; // the admin bar is tucked away (the "I am Rithvik" button brings it back)
   session: Session | null;
   panelOpen: boolean;
   openPanel: () => void;
@@ -27,6 +30,8 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   const [session, setSession] = useState<Session | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [inlineOn, setInlineOn] = useState(true); // on by default at sign-in, like the old site
+  const [barHidden, setBarHidden] = useState(false);
 
   // Tracks whether the user authenticated during this specific tab session.
   // sessionStorage is wiped on tab close, so a new tab always requires login.
@@ -60,6 +65,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
         setSession(null);
         setIsEditing(false);
         setPanelOpen(false);
+        setBarHidden(false);
       } else if (newSession && tabAuth.current) {
         // TOKEN_REFRESHED or INITIAL_SESSION with an existing tab auth — keep session alive
         setSession(newSession);
@@ -86,7 +92,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
         // Defer the setState off the effect's synchronous path (next frame).
         raf = requestAnimationFrame(() => setIsEditing(true));
       } else if (url.searchParams.has("edit")) {
-        // The v7 site has no visible login button: rithvik.ai/?edit opens the panel (or edit mode if this tab is signed in).
+        // Shortcut besides the header's "I am Rithvik" button: rithvik.ai/?edit opens the panel (or edit mode if this tab is signed in).
         url.searchParams.delete("edit");
         window.history.replaceState({}, "", url.pathname + url.search);
         raf = requestAnimationFrame(() => (tabAuth.current ? setIsEditing(true) : setPanelOpen(true)));
@@ -105,7 +111,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     // Belt + suspenders on top of shouldCreateUser: false — fail instantly
     // without burning Supabase's 4-per-hour OTP rate limit.
     if (ADMIN_EMAIL && normalized !== ADMIN_EMAIL) {
-      return "This email isn't allowed.";
+      return "Nice try. That is not the Rithvik email.";
     }
     const supabase = await getClient();
     const { error } = await supabase.auth.signInWithOtp({
@@ -143,17 +149,16 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     void getClient().then((supabase) => supabase.auth.signOut());
   };
 
+  // The header's "I am Rithvik" button: sign in if needed, otherwise show or tuck away the admin bar.
   const openPanel = () => {
-    if (session) {
-      setIsEditing(true);
-    } else {
-      setPanelOpen(true);
-    }
+    if (isEditing) setBarHidden((h) => !h);
+    else if (session) { setIsEditing(true); setBarHidden(false); }
+    else setPanelOpen(true);
   };
 
   return (
     <EditModeContext.Provider value={{
-      isEditing, session, panelOpen,
+      isEditing, inlineOn, setInlineOn, barHidden, session, panelOpen,
       openPanel, closePanel: () => setPanelOpen(false),
       requestOtp, verifyOtpCode,
       logout,

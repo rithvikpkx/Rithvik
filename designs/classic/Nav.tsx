@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Mark from "@/components/site/mark/Mark";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const LINKS = [["work", "Work"], ["about", "About"], ["play", "Play"], ["contact", "Contact"]] as const;
 
@@ -44,7 +45,10 @@ export default function Nav() {
           <a key={id} href={`#${id}`} aria-current={active === id ? "true" : undefined}>{label}</a>
         ))}
       </nav>
-      <button type="button" className="cl-btn sm cl-nav-resume" data-resume="">Resume</button>
+      <div className="cl-nav-r">
+        <IAmRithvik className="cl-btn sm ghost cl-nav-iam" />
+        <button type="button" className="cl-btn sm cl-nav-resume" data-resume="">Resume</button>
+      </div>
     </header>
   );
 }

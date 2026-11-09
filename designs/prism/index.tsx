@@ -17,6 +17,8 @@ import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
 import { Icon, Logo } from "@/components/site/Glyph";
 import { usePrismMotion } from "./motion";
 import "./prism.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("prism")!;
 // six projects, six bands of the visible spectrum (red bends least, violet most)
@@ -77,15 +79,18 @@ export default function Prism({ content: C }: DesignProps) {
         <header className="pr-nav" id="pr-nav">
           <a className="pr-logo" href="#top" aria-label={`${C.name}, back to top`}><span className="pr-logo-m"><Mark label="" /></span><span className="pr-logo-t">{C.name}</span></a>
           <nav className="pr-links" aria-label="Sections">{NAV.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>
-          <a className="pr-btn pr-btn-ink pr-btn-sm" href="#" data-resume="">Resume</a>
+          <div className="pr-nav-r">
+            <IAmRithvik className="pr-btn pr-btn-sm pr-iam" />
+            <a className="pr-btn pr-btn-ink pr-btn-sm" href="#" data-resume="">Resume</a>
+          </div>
         </header>
 
         <section className="pr-hero pr-lit" id="top" aria-labelledby="pr-h1">
           <div className="pr-hero-in">
-            <p className="pr-kicker"><i className="pr-spec-dot" aria-hidden="true" />{C.role}</p>
+            <p className="pr-kicker"><i className="pr-spec-dot" aria-hidden="true" /><span data-edit="v7.role">{C.role}</span></p>
             <h1 className="pr-name" id="pr-h1"><Ca txt={C.first} cls="pr-name-1" /><Ca txt={C.last} cls="pr-name-2" /></h1>
-            <p className="pr-lede">{C.line}</p>
-            <p className="pr-status"><i className="pr-led" aria-hidden="true" />{C.status}</p>
+            <p className="pr-lede" data-edit="v7.line">{C.line}</p>
+            <p className="pr-status"><i className="pr-led" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
             <div className="pr-acts">
               <a className="pr-btn pr-btn-ink" href="#" data-resume=""><Icon name="file-text" />Resume</a>
               <button type="button" className="pr-btn pr-btn-line" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
@@ -101,16 +106,16 @@ export default function Prism({ content: C }: DesignProps) {
             <div className="pr-about-txt">
               <p className="pr-kicker"><span className="pr-k-n">01</span>About</p>
               <h2 className="pr-h2" id="pr-h-about"><Ca txt={`Hi, I'm ${C.first}.`} /></h2>
-              {C.about.map((a, i) => <p className="pr-p" key={i}>{a}</p>)}
-              <ul className="pr-thesis">{C.thesis.map((t, i) => <li key={i} style={bandVar(i * 2 + 1)}>{t}</li>)}</ul>
+              {C.about.map((a, i) => <p className="pr-p" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
+              <ul className="pr-thesis">{C.thesis.map((t, i) => <li key={i} style={bandVar(i * 2 + 1)}><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
             </div>
           </div>
           <div className="pr-now" id="now">
             <div className="pr-now-h"><p className="pr-kicker"><span className="pr-k-n">01.1</span>Now</p><p className="pr-now-city"><Icon name="map-pin" />{C.now.city} · <Clock tz={C.now.tz} className="pr-clock" /></p></div>
             <dl className="pr-now-list">
-              <div><dt>Building</dt><dd>{C.now.building}</dd></div>
-              <div><dt>Researching</dt><dd>{C.now.researching}</dd></div>
-              <div><dt>Learning</dt><dd>{C.now.learning}</dd></div>
+              <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+              <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+              <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
             </dl>
             <ol className="pr-places" aria-label="Places">
               {C.places.map((pl) => (
@@ -121,7 +126,7 @@ export default function Prism({ content: C }: DesignProps) {
         </section>
 
         <section className="pr-sec pr-nums" aria-label="In numbers">
-          <dl>{C.numbers.map(([n, l], i) => <div key={l} style={bandVar([0, 2, 4, 5][i % 4])}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+          <dl>{C.numbers.map(([n, l], i) => <div key={l} style={bandVar([0, 2, 4, 5][i % 4])}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
         </section>
 
         <section className="pr-sec pr-work" id="work" aria-labelledby="pr-h-work">
@@ -138,9 +143,9 @@ export default function Prism({ content: C }: DesignProps) {
                   <span className="pr-pj-n"><b>{pad(i)}</b><span>{band(i)[1]} nm</span></span>
                   <span className="pr-pj-main">
                     <span className="pr-pj-t"><Ca txt={p.title} /></span>
-                    <span className="pr-pj-h">{p.headline}</span>
+                    <span className="pr-pj-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
                   </span>
-                  <span className="pr-pj-k"><Icon name={p.icon} />{p.kind}</span>
+                  <span className="pr-pj-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
                   <span className="pr-pj-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
                 </a>
               </li>
@@ -165,11 +170,11 @@ export default function Prism({ content: C }: DesignProps) {
           <ol className="pr-roles">
             {C.experience.map((x) => (
               <li className="pr-role" id={`experience-${x.slug}`} key={x.slug}>
-                <p className="pr-when"><b>{x.when}</b><span>{x.where}</span></p>
+                <p className="pr-when"><b data-edit={`role:${x.slug}:when`}>{x.when}</b><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
                 <div className="pr-role-b">
-                  <h3>{x.role}</h3>
-                  <p className="pr-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                  <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
+                  <p className="pr-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
                   <p className="pr-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
                 </div>
               </li>
@@ -180,9 +185,9 @@ export default function Prism({ content: C }: DesignProps) {
             <img src={logoSrc(C.education.logo)} alt={C.education.school} width={72} height={72} loading="lazy" decoding="async" />
             <div>
               <p className="pr-kicker">Education</p>
-              <h3>{C.education.school}</h3>
-              <p className="pr-edu-d">{C.education.degree}</p>
-              <p className="pr-edu-m">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p>
+              <h3 data-edit="edu:school">{C.education.school}</h3>
+              <p className="pr-edu-d" data-edit="edu:degree">{C.education.degree}</p>
+              <p className="pr-edu-m"><EduMeta e={C.education} /></p>
             </div>
           </div>
         </section>
@@ -217,8 +222,8 @@ export default function Prism({ content: C }: DesignProps) {
               <div className="pr-acts"><button type="button" className="pr-btn pr-btn-line" data-agent=""><span className="pr-prompt" aria-hidden="true">❯</span>Ask my agent</button></div>
             </div>
             <div className="pr-qs">
-              {C.faq.map(([q, a]) => (
-                <details className="pr-q" key={q} onToggle={oneOpen}><summary>{q}<span className="pr-plus" aria-hidden="true" /></summary><p>{a}</p></details>
+              {C.faq.map(([q, a], i) => (
+                <details className="pr-q" key={q} onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="pr-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
               ))}
             </div>
           </div>
@@ -248,7 +253,7 @@ export default function Prism({ content: C }: DesignProps) {
         <footer className="pr-foot">
           <a className="pr-foot-m" href="#top" aria-label="Back to top"><Mark label="" /></a>
           <nav className="pr-foot-nav" aria-label="Footer">{NAV.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>
-          <p className="pr-colo">The light is one fragment shader: a glass prism, its spectrum, and the caustics it throws on the Map. The photo is never touched. Set in Instrument Sans and IBM Plex Mono.</p>
+          <p className="pr-colo">The light is one fragment shader: a glass prism, its spectrum, and the caustics it throws on the Map. The photo is never touched. Set in Instrument Sans and IBM Plex Mono. <a className="foot-status" href="/status">Status</a></p>
         </footer>
       </div>
       <ShaderCanvas spec={META.shader} dark={META.dark} />

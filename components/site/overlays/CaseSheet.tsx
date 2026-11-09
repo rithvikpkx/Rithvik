@@ -65,19 +65,19 @@ export default function CaseSheet({ slug }: { slug: string }) {
       <article className="sheet-body" ref={bodyRef} tabIndex={-1}>
         <button type="button" className="ui-ic sheet-close" onClick={dismiss} aria-label="Close"><Icon name="x" /></button>
         <div className="case">
-          <p className="case-kind"><Icon name={p.icon} /> {p.kind}</p>
-          <h1 id="case-h">{p.headline}</h1>
+          <p className="case-kind"><Icon name={p.icon} /> <span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></p>
+          <h1 id="case-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</h1>
           <p className="case-lede">{p.desc[0]}</p>
           <div className="chips">{p.tags.map((t) => <span className="chip" key={t}>{t}</span>)}</div>
           <dl className="case-meta">
-            <div><dt>Project</dt><dd>{p.title}</dd></div>
-            <div><dt>Context</dt><dd>{p.ctx}</dd></div>
+            <div><dt>Project</dt><dd data-edit={`project:${p.slug}:title`}>{p.title}</dd></div>
+            <div><dt>Context</dt><dd data-edit={`project:${p.slug}:ctx`}>{p.ctx}</dd></div>
           </dl>
           {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size static asset; hide the frame if it is missing */}
           <figure className="case-art"><img src={`/v7/projects/${p.slug}.webp`} alt="" width={1280} height={960} decoding="async"
             onError={(e) => e.currentTarget.parentElement?.remove()} /></figure>
           <h2>What it does</h2>
-          <ul className="case-bullets">{p.desc.map((d) => <li key={d}>{d}</li>)}</ul>
+          <ul className="case-bullets">{p.desc.map((d, i) => <li key={d} data-edit={`project:${p.slug}:desc.${i}`}>{d}</li>)}</ul>
           {links.length > 0 && (
             <div className="case-links">
               {links.map(([k, u]) => <a key={k} className="ui-btn" href={u} target="_blank" rel="noopener noreferrer">{k} <Icon name="arrow-up-right" /></a>)}

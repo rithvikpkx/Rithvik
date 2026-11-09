@@ -248,3 +248,8 @@
 @media (prefers-reduced-motion: reduce) {
   :root[data-design="classic"] .cl-hero-copy > * { animation-name: cl-fade; }
 }
+
+/* "I am Rithvik" header button + nav cluster */
+:root[data-design="classic"] .cl-nav-r { display: flex; align-items: center; gap: 8px; }
+:root[data-design="classic"] .cl-nav-iam { background: color-mix(in srgb, var(--bg-soft) 86%, transparent); border-color: var(--cl-line); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); gap: 7px; }
+@media (max-width: 640px) { :root[data-design="classic"] .cl-nav-iam { width: 40px; padding: 0; } }

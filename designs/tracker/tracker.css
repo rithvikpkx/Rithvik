@@ -409,3 +409,8 @@
   :root[data-design="tracker"] .tk-colo { grid-column: 1 / -1; }
   :root[data-design="tracker"] .agent-bar::before { content: "#00 agent"; }
 }
+
+/* "I am Rithvik" header button: the outlined twin of Resume */
+:root[data-design="tracker"] .tk-iam { height: 36px; padding: 0 14px; font-size: 14px; gap: 8px; background: transparent; }
+:root[data-design="tracker"] .tk-iam .iam-ic { width: 15px; height: 15px; }
+@media (max-width: 640px) { :root[data-design="tracker"] .tk-iam { width: 36px; padding: 0; justify-content: center; } }
