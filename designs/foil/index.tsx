@@ -195,7 +195,7 @@ export default function Foil({ content: C }: DesignProps) {
           ))}</ul>
         </section>
 
-        <section className="fo-sec fo-faq" id="faq" aria-labelledby="fo-h-faq">
+        <section className="fo-sec fo-faq" id="questions" aria-labelledby="fo-h-faq">
           <div className="fo-faq-l"><Kick n="06" label="Questions" /><h2 id="fo-h-faq" className="fo-h2">Short answers</h2><p className="fo-sub">Anything else, <button type="button" className="fo-inl" data-agent="">ask my agent</button>. It only answers from what&apos;s on record.</p></div>
           <div className="fo-qs">{C.faq.map(([q, a]) => <details key={q} className="fo-q" onToggle={oneOpen}><summary>{q}<i aria-hidden="true" /></summary><p>{a}</p></details>)}</div>
         </section>

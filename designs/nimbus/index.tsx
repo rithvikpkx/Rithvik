@@ -240,7 +240,7 @@ export default function Nimbus({ content: C }: DesignProps) {
           <div className="nb-edge nb-edge-b" aria-hidden="true" dangerouslySetInnerHTML={{ __html: edgeSvg(8, true) }} />
         </section>
 
-        <section className="nb-sec nb-faq" id="faq" aria-labelledby="nb-h-faq">
+        <section className="nb-sec nb-faq" id="questions" aria-labelledby="nb-h-faq">
           <div className="nb-faq-l">
             <p className="nb-kicker">Questions</p>
             <h2 id="nb-h-faq" className="nb-h2">Short answers</h2>
