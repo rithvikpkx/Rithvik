@@ -1,26 +1,26 @@
-import Link from "next/link";
 import { requireAuth } from "@/app/admin/auth-helper";
-import { listVisitors } from "@/lib/track/query";
-import { parseVisitorFilters } from "@/lib/track/views";
-import { VisitorFilterForm, VisitorTable } from "@/components/visitor-log/VisitorViews";
+import AdminFrame from "@/components/admin/AdminFrame";
+import { VisitorsView } from "@/components/admin/People";
+import { currentLook, listVisitorsPage, PAGE_SIZE } from "@/lib/analytics/server";
 
 export const metadata = { title: "Visitors" };
 
-/** /admin/visitors: every tracked browser, most recently seen first, with filters. Admin only. */
+/** /admin/visitors: every tracked browser (bots hidden), searchable and paginated. Admin only. */
 export default async function VisitorsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAuth();
-  const filters = parseVisitorFilters(await searchParams);
-  const rows = await listVisitors(filters);
+  const sp = await searchParams;
+  const one = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
+  const f = {
+    q: one("q").trim().slice(0, 80), country: one("country").trim().toUpperCase().slice(0, 2), type: one("type"),
+    identified: one("identified") === "1", page: Math.min(500, Math.max(0, Number.parseInt(one("page"), 10) || 0)),
+  };
+  const [{ look, font, fonts, now }, { rows, total }] = await Promise.all([currentLook(), listVisitorsPage(f)]);
   return (
-    <main className="alog">
-      <div className="alog-wrap">
-        <div className="alog-top">
-          <h1>Visitors</h1>
-          <span><Link href="/admin/chats">Chats</Link> · <Link href="/">Back to site</Link></span>
-        </div>
-        <VisitorFilterForm f={filters} />
-        <VisitorTable rows={rows} />
-      </div>
-    </main>
+    <>
+      {fonts && <link rel="stylesheet" href={fonts} />}
+      <AdminFrame look={look} font={font} tab="visitors">
+        <VisitorsView rows={rows} total={total} f={f} base="/admin" now={now} pageSize={PAGE_SIZE} />
+      </AdminFrame>
+    </>
   );
 }

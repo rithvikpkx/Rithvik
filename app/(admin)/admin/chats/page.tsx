@@ -1,26 +1,23 @@
-import Link from "next/link";
 import { requireAuth } from "@/app/admin/auth-helper";
+import AdminFrame from "@/components/admin/AdminFrame";
+import { ChatsView } from "@/components/admin/Chats";
 import { parseFilters } from "@/lib/agent/chats";
 import { listSessions } from "@/lib/agent/chats-query";
-import { FilterForm, SessionTable } from "@/components/agent-log/SessionViews";
+import { currentLook } from "@/lib/analytics/server";
 
 export const metadata = { title: "Chats" };
 
 /** /admin/chats: every agent conversation, newest first, with filters. Admin only. */
 export default async function ChatsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAuth();
-  const filters = parseFilters(await searchParams);
-  const rows = await listSessions(filters);
+  const f = parseFilters(await searchParams);
+  const [{ look, font, fonts, now }, rows] = await Promise.all([currentLook(), listSessions(f)]);
   return (
-    <main className="alog">
-      <div className="alog-wrap">
-        <div className="alog-top">
-          <h1>Chats</h1>
-          <Link href="/">Back to site</Link>
-        </div>
-        <FilterForm f={filters} />
-        <SessionTable rows={rows} />
-      </div>
-    </main>
+    <>
+      {fonts && <link rel="stylesheet" href={fonts} />}
+      <AdminFrame look={look} font={font} tab="chats">
+        <ChatsView rows={rows} f={f} base="/admin" now={now} />
+      </AdminFrame>
+    </>
   );
 }

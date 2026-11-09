@@ -1,33 +1,25 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/app/admin/auth-helper";
+import AdminFrame from "@/components/admin/AdminFrame";
+import { VisitorInspector } from "@/components/admin/People";
+import type { MessageRow } from "@/lib/agent/chats";
+import { currentLook, messagesFor } from "@/lib/analytics/server";
 import { getVisitor } from "@/lib/track/query";
-import { whoLabel } from "@/lib/track/views";
-import { ChatList, VisitCard, VisitorMeta } from "@/components/visitor-log/VisitorViews";
 
 export const metadata = { title: "Visitor" };
 
-/** /admin/visitors/<id>: one visitor's identity, linked chats, and every visit with its event timeline and replay. Admin only. */
+/** /admin/visitors/<id>: one visitor's full profile, their chats as agent-window replicas, and every visit with events and replay. */
 export default async function VisitorPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
-  const found = await getVisitor((await params).id);
+  const [{ look, font, fonts, now }, found] = await Promise.all([currentLook(), getVisitor((await params).id)]);
   if (!found) notFound();
-  const { visitor: v, visits, chats } = found;
+  const messages = (await messagesFor(found.chats.map((c) => c.id))) as unknown as Map<string, MessageRow[]>;
   return (
-    <main className="alog">
-      <div className="alog-wrap">
-        <div className="alog-top">
-          <h1>{whoLabel(v)}</h1>
-          <Link href="/admin/visitors">All visitors</Link>
-        </div>
-        <VisitorMeta v={v} />
-        <h2>Agent conversations</h2>
-        <ChatList chats={chats} />
-        <h2>Visits</h2>
-        {visits.length === 0 ? <p className="alog-muted">No visits recorded.</p> : visits.map((x) => (
-          <VisitCard key={x.id} visit={x} events={x.events} replaySeqs={x.replaySeqs} />
-        ))}
-      </div>
-    </main>
+    <>
+      {fonts && <link rel="stylesheet" href={fonts} />}
+      <AdminFrame look={look} font={font} tab="visitors">
+        <VisitorInspector v={found.visitor} visits={found.visits} chats={found.chats} messages={messages} base="/admin" now={now} />
+      </AdminFrame>
+    </>
   );
 }

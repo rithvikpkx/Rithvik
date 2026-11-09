@@ -44,6 +44,13 @@ export async function recordBatch(h: Headers, visitorId: string, ip: string | nu
     if (isNew) enrichIp = ip;
   }
 
+  // Coordinates for the admin globe, best-effort and separate: a database without the lat/lng columns
+  // (analytics_migration.sql not applied yet) must never cost the batch.
+  const lat = Number(h.get("x-vercel-ip-latitude")), lng = Number(h.get("x-vercel-ip-longitude"));
+  if (enrichIp && h.get("x-vercel-ip-latitude") && Number.isFinite(lat) && Number.isFinite(lng)) {
+    await db.from("visitors").update({ lat, lng }).eq("id", visitorId).then(() => {}, () => {});
+  }
+
   const { data: visit, error: vi } = await db.from("visits").select("visitor_id").eq("id", batch.visitId).maybeSingle();
   if (vi) throw vi;
   if (visit && visit.visitor_id !== visitorId) return { status: "forbidden", enrichIp: null };
