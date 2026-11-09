@@ -20,6 +20,7 @@ import { Icon, Logo } from "@/components/site/Glyph";
 import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
 import { readPal, useThermalMotion } from "./motion";
 import "./thermal.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("thermal")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
@@ -83,7 +84,7 @@ export default function Thermal({ content: C }: DesignProps) {
         <nav className="th-nav" aria-label="Sections">
           <a className="th-brand" href="#top" onClick={goTo("top")}><span className="th-brand-mk" aria-hidden="true"><Mark label="" /></span><span>{C.name}</span></a>
           <ol className="th-navl">{NAV.map(([id, l], i) => <li key={id}><a href={`#${id}`} data-th-go={id} onClick={goTo(id)}><span>0{i + 1}</span>{l}</a></li>)}</ol>
-          <div className="th-nav-r"><button type="button" className="th-nb" data-resume="">Resume</button><button type="button" className="th-nb th-nb-hot" data-compose="Internship opportunity"><Icon name="mail" /><span>Email</span></button></div>
+          <div className="th-nav-r"><IAmRithvik className="th-nb th-iam" /><button type="button" className="th-nb" data-resume="">Resume</button><button type="button" className="th-nb th-nb-hot" data-compose="Internship opportunity"><Icon name="mail" /><span>Email</span></button></div>
         </nav>
 
         <section id="top" className="th-hero" aria-labelledby="th-name">
@@ -237,7 +238,7 @@ export default function Thermal({ content: C }: DesignProps) {
           <footer className="th-foot">
             <span className="th-foot-mk" aria-hidden="true"><Mark label="" /></span>
             <p>{C.name} · <Clock tz={C.now.tz} className="th-clk" /> in {C.now.city}</p>
-            <p className="th-foot-s">Set in Space Grotesk and JetBrains Mono. The heat is one fragment shader; the photograph is never mapped.</p>
+            <p className="th-foot-s">Set in Space Grotesk and JetBrains Mono. The heat is one fragment shader; the photograph is never mapped. <a className="foot-status" href="/status">Status</a></p>
           </footer>
         </section>
       </div>

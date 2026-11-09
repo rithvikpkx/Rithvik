@@ -17,6 +17,7 @@ import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
 import { ASKS, KEYS, SECTIONS, hash7 } from "./data";
 import { useGlyphMotion } from "./motion";
 import "./glyph.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("glyph")!;
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
@@ -96,6 +97,7 @@ export default function Glyph({ content: C }: DesignProps) {
           <ol className="gl-wins">{SECTIONS.map(([id, nm], i) => <li key={id}><a href={`#${id}`} data-gl-go={i} aria-current={i === 0 ? "true" : undefined}><b>{i + 1}</b><span>:{nm}</span></a></li>)}</ol>
           <span className="gl-tfill" aria-hidden="true" />
           <span className="gl-msg" id="gl-msg" aria-live="polite" />
+          <IAmRithvik className="gl-help gl-iam" />
           <button type="button" className="gl-help" id="gl-help" aria-expanded={keys} aria-controls="gl-keys" onClick={() => toggleKeys()}><kbd>?</kbd><span>keys</span></button>
         </nav>
         <div className="gl-keys" id="gl-keys" role="dialog" aria-label="Keyboard shortcuts" hidden={!keys}><dl>{KEYS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>
@@ -218,7 +220,7 @@ export default function Glyph({ content: C }: DesignProps) {
           </ol>
         </Pane>
 
-        <footer className="gl-foot"><span className="gl-foot-mk" aria-hidden="true"><Mark className="gl-mk" label="" /></span><p><span className="gl-dim">[process completed]</span> {C.name}</p></footer>
+        <footer className="gl-foot"><span className="gl-foot-mk" aria-hidden="true"><Mark className="gl-mk" label="" /></span><p><span className="gl-dim">[process completed]</span> {C.name} <a className="foot-status" href="/status">status</a></p></footer>
       </div>
       <ShaderCanvas spec={META.shader} dark={META.dark} />
     </main>

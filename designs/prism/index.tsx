@@ -17,6 +17,7 @@ import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
 import { Icon, Logo } from "@/components/site/Glyph";
 import { usePrismMotion } from "./motion";
 import "./prism.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("prism")!;
 // six projects, six bands of the visible spectrum (red bends least, violet most)
@@ -77,7 +78,10 @@ export default function Prism({ content: C }: DesignProps) {
         <header className="pr-nav" id="pr-nav">
           <a className="pr-logo" href="#top" aria-label={`${C.name}, back to top`}><span className="pr-logo-m"><Mark label="" /></span><span className="pr-logo-t">{C.name}</span></a>
           <nav className="pr-links" aria-label="Sections">{NAV.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>
-          <a className="pr-btn pr-btn-ink pr-btn-sm" href="#" data-resume="">Resume</a>
+          <div className="pr-nav-r">
+            <IAmRithvik className="pr-btn pr-btn-sm pr-iam" />
+            <a className="pr-btn pr-btn-ink pr-btn-sm" href="#" data-resume="">Resume</a>
+          </div>
         </header>
 
         <section className="pr-hero pr-lit" id="top" aria-labelledby="pr-h1">
@@ -248,7 +252,7 @@ export default function Prism({ content: C }: DesignProps) {
         <footer className="pr-foot">
           <a className="pr-foot-m" href="#top" aria-label="Back to top"><Mark label="" /></a>
           <nav className="pr-foot-nav" aria-label="Footer">{NAV.map(([h, l]) => <a key={h} href={`#${h}`}>{l}</a>)}</nav>
-          <p className="pr-colo">The light is one fragment shader: a glass prism, its spectrum, and the caustics it throws on the Map. The photo is never touched. Set in Instrument Sans and IBM Plex Mono.</p>
+          <p className="pr-colo">The light is one fragment shader: a glass prism, its spectrum, and the caustics it throws on the Map. The photo is never touched. Set in Instrument Sans and IBM Plex Mono. <a className="foot-status" href="/status">Status</a></p>
         </footer>
       </div>
       <ShaderCanvas spec={META.shader} dark={META.dark} />

@@ -19,6 +19,7 @@ import { ART, GOOD, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import "./stipple.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("stipple")!;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
@@ -61,6 +62,7 @@ export default function Stipple({ content: C }: DesignProps) {
           <span className="st-mast-l">Issue No. 06 <span className="st-sep">·</span> price: one email</span>
           <a className="st-mast-c" href="#top" aria-label="rithvik.ai, back to the cover"><span className="st-mark" aria-hidden="true"><Mark kind="hatch" label="" /></span><span>rithvik.ai</span></a>
           <span className="st-mast-r"><Clock tz={C.now.tz} className="" /> <span className="st-sep">·</span> {C.now.city}</span>
+          <IAmRithvik className="st-iam" />
         </header>
 
         <section id="top" className="st-cover" aria-labelledby="st-name-h">
@@ -241,7 +243,7 @@ export default function Stipple({ content: C }: DesignProps) {
           <div className="st-bars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
           <p className="st-label">Printing history</p>
           <ol className="st-log">{C.log.map(([d, k, m]) => <li key={d + k + m}><span>{d}</span><span className="st-log-k">{k}</span><span>{m}</span></li>)}</ol>
-          <p className="st-imprint">{C.name} <span className="st-sep">·</span> the ink may still be wet <span className="st-sep">·</span> <a href="#top">back to the cover</a></p>
+          <p className="st-imprint">{C.name} <span className="st-sep">·</span> the ink may still be wet <span className="st-sep">·</span> <a href="#top">back to the cover</a> <span className="st-sep">·</span><a className="foot-status" href="/status">Status</a></p>
         </footer>
       </div>
     </main>

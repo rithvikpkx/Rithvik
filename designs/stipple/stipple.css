@@ -500,3 +500,14 @@
 @media (prefers-reduced-motion: reduce) {
   :root[data-design="stipple"] .st-name:not(.st-on) .st-name-crisp, :root[data-design="stipple"] .st-name:not(.st-on) .st-lens-frame, :root[data-design="stipple"] .st-seal-spin, :root[data-design="stipple"] .st-live .st-pulse { animation: none; }
 }
+
+/* "I am Rithvik" header button: a rubber-stamp in the masthead */
+:root[data-design="stipple"] .st-mast { grid-template-columns: 1fr auto auto 1fr; }
+:root[data-design="stipple"] .st-mast-r { grid-column: 3; }
+:root[data-design="stipple"] .st-iam { grid-column: 4; justify-self: end; display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px; border: 1px solid var(--st-ink); border-radius: 2px; background: transparent; color: var(--st-ink); font: 600 10px/1 var(--st-mono); letter-spacing: .14em; text-transform: uppercase; transform: rotate(-2deg); cursor: pointer; transition: background-color 160ms ease, color 160ms ease; }
+@media (hover: hover) and (pointer: fine) { :root[data-design="stipple"] .st-iam:hover { background: var(--st-ink); color: var(--st-paper); } }
+@media (max-width: 760px) {
+  :root[data-design="stipple"] .st-mast { grid-template-columns: 1fr auto auto; }
+  :root[data-design="stipple"] .st-mast-r { display: none; }
+  :root[data-design="stipple"] .st-iam { grid-column: 3; padding: 6px; }
+}

@@ -18,6 +18,7 @@ import Clock from "@/components/site/Clock";
 import { Icon, Logo } from "@/components/site/Glyph";
 import { useMercuryMotion } from "./motion";
 import "./mercury.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("mercury")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
@@ -72,7 +73,10 @@ export default function Mercury({ content: C }: DesignProps) {
         <header className="mc-nav" aria-label="Site">
           <a className="mc-logo" href="#top" aria-label={`${C.name}, back to top`}><Mark label="" /><span>{C.name}</span></a>
           <nav className="mc-links" aria-label="Sections"><a href="#work">Work</a><a href="#experience">Experience</a><a href="#graph">Alloy</a><a href="#play">Play</a><a href="#contact">Contact</a></nav>
-          <a className="mc-pill" href="#" data-resume="">Resume</a>
+          <div className="mc-nav-r">
+            <IAmRithvik className="mc-pill mc-iam" />
+            <a className="mc-pill" href="#" data-resume="">Resume</a>
+          </div>
         </header>
 
         <section className="mc-hero" id="top" aria-labelledby="mc-h1">
@@ -210,7 +214,7 @@ export default function Mercury({ content: C }: DesignProps) {
                 <li><a href={C.links.linkedin} target="_blank" rel="noopener"><Logo slug="linkedin" />LinkedIn</a></li>
                 <li><a href="#" data-resume=""><Icon name="file-text" />Resume</a></li>
               </ul>
-              <p className="mc-colo">The metal is one fragment shader; bring the pointer down and it reaches for you. The photo is never touched. Set in Bodoni Moda and Hanken Grotesk.</p>
+              <p className="mc-colo">The metal is one fragment shader; bring the pointer down and it reaches for you. The photo is never touched. Set in Bodoni Moda and Hanken Grotesk. <a className="foot-status" href="/status">Status</a></p>
             </div>
             <figure className="mc-mark-art" aria-hidden="true"><img src="/v7/mercury/chrome-mark-800.webp" srcSet="/v7/mercury/chrome-mark-800.webp 800w, /v7/mercury/chrome-mark-1600.webp 1600w" sizes="(max-width: 700px) 44vw, 34vw" width={800} height={800} alt="" loading="lazy" decoding="async" onError={hideFig} /></figure>
           </div>

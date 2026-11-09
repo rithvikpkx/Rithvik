@@ -372,3 +372,9 @@
   :root[data-design="mercury"] .mc-toy:hover .mc-sphere { animation: none; }
 }
 :root[data-design="mercury"] a.mc-row { text-decoration: none; }
+
+/* "I am Rithvik" header button: another chrome pill beside Resume */
+:root[data-design="mercury"] .mc-nav-r { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+:root[data-design="mercury"] .mc-nav-r .mc-pill { margin-left: 0; }
+:root[data-design="mercury"] .mc-iam { gap: 7px; background: transparent; cursor: pointer; }
+@media (max-width: 640px) { :root[data-design="mercury"] .mc-iam { width: 34px; padding: 0; justify-content: center; } }

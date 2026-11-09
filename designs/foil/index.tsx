@@ -18,6 +18,7 @@ import { Icon, Logo } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
 import "./foil.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("foil")!;
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -77,6 +78,7 @@ export default function Foil({ content: C }: DesignProps) {
           <a className="fo-logo" href="#top" aria-label={`${C.name}, back to top`}><Fm /><span aria-hidden="true">RPK</span></a>
           <nav className="fo-links" aria-label="Sections"><a href="#work">Work</a><a href="#experience">Path</a><a href="#graph">Map</a><a href="#play">Play</a><a href="#contact">Contact</a></nav>
           <div className="fo-nav-r">
+            <IAmRithvik className="fo-btn fo-btn-s fo-iam" />
             <a className="fo-btn fo-btn-s" href="#" data-resume="">Resume</a>
             <button type="button" className="fo-ic" data-compose="Internship opportunity" aria-label={`Email ${C.first}`}><Icon name="mail" /></button>
           </div>
@@ -220,7 +222,7 @@ export default function Foil({ content: C }: DesignProps) {
         <footer className="fo-foot" id="colophon">
           <span className="fo-foot-mk" aria-hidden="true"><Fm /></span>
           <p>{C.name} · {C.status}</p>
-          <p className="fo-colo">The card is one fragment shader: thin-film interference over a noise height map, lit by your pointer. The photo is never touched. Set in Unbounded and Geist.</p>
+          <p className="fo-colo">The card is one fragment shader: thin-film interference over a noise height map, lit by your pointer. The photo is never touched. Set in Unbounded and Geist. <a className="foot-status" href="/status">Status</a></p>
         </footer>
         <div className="fo-mosh" aria-hidden="true" hidden />
       </div>

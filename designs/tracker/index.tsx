@@ -19,6 +19,7 @@ import { Icon, Logo } from "@/components/site/Glyph";
 import { TOY_LBL, fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import "./tracker.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("tracker")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
@@ -55,6 +56,7 @@ export default function Tracker({ content: C }: DesignProps) {
             <span>obj <b data-tk-obj="">0</b></span>
             <span className="tk-hud-m">rvk-track v0.7</span>
           </div>
+          <IAmRithvik className="tk-btn tk-iam" />
           <a className="tk-btn tk-btn-ink tk-nav-cta" href="#" data-resume=""><Icon name="file-text" />Resume</a>
         </header>
 
@@ -194,7 +196,7 @@ export default function Tracker({ content: C }: DesignProps) {
         <footer className="tk-foot" id="colophon">
           <span className="tk-foot-mark" data-tk="ouroboros" data-tk-label="ouroboros"><Mark label="" /></span>
           <p className="tk-foot-n">{C.name}</p>
-          <p className="tk-colo">The depth map is one fragment shader. The boxes are plain DOM, eased with a little lag like a real tracker. The photo is never touched. Set in Inter Tight and JetBrains Mono.</p>
+          <p className="tk-colo">The depth map is one fragment shader. The boxes are plain DOM, eased with a little lag like a real tracker. The photo is never touched. Set in Inter Tight and JetBrains Mono. <a className="foot-status" href="/status">Status</a></p>
         </footer>
 
         {/* the vision layer: a fixed pool of boxes and glitch slices, positioned by transforms only */}

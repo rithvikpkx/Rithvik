@@ -18,6 +18,7 @@ import { Icon, Logo } from "@/components/site/Glyph";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
 import "./starlight.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
@@ -72,6 +73,7 @@ export default function Starlight({ content: C }: DesignProps) {
           <nav className="sl-nav" aria-label="Sections"><a href="#work">Work</a><a href="#graph">Chart</a><a href="#experience">Log</a><a href="#about">Notes</a><a href="#play">Play</a><a href="#contact">Contact</a></nav>
           <p className="sl-read" aria-hidden="true"><span>GAIN <b data-sl-gain="">0.82</b></span><span className="sl-bat">BAT <i className="sl-cells" data-sl-cells="" data-lv="4"><i /><i /><i /><i /></i><b data-sl-bat="">EXT</b></span><span><b data-sl-ts="">--:--:--</b></span></p>
           <button type="button" className="sl-phos" aria-pressed={white} title="Switch phosphor" onClick={togglePh}><i aria-hidden="true" /><span>{white ? "P45 White" : "P43 Green"}</span></button>
+          <IAmRithvik className="sl-btn sl-iam" />
           <a className="sl-btn sl-top-cv" href="#" data-resume=""><Icon name="file-text" /><span>Resume</span></a>
         </header>
 
@@ -215,7 +217,7 @@ export default function Starlight({ content: C }: DesignProps) {
           </ul>
           <footer className="sl-foot" id="colophon">
             <span className="sl-foot-m" aria-hidden="true"><Mark label="" /></span>
-            <p>One fragment shader: starlight, a treeline, an intensifier tube. The photo on channel two is never touched. Set in Saira and IBM Plex Mono.</p>
+            <p>One fragment shader: starlight, a treeline, an intensifier tube. The photo on channel two is never touched. Set in Saira and IBM Plex Mono. <a className="foot-status" href="/status">Status</a></p>
           </footer>
         </section>
       </div>

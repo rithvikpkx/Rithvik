@@ -1,0 +1,10 @@
+/* "I am Rithvik" header button: shared bones only. Each design styles .iam with its own button classes. */
+.iam { cursor: pointer; }
+.iam-ic { width: 16px; height: 16px; flex: none; }
+.iam-l { white-space: nowrap; }
+/* Phones: the key icon alone, so the header stays calm at 390px. */
+@media (max-width: 640px) {
+  .iam-l { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+/* Footer "Status" link (every design): reads as part of the colophon line, underlined so it is findable. */
+a.foot-status { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }

@@ -427,3 +427,7 @@
 :root[data-design="foil"] .case-art { padding: 6px; border-radius: 22px; background: var(--fo-foil); }
 :root[data-design="foil"] .case-art img { border-radius: 16px; background: #E9E6E1; }
 :root[data-design="foil"] .case-art { box-shadow: 0 30px 70px -40px rgba(185, 168, 255, .5); }
+
+/* "I am Rithvik" header button: a glass pill beside Resume */
+:root[data-design="foil"] .fo-iam { gap: 7px; }
+@media (max-width: 640px) { :root[data-design="foil"] .fo-nav-r .fo-iam { width: 44px; padding: 0; justify-content: center; } }

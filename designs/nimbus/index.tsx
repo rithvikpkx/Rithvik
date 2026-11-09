@@ -19,6 +19,7 @@ import { DEFS, ON_PALE, ON_SKY, ON_SUN, SKIES, cloud, edgeSvg, glyph, hourIn, ic
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
 import "./nimbus.css";
+import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("nimbus")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
@@ -90,6 +91,7 @@ export default function Nimbus({ content: C }: DesignProps) {
             <a href="#work">Work</a><a href="#about">About</a><a href="#play">Play</a>
           </nav>
           <div className="nb-nav-r">
+            <IAmRithvik className="nb-btn nb-white nb-px-c nb-iam" />
             <a className="nb-btn nb-ink nb-px-c" href="#" data-resume="">Resume</a>
             <button type="button" className="nb-round nb-ink" data-compose="Internship opportunity" aria-label={`Email ${C.first}`}><Icon name="mail" /></button>
           </div>
@@ -279,7 +281,7 @@ export default function Nimbus({ content: C }: DesignProps) {
           <div className="nb-foot-top">
             <p className="nb-foot-name">{C.first}<br />{C.last}</p>
             <nav className="nb-foot-nav" aria-label="Footer"><a href="#work">Work</a><a href="#about">About</a><a href="#experience">Experience</a><a href="#graph">Map</a><a href="#play">Play</a><a href="#contact">Contact</a></nav>
-            <p className="nb-colo">Clouds are one fragment shader, quantised to pixels and dithered by hand. The sky follows your clock. The photo is never touched. Set in Fraunces and Geist.</p>
+            <p className="nb-colo">Clouds are one fragment shader, quantised to pixels and dithered by hand. The sky follows your clock. The photo is never touched. Set in Fraunces and Geist. <a className="foot-status" href="/status">Status</a></p>
           </div>
           <button type="button" className="nb-giant" aria-label="Spin the mark"><span className="nb-giant-a"><Mark label="" /></span><span className="nb-giant-b"><Mark label="" /></span></button>
         </footer>

@@ -482,3 +482,7 @@
 :root[data-design="nimbus"] .rc-bar i { background: var(--nb-sky); }
 :root[data-design="nimbus"] .rc-verdict { font: italic 400 1.4rem/1.2 var(--nb-serif); }
 :root[data-design="nimbus"] .play-win .label { color: var(--nb-muted); }
+
+/* "I am Rithvik" header button: the white pixel-cornered twin of Resume */
+:root[data-design="nimbus"] .nb-iam { gap: 8px; }
+@media (max-width: 640px) { :root[data-design="nimbus"] .nb-nav-r .nb-iam { width: 46px; padding: 0; } }
