@@ -37,7 +37,7 @@ export default function Window({ title, icon, label, className = "", place = "ce
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     const w = ref.current;
-    (w?.querySelector<HTMLElement>(initialFocus ?? "") ?? w)?.focus({ preventScroll: true });
+    ((initialFocus && w?.querySelector<HTMLElement>(initialFocus)) || w)?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.({ preventScroll: true }); };
