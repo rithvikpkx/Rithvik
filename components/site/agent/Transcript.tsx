@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import { COMMANDS } from "@/lib/agent/commands";
+import { STARTER_QUESTIONS } from "@/lib/agent/starters";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
 import type { Choice, Item } from "./types";
@@ -11,9 +12,10 @@ export type RowHandlers = {
   answer: (id: number, c: Choice) => void;
   undo: (id: number) => void;
   copy: (text: string) => void;
+  cite: (anchor: string) => void; // footnote click: scroll to + highlight the source
 };
 
-const STARTERS = ["What has he built?", "Is he open to internships?", "/theme random"];
+const STARTERS = [...STARTER_QUESTIONS, "/theme random"];
 const ASK_DONE: Record<string, string> = { yes: "Allowed", no: "Skipped", always: "Allowed for this session", auto: "Allowed for this session" };
 
 /** Welcome box: rows are padded to a fixed width so the box-drawing frame lines up in a mono font. */
@@ -112,7 +114,12 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "sources":
       return (
         <ol className="t-sources" aria-label="Sources">
-          {item.items.map((s) => <li key={s.n}><span className="n">[{s.n}]</span> {s.label}</li>)}
+          {item.items.map((s) => (
+            <li key={s.n}>
+              <span className="n">[{s.n}]</span>{" "}
+              {s.anchor ? <button type="button" onClick={() => h.cite(s.anchor!)} title="Show on the page">{s.label}</button> : s.label}
+            </li>
+          ))}
         </ol>
       );
     case "note":

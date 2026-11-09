@@ -73,6 +73,15 @@
 .t-sources { margin: -4px 0 0 22px; padding: 0; list-style: none; font: 400 12.5px/1.6 var(--a-mono); color: var(--a-muted); }
 .t-sources .n { color: var(--a-accent); }
 .agent-pending { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 8px; padding: 8px 12px; border: 1px solid var(--a-line); border-radius: 10px; background: var(--a-bg); box-shadow: var(--a-shadow); font: 400 13px/1.4 var(--a-mono); color: var(--a-fg); }
+/* cited-source highlight (components/site/agent/highlight.ts): outline + shadow only, so no layout shift */
+.agent-hl { outline: 2px solid color-mix(in srgb, var(--ui-accent, #ff4d8d) 45%, transparent); outline-offset: 4px; animation: agent-hl 1.6s cubic-bezier(.22, 1, .36, 1) forwards; }
+@keyframes agent-hl {
+  0% { outline-color: color-mix(in srgb, var(--ui-accent, #ff4d8d) 50%, transparent); box-shadow: 0 0 0 8px color-mix(in srgb, var(--ui-accent, #ff4d8d) 12%, transparent); }
+  100% { outline-color: transparent; box-shadow: 0 0 0 8px transparent; }
+}
+html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
+.t-sources button { border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.t-sources button:hover { color: var(--a-fg); }
 .agent-pending .q { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 .t-interrupted.warn { color: var(--a-accent); }
 .t-confirm { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -102,5 +111,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .agent-panel, .ab-send, .agent-bar, .t-acts { transition: none; }
-  .t-dot.live, .caret::after { animation: none; }
+  .t-dot.live, .caret::after, .agent-hl { animation: none; }
 }

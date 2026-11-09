@@ -4,6 +4,7 @@ import { fixture } from "../content/fixture.ts";
 import { renderProfile, scrubPrivate } from "./profile.ts";
 import { contextPrompt, nearestLandmark, sanitizeContext } from "./context.ts";
 import { cleanRewrite, rewriteMessages } from "./rewrite.ts";
+import { anchorFor, autoScrollTarget, citedNumbers } from "./highlight.ts";
 import { screenCalls, toolDefs, validateToolCall, type Allowed } from "./tools.ts";
 
 const A: Allowed = {
@@ -96,6 +97,30 @@ test("context: sanitizeContext drops unknown values and caps the selection", () 
   assert.deepEqual(sanitizeContext("nope", ok), {});
   assert.equal(contextPrompt({}), "");
   assert.match(contextPrompt({ selection: 'a """ b' }), /not instructions/);
+});
+
+test("highlight: anchors come from retrieval metadata, validated against content", () => {
+  const ok = { projects: ["boilerframe"], roles: ["tinyml-research"] };
+  assert.equal(anchorFor("projects", { slug: "boilerframe" }, ok), "project-boilerframe");
+  assert.equal(anchorFor("projects", { slug: "draft" }, ok), undefined);
+  assert.equal(anchorFor("experience", { slug: "tinyml-research" }, ok), "experience-tinyml-research");
+  assert.equal(anchorFor("education", { school: "Purdue" }, ok), "about");
+  assert.equal(anchorFor("site_content", { key: "contact.sub" }, ok), "contact");
+  assert.equal(anchorFor("site_content", { key: "v7.faq" }, ok), "questions");
+  assert.equal(anchorFor("site_content", { key: "rag.temperature" }, ok), undefined);
+  assert.equal(anchorFor(undefined, { filename: "resume.pdf" }, ok), undefined);
+});
+
+test("highlight: auto-scroll picks the most relevant cited, existing anchor, and never fights the visitor", () => {
+  const sources = [{ n: 1 }, { n: 2, anchor: "project-a" }, { n: 3, anchor: "about" }, { n: 4, anchor: "project-gone" }];
+  const base = { answer: "He built A [3] and B [2] [4].", sources, exists: (id: string) => id !== "project-gone", full: false, covered: false, lastActivity: 0, now: 10_000 };
+  assert.equal(autoScrollTarget(base), "project-a"); // lowest n among cited
+  assert.equal(autoScrollTarget({ ...base, answer: "Only [1] and [4]." }), null); // no anchor / not in this design
+  assert.equal(autoScrollTarget({ ...base, full: true }), null);
+  assert.equal(autoScrollTarget({ ...base, covered: true }), null);
+  assert.equal(autoScrollTarget({ ...base, lastActivity: 8_000 }), null); // scrolled 2s ago
+  assert.equal(autoScrollTarget({ ...base, answer: "No citations." }), null);
+  assert.deepEqual(citedNumbers("[2] x [10] [2]"), [2, 10]);
 });
 
 test("rewrite: cleans labels and quotes, falls back when empty", () => {

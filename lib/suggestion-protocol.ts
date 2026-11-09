@@ -177,8 +177,9 @@ export const FRAME = "\u0000";
 
 /** One retrieved record as the Search row shows it: `src` is a short label, `score` cosine. */
 export type SearchHit = { src: string; score: number };
-/** A citable record; the model writes `[n]` and the client footnotes it. */
-export type Source = { n: number; label: string };
+/** A citable record; the model writes `[n]` and the client footnotes it. `anchor` is the on-page
+ *  element id for site records (server-derived from retrieval metadata, never from the model). */
+export type Source = { n: number; label: string; anchor?: string };
 
 export type AgentEvent =
   | { t: "rewrite"; q: string }
@@ -189,7 +190,8 @@ export type AgentEvent =
   | { t: "tool"; id: string; name: string; args: Record<string, string>; result?: string }
   /** The answer is complete: the client unlocks the prompt without waiting on chips. */
   | { t: "done" }
-  | { t: "trailer"; suggestions: string[]; actions: unknown };
+  /** Always sent last; `usage.total_tokens` counts the answer model across steps. */
+  | { t: "trailer"; suggestions: string[]; actions: unknown; usage?: { total_tokens: number } };
 
 /** Serialises one event as a frame. */
 export function frame(e: AgentEvent): string {

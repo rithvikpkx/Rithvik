@@ -3,11 +3,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
 import { collectContext } from "@/lib/agent/context";
+import { autoScrollTarget, citedNumbers } from "@/lib/agent/highlight";
+import { scrollAndHighlight } from "./highlight";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from "@/lib/suggestion-protocol";
 import { GAMES } from "@/lib/play/games";
 import type { Content } from "@/lib/content/types";
 import { runSlash } from "./slash";
+import { answerStarter } from "./starters";
 import type { Choice, Design, Item, NewItem, Turn } from "./types";
 
 /** What the agent needs from the surrounding site. */
@@ -23,9 +26,8 @@ export type Host = {
   toast: (message: string) => void;
   /** Slug of the case sheet the visitor came from, for page context. */
   caseSlug?: string | null;
-  /** Edit-mode command runner (/embed /temp /docs, admin /resume …). Return true when it handled
-   *  the command; anything else falls through to the visitor slash commands. */
-  admin?: (raw: string, add: (item: NewItem) => void) => boolean;
+  /** Live view state (read when an answer lands, not when it was asked). */
+  view?: () => { full: boolean; covered: boolean };
 };
 
 type Cooldown = { until: number; status: 429 | 503 };
@@ -38,7 +40,7 @@ const clip = (s: string, n = 48) => (s.length > n ? `${s.slice(0, n - 1)}…` : 
 const pascal = (s: string) => s.replace(/(^|_)(\w)/g, (_, __, c: string) => c.toUpperCase());
 /** The [n] markers an answer cites, in first-seen order, limited to real sources. */
 const cited = (text: string, sources: Source[]) =>
-  [...new Set([...text.matchAll(/\[(\d{1,2})\]/g)].map((m) => Number(m[1])))].map((n) => sources.find((s) => s.n === n)).filter((s): s is Source => !!s);
+  citedNumbers(text).map((n) => sources.find((s) => s.n === n)).filter((s): s is Source => !!s);
 
 /** The agent's state machine: transcript items, real turns, the /api/chat stream, confirmations. */
 export function useAgent(host: Host) {
@@ -57,6 +59,18 @@ export function useAgent(host: Host) {
   const queue = useRef<Ask[]>([]); // side effects waiting behind the one on screen, run strictly in order
   const undos = useRef(new Map<number, () => void>());
   const selection = useRef(""); // last text the visitor selected on the page (not in the dock)
+  const activity = useRef(0); // last time the visitor scrolled or typed on the page
+
+  // Scrolling or typing outside the dock marks the visitor busy, so an answer won't yank the page.
+  useEffect(() => {
+    const mark = (e: Event) => {
+      if (e.type === "keydown" && e.target instanceof Element && e.target.closest(".agent")) return;
+      activity.current = Date.now();
+    };
+    const evs = ["wheel", "touchmove", "keydown"] as const;
+    evs.forEach((t) => window.addEventListener(t, mark, { passive: true }));
+    return () => evs.forEach((t) => window.removeEventListener(t, mark));
+  }, []);
 
   // Remember the page selection so "explain this" still has it after focus moves to the prompt.
   useEffect(() => {
@@ -216,6 +230,12 @@ export function useAgent(host: Host) {
       settle(answerIds.current);
       const notes = cited(answer, sources);
       if (notes.length) add({ kind: "sources", items: notes });
+      // Once per answer: bring the most relevant cited site record into view, unless that would fight the visitor.
+      const target = autoScrollTarget({
+        answer, sources, exists: (id) => !!document.getElementById(id),
+        ...(host.view?.() ?? { full: false, covered: false }), lastActivity: activity.current, now: Date.now(),
+      });
+      if (target) scrollAndHighlight(target);
       setTurns((p) => [...p, { q, a: answer, suggestions: [], at }]);
     };
     try {
@@ -333,15 +353,14 @@ export function useAgent(host: Host) {
     hIdx.current = -1;
     add({ kind: "user", text: q });
     if (isSlash) {
-      // Admin commands get first refusal; everything else is a visitor command.
-      if (host.admin?.(q, add)) return true;
       runSlash(q, {
         add, ask, clear, scroll, copy, turns, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
         openCase: host.openCase, openResume: host.openResume, openComposer: host.openComposer,
       });
     }
-    else void converse(q);
+    // Starter chips answer instantly from content, with no /api/chat call.
+    else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
   }, [add, ask, clear, converse, cooldown, copy, history, host, interrupt, scroll, turns]);
 

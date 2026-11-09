@@ -14,6 +14,7 @@ import { GAMES } from "@/lib/play/games";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { contextPrompt, sanitizeContext } from "@/lib/agent/context";
 import { cleanRewrite, rewriteMessages } from "@/lib/agent/rewrite";
+import { anchorFor } from "@/lib/agent/highlight";
 import { MAX_STEPS, SECTION_IDS, screenCalls, toolDefs, type Allowed } from "@/lib/agent/tools";
 
 // Models come from env (CHAT_MODEL / AUX_MODEL, see lib/openai.ts). Temperature is read per
@@ -228,7 +229,11 @@ export async function POST(req: Request) {
 				const records = [...secondary, ...primary].sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0));
 				const top: SearchHit[] = records.slice(0, 3).map((r) => ({ src: labelOf(r), score: Math.round((r.similarity ?? 0) * 100) / 100 }));
 				emit({ t: "search", q: standalone, n: records.length, top });
-				const sources: Source[] = records.map((r, i) => ({ n: i + 1, label: labelOf(r) }));
+				const ids = { projects: allowed.projects.map((p) => p.slug), roles: allowed.roles };
+				const sources: Source[] = records.map((r, i) => {
+					const anchor = anchorFor(r.source_table, r.metadata, ids);
+					return { n: i + 1, label: labelOf(r), ...(anchor ? { anchor } : {}) };
+				});
 				if (sources.length) emit({ t: "sources", items: sources });
 
 				// Empty-context guard: the profile is always present now, so this only fires if content
@@ -252,6 +257,7 @@ export async function POST(req: Request) {
 				//    calls go to the client as tool rows and back to the model as tool results.
 				const defs = toolDefs(allowed);
 				let toolsUsed = 0;
+				let tokens = 0; // answer-model tokens across steps, reported in the trailer for evals
 				let ttft = 0;
 				for (let step = 0; step < MAX_STEPS; step++) {
 					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, signal });
@@ -262,10 +268,11 @@ export async function POST(req: Request) {
 							if (!ttft) ttft = Date.now() - t0;
 							stepText += ev.text;
 							send(ev.text);
-						} else calls = ev.toolCalls;
+						} else if ("usage" in ev) tokens += ev.usage;
+						else calls = ev.toolCalls;
 					}
 					answerText += stepText;
-					if (!calls.length || isDeclineAnswer(answerText)) break;
+					if (!calls.length) break; // tools stay allowed beside a partial decline ("off-topic… also open his resume")
 					const { kept, replies } = screenCalls(calls, allowed);
 					for (const k of kept) emit({ t: "tool", ...k });
 					toolsUsed += kept.length;
@@ -275,7 +282,7 @@ export async function POST(req: Request) {
 					);
 					if (stepText) send("\n\n");
 				}
-				console.log(`[rag] ${model}: rewrite ${tRewrite - t0}ms, search ${tSearch - tRewrite}ms, ttft ${ttft || "-"}ms, total ${Date.now() - t0}ms, tools ${toolsUsed}`);
+				console.log(`[rag] ${model}: rewrite ${tRewrite - t0}ms, search ${tSearch - tRewrite}ms, ttft ${ttft || "-"}ms, total ${Date.now() - t0}ms, tools ${toolsUsed}, tokens ${tokens}`);
 
 				// The answer is complete: the client unlocks the prompt now, before the chips.
 				emit({ t: "done" });
@@ -286,7 +293,7 @@ export async function POST(req: Request) {
 				const decline = isDeclineAnswer(answerText);
 				const suggestions = decline ? [] : await generateSuggestions(standalone, contextBlock, history.filter((m) => m.role === "user").map((m) => m.content), answerText, offered, profile);
 				const actions = decline || toolsUsed > 0 ? [] : deriveActions(primary, await loadActionLinks(), standalone, gate[0]?.similarity ?? 0);
-				if (suggestions.length || actions.length) emit({ t: "trailer", suggestions, actions });
+				emit({ t: "trailer", suggestions, actions, usage: { total_tokens: tokens } });
 			} catch (e) {
 				if (signal.aborted) return; // visitor interrupted: upstream calls were aborted with it
 				// Headers are already sent: append a visible note instead of truncating silently.

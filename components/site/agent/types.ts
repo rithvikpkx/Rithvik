@@ -16,7 +16,7 @@ export type Item =
    *  `tool` is set when the model requested it, so the row reads as a tool call. */
   | { id: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string } }
   /** Footnotes for the [n] markers the answer actually cited. */
-  | { id: number; kind: "sources"; items: { n: number; label: string }[] }
+  | { id: number; kind: "sources"; items: { n: number; label: string; anchor?: string }[] }
   | { id: number; kind: "note"; text: string; tone?: "warn" };
 
 /** An item before it is given an id. */

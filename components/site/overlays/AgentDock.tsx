@@ -9,6 +9,7 @@ import { setAdminMode } from "../agent/adminCommands";
 import StatusLine from "../agent/StatusLine";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
+import { scrollAndHighlight } from "../agent/highlight";
 import "../agent/agent.css";
 
 /** True when a keystroke is going into a form field or editor, where global shortcuts must stay out of the way. */
@@ -45,6 +46,7 @@ export default function AgentDock() {
 
   const host = useMemo(() => ({
     content, design, caseSlug,
+    view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
     openCase: site.openCase, openResume: site.openResume, openComposer: site.openComposer, openPlay: site.openPlay,
     close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
   }), [content, design, caseSlug, site, close]);
@@ -53,8 +55,8 @@ export default function AgentDock() {
   const busy = busySince !== null;
 
   // Handlers read the latest agent/state through a ref, so the row callbacks (and memoised rows) stay stable.
-  const latest = useRef({ agent, open, input });
-  useEffect(() => { latest.current = { agent, open, input }; });
+  const latest = useRef({ agent, open, input, full, overlay });
+  useEffect(() => { latest.current = { agent, open, input, full, overlay }; });
 
   const go = (q: string) => { if (agent.submit(q)) { setInput(""); setPalIdx(0); recalled.current = null; } };
   const h = useMemo<RowHandlers>(() => ({
@@ -63,6 +65,7 @@ export default function AgentDock() {
     answer: (id, c) => latest.current.agent.answerAsk(id, c),
     undo: (id) => latest.current.agent.undo(id),
     copy: (t) => latest.current.agent.copy(t, "Copied"),
+    cite: (a) => { scrollAndHighlight(a); },
   }), []);
 
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
