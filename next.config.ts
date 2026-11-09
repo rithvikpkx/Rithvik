@@ -66,6 +66,8 @@ const resumePdfHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
 ];
 
+const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }];
+
 const nextConfig: NextConfig = {
   images: {
     // Serve modern formats; AVIF first (smaller), WebP fallback. The browser
@@ -87,6 +89,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/resume.pdf", headers: resumePdfHeaders },
+      // Private logs and shared transcripts must never be indexed (the pages also set a robots meta).
+      { source: "/admin/:path*", headers: noIndex },
+      { source: "/c/:path*", headers: noIndex },
     ];
   },
 };

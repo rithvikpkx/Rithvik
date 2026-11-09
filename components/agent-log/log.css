@@ -1,0 +1,71 @@
+/* Plain pages for the agent log: /admin/chats, the public /c/<token> transcript and /privacy.
+   Self-contained: defines its own --ui-* tokens so it looks the same under any site design. */
+.alog {
+  --ui-bg: #ffffff; --ui-fg: #18181b; --ui-muted: #52525b; --ui-accent: #1d4ed8; --ui-accent-fg: #ffffff;
+  --ui-line: rgba(0, 0, 0, .14); --ui-field: rgba(0, 0, 0, .04); --ui-r: 10px;
+  --ui-font: var(--font-geist-sans), -apple-system, "Segoe UI", system-ui, sans-serif;
+  --ui-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
+  min-height: 100vh; padding: 24px 16px 64px; background: var(--ui-bg); color: var(--ui-fg);
+  font: 400 15px/1.6 var(--ui-font); color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  .alog {
+    --ui-bg: #0f0f12; --ui-fg: #f4f4f5; --ui-muted: #a1a1aa; --ui-accent: #8ab4ff; --ui-accent-fg: #0f0f12;
+    --ui-line: rgba(255, 255, 255, .16); --ui-field: rgba(255, 255, 255, .06); color-scheme: dark;
+  }
+}
+.alog *, .alog *::before, .alog *::after { box-sizing: border-box; }
+.alog-wrap { max-width: 1100px; margin: 0 auto; }
+.alog-narrow { max-width: 720px; margin: 0 auto; }
+.alog h1 { margin: 0 0 4px; font-size: 24px; line-height: 1.25; }
+.alog h2 { margin: 32px 0 8px; font-size: 17px; }
+.alog p, .alog li { max-width: 68ch; }
+.alog a { color: var(--ui-accent); text-underline-offset: 3px; }
+.alog :focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.alog-muted { color: var(--ui-muted); }
+.alog-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+.alog-mono { font-family: var(--ui-mono); font-size: 12.5px; }
+
+.alog-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 16px; margin: 0 0 20px; padding: 14px; border: 1px solid var(--ui-line); border-radius: var(--ui-r); }
+.alog-filters label { display: grid; gap: 4px; font-size: 13px; color: var(--ui-muted); }
+.alog-filters label.inline { display: flex; align-items: center; gap: 6px; min-height: 36px; }
+.alog input[type="text"], .alog input[type="search"], .alog input[type="date"], .alog textarea {
+  min-height: 36px; padding: 6px 10px; border: 1px solid var(--ui-line); border-radius: 8px; background: var(--ui-field); color: var(--ui-fg); font: inherit;
+}
+.alog textarea { width: 100%; min-height: 120px; resize: vertical; }
+.alog button, .alog .alog-btn {
+  min-height: 36px; padding: 0 14px; border: 1px solid var(--ui-line); border-radius: 8px; background: transparent; color: var(--ui-fg);
+  font: 500 14px/1 var(--ui-font); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center;
+}
+.alog button.primary { background: var(--ui-accent); color: var(--ui-accent-fg); border-color: transparent; }
+
+.alog-tablewrap { overflow-x: auto; border: 1px solid var(--ui-line); border-radius: var(--ui-r); }
+.alog table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.alog caption { text-align: left; padding: 10px 12px; color: var(--ui-muted); font-size: 13px; }
+.alog th, .alog td { padding: 9px 12px; text-align: left; vertical-align: top; border-top: 1px solid var(--ui-line); }
+.alog th { font-weight: 600; font-size: 12.5px; color: var(--ui-muted); white-space: nowrap; }
+.alog td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.alog td.prev { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alog-tag { display: inline-block; padding: 1px 7px; border: 1px solid var(--ui-line); border-radius: 999px; font-size: 12px; }
+.alog-tag.hot { border-color: var(--ui-accent); color: var(--ui-accent); }
+
+.alog-dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 12px 0 0; font-size: 14px; }
+.alog-dl dt { color: var(--ui-muted); }
+.alog-dl dd { margin: 0; overflow-wrap: anywhere; }
+.alog-forms { display: grid; gap: 16px; margin-top: 16px; max-width: 640px; }
+
+.alog-msgs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
+.alog-msg { padding: 12px 14px; border: 1px solid var(--ui-line); border-radius: var(--ui-r); }
+.alog-msg[data-role="user"] { background: var(--ui-field); }
+.alog-msg[data-role="tool"] { border-style: dashed; }
+.alog-role { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; font-size: 12.5px; color: var(--ui-muted); }
+.alog-role b { color: var(--ui-fg); }
+.alog-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.alog details { margin-top: 8px; font-size: 13px; }
+.alog pre { margin: 6px 0 0; padding: 10px; overflow-x: auto; border-radius: 8px; background: var(--ui-field); font: 12px/1.5 var(--ui-mono); }
+.alog-err { color: #b91c1c; }
+@media (prefers-color-scheme: dark) { .alog-err { color: #fca5a5; } }
+@media (max-width: 640px) {
+  .alog-dl { grid-template-columns: 1fr; }
+  .alog-dl dd { margin-bottom: 6px; }
+}
