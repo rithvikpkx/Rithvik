@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getContent } from "@/lib/content";
 import OpenCase from "./OpenCase";
+import SitePage from "../SitePage";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -17,9 +18,9 @@ export async function caseMetadata({ params }: Params): Promise<Metadata> {
   return p ? { title: p.title, description: p.headline, alternates: { canonical: `/work/${p.slug}` } } : {};
 }
 
-/** The /work/[slug] page body: 404s on an unknown slug, otherwise opens the case sheet. */
+/** The /work/[slug] page: 404s on an unknown slug, otherwise the full site with that case sheet open. */
 export async function CasePage({ params }: Params) {
   const { slug } = await params;
   if (!(await getContent()).projects.some((x) => x.slug === slug)) notFound();
-  return <OpenCase slug={slug} />;
+  return <SitePage><OpenCase slug={slug} /></SitePage>;
 }
