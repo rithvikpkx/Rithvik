@@ -16,6 +16,9 @@ import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { cleanTimeZone, contextPrompt, sanitizeContext } from "@/lib/agent/context";
 import { logRequest, logTurn, startSession } from "@/lib/agent/log";
+import { cacheable, normalizeQuestion, replayChunks, storableParts } from "@/lib/agent/cache";
+import { currentHash, lookupCache, recordHit, storeCache } from "@/lib/agent/cache-db";
+import { isOwner } from "@/lib/track/owner";
 import type { TurnRow } from "@/lib/agent/obs";
 import { cleanRewrite, rewriteMessages } from "@/lib/agent/rewrite";
 import { anchorFor } from "@/lib/agent/highlight";
@@ -196,24 +199,28 @@ export async function POST(req: Request) {
 	});
 	const profile = renderProfile(content);
 	const t0 = Date.now();
+	// First turns with no page-relative context and no tools may be served from / stored in the response cache.
+	const useCache = cacheable({ evalRun: isEval(req), evalOptIn: req.headers.get("x-eval-cache") === "on", owner: isOwner(req), history: history.length, selection: page.selection, question: message });
 
 	// Observability: the turn's facts are gathered here and written after the response, never on the stream's path.
-	const log = { answer: "", tools: [] as { name: string; args: unknown; result?: string }[], sources: [] as Source[], tokens: 0, ttfb: 0, status: 200, errorKind: undefined as string | undefined };
+	const log = { answer: "", tools: [] as { name: string; args: unknown; result?: string }[], sources: [] as Source[], tokens: 0, ttfb: 0, status: 200, errorKind: undefined as string | undefined, cached: false, hitId: undefined as string | undefined, store: null as Parameters<typeof storeCache>[0] | null };
 	let turnDone!: () => void;
 	const finished = new Promise<void>((r) => (turnDone = r));
 	after(async () => {
 		await finished;
 		const totalMs = Date.now() - t0;
+		if (log.hitId) void recordHit(log.hitId);
+		if (log.store) await storeCache(log.store); // before the eval early-return: an opted-in eval run fills the cache too
 		const rows: TurnRow[] = [
 			{ role: "user", content: message },
 			...log.tools.map((t): TurnRow => ({ role: "tool", content: t.name, tools: t })),
 			// shortcut: total tokens (in + out) go in tokens_out; split them if the dashboard needs per-direction cost
-			{ role: "assistant", content: log.answer, sources: log.sources, model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, error: log.errorKind },
+			{ role: "assistant", content: log.answer, sources: log.sources, model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, error: log.errorKind, cached: log.cached },
 		];
 		if (isEval(req)) return;
 		await Promise.all([
 			logTurn(sessionId, rows),
-			logRequest({ model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, errorKind: log.errorKind, toolCount: log.tools.length }),
+			logRequest({ model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, errorKind: log.errorKind, cached: log.cached, toolCount: log.tools.length }),
 		]);
 	});
 
@@ -221,7 +228,8 @@ export async function POST(req: Request) {
 	const readable = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
-			const send = (s: string) => controller.enqueue(encoder.encode(s));
+			let raw = ""; // everything sent, kept so a finished answer can be cached
+			const send = (s: string) => { raw += s; controller.enqueue(encoder.encode(s)); };
 			const emit = (e: AgentEvent) => send(frame(e));
 			let answerText = "";
 			let tokens = 0; // answer-model tokens across steps, reported in the trailer for evals
@@ -245,11 +253,42 @@ export async function POST(req: Request) {
 				// 2. HyDE + one batched embedding call for both vectors: question+hypothetical for
 				//    recall, the bare question for the action gate (HyDE drags off-topic questions
 				//    into the corpus — "who won the world cup?" scores 0.732 with it, 0.099 without).
-				const hypothetical = await generateHypotheticalAnswer(standalone, signal);
+				// Cache-eligible turns look up the bare-question vector while HyDE is still generating; a hit
+				// aborts HyDE, a miss reuses the vector for the action gate (no extra embed call).
+				const hydeCtl = new AbortController();
+				const hydeP = generateHypotheticalAnswer(standalone, AbortSignal.any([signal, hydeCtl.signal]));
+				hydeP.catch(() => {}); // an aborted HyDE after a hit must not surface as unhandled
+				let bareVec: number[] | undefined;
+				let hash: string | null = null;
+				if (useCache) {
+					try {
+						const [[v], h] = await Promise.all([embedTexts([normalizeQuestion(standalone)]), currentHash(content, model)]);
+						bareVec = v;
+						hash = h;
+						const hit = h ? await lookupCache(v, h) : null;
+						if (hit) {
+							hydeCtl.abort();
+							for (const c of replayChunks(hit.parts, hit.createdAt)) send(c);
+							for (const p of hit.parts) {
+								if (p.type === "text") answerText += p.text;
+								else if (p.event.t === "sources") log.sources = p.event.items;
+							}
+							Object.assign(log, { cached: true, hitId: hit.id });
+							ttft = Date.now() - t0;
+							console.log(`[rag] cache hit (${hit.similarity.toFixed(3)}): ${Date.now() - t0}ms`);
+							return;
+						}
+					} catch (e) {
+						if (signal.aborted) throw e;
+						console.warn("[rag] cache lookup failed:", e instanceof Error ? e.message : e);
+					}
+				}
+				const hypothetical = await hydeP;
 				let primary: Row[] = [], secondary: Row[] = [], gate: Row[] = [];
 				let temperature = TEMP_DEFAULT;
 				try {
-					const [hyde, bare] = await embedTexts([`${standalone}\n\n${hypothetical}`, standalone]);
+					const hydeText = `${standalone}\n\n${hypothetical}`;
+					const [hyde, bare] = bareVec ? [(await embedTexts([hydeText]))[0], bareVec] : await embedTexts([hydeText, standalone]);
 					const [p, s, g, t] = await Promise.allSettled([
 						db.rpc("match_primary", { query_embedding: hyde, match_count: PRIMARY_MATCHES }),
 						db.rpc("match_secondary", { query_embedding: hyde, match_count: SECONDARY_MATCHES }),
@@ -300,6 +339,7 @@ export async function POST(req: Request) {
 				//    calls go to the client as tool rows and back to the model as tool results.
 				const defs = toolDefs(allowed);
 				let toolsUsed = 0;
+				let calledTools = false; // any tool call, even a rejected one, makes the answer uncacheable
 				for (let step = 0; step < MAX_STEPS; step++) {
 					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, signal });
 					let stepText = "";
@@ -313,6 +353,7 @@ export async function POST(req: Request) {
 						else calls = ev.toolCalls;
 					}
 					answerText += stepText;
+					if (calls.length) calledTools = true;
 					if (!calls.length) break; // tools stay allowed beside a partial decline ("off-topic… also open his resume")
 					const { kept, replies } = await screenCalls(calls, allowed, new Date(), visitorTz);
 					for (const k of kept) { emit({ t: "tool", ...k }); log.tools.push({ name: k.name, args: k.args, result: k.result }); }
@@ -335,6 +376,8 @@ export async function POST(req: Request) {
 				const suggestions = decline ? [] : await generateSuggestions(standalone, contextBlock, history.filter((m) => m.role === "user").map((m) => m.content), answerText, offered, profile);
 				const actions = decline || toolsUsed > 0 ? [] : deriveActions(primary, await loadActionLinks(), standalone, gate[0]?.similarity ?? 0);
 				emit({ t: "trailer", suggestions, actions, usage: { total_tokens: tokens } });
+				const parts = useCache && !calledTools && bareVec && hash ? storableParts(raw) : null;
+				if (parts && bareVec && hash) log.store = { question: normalizeQuestion(standalone), embedding: bareVec, hash, model, parts };
 			} catch (e) {
 				if (signal.aborted) { log.status = 499; log.errorKind = "aborted"; return; } // visitor interrupted: upstream calls were aborted with it
 				log.status = 500;

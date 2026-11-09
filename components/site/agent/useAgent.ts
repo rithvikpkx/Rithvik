@@ -12,7 +12,7 @@ import { GAMES } from "@/lib/play/games";
 import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
 import type { ComposerMeta } from "../SiteProvider";
-import { usageLines, type Usage } from "@/lib/agent/status";
+import { formatAge, usageLines, type Usage } from "@/lib/agent/status";
 import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
@@ -377,7 +377,7 @@ export function useAgent(host: Host) {
         const { done, value } = await reader.read();
         if (gone()) return;
         if (done) break;
-        if (first) { first = false; const ttfbMs = Date.now() - at; setUsage((p) => ({ ...p, ttfbMs, cache })); }
+        if (first) { first = false; const ttfbMs = Date.now() - at; setUsage((p) => ({ ...p, ttfbMs, cache, cached: false })); }
         acc += decoder.decode(value, { stream: true });
         const parts = parseFrames(acc);
         answer = parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
@@ -401,6 +401,9 @@ export function useAgent(host: Host) {
           else if (e.t === "search") {
             const top = (e.top ?? []).map((h) => `${h.src} ${Number(h.score).toFixed(2)}`).join(", ");
             add({ kind: "tool", name: "Search", args: `site, "${clip(e.q)}"`, result: `${e.n} record${e.n === 1 ? "" : "s"}${top ? ` · ${top}` : " · answering from the profile"}` });
+          } else if (e.t === "cache") {
+            setUsage((p) => ({ ...p, cached: true }));
+            add({ kind: "tool", name: "Cache", args: "semantic", result: `hit · answered ${formatAge(e.age)} ago` });
           } else if (e.t === "sources") sources = Array.isArray(e.items) ? e.items : [];
           else if (e.t === "tool") runTool(e);
           else if (e.t === "done") finish();
