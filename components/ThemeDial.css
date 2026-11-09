@@ -41,7 +41,8 @@
 /* Expanded size — small, non-invasive. :has(:focus-visible) opens on
    keyboard focus only (mouse click doesn't trigger focus-visible). */
 .theme-dial-aside:hover .theme-dial-content,
-.theme-dial-aside:has(:focus-visible) .theme-dial-content {
+.theme-dial-aside:has(:focus-visible) .theme-dial-content,
+.theme-dial-aside.is-holding .theme-dial-content {
   width: 200px;
   height: 220px;
 }
@@ -80,7 +81,8 @@
 }
 
 .theme-dial-aside:hover .theme-dial-dormant,
-.theme-dial-aside:has(:focus-visible) .theme-dial-dormant {
+.theme-dial-aside:has(:focus-visible) .theme-dial-dormant,
+.theme-dial-aside.is-holding .theme-dial-dormant {
   opacity: 0;
 }
 
@@ -106,7 +108,8 @@
 }
 
 .theme-dial-aside:hover .theme-dial-fan,
-.theme-dial-aside:has(:focus-visible) .theme-dial-fan {
+.theme-dial-aside:has(:focus-visible) .theme-dial-fan,
+.theme-dial-aside.is-holding .theme-dial-fan {
   opacity: 1;
   pointer-events: auto;
 }
@@ -177,7 +180,8 @@
     height: 30px;
   }
   .theme-dial-aside:hover .theme-dial-content,
-  .theme-dial-aside:has(:focus-visible) .theme-dial-content {
+  .theme-dial-aside:has(:focus-visible) .theme-dial-content,
+.theme-dial-aside.is-holding .theme-dial-content {
     width: 182px;
     height: 200px;
   }

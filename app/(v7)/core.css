@@ -33,15 +33,22 @@ button { font: inherit; color: inherit; }
 .stage { position: relative; z-index: 1; display: block; min-height: 100vh; outline: none; }
 html.locked, html.locked body { overflow: hidden; }
 
-/* View-transition reveal: the new website grows out of the click point; a crossfade under reduced motion */
+/* View-transition reveal: the new website grows out of the theme dial on the left edge and sweeps across
+   the whole display; a crossfade under reduced motion. */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 html.vt-reveal::view-transition-new(root) { animation: v7-reveal 900ms var(--ease-in-out) both; }
 html.vt-reveal::view-transition-old(root) { animation: v7-recede 900ms var(--ease-in-out) both; }
 html.vt-fade::view-transition-new(root) { animation: v7-fade-in 240ms ease both; }
 html.vt-fade::view-transition-old(root) { animation: v7-fade-in 240ms ease reverse both; }
-@keyframes v7-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(150vmax at var(--vt-x) var(--vt-y)); } }
+@keyframes v7-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x) var(--vt-y)); } }
 @keyframes v7-recede { to { transform: scale(.94); filter: blur(6px) saturate(.6); } }
 @keyframes v7-fade-in { from { opacity: 0; } }
+/* The dial is its own transition layer above the reveal. Its new view is live, so the pill rotation keeps
+   animating during the sweep instead of freezing inside the page snapshot. */
+.theme-dial-aside { view-transition-name: v7-dial; }
+::view-transition-group(v7-dial) { z-index: 2; animation: none; }
+::view-transition-old(v7-dial) { display: none; }
+::view-transition-new(v7-dial) { animation: none; }
 
 /* Performance mode + reduced motion: gentler, not zero */
 html.lite *, html.lite *::before, html.lite *::after { animation-duration: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }

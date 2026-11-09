@@ -94,11 +94,18 @@ async function switchLook(live: { current: Live }, id: string, opts: Opts = {}) 
   else {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const cls = reduce ? "vt-fade" : "vt-reveal";
-    const [x, y] = opts.from ?? [innerWidth / 2, innerHeight / 2];
+    // The sweep always starts at the dial (the switcher lives there), whatever triggered it.
+    const dial = document.querySelector<HTMLElement>(".theme-dial-aside");
+    const r = dial?.getBoundingClientRect();
+    const [x, y] = r ? [r.left + r.width / 2, r.top + r.height / 2] : opts.from ?? [innerWidth / 2, innerHeight / 2];
     html.style.setProperty("--vt-x", `${x}px`);
     html.style.setProperty("--vt-y", `${y}px`);
+    html.style.setProperty("--vt-r", `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`);
+    // Pointer hover is lost while a view transition runs, so keep an open fan open until it ends.
+    const hold = !!dial?.matches(":hover, :has(:focus-visible)");
+    if (hold) dial!.classList.add("is-holding");
     html.classList.add(cls);
-    document.startViewTransition(go).finished.finally(() => html.classList.remove(cls));
+    document.startViewTransition(go).finished.finally(() => { html.classList.remove(cls); dial?.classList.remove("is-holding"); });
   }
   const name = meta?.name ?? (entry.kind === "palette" ? entry.name : id);
   if (!opts.silent) live.current.toast(`Now viewing ${name}`, () => void switchLook(live, prev, { silent: true }));
