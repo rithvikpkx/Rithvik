@@ -41,7 +41,7 @@ export type Filters = { q: string; email: boolean; followUp: boolean; from: stri
 type Params = Record<string, string | string[] | undefined>;
 
 /** A YYYY-MM-DD string that is a real calendar date, else null. */
-function dateOrNull(v: string | null): string | null {
+export function dateOrNull(v: string | null): string | null {
   if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
   const d = new Date(`${v}T00:00:00Z`);
   return Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v ? null : v;
