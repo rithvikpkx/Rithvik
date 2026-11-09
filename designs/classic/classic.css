@@ -1,0 +1,7 @@
+/* Placeholder Classic: palette tokens (--bg, --text, --muted, --accent) come from ThemeStyleInjector. */
+:root[data-design="classic"] body { background: var(--bg, #fff); color: var(--text, #1f2328); font-family: var(--ui-font); }
+:root[data-design="classic"] .cl { max-width: 720px; margin: 0 auto; padding: 12vh 24px 160px; line-height: 1.6; }
+:root[data-design="classic"] .cl h1 { font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.05; margin: 0 0 12px; }
+:root[data-design="classic"] .cl h2 { margin: 48px 0 8px; font-size: 1.1rem; }
+:root[data-design="classic"] .cl a { color: var(--accent, #0969da); }
+:root[data-design="classic"] .cl-muted { color: var(--muted, #656d76); }
