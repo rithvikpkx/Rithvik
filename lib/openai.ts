@@ -24,7 +24,7 @@ export type ChatOpts = {
   messages: ChatMessage[];
   temperature?: number; // dropped for reasoning models
   maxTokens: number;
-  reasoningEffort?: "minimal" | "low"; // reasoning models only; keeps time-to-first-token low
+  reasoningEffort?: "none" | "minimal" | "low"; // reasoning models only; keeps time-to-first-token low
   tools?: ToolDef[];
   json?: boolean; // response_format json_object
   signal?: AbortSignal;
@@ -100,6 +100,13 @@ async function post(o: ChatOpts, stream: boolean): Promise<Response> {
     body: JSON.stringify(chatBody(o, stream)),
     signal: o.signal,
   });
+  if (res.status === 400 && o.reasoningEffort && o.reasoningEffort !== "none") {
+    // Newer models (gpt-5.4+, gpt-6) reject a reasoning effort alongside function tools on this endpoint and
+    // ask for "none"; older gpt-5 models reject "none". Retry once instead of tracking per-model rules.
+    const text = await res.text();
+    if (text.includes("reasoning_effort")) return post({ ...o, reasoningEffort: "none" }, stream);
+    throw new Error(`Chat completion failed (400): ${text}`);
+  }
   if (!res.ok || (stream && !res.body)) throw new Error(`Chat completion failed (${res.status}): ${await res.text()}`);
   return res;
 }
