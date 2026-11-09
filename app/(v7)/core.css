@@ -1,0 +1,48 @@
+/* v7 base: tokens, reset, type, view-transition reveal. Ported from docs/mockups/v7/core.css; component
+   rules live with their components, design rules under [data-design="<id>"]. */
+:root {
+  /* chrome tokens: switcher, agent, windows, sheet, toast */
+  --ui-bg: #0f0f12; --ui-fg: #f4f4f5; --ui-muted: #a1a1aa; --ui-accent: #ff4d8d; --ui-accent-fg: #0f0f12;
+  --ui-line: rgba(255, 255, 255, .14); --ui-field: rgba(255, 255, 255, .06);
+  --ui-font: var(--font-geist-sans), -apple-system, "Segoe UI", system-ui, sans-serif; --ui-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
+  --ui-r: 14px; --ui-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 48px rgba(0, 0, 0, .35); --ui-blur: blur(16px) saturate(150%);
+  /* portrait tokens */
+  --pt-ring: transparent; --pt-ring-w: 0px; --pt-photo-bg: #ddd; --pt-photo-r: 50%; --pt-shadow: 0 30px 80px -30px rgba(0, 0, 0, .45);
+  --pt-node-bg: #fff; --pt-node-fg: #111; --pt-node-line: rgba(0, 0, 0, .14); --pt-node-r: 50%; --pt-node-size: 13.5%;
+  --pt-beam: rgba(127, 127, 127, .35); --pt-pulse-a: #ff4d8d; --pt-pulse-b: #ffd166; --pt-beam-w: 1.4; --pt-pulse-w: 2.6;
+  /* agent skin maps onto the chrome tokens */
+  --agent-bg: var(--ui-bg); --agent-fg: var(--ui-fg); --agent-muted: var(--ui-muted); --agent-accent: var(--ui-accent); --agent-line: var(--ui-line);
+  --agent-font: var(--ui-mono); --agent-text-font: var(--ui-font); --agent-r: var(--ui-r); --agent-shadow: var(--ui-shadow);
+  --bw: 1px; --press: scale(.97);
+  --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  /* the shared theme dial reads the old site's mono token */
+  --mono: var(--ui-mono);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; overflow-x: hidden; font-family: var(--ui-font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+img { max-width: 100%; display: block; }
+button { font: inherit; color: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 16px; top: -60px; z-index: 300; padding: 8px 12px; border-radius: 8px; background: var(--ui-bg); color: var(--ui-fg); }
+.skip:focus { top: 12px; }
+:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+.ic { width: 16px; height: 16px; flex: none; }
+.logo { width: 16px; height: 16px; }
+.stage { position: relative; z-index: 1; display: block; min-height: 100vh; outline: none; }
+html.locked, html.locked body { overflow: hidden; }
+
+/* View-transition reveal: the new website grows out of the click point; a crossfade under reduced motion */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.vt-reveal::view-transition-new(root) { animation: v7-reveal 900ms var(--ease-in-out) both; }
+html.vt-reveal::view-transition-old(root) { animation: v7-recede 900ms var(--ease-in-out) both; }
+html.vt-fade::view-transition-new(root) { animation: v7-fade-in 240ms ease both; }
+html.vt-fade::view-transition-old(root) { animation: v7-fade-in 240ms ease reverse both; }
+@keyframes v7-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(150vmax at var(--vt-x) var(--vt-y)); } }
+@keyframes v7-recede { to { transform: scale(.94); filter: blur(6px) saturate(.6); } }
+@keyframes v7-fade-in { from { opacity: 0; } }
+
+/* Performance mode + reduced motion: gentler, not zero */
+html.lite *, html.lite *::before, html.lite *::after { animation-duration: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-iteration-count: 1 !important; animation-delay: 0ms !important; } }
