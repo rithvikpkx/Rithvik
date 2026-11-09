@@ -21,6 +21,13 @@ test("classic models get max_tokens + temperature and never reasoning_effort", (
   assert.equal("stream" in b, false);
 });
 
+test("streaming asks for usage and the final usage chunk is read", () => {
+  assert.deepEqual(chatBody({ model: "gpt-4o-mini", messages: [], maxTokens: 5 }, true).stream_options, { include_usage: true });
+  const { usage, deltas } = parseSSEDeltas(`data: ${JSON.stringify({ choices: [], usage: { total_tokens: 123 } })}\n\n`);
+  assert.equal(usage, 123);
+  assert.deepEqual(deltas, []);
+});
+
 test("streamed tool-call fragments merge into whole calls by index", () => {
   const tc = (index: number, f: Record<string, string>, id?: string) =>
     `data: ${JSON.stringify({ choices: [{ delta: { tool_calls: [{ index, ...(id ? { id } : {}), function: f }] } }] })}\n\n`;

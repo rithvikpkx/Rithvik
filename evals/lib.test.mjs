@@ -11,6 +11,16 @@ test("splitStream treats everything after the first NUL as structured, with or w
   assert.deepEqual(parseFrames(s.tail), [{ suggestions: ["a"], actions: [] }]);
 });
 
+test("splitStream reads v2: text runs are the answer, frames are structured", () => {
+  const f = (o) => `\u0000${JSON.stringify(o)}\u0000`;
+  const raw = f({ t: "search", q: "x", n: 1, top: [] }) + "Step one." + f({ t: "tool", id: "1", name: "open_project", args: { slug: "boilerframe" } }) + " Two." + f({ t: "done" }) + f({ t: "trailer", suggestions: [], actions: [], usage: { total_tokens: 42 } });
+  const s = splitStream(raw);
+  assert.equal(s.answer, "Step one. Two.");
+  const frames = parseFrames(s.tail);
+  assert.deepEqual(extractTools(frames), [{ name: "open_project", target: "boilerframe" }]);
+  assert.equal(extractTokens(frames), 42);
+});
+
 test("parseFrames tolerates labels, partial JSON and several NUL-separated frames", () => {
   const frames = parseFrames('LABEL\u0000{"a":1}\u0000{"b":\u0000[{"tool":"x"}]');
   assert.deepEqual(frames, [{ a: 1 }, [{ tool: "x" }]]);

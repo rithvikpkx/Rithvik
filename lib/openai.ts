@@ -46,7 +46,7 @@ export function chatBody(o: ChatOpts, stream: boolean): Record<string, unknown> 
       : { max_tokens: o.maxTokens, ...(o.temperature !== undefined ? { temperature: o.temperature } : {}) }),
     ...(o.tools?.length ? { tools: o.tools } : {}),
     ...(o.json ? { response_format: { type: "json_object" } } : {}),
-    ...(stream ? { stream: true } : {}),
+    ...(stream ? { stream: true, stream_options: { include_usage: true } } : {}), // usage arrives in a final chunk
   };
 }
 
@@ -55,18 +55,21 @@ export type ToolDelta = { index: number; id?: string; name?: string; args?: stri
 
 /** Pulls text and tool-call fragments out of every complete SSE event in `buffer`
  *  and returns the unconsumed tail (a partial event) for the next call. Pure. */
-export function parseSSEDeltas(buffer: string): { deltas: string[]; tools: ToolDelta[]; rest: string } {
+export function parseSSEDeltas(buffer: string): { deltas: string[]; tools: ToolDelta[]; usage: number; rest: string } {
   const events = buffer.split(/\r?\n\r?\n/);
   const rest = events.pop() ?? ""; // last piece has no terminator yet
   const deltas: string[] = [];
   const tools: ToolDelta[] = [];
+  let usage = 0;
   for (const event of events) {
     for (const line of event.split(/\r?\n/)) {
       if (!line.startsWith("data:")) continue;
       const data = line.slice(5).trim();
       if (!data || data === "[DONE]") continue;
       try {
-        const delta = JSON.parse(data)?.choices?.[0]?.delta;
+        const json = JSON.parse(data);
+        if (typeof json?.usage?.total_tokens === "number") usage += json.usage.total_tokens;
+        const delta = json?.choices?.[0]?.delta;
         if (typeof delta?.content === "string" && delta.content) deltas.push(delta.content);
         for (const t of Array.isArray(delta?.tool_calls) ? delta.tool_calls : []) {
           tools.push({ index: Number(t.index) || 0, id: t.id, name: t.function?.name, args: t.function?.arguments });
@@ -76,7 +79,7 @@ export function parseSSEDeltas(buffer: string): { deltas: string[]; tools: ToolD
       }
     }
   }
-  return { deltas, tools, rest };
+  return { deltas, tools, usage, rest };
 }
 
 /** Folds streamed tool-call fragments (keyed by index) into whole calls. Pure. */
@@ -113,10 +116,10 @@ export async function complete(o: ChatOpts): Promise<{ content: string; toolCall
   };
 }
 
-export type StreamEvent = { text: string } | { toolCalls: ToolCall[] };
+export type StreamEvent = { text: string } | { toolCalls: ToolCall[] } | { usage: number };
 
 /** Opens a streaming completion: yields `{text}` deltas, then one `{toolCalls}` at the end if the
- *  model called tools. Rejects before returning if the request itself fails (bad key, 429, ...),
+ *  model called tools, then `{usage}` (total tokens). Rejects before returning if the request itself fails (bad key, 429, ...),
  *  so callers can still answer with an error status. `signal` aborts the upstream request. */
 export async function streamChat(o: ChatOpts): Promise<AsyncGenerator<StreamEvent>> {
   return eventsOf((await post(o, true)).body!);
@@ -128,17 +131,20 @@ async function* eventsOf(body: ReadableStream<Uint8Array>): AsyncGenerator<Strea
   const decoder = new TextDecoder();
   let buffer = "";
   let calls: ToolCall[] = [];
+  let usage = 0;
   try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
-      const { deltas, tools, rest } = parseSSEDeltas(buffer);
+      const { deltas, tools, usage: u, rest } = parseSSEDeltas(buffer);
       buffer = rest;
+      usage += u;
       calls = mergeToolDeltas(calls, tools);
       for (const text of deltas) yield { text };
     }
     if (calls.length) yield { toolCalls: calls };
+    if (usage) yield { usage };
   } finally {
     reader.cancel().catch(() => {});
   }
