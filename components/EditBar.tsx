@@ -26,6 +26,7 @@ export default function EditBar({ onEditContent }: { onEditContent?: () => void 
           <span className="edit-bar-hint">Click any text to edit — saves automatically on blur</span>
           {onEditContent && <button className="edit-bar-exit" onClick={onEditContent}>Edit content</button>}
           <Link className="edit-bar-exit" href="/admin/chats" style={{ textDecoration: "none" }}>Chats</Link>
+          <Link className="edit-bar-exit" href="/admin/visitors" style={{ textDecoration: "none" }}>Visitors</Link>
           <button className="edit-bar-exit" onClick={logout}>
             Exit
           </button>

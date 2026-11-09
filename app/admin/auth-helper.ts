@@ -52,3 +52,17 @@ export async function requireAuth() {
 
   return user;
 }
+
+/** True when the request carries a Supabase session belonging to the admin. The non-redirecting twin of
+ *  requireAuth, for route handlers that answer 401 instead (same fail-closed allow-list check). */
+export async function isAdmin(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } },
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  const allowed = adminEmail();
+  return !!user && !!allowed && user.email?.trim().toLowerCase() === allowed;
+}

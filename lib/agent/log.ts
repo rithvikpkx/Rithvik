@@ -1,6 +1,9 @@
 import "server-only";
 import { adminClient } from "@/lib/supabase-server";
+import { headers } from "next/headers";
 import { ipBucket } from "@/lib/rate-limit";
+import { isOwner, isOwnerHeaders } from "@/lib/track/owner";
+import { visitorIdFromCookie } from "@/lib/track/schema";
 import { clip, geoFromHeaders, hashIp, isUuid, safeInt, toMessageRow, type TurnRow } from "./obs";
 
 /* Agent observability writes. Every export is fire-and-forget safe: it catches everything, logs
@@ -14,6 +17,7 @@ export async function startSession(
   sessionId?: string | null,
   opts: { firstDesign?: string; referrer?: string } = {},
 ): Promise<string | null> {
+  if (isOwner(req)) return null; // the owner's own chats are never logged (logTurn skips a null session)
   try {
     const db = adminClient();
     if (isUuid(sessionId)) {
@@ -34,6 +38,10 @@ export async function startSession(
       .select("id")
       .single();
     if (error) throw error;
+    // Link the conversation to the tracked visitor. A separate best-effort update so a missing column or an
+    // unknown visitor id (FK) can never cost the session row itself.
+    const visitorId = visitorIdFromCookie(req.headers.get("cookie"));
+    if (visitorId) await db.from("agent_sessions").update({ visitor_id: visitorId }).eq("id", data.id);
     return data.id as string;
   } catch (e) {
     console.error("[agentlog] startSession failed:", e instanceof Error ? e.message : e);
@@ -59,6 +67,10 @@ export async function logRequest(m: {
   model?: string; tokensIn?: number; tokensOut?: number; ttfbMs?: number; totalMs?: number;
   status?: number; errorKind?: string; cached?: boolean; toolCount?: number;
 }): Promise<void> {
+  try {
+    // No request is passed in, so read it from the ambient context; outside one it throws and we log.
+    if (isOwnerHeaders(await headers())) return;
+  } catch { /* no request context */ }
   try {
     const { error } = await adminClient().from("agent_requests").insert({
       model: clip(m.model, 80),
