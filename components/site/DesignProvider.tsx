@@ -4,7 +4,7 @@ import type { ComponentType } from "react";
 import { flushSync } from "react-dom";
 import type { DesignMeta, DesignProps } from "@/lib/designs/types";
 import type { Theme } from "@/lib/types";
-import { THEME_STORAGE_KEY } from "@/lib/themes";
+import { DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
 import { DESIGNS, DESIGN_KEY, designById, fontsHref, htmlAttrsFor, isDarkColor, loadClassic } from "@/lib/designs/registry";
 import { useSite } from "./SiteProvider";
 
@@ -131,10 +131,14 @@ export default function DesignProvider({ initial, palettes, children }: { initia
   const apply = useCallback((id: string, opts?: Opts) => switchLook(live, id, opts), []);
 
   const setDesign = useCallback((id: string, from?: [number, number]) => { void apply(id, { from }); }, [apply]);
+  // `T` steps through the nine designs plus Classic (one stop, in the last palette used), not all 25 entries.
+  const lastPalette = useRef(DEFAULT_THEME_SLUG);
+  useEffect(() => { if (!designById(current)) lastPalette.current = current; }, [current]);
   const cycle = useCallback((dir: 1 | -1 = 1) => {
-    const { entries: es, current: cur } = live.current;
-    const i = es.findIndex((e) => e.id === cur);
-    void apply(es[(i + dir + es.length) % es.length].id);
+    const stops = [lastPalette.current, ...DESIGNS.map((d) => d.id)];
+    const cur = live.current.current;
+    const i = Math.max(0, stops.indexOf(designById(cur) ? cur : lastPalette.current));
+    void apply(stops[(i + dir + stops.length) % stops.length]);
   }, [apply]);
 
   useEffect(() => {
