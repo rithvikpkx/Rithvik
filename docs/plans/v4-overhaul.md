@@ -391,6 +391,12 @@ and outreach after launch (first-party events, review queue, never auto-send).
 - Order: agent backend → wave A (conversations + metrics logging + share + /privacy + meeting email; calendar;
   voice) → wave B (cache + /status; JSON chat artifacts). All Sonnet/high. Tailored brief + GitHub activity dropped for now (owner, 2026-11-09).
 
+Status (2026-11-09): **Step 3 done** (tag `step3-done`): resume sync, edit window, agent (gpt-6-luna, tools, multi-step,
+calendar, meeting email, voice, page awareness, source highlight, artifacts, cache, /usage), conversations + share,
+visitor tracking + replay + owner exclusion, /privacy, /status. Launch-day tasks: enable the `rithvik-uptime` pg_cron
+job (commented in supabase/agent_cache_metrics_migration.sql) once the apex serves /api/health; confirm Vercel env vars
+for Production (CRON_SECRET, CALENDAR_ICS_URL, IP_HASH_SALT, TRACKING_OWNER_KEY, TRACKING_EXCLUDE_IPS, IPINFO_TOKEN).
+
 ### Step 4: verification and merge
 Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
 throttle, contrast audit, preview review by the owner. Merge to `main` only on "merge to main".
