@@ -44,7 +44,7 @@ export async function rateLimit(
   windowSeconds = 3600,
 ): Promise<RateLimitResult> {
   // Lazy import keeps ipBucket testable under plain node (no Supabase env or "@/" alias).
-  const { adminClient } = await import("@/lib/supabase");
+  const { adminClient } = await import("@/lib/supabase-server");
   const { data, error } = await adminClient().rpc("rate_limit_hit", {
     p_bucket: bucket,
     p_key: key,
