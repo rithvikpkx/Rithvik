@@ -30,7 +30,7 @@ minimal code, granular conventional commits).
 - Designs: `lib/designs/types.ts` (`DesignMeta`, `ShaderSpec`, `DesignProps`). Switch API:
   `components/site/DesignProvider.tsx` → `useDesign()`: `entries, current, setDesign(id, from?), cycle(dir?)`.
 - Performance mode = `html.lite` class (single source of truth; `useSite().lite`).
-- Icons/logos/land/spinners/banner/commits: `lib/assets/{icons,land,misc}.ts` (ported from the mockup;
+- Icons/logos: `<Icon name>` / `<Logo slug>` from `components/site/Glyph.tsx`; raw data in `lib/assets/{icons,land,misc}.ts` (ported from the mockup;
   no icon packages).
 
 ## Ownership (only edit files you own; anything shared → note it in your report)
