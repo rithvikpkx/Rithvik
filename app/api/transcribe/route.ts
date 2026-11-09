@@ -1,5 +1,5 @@
 import { rateLimit, clientKey } from "@/lib/rate-limit";
-import { durationOk, MAX_AUDIO_BYTES, sniffAudio } from "@/lib/voice";
+import { durationOk, MAX_AUDIO_BYTES, sniffAudio, stripPromptEcho } from "@/lib/voice";
 
 const PER_KEY = 30;      // transcriptions per IP (IPv6: per /64) per hour
 const GLOBAL = 600;      // all visitors per hour
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
     console.error("[voice] transcribe failed:", res.status, (await res.text()).slice(0, 200));
     return Response.json({ error: "Transcription failed." }, { status: 502 });
   }
-  const text = String(((await res.json()) as { text?: string }).text ?? "").trim().slice(0, 500);
+  const text = stripPromptEcho(String(((await res.json()) as { text?: string }).text ?? "").trim(), PROMPT).slice(0, 500);
   return Response.json({ text });
 }

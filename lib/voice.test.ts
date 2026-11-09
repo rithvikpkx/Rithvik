@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { durationOk, sniffAudio, speakable } from "./voice.ts";
+import { durationOk, sniffAudio, speakable, stripPromptEcho } from "./voice.ts";
 
 const bytes = (...n: number[]) => Uint8Array.from([...n, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const ascii = (s: string) => [...s].map((c) => c.charCodeAt(0));
@@ -34,4 +34,10 @@ test("speakable clips long text at a sentence boundary", () => {
   const s = "First sentence here. ".repeat(100);
   const out = speakable(s, 100);
   assert.ok(out.length <= 100 && out.endsWith("."));
+});
+
+test("stripPromptEcho drops a parroted prompt but keeps real speech", () => {
+  const p = "Rithvik Praveen Kumar, Purdue, BoilerFrame";
+  assert.equal(stripPromptEcho("Rithvik Praveen Kumar, Purdue, BoilerFrame.", p), "");
+  assert.equal(stripPromptEcho("Tell me about BoilerFrame", p), "Tell me about BoilerFrame");
 });

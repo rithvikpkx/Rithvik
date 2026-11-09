@@ -41,3 +41,10 @@ export function speakable(md: string, max = MAX_SPEAK_CHARS): string {
   const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("? "), cut.lastIndexOf("! "));
   return end > max / 2 ? cut.slice(0, end + 1) : cut;
 }
+
+/** Removes an echoed bias prompt from a transcript. On silence or noise the model parrots the prompt
+ *  back as if it were speech, which would otherwise land in the visitor's input box. */
+export function stripPromptEcho(text: string, prompt: string): string {
+  const i = text.toLowerCase().indexOf(prompt.toLowerCase());
+  return (i < 0 ? text : text.slice(0, i) + text.slice(i + prompt.length)).replace(/^[\s.,]+|[\s,]+$/g, "");
+}

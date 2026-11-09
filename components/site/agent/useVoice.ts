@@ -61,6 +61,7 @@ export function useVoice(onTranscript: (text: string) => void) {
     if (rec.current || want.current) return;
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") return fail("Voice isn't supported here.");
     want.current = true;
+    setState("listening"); setMessage("Starting mic…"); // the first getUserMedia can take a moment (permission prompt)
     clearTimeout(clear.current);
     ctl.current?.abort();
     let stream: MediaStream;
@@ -71,7 +72,7 @@ export function useVoice(onTranscript: (text: string) => void) {
       const denied = (e as Error).name === "NotAllowedError" || (e as Error).name === "SecurityError";
       return fail(denied ? "Microphone blocked. Allow it in your browser." : "No microphone found.");
     }
-    if (!want.current) { stream.getTracks().forEach((t) => t.stop()); return; } // released before the prompt resolved
+    if (!want.current) { stream.getTracks().forEach((t) => t.stop()); return fail("Hold to talk."); } // released before the mic was ready
 
     const type = TYPES.find((t) => MediaRecorder.isTypeSupported(t));
     const mr = new MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 32000 });
@@ -85,6 +86,7 @@ export function useVoice(onTranscript: (text: string) => void) {
     let ac: AudioContext | undefined;
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       ac = new AudioContext();
+      void ac.resume(); // created after an await, so Safari may start it suspended
       const an = ac.createAnalyser();
       an.fftSize = 256;
       ac.createMediaStreamSource(stream).connect(an);
@@ -113,7 +115,7 @@ export function useVoice(onTranscript: (text: string) => void) {
       void transcribe(new Blob(chunks, { type: mr.mimeType }), Math.min(ms, MAX_AUDIO_MS));
     };
     mr.start();
-    setState("listening"); setMessage("Listening…");
+    setMessage("Listening…");
   }, [fail, stop, transcribe]);
 
   // Leaving the page or unmounting must release the microphone.
