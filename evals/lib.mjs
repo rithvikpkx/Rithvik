@@ -60,7 +60,7 @@ export function hasTool(expected, tools) {
   return tools.some((t) => t.name === expected || ALIAS[expected]?.(t));
 }
 
-const DECLINE_RE = /(don[’']?t (have (that|this|enough|any|rithvik[’']?s|his)|share)|do not have (that|this)|not (listed|specified|mentioned|available|in (the|my) (context|information))|no information|specifically to answer|only set up to discuss|only (here|able) to (answer|discuss)|can[’']?t (share|help|provide|do that|assist)|cannot (share|help|provide|assist)|not able to|unable to|reach out to rithvik|isn[’']?t something|outside (of )?(my|the) scope|here to (help|answer) (you )?(with|about) (questions about )?rithvik)/i;
+const DECLINE_RE = /(don[’']?t (have (that|this|enough|any|a|an|rithvik[’']?s|his)|share)|do not have (that|this)|not (listed|specified|mentioned|available|in (the|my) (context|information))|no information|specifically to answer|only set up to discuss|only (here|able) to (answer|discuss)|can[’']?t (share|help|provide|do that|assist)|cannot (share|help|provide|assist)|not able to|unable to|reach out to rithvik|isn[’']?t something|outside (of )?(my|the) scope|here to (help|answer) (you )?(with|about) (questions about )?rithvik)/i;
 
 /** True when the answer reads as a refusal or redirect. */
 export function isDecline(answer) {

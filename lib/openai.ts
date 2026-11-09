@@ -7,7 +7,7 @@
  */
 
 /** Answer + tool-calling model. An eval picks the default; env overrides it. */
-export const CHAT_MODEL = process.env.CHAT_MODEL || "gpt-4o-mini";
+export const CHAT_MODEL = process.env.CHAT_MODEL || "gpt-6-luna"; // picked by the eval (docs/plans/v4-overhaul.md): best tools + injection, cheapest
 /** Cheap helper model: rewrite, HyDE, suggestions. */
 export const AUX_MODEL = process.env.AUX_MODEL || "gpt-5-nano";
 

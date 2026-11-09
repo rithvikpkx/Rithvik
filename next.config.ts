@@ -72,7 +72,7 @@ const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
 
 const nextConfig: NextConfig = {
   // The agent header shows the answer model this deployment actually uses (set via CHAT_MODEL).
-  env: { NEXT_PUBLIC_CHAT_MODEL: process.env.CHAT_MODEL ?? "gpt-4o-mini" },
+  env: { NEXT_PUBLIC_CHAT_MODEL: process.env.CHAT_MODEL ?? "gpt-6-luna" },
   images: {
     // Serve modern formats; AVIF first (smaller), WebP fallback. The browser
     // negotiates via Accept headers — older browsers still get the original.
