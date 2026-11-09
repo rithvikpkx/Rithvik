@@ -13,7 +13,7 @@ export default function Toasts() {
           <div key={t.id} className="toast" role="status">
             <span>{t.message}</span>
             {t.undo && (
-              <button type="button" className="toast-undo" onClick={() => { t.undo?.(); dismissToast(t.id); }}>{(t as { label?: string }).label ?? "Undo"}</button>
+              <button type="button" className="toast-undo" onClick={() => { t.undo?.(); dismissToast(t.id); }}>{t.label ?? "Undo"}</button>
             )}
             <button type="button" className="toast-x" aria-label="Dismiss" onClick={() => dismissToast(t.id)}>&times;</button>
           </div>
