@@ -1,10 +1,11 @@
 import { adminClient } from "@/lib/supabase";
 import { sanitizeEmailHtml, htmlToText } from "@/lib/sanitize-html";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 const MAX_SUBJECT = 200;
 const MAX_BODY = 20000;                       // raw HTML length cap
-const RATE_LIMIT = 3;                         // sends per IP per window
-const RATE_WINDOW_MS = 60 * 60 * 1000;        // 1 hour
+const RATE_LIMIT = 3;                         // sends per IP (IPv6: per /64) per hour
+const RATE_LIMIT_GLOBAL = 50;                 // all senders per hour; protects domain reputation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Payload = { from?: string; subject?: string; bodyHtml?: string; honeypot?: string };
@@ -54,23 +55,18 @@ export async function POST(req: Request) {
   const db = adminClient();
   const ip = clientIp(req);
 
-  // Rate limit: count this IP's sends in the trailing window.
-  const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
-  const { count } = await db
-    .from("contact_submissions")
-    .select("id", { count: "exact", head: true })
-    .eq("ip", ip)
-    .gte("created_at", since);
-  if ((count ?? 0) >= RATE_LIMIT) {
-    return Response.json({ error: "rate-limited" }, { status: 429 });
+  // The hit is recorded atomically before sending, so a failed send still counts.
+  const limited = await rateLimit("contact", clientKey(req), RATE_LIMIT, RATE_LIMIT_GLOBAL);
+  if (!limited.ok) {
+    return Response.json(
+      { error: limited.status === 429 ? "rate-limited" : "Could not send right now." },
+      { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } },
+    );
   }
 
   const sender = from.trim();
 
-  // Reserve the rate-limit slot BEFORE sending. Counting only successful sends
-  // (the old order) meant concurrent requests all passed the check above, and a
-  // 502 from Resend cost the caller nothing — both made the limit easy to walk
-  // past. The row is marked 'sent' or 'failed' once we know the outcome.
+  // Log row before sending, marked 'sent' or 'failed' once we know the outcome.
   const { data: logRow } = await db
     .from("contact_submissions")
     .insert({ ip, from_email: sender, subject: subject.trim(), status: "pending" })
