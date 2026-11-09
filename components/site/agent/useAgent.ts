@@ -5,12 +5,8 @@ import { resolveTarget } from "@/lib/agent/targets";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { splitStream, SUGGESTIONS_SENTINEL } from "@/lib/suggestion-protocol";
 import type { Content } from "@/lib/content/types";
-import type { useDesign } from "../DesignProvider";
 import { runSlash } from "./slash";
-import type { Choice, Item, NewItem, Turn } from "./types";
-
-/** The current design engine API, or null when no provider is mounted (the lab harness). */
-export type Design = ReturnType<typeof useDesign> | null;
+import type { Choice, Design, Item, NewItem, Turn } from "./types";
 
 /** What the agent needs from the surrounding site. */
 export type Host = {
@@ -218,10 +214,16 @@ export function useAgent(host: Host) {
     saveHistory(typeof localStorage === "undefined" ? undefined : localStorage, next);
     hIdx.current = -1;
     add({ kind: "user", text: q });
-    if (isSlash) runSlash(q, { add, clear, history: next, toggleFull: host.toggleFull, close: host.close });
+    if (isSlash) {
+      runSlash(q, {
+        add, ask, clear, scroll, copy, turns, history: next,
+        content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
+        openCase: host.openCase, openResume: host.openResume, openComposer: host.openComposer,
+      });
+    }
     else void converse(q);
     return true;
-  }, [add, clear, converse, cooldown, history, host, interrupt]);
+  }, [add, ask, clear, converse, cooldown, copy, history, host, interrupt, scroll, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {

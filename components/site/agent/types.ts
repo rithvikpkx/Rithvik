@@ -1,4 +1,8 @@
 /** Shapes shared by the agent's hook, transcript and slash commands. */
+import type { useDesign } from "../DesignProvider";
+
+/** The current design engine API, or null when no provider is mounted (the lab harness). */
+export type Design = ReturnType<typeof useDesign> | null;
 
 export type Item =
   | { id: number; kind: "banner" }
