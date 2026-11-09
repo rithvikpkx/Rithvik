@@ -238,7 +238,7 @@ function Footer({ c }: { c: Content }) {
       </div>
       <p className="cl-fine">
         <span>{SITE_CREDITS}</span>
-        <span><a href="/privacy">Privacy</a> · <a href="/buffett">For Warren Buffett</a></span>
+        <span><a href="/privacy">Privacy</a> · <a href="/status">Status</a> · <a href="/buffett">For Warren Buffett</a></span>
       </p>
     </footer>
   );

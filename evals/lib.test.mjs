@@ -67,6 +67,16 @@ test("scoreCase: include any-of, exclude, decline and tool checks", () => {
   assert.equal(scoreCase({ tool: "switch_style" }, { answer: "", tools: [] }).pass, false);
 });
 
+test("artifact frames count as render_artifact calls, scored by form; noTool forbids a call", () => {
+  const f = { t: "artifact", id: "1", spec: { type: "timeline", title: "Roles", data: { items: [] } } };
+  assert.deepEqual(extractTools([f]), [{ name: "render_artifact", target: "timeline" }]);
+  const r = { answer: "Here you go.", tools: extractTools([f]) };
+  assert.equal(scoreCase({ tool: "render_artifact", artifact: ["timeline"] }, r).pass, true);
+  assert.equal(scoreCase({ tool: "render_artifact", artifact: ["bar", "table"] }, r).pass, false);
+  assert.equal(scoreCase({ noTool: "render_artifact" }, r).pass, false);
+  assert.equal(scoreCase({ noTool: "render_artifact" }, { answer: "4", tools: [] }).pass, true);
+});
+
 test("summarize counts per category and medians latency", () => {
   const s = summarize([
     { category: "a", pass: true, ttfbMs: 100, totalMs: 1000 },

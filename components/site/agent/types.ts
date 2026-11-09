@@ -1,5 +1,6 @@
 /** Shapes shared by the agent's hook, transcript and slash commands. */
 import type { useDesign } from "../DesignProvider";
+import type { ArtifactSpec } from "@/lib/agent/artifacts";
 
 /** The current design engine API, or null when no provider is mounted (the lab harness). */
 export type Design = ReturnType<typeof useDesign> | null;
@@ -13,6 +14,8 @@ export type Item =
   | { id: number; at?: number; kind: "help" }
   | { id: number; at?: number; kind: "answer"; text: string; streaming: boolean }
   | { id: number; at?: number; kind: "suggest"; chips: string[] }
+  /** A chart/table the model asked for: already re-validated on the client, drawn by components/site/charts. */
+  | { id: number; at?: number; kind: "artifact"; spec: ArtifactSpec }
   /** A permission confirmation for a side effect (the action itself is held by the hook until answered).
    *  `tool` is set when the model requested it, so the row reads as a tool call. `detail` lists exactly what
    *  will happen (the meeting card); `once` means the visitor must confirm every time (no "Always"). */

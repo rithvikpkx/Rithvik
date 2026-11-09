@@ -173,6 +173,8 @@ export function containsGrounding(haystack: string, evidence: string): boolean {
 // so a frame boundary is unambiguous. The ROUTE emits every frame, never the
 // model. Order per turn: rewrite? → search → sources → (text | tool)* → done → trailer?
 
+import type { ArtifactSpec } from "./agent/artifacts.ts";
+
 export const FRAME = "\u0000";
 
 /** One retrieved record as the Search row shows it: `src` is a short label, `score` cosine. */
@@ -190,6 +192,8 @@ export type AgentEvent =
   | { t: "tool"; id: string; name: string; args: Record<string, string>; result?: string }
   /** First frame of a replayed answer: it came from the response cache, `age` seconds after it was generated. */
   | { t: "cache"; age: number }
+  /** A chart/table the model asked for: a server-rebuilt data spec (lib/agent/artifacts.ts), drawn by our own SVG components. */
+  | { t: "artifact"; id: string; spec: ArtifactSpec }
   /** The answer is complete: the client unlocks the prompt without waiting on chips. */
   | { t: "done" }
   /** Always sent last; `usage.total_tokens` counts the answer model across steps. */

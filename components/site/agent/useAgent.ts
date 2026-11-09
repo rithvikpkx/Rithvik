@@ -3,6 +3,7 @@ import { speak, stopSpeaking } from "./speech";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
+import { parseArtifact } from "@/lib/agent/artifacts";
 import { collectContext } from "@/lib/agent/context";
 import { autoScrollTarget, citedNumbers } from "@/lib/agent/highlight";
 import { scrollAndHighlight } from "./highlight";
@@ -406,6 +407,10 @@ export function useAgent(host: Host) {
             add({ kind: "tool", name: "Cache", args: "semantic", result: `hit · answered ${formatAge(e.age)} ago` });
           } else if (e.t === "sources") sources = Array.isArray(e.items) ? e.items : [];
           else if (e.t === "tool") runTool(e);
+          else if (e.t === "artifact") {
+            const a = parseArtifact(e.spec); // the client trusts no frame: rebuild it through the same gate
+            if (a.ok) add({ kind: "artifact", spec: a.spec });
+          }
           else if (e.t === "done") finish();
           else if (e.t === "trailer") {
             const used = Number(e.usage?.total_tokens);

@@ -4,6 +4,7 @@ import { COMMANDS } from "@/lib/agent/commands";
 import { STARTER_QUESTIONS } from "@/lib/agent/starters";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
+import ArtifactView from "../charts/ArtifactView";
 import type { Choice, Item } from "./types";
 
 export type RowHandlers = {
@@ -85,6 +86,8 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
           )}
         </div>
       );
+    case "artifact":
+      return <ArtifactView spec={item.spec} />;
     case "suggest":
       return (
         <div className="t-sugg">
