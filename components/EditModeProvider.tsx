@@ -1,6 +1,5 @@
 "use client";
 import { createContext, useContext, useRef, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase-browser";
 import type { Session } from "@supabase/supabase-js";
 
 const TAB_AUTH_KEY = "rithvik-tab-auth";
@@ -35,6 +34,40 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     typeof window !== "undefined" && sessionStorage.getItem(TAB_AUTH_KEY) === "1"
   );
 
+  // Browser client is loaded on demand so ordinary visitors never download it.
+  // The promise is cached; the first load also subscribes to auth changes once.
+  const clientRef = useRef<Promise<typeof import("@/lib/supabase-browser").supabase> | null>(null);
+  const getClient = () => {
+    clientRef.current ??= import("@/lib/supabase-browser").then(({ supabase }) => {
+      supabase.auth.onAuthStateChange(onAuthEvent.current);
+      return supabase;
+    });
+    return clientRef.current;
+  };
+
+  // Latest auth handler, so the one-time subscription never goes stale.
+  const onAuthEvent = useRef<(event: string, s: Session | null) => void>(() => {});
+  useEffect(() => {
+    onAuthEvent.current = (event, newSession) => {
+      if (event === "SIGNED_IN") {
+        // Fresh login — mark this tab as authenticated
+        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        tabAuth.current = true;
+        setSession(newSession);
+      } else if (event === "SIGNED_OUT") {
+        sessionStorage.removeItem(TAB_AUTH_KEY);
+        tabAuth.current = false;
+        setSession(null);
+        setIsEditing(false);
+        setPanelOpen(false);
+      } else if (newSession && tabAuth.current) {
+        // TOKEN_REFRESHED or INITIAL_SESSION with an existing tab auth — keep session alive
+        setSession(newSession);
+      }
+      // INITIAL_SESSION with no tab auth: leave session null so new tab requires login
+    };
+  });
+
   useEffect(() => {
     // Magic-link landing: /auth/callback redirected here with ?auth=ok after
     // exchanging the PKCE code for a session. The server-side cookie write
@@ -55,25 +88,9 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
       }
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === "SIGNED_IN") {
-        // Fresh login — mark this tab as authenticated
-        sessionStorage.setItem(TAB_AUTH_KEY, "1");
-        tabAuth.current = true;
-        setSession(newSession);
-      } else if (event === "SIGNED_OUT") {
-        sessionStorage.removeItem(TAB_AUTH_KEY);
-        tabAuth.current = false;
-        setSession(null);
-        setIsEditing(false);
-        setPanelOpen(false);
-      } else if (newSession && tabAuth.current) {
-        // TOKEN_REFRESHED or INITIAL_SESSION with an existing tab auth — keep session alive
-        setSession(newSession);
-      }
-      // INITIAL_SESSION with no tab auth: leave session null so new tab requires login
-    });
-    return () => { if (raf) cancelAnimationFrame(raf); subscription.unsubscribe(); };
+    // Only load the client when a session could already exist for this tab.
+    if (tabAuth.current) void getClient();
+    return () => { if (raf) cancelAnimationFrame(raf); };
   }, []);
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() ?? "";
@@ -85,6 +102,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     if (ADMIN_EMAIL && normalized !== ADMIN_EMAIL) {
       return "This email isn't allowed.";
     }
+    const supabase = await getClient();
     const { error } = await supabase.auth.signInWithOtp({
       email: normalized,
       options: {
@@ -98,6 +116,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   const verifyOtpCode = async (email: string, code: string): Promise<string | null> => {
     const normalized = email.trim().toLowerCase();
     const token = code.replace(/\s+/g, "").trim();
+    const supabase = await getClient();
     const { error } = await supabase.auth.verifyOtp({
       email: normalized,
       token,
@@ -111,11 +130,12 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     return null;
   };
 
+  // Exit editing signs out; the SIGNED_OUT event clears state, the explicit clears cover a not-yet-subscribed client.
   const logout = () => {
-    // Exit edit mode without signing out of Supabase — the session and tab auth flag stay.
-    // Clicking "I am Rithvik" again re-enters edit mode immediately without re-auth.
-    // Closing the tab wipes sessionStorage, so the next tab open always requires login.
     setIsEditing(false);
+    sessionStorage.removeItem(TAB_AUTH_KEY);
+    tabAuth.current = false;
+    void getClient().then((supabase) => supabase.auth.signOut());
   };
 
   const openPanel = () => {
