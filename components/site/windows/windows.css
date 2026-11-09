@@ -1,0 +1,37 @@
+/* Draggable floating windows (ported from docs/mockups/v7/core.css) */
+
+/* ───────── Windows: resume + floating email ───────── */
+.win { position: fixed; z-index: 92; left: 0; top: 0; display: flex; flex-direction: column; background: var(--ui-bg, #0f0f12); color: var(--ui-fg, #f4f4f5); border: var(--bw, 1px) solid var(--ui-line, rgba(255,255,255,.14)); border-radius: var(--ui-r, 14px); box-shadow: var(--ui-shadow, 0 1px 2px rgba(0,0,0,.3),0 18px 48px rgba(0,0,0,.35)); overflow: hidden; font-family: var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); transition: opacity 200ms ease, scale 260ms var(--ease-out, cubic-bezier(.23,1,.32,1)); -webkit-backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); }
+@starting-style { .win:not([hidden]) { opacity: 0; scale: .97; } }
+.win.front { z-index: 93; }
+.win-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--ui-line, rgba(255,255,255,.14)); cursor: grab; user-select: none; touch-action: none; }
+.win-bar:active { cursor: grabbing; }
+.win-title { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); color: var(--ui-muted, #a1a1aa); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.win-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.resume-win { width: min(760px, calc(100vw - 32px)); height: min(860px, calc(100dvh - 120px)); }
+.pdf-viewport { flex: 1; overflow: auto; padding: clamp(12px, 3vw, 28px); background: color-mix(in srgb, var(--ui-fg, #f4f4f5) 8%, var(--ui-bg, #0f0f12)); }
+.pdf-page { margin: 0 auto; max-width: 720px; aspect-ratio: 8.5 / 11; background: #fff; color: #111; box-shadow: 0 10px 40px rgba(0, 0, 0, .25); padding: clamp(18px, 5%, 48px); font: 400 clamp(8px, 1.4vw, 11.5px)/1.42 "Times New Roman", Times, serif; overflow: hidden; }
+.pdf-page h1 { font: 700 2.2em/1.1 "Times New Roman", Times, serif; text-align: center; margin: 0; }
+.pdf-page .pc { text-align: center; margin: .3em 0 .9em; }
+.pdf-page h2 { font: 700 1.15em/1.2 "Times New Roman", Times, serif; text-transform: uppercase; border-bottom: 1px solid #111; margin: 1em 0 .4em; }
+.pdf-page .pr, .pdf-page .pi { display: flex; justify-content: space-between; gap: 1em; }
+.pdf-page .pr { font-weight: 700; } .pdf-page .pi { font-style: italic; }
+.pdf-page ul { list-style: disc; padding-left: 1.4em; margin: .2em 0 .6em; }
+.win-foot { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 8px 14px; font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
+.composer-win { width: min(500px, calc(100vw - 32px)); }
+.composer { display: flex; flex-direction: column; margin: 0; }
+.cmp-fields { display: grid; gap: 10px; padding: 14px; }
+.cmp-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; }
+.cmp-row label { font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); }
+.cmp-row .field-err { grid-column: 2; }
+.cmp-row.grow { grid-template-columns: minmax(0, 1fr); }
+.cmp-row.grow .field-err { grid-column: 1; }
+.cmp-row:not(.grow) > .field:not(#cmp-to) { grid-column: 2 / -1; }
+input.field, textarea.field { width: 100%; min-height: 40px; padding: 9px 12px; border: var(--bw, 1px) solid var(--ui-line, rgba(255,255,255,.14)); border-radius: calc(var(--ui-r, 14px) * .6); background: var(--ui-field, rgba(255,255,255,.06)); color: var(--ui-fg, #f4f4f5); font: 400 15px/1.4 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); caret-color: var(--ui-accent, #ff4d8d); }
+input.field::placeholder, textarea.field::placeholder { color: var(--ui-muted, #a1a1aa); }
+:is(input, textarea).field[aria-invalid="true"] { border-color: #ff5a5a; }
+.field-err { margin: 4px 0 0; font-size: 13px; color: #ff6b6b; }
+textarea.field { resize: vertical; min-height: 140px; }
+.cmp-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 14px 14px; }
+.cmp-note { font-size: 13px; color: var(--ui-muted, #a1a1aa); }
+@media (max-width: 640px) { .win { left: 8px !important; right: 8px; top: auto !important; bottom: 84px; width: auto; max-height: calc(100dvh - 160px); } .resume-win { height: calc(100dvh - 160px); } }
