@@ -180,6 +180,7 @@ const SITE_CONTENT_LABELS: Record<string, string> = {
   "contact.link.github":  "Rithvik's GitHub link",
   "contact.link.linkedin": "Rithvik's LinkedIn link",
   "contact.link.email":   "Rithvik's email address",
+  "profile.work_authorization": "Rithvik's work authorization in the United States (visa sponsorship status)",
 };
 
 /** Render a site_content key/value pair as natural prose. Async because some

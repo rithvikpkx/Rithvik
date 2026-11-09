@@ -36,10 +36,11 @@ export type Content = {
   about: string[];
   now: { city: string; tz: string; building: string; researching: string; learning: string };
   places: Place[];
+  workAuth: string; // shown only in discreet places (resume fine print, agent answers)
   links: { email: string; github: string; linkedin: string };
   projects: ContentProject[];
   experience: ContentRole[];
-  education: { school: string; degree: string; focus: string; grad: string; logo: string };
+  education: { school: string; degree: string; focus: string; grad: string; logo: string }; // grad may be "" (hidden)
   stack: Record<string, string[]>;
   faq: [question: string, answer: string][];
   numbers: [value: string, label: string][];

@@ -21,7 +21,7 @@ export default function ResumeWindow() {
           <p className="pc">{c.links.email} · {c.links.github.replace(/^https?:\/\//, "")} · rithvik.ai</p>
           <h2>Education</h2>
           <div className="pr"><span>{e.school}</span></div>
-          <div className="pi"><span>{e.degree} · {e.focus}</span>{!e.grad.includes("{{") && <span>{e.grad}</span>}</div>
+          <div className="pi"><span>{e.degree} · {e.focus}</span>{e.grad && <span>{e.grad}</span>}</div>
           <h2>Experience</h2>
           {c.experience.map((x) => (
             <div key={x.slug}>
@@ -41,7 +41,8 @@ export default function ResumeWindow() {
           <p>{Object.entries(c.stack).slice(0, 2).map(([k, v], i) => <span key={k}>{i ? " · " : ""}<b>{k}:</b> {v.join(", ")}</span>)}</p>
         </div>
       </div>
-      <p className="win-foot"><span>Summary of the site content</span></p>
+      {/* Work authorization lives only here and in the agent: findable for whoever looks, never a headline. */}
+      <p className="win-foot"><span>Summary of the site content</span>{c.workAuth && <span className="win-fine">Work authorization: {c.workAuth}</span>}</p>
     </Window>
   );
 }

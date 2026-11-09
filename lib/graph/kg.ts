@@ -47,7 +47,7 @@ export function buildKG(c: Content, meta: KGMeta = DEFAULT_META): KG {
     if (x.org.includes(c.education.school)) link("r-" + x.slug, "school", "at");
   });
   c.places.forEach((pl) => { add({ id: "pl-" + pl.key, type: "place", label: pl.city, sub: { home: "Home", school: "School", now: "Now" }[pl.key], tz: pl.tz }); });
-  add({ id: "school", type: "school", label: c.education.school, short: c.education.school.split(" ")[0], sub: c.education.degree, facts: [c.education.focus, c.education.grad] });
+  add({ id: "school", type: "school", label: c.education.school, short: c.education.school.split(" ")[0], sub: c.education.degree, facts: [c.education.focus, c.education.grad].filter(Boolean) });
   link("me", "school", "studies");
   c.places.forEach((pl) => link("me", "pl-" + pl.key, "lives"));
   const schoolPlace = c.places.find((p) => p.key === "school");

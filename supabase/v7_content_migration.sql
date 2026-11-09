@@ -20,7 +20,7 @@ update experience set period='2025 – 2026' where slug='hack-the-future' and pe
 update experience set period='2025' where slug='code-ninjas-ir' and period is null;
 update experience set period='2023 – 2025' where slug='code-ninjas-sensei' and period is null;
 
-update education set focus='Software Engineering · AI/ML', grad='Expected {{graduation}}' where school='Purdue University' and focus is null;
+update education set focus='Software Engineering · AI/ML', grad='' where school='Purdue University' and focus is null;
 
 -- Seeds only: re-running never overwrites edited values (updates fill NULLs; inserts do nothing on conflict).
 -- Strings raw, structures as JSON text.
@@ -33,6 +33,6 @@ insert into site_content (key, value) values
   ('v7.now', '{"city":"San Francisco","tz":"America/Los_Angeles","building":"rithvik.ai","researching":"TinyML on Edge Impulse","learning":"Energy-harvesting sensors"}'),
   ('v7.places', '[{"key":"home","city":"Boston","tz":"America/New_York","lat":42.36,"lng":-71.06},{"key":"school","city":"West Lafayette","tz":"America/Indiana/Indianapolis","lat":40.43,"lng":-86.91},{"key":"now","city":"San Francisco","tz":"America/Los_Angeles","lat":37.77,"lng":-122.42}]'),
   ('v7.stack', '{"Languages":["Python","JavaScript","TypeScript","C++","C#","SQL"],"Frameworks":["React","Next.js","Node.js","Express","TensorFlow","Keras","scikit-learn","Pandas"],"Infra and data":["AWS","MongoDB","Supabase","Vercel","Cloudflare","Google Apps Script"],"AI and hardware":["RAG","Ollama","Edge Impulse","TinyML","OpenBCI","NeuroSky","Arduino","EEG"]}'),
-  ('v7.faq', '[["When can you start?","I''m open to SWE and AI internships for {{season and dates}}."],["Where are you based?","West Lafayette, Indiana during the school year. I''m in San Francisco right now."],["What kind of role fits best?","Software engineering or ML work, especially close to hardware: brain-computer interfaces, computer vision and TinyML."],["Can I see code?","Most projects link to their repositories; the rest are on GitHub at github.com/rithvikpkx."],["Work authorization?","{{owner to confirm}}"]]'),
+  ('v7.faq', '[["What kind of role fits best?", "Software engineering or ML work, especially close to hardware: brain-computer interfaces, computer vision and TinyML."], ["Are you open to relocating?", "Yes. I''m happy to relocate for the right role."], ["Where are you based?", "West Lafayette, Indiana during the school year. I''m in San Francisco right now."], ["Can I see code?", "Yes. Most projects link to their repositories, the rest are on GitHub at github.com/rithvikpkx, and this site''s code is public too."], ["What''s the best way to reach you?", "Email. The write-to-me button sends a message straight to my inbox."], ["Can I ask this site questions?", "Yes. Press ⌘K or / to open the agent. It answers from what''s on this site and says so when it doesn''t know."], ["What''s playing on the record player?", "Chili Pepper by Fred Longshaw, recorded in 1927. It''s in the public domain."]]'),
   ('v7.numbers', '[["500+","learners on the RAG platform I built"],["40","kids taught to code through games"],["16","EEG channels decoded into left, right and neutral"],["6","projects, from headsets to the cloud"]]')
 on conflict (key) do nothing;

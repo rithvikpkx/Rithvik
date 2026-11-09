@@ -90,11 +90,12 @@ export function toContent({ projects, experience, education, site }: Rows): Cont
       school: ed?.school || fx.education.school,
       degree: ed?.degree || fx.education.degree,
       focus: ed?.focus || ed?.concentrations?.join(" · ") || fx.education.focus,
-      grad: ed?.grad || fx.education.grad,
+      grad: ed?.grad ?? "", // empty = not shown; never fall back to a placeholder
       logo: ed?.logo_path?.split("/").pop() || fx.education.logo,
     },
     stack: json(site["v7.stack"], fx.stack),
     faq: json(site["v7.faq"], fx.faq),
+    workAuth: site["profile.work_authorization"] || fx.workAuth,
     numbers: json(site["v7.numbers"], fx.numbers),
     log: fx.log, // shortcut: static commit feed; wire to a git/GitHub source later
   };

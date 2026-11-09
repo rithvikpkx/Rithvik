@@ -22,6 +22,7 @@ export const fixture: Content = {
     { key: "school", city: "West Lafayette", tz: "America/Indiana/Indianapolis", lat: 40.43, lng: -86.91 },
     { key: "now", city: "San Francisco", tz: "America/Los_Angeles", lat: 37.77, lng: -122.42 },
   ],
+  workAuth: "U.S. citizen", // discreet: resume fine print + agent only, never a page headline
   links: {
     email: "rithvikpkx@gmail.com",
     github: "https://github.com/rithvikpkx",
@@ -59,7 +60,7 @@ export const fixture: Content = {
     { slug: "code-ninjas-sensei", role: "Code Sensei", org: "Code Ninjas", when: "2023 – 2025", where: "Northborough, MA",
       desc: ["Taught programming through game development to 40 students aged 5 to 12.", "Organized hackathons and built personalized skill paths with parents."], tags: ["JavaScript", "C#", "Teaching"] },
   ],
-  education: { school: "Purdue University", degree: "B.S. Computer Science + Mathematics", focus: "Software Engineering · AI/ML", grad: "Expected {{graduation}}", logo: "purdue.png" },
+  education: { school: "Purdue University", degree: "B.S. Computer Science + Mathematics", focus: "Software Engineering · AI/ML", grad: "", logo: "purdue.png" },
   stack: {
     Languages: ["Python", "JavaScript", "TypeScript", "C++", "C#", "SQL"],
     Frameworks: ["React", "Next.js", "Node.js", "Express", "TensorFlow", "Keras", "scikit-learn", "Pandas"],
@@ -67,11 +68,13 @@ export const fixture: Content = {
     "AI and hardware": ["RAG", "Ollama", "Edge Impulse", "TinyML", "OpenBCI", "NeuroSky", "Arduino", "EEG"],
   },
   faq: [
-    ["When can you start?", "I'm open to SWE and AI internships for {{season and dates}}."],
-    ["Where are you based?", "West Lafayette, Indiana during the school year. I'm in San Francisco right now."],
     ["What kind of role fits best?", "Software engineering or ML work, especially close to hardware: brain-computer interfaces, computer vision and TinyML."],
-    ["Can I see code?", "Most projects link to their repositories; the rest are on GitHub at github.com/rithvikpkx."],
-    ["Work authorization?", "{{owner to confirm}}"],
+    ["Are you open to relocating?", "Yes. I'm happy to relocate for the right role."],
+    ["Where are you based?", "West Lafayette, Indiana during the school year. I'm in San Francisco right now."],
+    ["Can I see code?", "Yes. Most projects link to their repositories, the rest are on GitHub at github.com/rithvikpkx, and this site's code is public too."],
+    ["What's the best way to reach you?", "Email. The write-to-me button sends a message straight to my inbox."],
+    ["Can I ask this site questions?", "Yes. Press ⌘K or / to open the agent. It answers from what's on this site and says so when it doesn't know."],
+    ["What's playing on the record player?", "Chili Pepper by Fred Longshaw, recorded in 1927. It's in the public domain."],
   ],
   numbers: [
     ["500+", "learners on the RAG platform I built"],
