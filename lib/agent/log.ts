@@ -17,7 +17,8 @@ export async function startSession(
   sessionId?: string | null,
   opts: { firstDesign?: string; referrer?: string } = {},
 ): Promise<string | null> {
-  if (isOwner(req)) return null; // the owner's own chats are never logged (logTurn skips a null session)
+  // The owner's chats are logged (so Share works) but flagged `is_owner`, and skip visitor linking below.
+  const owner = isOwner(req);
   try {
     const db = adminClient();
     if (isUuid(sessionId)) {
@@ -34,13 +35,14 @@ export async function startSession(
         user_agent: clip(req.headers.get("user-agent"), 300),
         referrer: clip(opts.referrer ?? req.headers.get("referer"), 300),
         first_design: clip(opts.firstDesign, 40),
+        ...(owner ? { is_owner: true } : {}), // only sent for the owner, so the insert works before the migration is applied
       })
       .select("id")
       .single();
     if (error) throw error;
     // Link the conversation to the tracked visitor. A separate best-effort update so a missing column or an
     // unknown visitor id (FK) can never cost the session row itself.
-    const visitorId = visitorIdFromCookie(req.headers.get("cookie"));
+    const visitorId = owner ? null : visitorIdFromCookie(req.headers.get("cookie"));
     if (visitorId) await db.from("agent_sessions").update({ visitor_id: visitorId }).eq("id", data.id);
     return data.id as string;
   } catch (e) {
