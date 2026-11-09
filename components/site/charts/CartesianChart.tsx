@@ -55,7 +55,7 @@ export default function CartesianChart({ kind, title, labels, series, unit, heig
                 <text x={labW} y={cy + 4} textAnchor="end">{l.length > 22 ? `${l.slice(0, 21)}…` : l}</text>
                 {typeof v === "number" && (
                   <>
-                    <path className="ch-in" d={hBar(base, xv(v), cy - 8, 16)} fill={seriesColor(0)} />
+                    <path className="ch-in" d={hBar(base, xv(v), cy - 8, 16)} style={{ color: seriesColor(0) }} fill="currentColor" />
                     <text x={Math.max(base, xv(v)) + 6} y={cy + 4}>{withUnit(v, unit)}</text>
                   </>
                 )}
@@ -106,18 +106,18 @@ export default function CartesianChart({ kind, title, labels, series, unit, heig
           const color = seriesColor(si);
           if (kind === "bar") {
             const gx = xAt(0) - band / 2 + (band - (S * bw + gap * (S - 1))) / 2;
-            return <g key={si} className="ch-in" fill={color}>{s.values.map((v, i) => typeof v === "number" && <path key={i} d={barPath(gx + band * i + si * (bw + gap), y(v), bw, y(0))} />)}</g>;
+            return <g key={si} className="ch-in" style={{ color }} fill="currentColor">{s.values.map((v, i) => typeof v === "number" && <path key={i} d={barPath(gx + band * i + si * (bw + gap), y(v), bw, y(0))} />)}</g>;
           }
           const pts = s.values.map((v, i) => (typeof v === "number" ? { x: xAt(i), y: y(v) } : null));
           const last = [...pts].reverse().find(Boolean);
           return (
-            <g key={si} className="ch-in">
-              {kind === "area" && <path d={areaPath(pts, baseY)} fill={color} opacity={0.12} />}
-              <path d={linePath(pts)} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-              {last && n > 1 && <circle className="ch-ring" cx={last.x} cy={last.y} r={4} fill={color} />}
-              {n === 1 && last && <circle className="ch-ring" cx={last.x} cy={last.y} r={4} fill={color} />}
+            <g key={si} className="ch-in" style={{ color }}>
+              {kind === "area" && <path d={areaPath(pts, baseY)} fill="currentColor" opacity={0.12} />}
+              <path d={linePath(pts)} fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+              {last && n > 1 && <circle className="ch-ring" cx={last.x} cy={last.y} r={4} fill="currentColor" />}
+              {n === 1 && last && <circle className="ch-ring" cx={last.x} cy={last.y} r={4} fill="currentColor" />}
               {labelled && last && <text x={last.x + 10} y={last.y + 4}>{s.name}</text>}
-              {hover !== null && pts[hover] && <circle className="ch-ring" cx={pts[hover]!.x} cy={pts[hover]!.y} r={4} fill={color} />}
+              {hover !== null && pts[hover] && <circle className="ch-ring" cx={pts[hover]!.x} cy={pts[hover]!.y} r={4} fill="currentColor" />}
             </g>
           );
         })}

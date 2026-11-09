@@ -16,7 +16,7 @@ export default function Donut({ title, slices, unit }: { title: string; slices: 
     <div className="ch ch-donut">
       <svg viewBox="0 0 150 150" role="img" aria-label={summary} onPointerLeave={() => setHover(null)}>
         {angles.map((a, i) => (
-          <path key={i} className="ch-in" d={arcPath(75, 75, 70, 46, a.a0, a.a1)} fill={seriesColor(i)} stroke="var(--ch-surface)" strokeWidth={2}
+          <path key={i} className="ch-in" d={arcPath(75, 75, 70, 46, a.a0, a.a1)} style={{ color: seriesColor(i) }} fill="currentColor" stroke="var(--ch-surface)" strokeWidth={2}
             opacity={hover === null || hover === i ? 1 : 0.45} onPointerEnter={() => setHover(i)} onPointerDown={() => setHover(i)} />
         ))}
         <text className="big" x={75} y={shown ? 76 : 80} textAnchor="middle">{compact(shown ? shown.value : total)}</text>
