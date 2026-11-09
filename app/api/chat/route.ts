@@ -1,7 +1,8 @@
-import { streamChat } from "@/lib/openai";
+import { CHAT_MODEL, streamChat } from "@/lib/openai";
 import { adminClient } from "@/lib/supabase-server";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
-import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
+import { generateSuggestions } from "@/lib/suggestions";
+import { SUGGESTIONS_SENTINEL } from "@/lib/suggestion-protocol";
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 import { deriveActions, isDeclineAnswer } from "@/lib/chat-actions";
 import { loadActionLinks } from "@/lib/action-links";
@@ -15,7 +16,6 @@ import { rateLimit, clientKey } from "@/lib/rate-limit";
 // stored in site_content as `rag.temperature`). It governs phrasing variety,
 // NOT how much the model may extrapolate — that is enforced by the GROUNDING
 // RULES below.
-const CHAT_MODEL = "gpt-4o-mini";
 const CHAT_MAX_TOKENS = 512;
 
 /** Reads the operator-set temperature, clamped. Never throws: a settings read
@@ -317,9 +317,10 @@ ${contextBlock}`;
 			const encoder = new TextEncoder();
 			let answerText = "";
 			try {
-				for await (const text of stream) {
-					answerText += text;
-					controller.enqueue(encoder.encode(text));
+				for await (const ev of stream) {
+					if (!("text" in ev)) continue;
+					answerText += ev.text;
+					controller.enqueue(encoder.encode(ev.text));
 				}
 			} catch (e) {
 				if (req.signal.aborted) return; // client is gone; nothing to write to
