@@ -3,7 +3,8 @@ import "./EditMode.css";
 import { motion, AnimatePresence } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 
-export default function EditBar() {
+/** Bottom edit bar; `onEditContent` (v7 site only) adds the button that opens the Edit content window. */
+export default function EditBar({ onEditContent }: { onEditContent?: () => void }) {
   const { isEditing, logout } = useEditMode();
 
   return (
@@ -22,6 +23,7 @@ export default function EditBar() {
           <span className="edit-bar-label">Edit mode</span>
           <span className="edit-bar-sep" aria-hidden="true">·</span>
           <span className="edit-bar-hint">Click any text to edit — saves automatically on blur</span>
+          {onEditContent && <button className="edit-bar-exit" onClick={onEditContent}>Edit content</button>}
           <button className="edit-bar-exit" onClick={logout}>
             Exit
           </button>
