@@ -16,6 +16,8 @@ Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithv
 - Deployed on **Vercel**: `dev` → preview, `main` → production. **The apex `rithvik.ai` is the serving host and `www` 307s to it** — a Vercel domain setting, not code. `siteUrl` in `app/(site)/layout.tsx` (→ `metadataBase` + `alternates.canonical`) must keep pointing at the apex to match. It was the other way round once, and Google ended up caching the favicon under `www` while indexing the apex, which is why search results showed a blank globe. Don't "fix" `siteUrl` to `www`.
 - **Performance** (`next.config.ts` + `docs/plans/performance-improvement.md`): homepage uses **ISR** (`export const revalidate = 60` in `app/(site)/layout.tsx` and `app/(site)/page.tsx`), NOT `force-dynamic` (which cost ~5 uncached Supabase round-trips per visit); `next/image` with AVIF/WebP formats for the hero photo; `optimizePackageImports: ["motion"]` to tree-shake the motion barrel; the globe rAF and the RAG/composer overlays are deferred/paused (see their sections).
 
+- **Security headers** (`next.config.ts` `headers()`): static CSP + nosniff/Referrer-Policy/X-Frame-Options/Permissions-Policy/HSTS. `script-src` keeps `'unsafe-inline'` on purpose: per-request nonces would force every page dynamic and kill ISR, and Next's inline hydration scripts have no stable hash. Previews also allow `vercel.live`. A new third-party host (fonts, images, embeds) needs a CSP entry or it is blocked.
+
 Node 22, npm. `npm run dev` / `build` / `lint`.
 
 ## Rules
@@ -116,7 +118,7 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 - **Passwordless login**: enter email → Supabase emails a numeric code AND a magic link (one token, two paths). Enter the code in the panel for same-tab auth, or click the link for a fresh tab.
 - **Resend SMTP** sends from `auth@rithvik.ai` (SPF/DKIM/return-path DNS on Vercel); the built-in mailer is bypassed. The Magic Link **email template is customized** to render both `{{ .Token }}` and `{{ .ConfirmationURL }}` — the default omits the token, leaving the code path empty.
 - **OTP length** is whatever Supabase generates (default 8 in newer projects); the panel input accepts 6–10 digits.
-- **Session policy**: per-tab via `sessionStorage[rithvik-tab-auth]`; closing the tab clears it. The Supabase session itself isn't signed out on "exit edit mode".
+- **Session policy**: per-tab via `sessionStorage[rithvik-tab-auth]`; closing the tab clears it. "Exit editing" signs out of Supabase too. The browser client is lazy-loaded (`import()` in `EditModeProvider`) only when a login starts or the tab is already authed, so visitors never download it. Public reads filter `published = true`; edit mode loads drafts through `listAllProjects`/`listAllExperience` (admin-only).
 - **Allow-list**: two layers. `NEXT_PUBLIC_ADMIN_EMAIL` is checked client-side before the Supabase call — instant feedback + avoids burning the OTP rate limit. The one that actually enforces anything is `requireAuth()`, which compares the session email against server-only `ADMIN_EMAIL` (falling back to the `NEXT_PUBLIC_` one) and **fails closed if neither is set**. A Supabase session only proves *someone* signed in to the project, not that Rithvik did — never treat "has a session" as "is admin".
 - **Magic-link landing**: callback redirects to `/?auth=ok`; `EditModeProvider` detects the marker on mount, pre-arms `tabAuth`, flips `isEditing`, strips the param via `history.replaceState` (without the marker the in-tab SDK fires `INITIAL_SESSION`, which the per-tab policy filters out, leaving the new tab unauthenticated).
 - Components: `InlineLoginPanel` (top-right two-step card), `EditBar` (bottom "Exit editing"), `EditableText` (contentEditable, saves on blur, Esc reverts, Enter blurs unless multiline), `EditableTagList` (chip editor).
@@ -215,7 +217,7 @@ Temperature changes phrasing variety, **not** how much the model may extrapolate
 
 ### Supabase browser-client gotcha
 
-`lib/supabase.ts` MUST use `createBrowserClient` from `@supabase/ssr`, NOT `createClient` from `@supabase/supabase-js`. Only the SSR version stores sessions in cookies; the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save. This was a real bug.
+`lib/supabase-browser.ts` MUST use `createBrowserClient` from `@supabase/ssr`, NOT `createClient` from `@supabase/supabase-js`. Only the SSR version stores sessions in cookies; the plain client uses localStorage, which server actions can't read, so `requireAuth()` would redirect every save. This was a real bug.
 
 ## Database
 
@@ -293,7 +295,8 @@ components/
   ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
 
 lib/
-  supabase.ts         — clients (browser = createBrowserClient)
+  supabase-browser.ts — browser client (createBrowserClient; lazy-loaded)
+  supabase-server.ts  — `server-only` service-role clients (serverClient/adminClient)
   themes.ts           — token list, fallbacks, buildThemeStyleSheet
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
   embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
@@ -316,7 +319,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 ## Where to look first when something breaks
 
 - **Theme not switching** → `ThemeProvider` console errors; check `localStorage[rithvik-theme]`; force `data-theme` in devtools to isolate CSS.
-- **Edit-mode save / `requireAuth()` redirects to login** → browser client isn't `createBrowserClient` (cookie mismatch in `lib/supabase.ts`).
+- **Edit-mode save / `requireAuth()` redirects to login** → browser client isn't `createBrowserClient` (cookie mismatch in `lib/supabase-browser.ts`).
 - **Dial rotation doesn't animate** → `.theme-strip-option` lost `transition: transform …`, or pills regained `view-transition-name`.
 - **Theme missing from the dial** → reapply themes migration; `SELECT slug,name,sort_order FROM themes`. ISR means raw SQL inserts surface within 60s (instant after any inline edit's `revalidatePath`).
 - **RAG hallucinating wildly** → right chunk missing/low-ranked. Embed the question, query `match_primary` with `match_count=17`; if buried, check logs for `[rag] hyde failed`. Recovery: re-embed primary.
