@@ -13,3 +13,6 @@ public/images/rithvik-original.jpeg
 
 # graphify knowledge graph output
 graphify-out/
+
+# local eval run outputs (results are summarised in docs/plans/v4-overhaul.md)
+evals/results/*.json
