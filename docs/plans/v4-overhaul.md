@@ -381,6 +381,13 @@ and outreach after launch (first-party events, review queue, never auto-send).
   link, calendar availability from a **secret iCal URL** (server-only env; only busy/free ever shown) within
   **weekdays 10:00–17:00** in his current tz, request-a-meeting email to the owner with contact info + transcript link,
   full conversation observability at /admin/chats (notice lives on a /privacy page only, not in the agent).
+- More (2026-11-09): in-chat **artifacts as JSON specs only** (our SVG components: bar/line/area/donut/timeline/table/
+  stat row/mini graph; never model HTML); **semantic response cache** (first turns without page context/tools,
+  cosine ≥0.95, keyed by a content hash, `● cached`); **public /status dashboard** (metrics-only request log: tokens,
+  TTFB/total p50/p95, errors, cache hits, cost, model mix; uptime from Supabase pg_cron + pg_net pinging /api/health
+  every 5 min); **cited sources scroll + softly highlight** on the page (once per answer, never fighting the visitor).
+- Order: agent backend → wave A (conversations + metrics logging + share + /privacy + meeting email; calendar;
+  voice) → wave B (cache + /status; artifacts + brief + GitHub). All Sonnet/high.
 
 ### Step 4: verification and merge
 Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
