@@ -1,0 +1,38 @@
+/* "Edit content" window. Styled only with --ui-* tokens so it follows every design; form controls reuse .field from windows.css. */
+.edit-win { width: min(720px, calc(100vw - 32px)); height: min(820px, calc(100dvh - 120px)); }
+.edit-win select.field { appearance: auto; }
+.ew-tabs { display: flex; gap: 4px; padding: 8px 10px; overflow-x: auto; border-bottom: 1px solid var(--ui-line, rgba(255,255,255,.14)); flex: none; scrollbar-width: thin; }
+.ew-tabs [role="tab"] { flex: none; padding: 7px 12px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--ui-muted, #a1a1aa); font: 500 13px/1 var(--ui-font, system-ui, sans-serif); cursor: pointer; }
+.ew-tabs [role="tab"][aria-selected="true"] { color: var(--ui-fg, #f4f4f5); border-color: var(--ui-line, rgba(255,255,255,.14)); background: var(--ui-field, rgba(255,255,255,.06)); }
+.ew-tabs [role="tab"]:focus-visible, .ew-toggle:focus-visible { outline: 2px solid var(--ui-accent, #ff4d8d); outline-offset: 2px; }
+.ew-scroll { flex: 1; overflow: auto; padding: 14px; overscroll-behavior: contain; }
+.ew-form { display: grid; gap: 14px; margin: 0 0 28px; }
+.ew-form h3 { margin: 0; font: 600 15px/1.2 var(--ui-font, system-ui, sans-serif); }
+.ew-field { display: grid; gap: 5px; min-width: 0; }
+.ew-field label { font: 500 12px/1.2 var(--ui-mono, ui-monospace, monospace); color: var(--ui-muted, #a1a1aa); }
+.ew-hint { margin: 0; font-size: 12.5px; color: var(--ui-muted, #a1a1aa); }
+.ew-field .field-err, .ew-list > .field-err { margin: 0; }
+.ew-list, .ew-card { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.ew-list > legend, .ew-card > legend { padding: 0; margin-bottom: 8px; font: 500 12px/1.2 var(--ui-mono, ui-monospace, monospace); color: var(--ui-muted, #a1a1aa); }
+.ew-card { padding: 12px; border: 1px solid var(--ui-line, rgba(255,255,255,.14)); border-radius: calc(var(--ui-r, 14px) * .6); }
+.ew-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.ew-row > .ui-ic, .ew-row > .ew-tools { margin-top: 22px; }
+.ew-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.ew-tools { display: inline-flex; gap: 4px; }
+.ew-tools .ui-ic { width: 30px; height: 30px; }
+.ew-tools .ui-ic:disabled { opacity: .35; cursor: default; }
+.ew-flip { transform: rotate(180deg); }
+.ew-save { display: flex; align-items: center; gap: 12px; position: sticky; bottom: -14px; padding: 10px 0; background: var(--ui-bg, #0f0f12); }
+.ew-ok { font-size: 13px; color: var(--ui-muted, #a1a1aa); }
+.ew-err { font-size: 13px; color: #ff6b6b; }
+.ew-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ew-item { border: 1px solid var(--ui-line, rgba(255,255,255,.14)); border-radius: calc(var(--ui-r, 14px) * .6); }
+.ew-item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 4px 4px; }
+.ew-toggle { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-fg, #f4f4f5); font: 500 14px/1.2 var(--ui-font, system-ui, sans-serif); text-align: left; cursor: pointer; }
+.ew-toggle > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ew-badge { flex: none; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--ui-line, rgba(255,255,255,.14)); font: 500 11px/1.4 var(--ui-mono, ui-monospace, monospace); color: var(--ui-muted, #a1a1aa); }
+.ew-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ui-accent, #ff4d8d); }
+.ew-body { display: grid; gap: 14px; padding: 14px 12px 8px; border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
+.ew-check { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.ew-check input { width: 16px; height: 16px; accent-color: var(--ui-accent, #ff4d8d); }
+@media (max-width: 640px) { .edit-win { height: calc(100dvh - 160px); } .ew-grid { grid-template-columns: 1fr; } }
