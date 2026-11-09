@@ -10,6 +10,7 @@ import StatusLine from "../agent/StatusLine";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
 import { scrollAndHighlight } from "../agent/highlight";
+import Voice from "../agent/Voice";
 import "../agent/agent.css";
 
 /** True when a keystroke is going into a form field or editor, where global shortcuts must stay out of the way. */
@@ -187,6 +188,8 @@ export default function AgentDock() {
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />
         <kbd className="ab-kbd" aria-hidden="true">⌘K</kbd>
+        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} />
+        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
     </div>

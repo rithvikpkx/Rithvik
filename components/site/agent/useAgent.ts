@@ -1,4 +1,5 @@
 "use client";
+import { speak, stopSpeaking } from "./speech";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
@@ -202,6 +203,7 @@ export function useAgent(host: Host) {
 
   /** Stops the in-flight turn. Before the answer completes it leaves "Interrupted"; after, it only drops the trailing chips. */
   const interrupt = useCallback(() => {
+    stopSpeaking(); // a new question or Esc silences any reply being read aloud
     const r = run.current;
     if (!r) return;
     run.current = null;
@@ -227,6 +229,7 @@ export function useAgent(host: Host) {
       if (me.answered) return;
       me.answered = true;
       setBusySince(null);
+      void speak(answer); // no-op unless the visitor turned the speaker on
       settle(answerIds.current);
       const notes = cited(answer, sources);
       if (notes.length) add({ kind: "sources", items: notes });
