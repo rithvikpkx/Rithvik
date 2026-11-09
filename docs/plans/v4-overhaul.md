@@ -322,6 +322,10 @@ The page always uses the v7 layout. The existing side pill dial (`ThemeDial`) st
 designs alongside the legacy palette themes, which stay selectable. A legacy palette = a "classic" design:
 the v7 layout coloured by that palette's 7 tokens. Step 1's switcher work extends the dial rather than
 replacing it.
+- Decisions (2026-11-08): palettes all share one **Classic** v7 layout (no shader, coloured by the palette's
+  7 tokens; built from the v5 long-page base + v4 classic rules, reviewed on the preview); the 9 designs keep
+  their own layouts. **Default for first-time visitors = GitHub Light palette (Classic)**, not Nimbus.
+  Step 1 is done when Classic and Nimbus both render end to end from DB content.
 
 ### Step 1: foundation for the overhaul
 - Content: extend the DB to the `C` shape in `docs/mockups/v7/content.js` (projects: headline, kind,
