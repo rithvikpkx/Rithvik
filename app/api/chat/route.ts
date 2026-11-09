@@ -1,5 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai";
-import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
+import { streamChat } from "@/lib/openai";
 import { adminClient } from "@/lib/supabase";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
@@ -10,24 +9,13 @@ import { loadActionLinks } from "@/lib/action-links";
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
 // Michigan, fictional GitHub handles). Cost is comparable for our traffic.
-/** Built per request because the temperature is editable at runtime from the
- *  Context panel (stored in site_content as `rag.temperature`). Constructing a
- *  ChatOpenAI is just assembling a config object — no connection is opened —
- *  so this is not worth caching.
- *
- *  Temperature governs phrasing variety, NOT how much the model may extrapolate.
- *  What it is allowed to assert is enforced by the GROUNDING RULES below; raising
- *  this makes answers more varied and free-flowing, not more speculative. */
-function makeModel(temperature: number) {
-	return new ChatOpenAI({
-		apiKey: process.env.OPENAI_API_KEY!,
-		modelName: "gpt-4o-mini",
-		maxTokens: 512,
-		streaming: true,
-		temperature,
-	});
-}
-
+//
+// Temperature is read per request (editable at runtime from the Context panel,
+// stored in site_content as `rag.temperature`). It governs phrasing variety,
+// NOT how much the model may extrapolate — that is enforced by the GROUNDING
+// RULES below.
+const CHAT_MODEL = "gpt-4o-mini";
+const CHAT_MAX_TOKENS = 512;
 
 /** Reads the operator-set temperature, clamped. Never throws: a settings read
  *  failing must not take the chat down. */
@@ -304,11 +292,11 @@ ${contextBlock}`;
 	// The history appears twice on purpose — once labeled inside the system prompt for the
 	// grounding frame, once as actual Human/AI turns so the model treats the conversation as
 	// a conversation rather than a transcript dropped on it.
-	const prior = recentHistory.map((m) =>
-		m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content),
-	);
-
-	const messages = [new SystemMessage(systemPrompt), ...prior, new HumanMessage(message)];
+	const messages = [
+		{ role: "system" as const, content: systemPrompt },
+		...recentHistory,
+		{ role: "user" as const, content: message },
+	];
 
 	// Prior user turns, so suggestions can't repeat a question already asked.
 	// Enforced in generateSuggestions rather than trusted to the model.
@@ -339,22 +327,27 @@ ${contextBlock}`;
 		}
 	})();
 
-	// Stream the response and pipe tokens directly to the client
-	const stream = await makeModel(temperature).stream(messages);
+	// Stream the response and pipe tokens directly to the client. req.signal
+	// aborts the upstream request if the visitor closes the tab.
+	const stream = await streamChat({
+		model: CHAT_MODEL,
+		messages,
+		temperature,
+		maxTokens: CHAT_MAX_TOKENS,
+		signal: req.signal,
+	});
 
 	const readable = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
 			let answerText = "";
 			try {
-				for await (const chunk of stream) {
-					const text = typeof chunk.content === "string" ? chunk.content : "";
-					if (text) {
-						answerText += text;
-						controller.enqueue(encoder.encode(text));
-					}
+				for await (const text of stream) {
+					answerText += text;
+					controller.enqueue(encoder.encode(text));
 				}
 			} catch (e) {
+				if (req.signal.aborted) return; // client is gone; nothing to write to
 				// Headers are already sent, so we can't switch to an error status —
 				// append a visible note instead of truncating mid-sentence and
 				// leaving the user staring at a half-answer.
