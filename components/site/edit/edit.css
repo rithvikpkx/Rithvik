@@ -1,6 +1,11 @@
 /* "Edit content" window. Styled only with --ui-* tokens so it follows every design; form controls reuse .field from windows.css. */
 .edit-win { width: min(720px, calc(100vw - 32px)); height: min(820px, calc(100dvh - 120px)); }
-.edit-win select.field { appearance: auto; }
+/* windows.css styles only input/textarea .field; mirror it for the selects */
+.edit-win select.field { width: 100%; min-height: 40px; padding: 9px 12px; border: var(--bw, 1px) solid var(--ui-line, rgba(255,255,255,.14)); border-radius: calc(var(--ui-r, 14px) * .6); background: var(--ui-field, rgba(255,255,255,.06)); color: var(--ui-fg, #f4f4f5); font: 400 15px/1.4 var(--ui-font, system-ui, sans-serif); }
+.edit-win select.field option { background: var(--ui-bg, #0f0f12); color: var(--ui-fg, #f4f4f5); }
+:is(input, textarea, select).field:focus-visible { outline: 2px solid var(--ui-accent, #ff4d8d); outline-offset: 1px; }
+.edit-win textarea.field { min-height: 64px; }
+.ew-list > .ui-btn, .ew-form > .ui-btn { justify-self: start; }
 .ew-tabs { display: flex; gap: 4px; padding: 8px 10px; overflow-x: auto; border-bottom: 1px solid var(--ui-line, rgba(255,255,255,.14)); flex: none; scrollbar-width: thin; }
 .ew-tabs [role="tab"] { flex: none; padding: 7px 12px; border-radius: 999px; border: 1px solid transparent; background: transparent; color: var(--ui-muted, #a1a1aa); font: 500 13px/1 var(--ui-font, system-ui, sans-serif); cursor: pointer; }
 .ew-tabs [role="tab"][aria-selected="true"] { color: var(--ui-fg, #f4f4f5); border-color: var(--ui-line, rgba(255,255,255,.14)); background: var(--ui-field, rgba(255,255,255,.06)); }
