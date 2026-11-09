@@ -165,6 +165,9 @@ export async function saveEducation(id: string | null, input: unknown): Promise<
   if (!c.ok) return fail(c);
   try {
     const v = c.value;
+    // The site has one education row; reuse it if the client didn't know its id (e.g. a second save
+    // before reloading after the first create), so saves never duplicate the row.
+    id ??= ((await adminClient().from("education").select("id").order("sort_order").limit(1)).data?.[0]?.id as string | undefined) ?? null;
     if (id) await updateEducation(id, { school: v.school, degree: v.degree, focus: v.focus, grad: v.grad } as never); // focus/grad are v7 columns, not in EducationInput
     else await createEducation({ school: v.school, school_url: null, degree: v.degree, concentrations: [], logo_path: null, sort_order: 0, published: true, ...{ focus: v.focus, grad: v.grad } } as never);
     return { ok: true, data: null };
