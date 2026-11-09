@@ -1,4 +1,4 @@
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import { sanitizeEmailHtml, htmlToText } from "@/lib/sanitize-html";
 
 const MAX_SUBJECT = 200;

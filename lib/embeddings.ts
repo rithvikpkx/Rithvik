@@ -3,7 +3,7 @@
  * primary-row → embedding-text builders. Server-only (uses service-role
  * Supabase client and OPENAI_API_KEY).
  */
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 // Re-export the pure splitter so callers (rag-actions.ts) import from here
 // without needing to know about the dependency-free sub-module.
 export { chunkText, CHUNK_TARGET, CHUNK_OVERLAP, CHUNK_HARD_MAX } from "@/lib/chunk-text";

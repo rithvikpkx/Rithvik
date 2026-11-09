@@ -23,7 +23,7 @@
  *                  Kills the C1/C2 mismatch.
  * Both gates are deterministic string checks; no extra judge model.
  */
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import { embedTexts } from "@/lib/embeddings";
 import {
   normalizeSuggestions,

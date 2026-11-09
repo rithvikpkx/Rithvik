@@ -1,4 +1,4 @@
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Project } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import ProjectsClient from "./ProjectsClient";
@@ -7,6 +7,7 @@ export default async function Projects() {
   const { data } = await serverClient()
     .from("projects")
     .select("*")
+    .eq("published", true) // service role bypasses RLS, so drafts must be filtered here
     .order("sort_order");
   const projects = (data ?? []) as Project[];
 

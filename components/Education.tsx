@@ -1,5 +1,5 @@
 import React from "react";
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Education as EducationRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import EducationClient from "./EducationClient";
@@ -19,8 +19,8 @@ const FALLBACK: EducationRow = {
 };
 
 export default async function Education() {
-  const { data } = await serverClient().from("education").select("*").order("sort_order");
-  const rows = ((data ?? []) as EducationRow[]).filter((e) => e.published);
+  const { data } = await serverClient().from("education").select("*").eq("published", true).order("sort_order");
+  const rows = (data ?? []) as EducationRow[];
   const entries = rows.length > 0 ? rows : [FALLBACK];
 
   return (

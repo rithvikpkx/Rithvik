@@ -1,4 +1,4 @@
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Experience as ExperienceRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import ExperienceClient from "./ExperienceClient";
@@ -7,6 +7,7 @@ export default async function Experience() {
   const { data } = await serverClient()
     .from("experience")
     .select("*")
+    .eq("published", true) // service role bypasses RLS, so drafts must be filtered here
     .order("sort_order");
   const entries = (data ?? []) as ExperienceRow[];
 
