@@ -188,6 +188,8 @@ export type AgentEvent =
   /** A validated tool call. `args` are server-checked values (never a URL from the model);
    *  `result` is set for read-only tools the server already ran (local_time). */
   | { t: "tool"; id: string; name: string; args: Record<string, string>; result?: string }
+  /** First frame of a replayed answer: it came from the response cache, `age` seconds after it was generated. */
+  | { t: "cache"; age: number }
   /** The answer is complete: the client unlocks the prompt without waiting on chips. */
   | { t: "done" }
   /** Always sent last; `usage.total_tokens` counts the answer model across steps. */

@@ -23,6 +23,12 @@ export function formatRetry(secs: number): string {
   return s < 60 ? `${s}s` : `${Math.ceil(s / 60)}m`;
 }
 
+/** Age in seconds as "42s", "5m", "3h" or "2d". */
+export function formatAge(secs: number): string {
+  const s = Math.max(0, Math.round(secs));
+  return s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${Math.round(s / 3600)}h` : `${Math.round(s / 86400)}d`;
+}
+
 /** What the panel knows about spend and speed. Every field is optional: nothing is shown until it is known. */
 export type Usage = {
   /** The visitor key's hourly window, from the X-RateLimit-* headers. `reset` is epoch seconds. */
@@ -33,6 +39,8 @@ export type Usage = {
   ttfbMs?: number; totalMs?: number;
   /** CDN cache header when the host sent one. */
   cache?: string;
+  /** The last answer was replayed from the response cache. */
+  cached?: boolean;
 };
 
 /** "980" under a thousand, else "1.2k" / "12.4k" / "123k". */
@@ -87,6 +95,7 @@ export function statusSegments(s: StatusState): StatusSeg[] {
   // ● ready · 3 turns · 41/60 left · 12.4k tok · 1.9s · ? for shortcuts  (unknown pieces are left out)
   const u = s.usage;
   const segs: StatusSeg[] = [{ text: "● ready" }, { text: `${s.turns} turn${s.turns === 1 ? "" : "s"}` }];
+  if (u?.cached) segs.push({ text: "● cached", cls: "s-cached" });
   if (u?.limit !== undefined && u.remaining !== undefined) segs.push({ text: `${u.remaining}/${u.limit} left`, cls: "s-left", ...(u.remaining <= 5 ? { tone: "warn" as const } : {}) });
   if (u?.tokens) segs.push({ text: `${formatTokens(u.tokens)} tok`, cls: "s-tok" });
   if (u?.totalMs !== undefined) segs.push({ text: formatSecs(u.totalMs), cls: "s-time" });
