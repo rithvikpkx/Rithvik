@@ -372,6 +372,16 @@ graph from DB, agent upgrades (above), edit mode for the new content fields, `/b
 minigames later on `<game>.rithvik.si` with embeds (prompts doc for that repo still to write), analytics
 and outreach after launch (first-party events, review queue, never auto-send).
 
+### Step 3 decisions (owner, 2026-11-09)
+- Resume: public Google Doc export (option B), doc id in RESUME_DOC_ID; agent text strips phone + graduation date. Done.
+- Agent: smarter answer model picked by the 40-question eval (candidates gpt-5.4-mini, gpt-5.5, a gpt-6 model); cheap
+  AUX model for rewrite/HyDE/suggestions; 60/hr per visitor, 1500/hr global. No job-fit scoring (owner: too risky).
+- Agent features: page awareness + Ask-about-this, multi-step plans, draft_email prefills the composer (never sends),
+  push-to-talk voice + spoken replies, live GitHub activity, tailored brief (strengths only), shareable conversation
+  link, calendar availability from a **secret iCal URL** (server-only env; only busy/free ever shown) within
+  **weekdays 10:00–17:00** in his current tz, request-a-meeting email to the owner with contact info + transcript link,
+  full conversation observability at /admin/chats (notice lives on a /privacy page only, not in the agent).
+
 ### Step 4: verification and merge
 Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
 throttle, contrast audit, preview review by the owner. Merge to `main` only on "merge to main".
