@@ -111,14 +111,14 @@ $$;
 -- To inspect:  select * from cron.job_run_details order by start_time desc limit 5;  select * from public.uptime_checks order by at desc limit 5;
 
 -- ── READ MODELS for /api/status ──────────────────────────────────────────
--- Metrics for the last p_hours, bucketed by 'hour' or 'day'. Errors are 5xx; aborted (499) and rate-limited (429)
+-- Metrics since p_since (the caller aligns it to a bucket boundary), bucketed by 'hour' or 'day'. Errors are 5xx; aborted (499) and rate-limited (429)
 -- requests are counted as requests but not errors. Percentiles skip rows without a timing (rate-limited).
-create or replace function public.agent_metrics (p_hours int, p_bucket text default 'hour') returns jsonb
+create or replace function public.agent_metrics (p_since timestamptz, p_bucket text default 'hour') returns jsonb
 language sql stable
 set search_path = public
 as $$
   with r as (
-    select * from public.agent_requests where created_at >= now() - make_interval(hours => p_hours)
+    select * from public.agent_requests where created_at >= p_since
   )
   select jsonb_build_object(
     'requests',   (select count(*) from r),
@@ -171,12 +171,12 @@ $$;
 revoke execute on function public.match_agent_cache(vector, text, float, int) from public, anon, authenticated;
 revoke execute on function public.agent_cache_hit(uuid) from public, anon, authenticated;
 revoke execute on function public.uptime_tick(text) from public, anon, authenticated;
-revoke execute on function public.agent_metrics(int, text) from public, anon, authenticated;
+revoke execute on function public.agent_metrics(timestamptz, text) from public, anon, authenticated;
 revoke execute on function public.uptime_summary() from public, anon, authenticated;
 revoke execute on function public.agent_prune() from public, anon, authenticated;
 grant execute on function public.match_agent_cache(vector, text, float, int) to service_role;
 grant execute on function public.agent_cache_hit(uuid) to service_role;
 grant execute on function public.uptime_tick(text) to service_role;
-grant execute on function public.agent_metrics(int, text) to service_role;
+grant execute on function public.agent_metrics(timestamptz, text) to service_role;
 grant execute on function public.uptime_summary() to service_role;
 grant execute on function public.agent_prune() to service_role;
