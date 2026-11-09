@@ -1,5 +1,6 @@
 "use client";
 import "./EditMode.css";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 
@@ -24,6 +25,7 @@ export default function EditBar({ onEditContent }: { onEditContent?: () => void 
           <span className="edit-bar-sep" aria-hidden="true">·</span>
           <span className="edit-bar-hint">Click any text to edit — saves automatically on blur</span>
           {onEditContent && <button className="edit-bar-exit" onClick={onEditContent}>Edit content</button>}
+          <Link className="edit-bar-exit" href="/admin/chats" style={{ textDecoration: "none" }}>Chats</Link>
           <button className="edit-bar-exit" onClick={logout}>
             Exit
           </button>

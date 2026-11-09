@@ -68,6 +68,8 @@ const resumePdfHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
 ];
 
+const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }];
+
 const nextConfig: NextConfig = {
   // The agent header shows the answer model this deployment actually uses (set via CHAT_MODEL).
   env: { NEXT_PUBLIC_CHAT_MODEL: process.env.CHAT_MODEL ?? "gpt-4o-mini" },
@@ -91,6 +93,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/resume.pdf", headers: resumePdfHeaders },
+      // Private logs and shared transcripts must never be indexed (the pages also set a robots meta).
+      { source: "/admin/:path*", headers: noIndex },
+      { source: "/c/:path*", headers: noIndex },
     ];
   },
 };
