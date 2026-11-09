@@ -7,7 +7,7 @@ import Portrait from "@/components/site/portrait/Portrait";
 import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
 import Mark from "@/components/site/mark/Mark";
 import { PLAY } from "@/lib/play/games";
-import { CREDITS } from "@/lib/assets/misc";
+import { SITE_CREDITS } from "@/lib/assets/misc";
 import Nav from "./Nav";
 import Clock from "./Clock";
 import "./classic.css";
@@ -237,7 +237,7 @@ function Footer({ c }: { c: Content }) {
         </ul>
       </div>
       <p className="cl-fine">
-        <span>Photos: {Object.values(CREDITS).join("; ")}.</span>
+        <span>{SITE_CREDITS}</span>
         <a href="/buffett">For Warren Buffett</a>
       </p>
     </footer>
