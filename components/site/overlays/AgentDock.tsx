@@ -33,17 +33,21 @@ export default function AgentDock() {
   const recalled = useRef<string | null>(null); // the history entry currently in the input, so repeated up-arrows keep walking
 
   // openAgent(question) prefills the prompt; derived during render so no effect has to set state.
+  // Also remembers the case sheet the agent was summoned over, for page context (one overlay at a time).
   const [seen, setSeen] = useState(overlay);
+  const [caseSlug, setCaseSlug] = useState<string | null>(null);
   if (overlay !== seen) {
     setSeen(overlay);
     if (overlay?.kind === "agent" && overlay.question) setInput(overlay.question);
+    if (overlay?.kind === "case") setCaseSlug(overlay.slug);
+    else if (overlay?.kind !== "agent") setCaseSlug(null);
   }
 
   const host = useMemo(() => ({
-    content, design,
-    openCase: site.openCase, openResume: site.openResume, openComposer: site.openComposer,
+    content, design, caseSlug,
+    openCase: site.openCase, openResume: site.openResume, openComposer: site.openComposer, openPlay: site.openPlay,
     close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
-  }), [content, design, site, close]);
+  }), [content, design, caseSlug, site, close]);
   const agent = useAgent(host);
   const { items, busySince } = agent;
   const busy = busySince !== null;
@@ -157,6 +161,14 @@ export default function AgentDock() {
           )}
           <StatusLine turns={agent.turns.length} busySince={busySince} cooldown={agent.cooldown} />
         </section>
+      )}
+      {!open && agent.pending && (
+        // A multi-step turn can open a case sheet (collapsing the panel) with more steps queued: confirm them here.
+        <div className="agent-pending" role="group" aria-label="Agent wants to">
+          <span className="q">{agent.pending.question}</span>
+          <button type="button" className="t-key primary" onClick={() => agent.answerAsk(agent.pending!.id, "yes")}>⏎ Yes</button>
+          <button type="button" className="t-key" onClick={() => agent.answerAsk(agent.pending!.id, "no")}>n No</button>
+        </div>
       )}
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>
         <span className="ab-prompt" aria-hidden="true">❯</span>

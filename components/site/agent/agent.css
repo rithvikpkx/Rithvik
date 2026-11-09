@@ -70,6 +70,10 @@
 .t-res, .t-interrupted { grid-column: 2; font: 400 13px/1.6 var(--a-mono); color: var(--a-muted); overflow-wrap: anywhere; }
 .t-res::before, .t-interrupted::before { content: "⎿  "; }
 .t-interrupted { margin: 0; font-size: 12.5px; }
+.t-sources { margin: -4px 0 0 22px; padding: 0; list-style: none; font: 400 12.5px/1.6 var(--a-mono); color: var(--a-muted); }
+.t-sources .n { color: var(--a-accent); }
+.agent-pending { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 8px; padding: 8px 12px; border: 1px solid var(--a-line); border-radius: 10px; background: var(--a-bg); box-shadow: var(--a-shadow); font: 400 13px/1.4 var(--a-mono); color: var(--a-fg); }
+.agent-pending .q { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 .t-interrupted.warn { color: var(--a-accent); }
 .t-confirm { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .t-key { border: 1px solid var(--a-line); background: transparent; color: var(--a-fg); border-radius: 6px; padding: 4px 10px; font: 400 12.5px/1.4 var(--a-mono); cursor: pointer; }

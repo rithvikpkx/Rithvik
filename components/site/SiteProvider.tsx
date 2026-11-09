@@ -6,7 +6,7 @@ import Overlays from "./overlays/Overlays";
 /** Which layer is open over the page. One at a time keeps the page calm. */
 export type Overlay =
   | { kind: "case"; slug: string }
-  | { kind: "composer"; subject: string }
+  | { kind: "composer"; subject: string; body?: string }
   | { kind: "resume" }
   | { kind: "agent"; question?: string }
   | { kind: "play"; id?: string }
@@ -18,7 +18,7 @@ type SiteCtx = {
   content: Content;
   overlay: Overlay;
   openCase: (slug: string) => void;
-  openComposer: (subject?: string) => void;
+  openComposer: (subject?: string, body?: string) => void; // body prefills the draft; it never sends
   openResume: () => void;
   openAgent: (question?: string) => void;
   openPlay: (id?: string) => void;
@@ -92,7 +92,7 @@ export default function SiteProvider({ content, children }: { content: Content; 
   const value = useMemo<SiteCtx>(() => ({
     content, overlay, toasts, toast, dismissToast, lite, setLite,
     openCase: (slug) => setOverlay({ kind: "case", slug }),
-    openComposer: (subject = "") => setOverlay({ kind: "composer", subject }),
+    openComposer: (subject = "", body?: string) => setOverlay({ kind: "composer", subject, body }),
     openResume: () => setOverlay({ kind: "resume" }),
     openAgent: (question) => setOverlay({ kind: "agent", question }),
     openPlay: (id) => setOverlay({ kind: "play", id }),

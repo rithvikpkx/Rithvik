@@ -13,11 +13,11 @@ function toHtml(text: string) {
 }
 
 /** The v7 floating email window; posts the same payload as the old composer to /api/contact. */
-export default function ComposerWindow({ subject: initialSubject }: { subject: string }) {
+export default function ComposerWindow({ subject: initialSubject, body: initialBody = "" }: { subject: string; body?: string }) {
   const { content, close, toast } = useSite();
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState(initialSubject);
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody);
   const [honeypot, setHoneypot] = useState("");
   const [bad, setBad] = useState<{ from?: boolean; subject?: boolean; body?: boolean }>({});
   const [busy, setBusy] = useState(false);

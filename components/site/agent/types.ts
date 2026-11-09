@@ -12,8 +12,11 @@ export type Item =
   | { id: number; kind: "help" }
   | { id: number; kind: "answer"; text: string; streaming: boolean }
   | { id: number; kind: "suggest"; chips: string[] }
-  /** A permission confirmation for a side effect (the action itself is held by the hook until answered). */
-  | { id: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto" }
+  /** A permission confirmation for a side effect (the action itself is held by the hook until answered).
+   *  `tool` is set when the model requested it, so the row reads as a tool call. */
+  | { id: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string } }
+  /** Footnotes for the [n] markers the answer actually cited. */
+  | { id: number; kind: "sources"; items: { n: number; label: string }[] }
   | { id: number; kind: "note"; text: string; tone?: "warn" };
 
 /** An item before it is given an id. */
