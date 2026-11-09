@@ -1,11 +1,38 @@
-# rithvik.ai v4 overhaul — handoff
+# rithvik.ai overhaul: handoff
 
-Status (2026-11-08): **design phase, mockup v4 published and awaiting owner review.** No production code
-has changed yet. Next step after owner approval: parallel implementation on `dev` with granular commits
-(see "Implementation plan"). Nothing merges to `main` without the owner saying "merge to main".
+Status (2026-11-08): **APPROVED for development.** The owner approved the v7 direction (minus Relief) and
+asked to start building it into the real site on `dev` (Vercel preview). Next session: start at
+"Development plan" → Step 0. Nothing merges to `main` without the owner saying "merge to main".
+
+## Summary of the design phase (read this first)
+- v3 → v4: classic site + 12 CSS design systems, page routes, TUI agent, records player, games.
+- v5: one long andreas.vision-style page, overlays instead of pages, a generated geometric ouroboros mark
+  (`ouroPath`), plain portrait with GitHub/LinkedIn/Email nodes centred underneath and beams curving into
+  the photo (owner rejected serpent decorations around the photo as too busy).
+- v6: "absolutely wild, modern-art" rewrite. Each design became a **whole different website** rendered
+  from one content file, each with one WebGL shader. Owner references: mindofakira.com (scratchable
+  vinyl, drawing artboard), andreas.vision (light-hearted, cohesive motif, clean logo), suho.studio
+  (density: one visual + little text per screen), christendijoux.com (fluid ASCII/halftone),
+  petrillo.studio (instant red hit).
+- v7 (approved): owner kept Nimbus, Stipple, Glyph ("crisp, well defined, high quality"), cut the busy
+  ones, asked for trippy-but-calm designs with effects used smartly, 45–60fps, a performance mode, a
+  shared knowledge graph, custom assets. Relief (embossed paper) was built and then **removed** ("not
+  good"). Final set: **Nimbus (default), Stipple, Glyph, Prism, Mercury, Thermal, Starlight, Tracker,
+  Foil**.
+- Constant requirements: unfiltered portrait + three beamed contacts; Claude Code-style agent TUI;
+  floating email window; design switcher (each design a different site); Play (records vinyl, artboard,
+  Type Racer, Angle, Dots, Center the Div); resume window; minimal copy (no emoji, no exclamation marks,
+  no invented facts); calm density; hireable.
 
 ## Links and files
-- **v4 mockup (current):** https://claude.ai/artifact/SaunHuCP7ADViTosm7uLQL — sources in `docs/mockups/v4/`
+- **v7 mockup (current):** https://claude.ai/artifact/GiBtDmZtV7hf7uLv7PrArV — sources in `docs/mockups/v7/` (contract
+  `CONTRACT.md`, ten designs in `themes/`, generated assets in `assets/`). `?theme=<id>` opens a design.
+- **v6 mockup (previous):** https://claude.ai/artifact/QAeMB9v6S4zsUdLqgAjHDp — sources in `docs/mockups/v6/` (contract
+  `CONTRACT.md`; nine designs in `themes/`). Preview locally over http; `?theme=<id>` opens a design.
+- **v5 mockup (previous):** https://claude.ai/artifact/9BiFx5yvvesRWxMFeJtXRe — sources in `docs/mockups/v5/`
+  (contract `CONTRACT.md`; `systems-1.css` glass/comic/brutal/neon, `-2` crt/win98/paper/pane, `-3`
+  lab/ledger/riso/spectrum). Serve over http locally (`python3 -m http.server --directory docs/mockups/v5`).
+- **v4 mockup (previous):** https://claude.ai/artifact/SaunHuCP7ADViTosm7uLQL — sources in `docs/mockups/v4/`
   (`index.html`, `base.css` = classic site + token contract, `systems-1.css` glass/comic/brutal/neon,
   `systems-2.css` crt/win98/paper/pane, `systems-3.css` lab/ledger/riso/spectrum, `app.js`, `assets.js`,
   `CONTRACT.md` = the design-system contract, `assets/`).
@@ -19,6 +46,90 @@ has changed yet. Next step after owner approval: parallel implementation on `dev
 - Local preview: Playwright at `/Users/rithvikpraveenkumar/.npm/_npx/e41f203b7505f1fb/node_modules/playwright`,
   Chrome at `~/Library/Caches/ms-playwright/chromium-1254/chrome-mac-arm64/Google Chrome for Testing.app/...`.
   `file://` blocks the mp3 fetch and canvas pixel reads (ASCII portrait); serve over http to test those.
+
+## v7 mockup (current, 2026-11-08)
+Owner verdict on v6: keep Nimbus, Stipple, Glyph ("crisp, well defined, high quality, high resolution");
+cut Petal, Chroma, Synapse, Slit, Afterimage, Vertigo ("too busy, way too overwhelming"); Glyph needed
+real separation between elements; Synapse's graph idea became a shared feature. New brief: trippy,
+ethereal effects used smartly (not everywhere), 45–60fps sustained, a performance mode for low-power
+machines, custom high-fidelity assets.
+- Nine designs (Relief removed by the owner after review): Nimbus (default), Stipple, Glyph (now one pane per screen), Prism (chromatic aberration,
+  dispersion, caustics), Mercury (liquid chrome metaballs, ferrofluid), Thermal (FLIR false colour,
+  palette switch), Starlight (night vision, IR flashlight), Tracker (CV blob tracking over real page
+  elements), Foil (holographic card, lenticular).
+- Core additions: knowledge graph `H.graph()` (radial tree built from `content.js`: me → fields →
+  projects/roles → skills, plus school and places; hover, click-to-card, type filters) in every design;
+  performance mode = `html.lite` via the switcher's lightning button (shader frozen, designs drop their
+  heavy effects) plus an offer when frames stay under ~32fps; case sheets show a generated project object.
+- Assets: Nano Banana Pro on Weave (free tier: 2 runs) made the chrome ouroboros and chrome ribbon; Figma's
+  generator (gemini-3.1-flash-image, gpt-image-2.5-flare) made the prism, paper, foil and six project
+  objects. Figma file: https://www.figma.com/design/pCufh6qWiIDnYAls4uTMVE.
+- Production notes: Thermal sets an extra uniform `u_pv` on the core GL program from outside (core should
+  expose theme uniforms properly). Relief's files were removed from `docs/mockups/v7/`.
+
+## v6 mockup (superseded by v7)
+Owner brief: an "absolutely wild, visually stunning, bold, extremely abstract, almost modern-art"
+portfolio; ethereal and emotional; vivid colour; granular details; each design a **completely different
+website**; still hireable. Model: Opus 5.5 builds everything (owner's call after asking which model is
+better; I said I couldn't verify Fable 5.1's design strengths). Effects budget: **one GPU shader per
+design** (resolution-capped, adaptive, paused off-screen, still frame under reduced motion), else
+CSS/SVG/DOM. Owner references (round 2): mindofakira.com (scratchable tilted vinyl, free-drawing
+artboard), andreas.vision (light-hearted, cohesive pixel-cloud motif, clean minimal logo),
+suho.studio (density: one visual + a little text per screen), christendijoux.com (fluid ASCII/halftone),
+petrillo.studio (instant full-bleed red landing).
+- Architecture (`docs/mockups/v6/`): `content.js` (`window.C`, the only facts), `core.js` (theme engine:
+  each design's `render(C,H)` returns a whole site; shader runtime; portrait with three beamed
+  contacts, photo never filtered; design switcher with circular view-transition reveal; Claude
+  Code-style agent; floating email window; resume window; case sheet; the ouroboros mark `H.mark()`;
+  Play window with records vinyl, artboard, Type Racer, Angle, Dots, Center the Div), `core.css`,
+  `themes/<id>.js|css`, `CONTRACT.md` (rules for designs).
+- Nine designs: Petal (default: full-red landing that breathes into crimson silk), Chroma (Bauhaus
+  Truchet tiles), Synapse (connectome graph over an EEG field), Glyph (terminal broadsheet over a
+  halftone/ASCII cortex, keyboard-first), Slit (festival bands, slit-scan at 128 BPM), Stipple (living
+  ink-stipple pamphlet), Afterimage (cinematic scenes, projector beam), Vertigo (op-art moiré with a
+  lens), Nimbus (light-hearted pixel-cloud sky after andreas.vision).
+- v5 changes kept: plain portrait (no serpent layers) with the three contact nodes centred underneath
+  and beams curving up into the photo.
+
+## v5 mockup (superseded by v6 for direction; kept for comparison)
+Owner feedback on v4 → v5 (2026-11-08):
+17. **One long page, no page routes.** Sections: Hero → Work → Experience (+ Education row) → About
+    (full-bleed accent band, pinned globe) → Play → Questions → Footer/Contact. The nav is an
+    andreas.vision-style pill (mark + Work · About · Play · Contact) that only scrolls, with a sliding
+    scroll-spy highlight and a page-progress ring around the mark; actions sit right (design pill,
+    Resume, write-to-me). Chat, resume, email, case studies and games are **layers over the page**:
+    agent bar (bottom), draggable non-modal windows (resume, composer), a bottom sheet with an X for
+    case studies, and a FLIP expansion for play cards. Production keeps `/work/[slug]` etc. only as
+    deep links that open the same layers (SEO), not as separate pages.
+18. **Logo rebuilt**: a geometric ouroboros generated from one function (`ouroPath` in
+    `docs/mockups/v5/app.js`): an even ring, a rounded snout with a wedge mouth, a tail that tapers
+    into the mouth, an eye hole. Weights Fine / Ring (default) / Bold. Renders solid, inverse, accent,
+    hatched, 16px favicon, spinner. Animations: draw-on (stroke mask), blink, hover spin, rotation tied
+    to scroll in the nav, a giant hatched footer mark that draws in on scroll and whose pupil follows
+    the pointer, a progress fill in the case sheet, the traveller on the About globe. Replaces the
+    lemniscate mark.
+19. **Portrait**: the 3D tube was dropped (read as phallic). Now a layered orbit with parallax depth:
+    engraved serpent (Ouroboros by Abake, public domain), a measured ring with ticks + text path, a
+    scaled serpent ring (Openclipart ouroboros, CC0), the photo. The **original photo + animated
+    beams to GitHub / LinkedIn / Email is back**: three contact nodes on the orbit with pulses
+    travelling into the photo.
+20. **No project thumbnails** (inconsistent coverage). Work cards are type-led: icon, label, outcome
+    headline, context, tags, a hatched mark watermark that turns on hover, "View" pill unroll.
+21. **Play** = an endless 2D field of cards (drag/flick with inertia, horizontal trackpad, arrow keys;
+    vertical wheel stays with the page), filter pill (All · Games · Designs · More) + shuffle. A card
+    expands (FLIP) into its full UI: games, the records player, the mark specimen, Stack, Colophon.
+    Design cards apply that design (toast + Undo).
+22. Kept: theme pill dial, 12 design systems + 16 palettes, bottom chat bar (TUI agent), Buffett line.
+    Systems were re-ported onto v5 markup (`docs/mockups/v5/CONTRACT.md`); the LarpParty
+    `docs/UI-STYLES.md` styles were treated as spirit, not exact values.
+Sources: `docs/mockups/v5/` (`index.html`, `base.css`, `app.js`, `systems-1..3.css`, `CONTRACT.md`,
+`assets/ouro-engraved.svg`, `assets/ouro-scales.svg`). andreas.vision reference screenshots were taken
+with Playwright (home, work, case, about, writing, play) for structure only.
+UI proposals in v5: scroll-spy nav pill + progress ring; portrait orbit with depth parallax that
+spreads as you scroll; type-led work cards; case sheet whose mark fills as you read; pixel-stepped
+accent band with a scroll-scrubbed globe journey Boston → West Lafayette → SF; endless play field with
+card-to-panel expansion; FAQ with an inline ask box that hands off to the agent; footer clocks with
+day/night icons and GMT offsets; giant hatched mark with a watching pupil.
 
 ## Owner decisions (chronological, all still in force unless superseded)
 1. Overhaul order: security/correctness fixes first, then features as vertical slices on `dev`.
@@ -180,29 +291,76 @@ re-embedding and is unbatched; `sql-schema.md` is destructive and reintroduces r
 Perf: Supabase client (63 KB gz) shipped to every visitor; hero invisible until JS; globe redraws idle
 at 4× DPR; FlickeringGrid ~13k fillRects/frame; LangChain 1 MB server chunk; dead admin CSS.
 
-## Implementation plan (after owner approves v4 mockup)
-Subagents in git worktrees on feature branches off `dev`; one logical change per commit
-(`feat:/fix:/chore:/refactor:`); orchestrator merges into `dev` one branch at a time and pushes for a
-Vercel preview per wave. Never push `main`.
-- **Wave 1:** A security & correctness (findings above) · B design-system foundation (token contract from
-  `docs/mockups/v4/CONTRACT.md`, `data-system` + `kind palette|system` on `themes` table, CSS split, dial,
-  datamosh switch, fonts via next/font `preload:false`) · C agent backend (`lib/openai.ts`, query rewrite,
-  full-profile context, tool calling, abort, eval set, drop LangChain).
-- **Wave 2:** D/E/F the 12 systems (port `docs/mockups/v4/systems-*.css`) · G agent UI (TUI grammar above)
-  · H pages/routes (`/work/[slug]`, `/about`, `/play`, `/resume`, `/chat`), 3D ouroboros (OGL), records
-  player, Buffett entry · I resume (Drive API export cron → Storage, viewer) · J Arcade host
-  (`GameEmbed` sandboxed iframe, postMessage `{type:"score"}` / `{type:"style", system, mode}`, origin
-  allowlist, CSP `frame-src`) + J′ rithvik.si prompts doc.
-- **Wave 3:** K analytics & outreach (Vercel Analytics/Speed Insights, `/api/track` beacon, IP→company
-  enrichment, dashboard, review queue, privacy page) · L verification (Playwright contact sheets per
-  system × 1440/390, 4× CPU-throttle 60fps check, contrast audit, CI) · stretch MCP read-only API.
-Data model additions: `projects` (summary, body_md, year, featured, sort_order, media_url, media_alt,
-links jsonb), `education` (expected_grad), `site_content` keys (hero.status, now.*, faq.*),
-`themes.kind`, `resume_versions`, `game_scores` (baselines), optional `chat_sessions`.
+## Development plan (current)
+Source of truth for the UI: `docs/mockups/v7/` (published https://claude.ai/artifact/GiBtDmZtV7hf7uLv7PrArV):
+`content.js` (the content shape `C`), `core.js` + `core.css` (shared engine and chrome), `themes/<id>.js|css`
+(nine designs), `CONTRACT.md` (rules every design follows), `assets/` (generated images, record + audio).
+Process: work on `dev` (every push = Vercel preview). Big streams run as subagents in git worktrees on
+feature branches off `dev`, one logical change per commit (`feat:/fix:/chore:/refactor:`); merge into `dev`
+one branch at a time; verify (tsc, eslint on touched files, `next build`, preview) before each push.
+Never push or merge to `main` without "merge to main". Apply `supabase/*.sql` migrations to the linked
+`Rithvik` project before relying on them.
+
+### Step 0: general fixes (current site, before any UI work)
+From the codebase scan; each item is its own commit.
+- Security: upgrade Next to ≥ 16.4.5 + `npm audit fix`; Supabase Auth redirect allow-list without broad
+  `*.vercel.app` wildcards, public signups disabled (dashboard settings: tell the owner what to click);
+  filter unpublished `projects`/`experience` in every server read; rate limits as an atomic Postgres RPC
+  (IPv6 /64 bucketing, global caps, fail closed) and prune `chat_requests`; `safeUrl` for any URL rendered
+  from model output; CSP + security headers in `next.config.ts`; escape theme tokens injected into
+  `<style>`; exiting edit mode signs out; split `lib/supabase.ts` into browser vs `server-only` service-role
+  modules.
+- Correctness: inline-edit saves with rollback on failure; RagBot `finally` race that unlocks input
+  mid-stream; chat history excludes welcome/notices; `backfillPrimaryEmbeddings` upserts-then-trims and
+  batches (like `reembedSecondaryDocuments`); remove or fix the destructive `sql-schema.md`.
+- Perf: keep the Supabase browser client out of visitor bundles; hero renders without JS; drop LangChain for
+  a thin `lib/openai.ts` (the RAG pipeline otherwise unchanged).
+- Done when: tsc + eslint + `next build` clean, preview renders, chat and contact still work.
+
+### Step 1: foundation for the overhaul
+- Content: extend the DB to the `C` shape in `docs/mockups/v7/content.js` (projects: headline, kind,
+  icon, ctx, desc lines, tags, links jsonb, sort_order, featured; experience; education expected_grad;
+  `site_content` keys for status, line, thesis, about, now, faq, numbers). One server `getContent()`
+  returns `C`; ISR stays.
+- Design engine: `lib/designs/` registry; each design is a lazy-loaded client component
+  (`next/dynamic`) plus CSS scoped under `[data-design="<id>"]`; choice persisted in localStorage +
+  cookie so SSR and the pre-paint script pick the right design without a flash; default Nimbus; switcher
+  with the circular view-transition reveal; `T` cycles; `?theme=` deep link.
+- Shared components (port from `docs/mockups/v7/core.js`): Mark (ouroboros), Portrait (photo never
+  filtered, three nodes + beams), KnowledgeGraph (`KG` build + radial `kgLayout`, hover/click card/
+  filters, built from DB content), CaseSheet (`/work/[slug]` deep links open it), Windows (Resume,
+  Composer → existing `/api/contact`), PlayWindow (records vinyl with Web Audio scratch, artboard,
+  4 games), Toast, Performance mode (`html.lite` + fps watchdog under ~32fps).
+- Shader runtime: one WebGL context singleton, shared GLSL head (noise helpers), adaptive resolution,
+  pause off-screen/hidden, still frame under lite/reduced motion, **plus a proper per-design uniforms
+  API** (replaces Thermal's `u_pv` workaround).
+- Agent: port the TUI grammar (prompt, slash commands, tool rows, status line, confirmations, `/theme`
+  switches designs) onto the existing `/api/chat` stream + suggestion protocol. Agent backend upgrades
+  (query rewrite, full-profile context, tool calling, abort on `req.signal`, eval set) can follow in Step 3.
+- Done when: Nimbus renders end to end from DB content on the preview with all shared components.
+
+### Step 2: port the designs
+Order: Nimbus → Glyph → Stipple → Prism → Mercury → Thermal → Starlight → Tracker → Foil. Each port turns
+`render(C,H)` into JSX and `mount()` into effects with cleanup, reuses its shader and CSS, and keeps the
+`CONTRACT.md` rules. Acceptance per design: visual parity with the mockup at 1440×900 and 390×844,
+45–60fps with the shader running, performance mode as a designed still, no horizontal overflow, body text
+≥ 4.5:1, keyboard reachable, no console errors. Move generated assets from `docs/mockups/v7/assets/` to
+`public/` (Figma source file: https://www.figma.com/design/pCufh6qWiIDnYAls4uTMVE).
+
+### Step 3: features
+Resume (Google Doc is master → PDF export sync to Storage; admin Sync now / Upload override), knowledge
+graph from DB, agent upgrades (above), edit mode for the new content fields, `/buffett` unchanged,
+minigames later on `<game>.rithvik.si` with embeds (prompts doc for that repo still to write), analytics
+and outreach after launch (first-party events, review queue, never auto-send).
+
+### Step 4: verification and merge
+Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
+throttle, contrast audit, preview review by the owner. Merge to `main` only on "merge to main".
 
 ## Open items for the owner
-- Review v4 mockup; pick changes; then say "approved" to start implementation.
+- v7 approved (2026-11-08). Pending: the Mercury builder the owner resumed may have edited `themes/mercury.*`
+  after the last publish; check `git diff`/the artifact before porting Mercury.
 - Provide: newest experience entries, internship dates, graduation date, work authorization, LinkedIn URL,
   real game baselines.
-- Decide: Lab light/dark semantics; Riso record disc colour; whether to keep eyebrow-free labels inside
-  systems that styled them as signature.
+- Copy to review: lines designs wrote in their own voice (e.g. Nimbus "Head in the clouds, hands on the
+  hardware", Thermal "Six builds, warmest first."); no new facts were added.
