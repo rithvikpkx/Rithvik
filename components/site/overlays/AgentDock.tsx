@@ -9,6 +9,7 @@ import { setAdminMode } from "../agent/adminCommands";
 import StatusLine from "../agent/StatusLine";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
+import { scrollAndHighlight } from "../agent/highlight";
 import "../agent/agent.css";
 
 /** True when a keystroke is going into a form field or editor, where global shortcuts must stay out of the way. */
@@ -33,24 +34,34 @@ export default function AgentDock() {
   const recalled = useRef<string | null>(null); // the history entry currently in the input, so repeated up-arrows keep walking
 
   // openAgent(question) prefills the prompt; derived during render so no effect has to set state.
+  // Also remembers the case sheet the agent was summoned over, for page context (one overlay at a time).
   const [seen, setSeen] = useState(overlay);
+  const [caseSlug, setCaseSlug] = useState<string | null>(null);
   if (overlay !== seen) {
     setSeen(overlay);
     if (overlay?.kind === "agent" && overlay.question) setInput(overlay.question);
+    if (overlay?.kind === "case") setCaseSlug(overlay.slug);
+    else if (overlay?.kind !== "agent") setCaseSlug(null);
   }
 
-  const host = useMemo(() => ({
-    content, design,
-    openCase: site.openCase, openResume: site.openResume, openComposer: site.openComposer,
-    close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
-  }), [content, design, site, close]);
+  // Overlays restore focus to whatever had it when they close; if that is this input, its onFocus
+  // would reopen the agent over them (instantly under StrictMode's double effect). So blur first.
+  const host = useMemo(() => {
+    const away = <A extends unknown[]>(f: (...a: A) => void) => (...a: A) => { inputRef.current?.blur(); f(...a); };
+    return {
+      content, design, caseSlug,
+      view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
+      openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay),
+      close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
+    };
+  }, [content, design, caseSlug, site, close]);
   const agent = useAgent(host);
   const { items, busySince } = agent;
   const busy = busySince !== null;
 
   // Handlers read the latest agent/state through a ref, so the row callbacks (and memoised rows) stay stable.
-  const latest = useRef({ agent, open, input });
-  useEffect(() => { latest.current = { agent, open, input }; });
+  const latest = useRef({ agent, open, input, full, overlay });
+  useEffect(() => { latest.current = { agent, open, input, full, overlay }; });
 
   const go = (q: string) => { if (agent.submit(q)) { setInput(""); setPalIdx(0); recalled.current = null; } };
   const h = useMemo<RowHandlers>(() => ({
@@ -59,6 +70,7 @@ export default function AgentDock() {
     answer: (id, c) => latest.current.agent.answerAsk(id, c),
     undo: (id) => latest.current.agent.undo(id),
     copy: (t) => latest.current.agent.copy(t, "Copied"),
+    cite: (a) => { scrollAndHighlight(a); },
   }), []);
 
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
@@ -131,7 +143,7 @@ export default function AgentDock() {
   };
 
   return (
-    <div className="agent" data-open={open} data-full={open && full}>
+    <div className="agent" data-open={open} data-full={open && full} data-pending={!open && !!agent.pending}>
       {open && (
         <section className="agent-panel" aria-label="Rithvik's agent">
           <header className="agent-head">
@@ -157,6 +169,14 @@ export default function AgentDock() {
           )}
           <StatusLine turns={agent.turns.length} busySince={busySince} cooldown={agent.cooldown} />
         </section>
+      )}
+      {!open && agent.pending && (
+        // A multi-step turn can open a case sheet (collapsing the panel) with more steps queued: confirm them here.
+        <div className="agent-pending" role="group" aria-label="Agent wants to">
+          <span className="q">{agent.pending.question}</span>
+          <button type="button" className="t-key primary" onClick={() => agent.answerAsk(agent.pending!.id, "yes")}>⏎ Yes</button>
+          <button type="button" className="t-key" onClick={() => agent.answerAsk(agent.pending!.id, "no")}>n No</button>
+        </div>
       )}
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>
         <span className="ab-prompt" aria-hidden="true">❯</span>

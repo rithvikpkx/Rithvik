@@ -1,10 +1,13 @@
 // Pure helpers for scripts/eval-agent.mjs: stream parsing and scoring. No I/O, so they are unit-tested.
 
-/** Splits a raw /api/chat body at the first NUL: before = the visible answer, after = structured data.
- *  Works for v1 (`\0RAG_SUGGESTIONS\0{json}`) and any later framing that keeps "answer, NUL, structured". */
+/** Splits a raw /api/chat body into the visible answer and the structured data (frames joined by NUL).
+ *  v2 (lib/suggestion-protocol.ts) puts text runs between \0{json}\0 frames, so even NUL-split segments are
+ *  answer text and odd ones are frames; v1 (`answer\0RAG_SUGGESTIONS\0{json}`) is recognised by its label. */
 export function splitStream(raw) {
-  const i = raw.indexOf("\u0000");
-  return i === -1 ? { answer: raw, tail: "" } : { answer: raw.slice(0, i), tail: raw.slice(i + 1) };
+  const seg = raw.split("\u0000");
+  if (seg.length === 1) return { answer: raw, tail: "" };
+  if (seg[1] === "RAG_SUGGESTIONS") return { answer: seg[0], tail: seg.slice(1).join("\u0000") };
+  return { answer: seg.filter((_, i) => i % 2 === 0).join(""), tail: seg.filter((_, i) => i % 2 === 1).join("\u0000") };
 }
 
 /** Pulls every JSON value out of the structured tail (frames may be NUL-separated, and v1 has a label frame first). */
@@ -26,8 +29,8 @@ export function extractTools(frames) {
   const visit = (v, key) => {
     if (Array.isArray(v)) return v.forEach((x) => visit(x, key));
     if (!v || typeof v !== "object") return;
-    if (["actions", "tools", "tool_calls", "toolCalls"].includes(key) || "type" in v || "tool" in v) {
-      add(v.type ?? v.tool ?? v.name, v.target ?? v.args?.target ?? v.args?.slug ?? v.arguments?.target ?? v.arguments?.slug);
+    if (["actions", "tools", "tool_calls", "toolCalls"].includes(key) || "type" in v || "tool" in v || v.t === "tool") {
+      add(v.type ?? v.tool ?? v.name, v.target ?? v.args?.target ?? v.args?.slug ?? v.args?.id ?? v.args?.place ??v.arguments?.target ?? v.arguments?.slug);
     }
     for (const [k, x] of Object.entries(v)) if (typeof x === "object") visit(x, k);
   };

@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import { COMMANDS } from "@/lib/agent/commands";
+import { STARTER_QUESTIONS } from "@/lib/agent/starters";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
 import type { Choice, Item } from "./types";
@@ -11,9 +12,10 @@ export type RowHandlers = {
   answer: (id: number, c: Choice) => void;
   undo: (id: number) => void;
   copy: (text: string) => void;
+  cite: (anchor: string) => void; // footnote click: scroll to + highlight the source
 };
 
-const STARTERS = ["What has he built?", "Is he open to internships?", "/theme random"];
+const STARTERS = [...STARTER_QUESTIONS, "/theme random"];
 const ASK_DONE: Record<string, string> = { yes: "Allowed", no: "Skipped", always: "Allowed for this session", auto: "Allowed for this session" };
 
 /** Welcome box: rows are padded to a fixed width so the box-drawing frame lines up in a mono font. */
@@ -90,7 +92,14 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
       return (
         <div className="t-line">
           <span className="t-dot" aria-hidden="true">⏺</span>
-          <span className="t-tool"><b>{item.question}</b></span>
+          {item.tool ? (
+            <>
+              <span className="t-tool"><b>{item.tool.name}</b><span className="args">({item.tool.args})</span></span>
+              <span className="t-res">{item.question}</span>
+            </>
+          ) : (
+            <span className="t-tool"><b>{item.question}</b></span>
+          )}
           {item.state === "pending" ? (
             <div className="t-confirm">
               <button type="button" className="t-key primary" onClick={() => h.answer(item.id, "yes")}>⏎ Yes</button>
@@ -101,6 +110,17 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
             <span className="t-res">{ASK_DONE[item.state]}</span>
           )}
         </div>
+      );
+    case "sources":
+      return (
+        <ol className="t-sources" aria-label="Sources">
+          {item.items.map((s) => (
+            <li key={s.n}>
+              <span className="n">[{s.n}]</span>{" "}
+              {s.anchor ? <button type="button" onClick={() => h.cite(s.anchor!)} title="Show on the page">{s.label}</button> : s.label}
+            </li>
+          ))}
+        </ol>
       );
     case "note":
       return <p className={`t-interrupted${item.tone === "warn" ? " warn" : ""}`}>{item.text}</p>;

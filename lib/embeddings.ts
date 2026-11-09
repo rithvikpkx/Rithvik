@@ -4,6 +4,7 @@
  * Supabase client and OPENAI_API_KEY).
  */
 import { adminClient } from "@/lib/supabase-server";
+import { AUX_MODEL, complete } from "@/lib/openai";
 // Re-export the pure splitter so callers (rag-actions.ts) import from here
 // without needing to know about the dependency-free sub-module.
 export { chunkText, CHUNK_TARGET, CHUNK_OVERLAP, CHUNK_HARD_MAX } from "@/lib/chunk-text";
@@ -11,8 +12,8 @@ import type { Project, Experience, Education, GlobeMarker } from "@/lib/types";
 
 const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIM = 1536;
-const HYDE_MODEL = "gpt-4o-mini";
-const HYDE_MAX_TOKENS = 120;
+// Reasoning models spend part of this on reasoning even at "minimal", so it has headroom over the ~60 visible tokens.
+const HYDE_MAX_TOKENS = 200;
 
 /** Single-shot embed. Throws on non-2xx. */
 export async function embedText(text: string): Promise<number[]> {
@@ -96,33 +97,23 @@ A: Rithvik works with React, Next.js, Python, and AWS to build full-stack and AI
  *  content chunks than a bare question does, dramatically improving retrieval
  *  recall on question-form queries. Falls back to the original question on
  *  any failure so an OpenAI hiccup never breaks the chat. */
-export async function generateHypotheticalAnswer(question: string): Promise<string> {
+export async function generateHypotheticalAnswer(question: string, signal?: AbortSignal): Promise<string> {
   if (!process.env.OPENAI_API_KEY) return question;
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: HYDE_MODEL,
-        max_tokens: HYDE_MAX_TOKENS,
-        messages: [
-          { role: "system", content: HYDE_PROMPT },
-          { role: "user", content: `Q: ${question}\nA:` },
-        ],
-      }),
+    const { content } = await complete({
+      model: AUX_MODEL,
+      maxTokens: HYDE_MAX_TOKENS,
+      reasoningEffort: "minimal",
+      messages: [
+        { role: "system", content: HYDE_PROMPT },
+        { role: "user", content: `Q: ${question}\nA:` },
+      ],
+      signal,
     });
-    if (!res.ok) {
-      console.warn(`[rag] hyde failed (${res.status}); falling back to raw question`);
-      return question;
-    }
-    const json = (await res.json()) as { choices: { message: { content: string } }[] };
-    const answer = json.choices[0]?.message?.content?.trim();
-    return answer || question;
+    return content.trim() || question;
   } catch (e) {
-    console.warn("[rag] hyde threw; falling back to raw question:", e instanceof Error ? e.message : e);
+    if (signal?.aborted) throw e; // visitor left: stop the turn, don't fall back
+    console.warn("[rag] hyde failed; falling back to raw question:", e instanceof Error ? e.message : e);
     return question;
   }
 }
