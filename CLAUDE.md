@@ -11,7 +11,7 @@ Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithv
 - **Resend** — two distinct paths: (1) custom SMTP for Supabase Auth emails (`auth@rithvik.ai`); (2) the contact composer POSTs directly to the **Resend HTTP API** (`fetch` to `https://api.resend.com/emails`, no SDK) from `contact@rithvik.ai`. Verified domain `rithvik.ai` covers both.
 - **Motion** (`motion/react`) for animation
 - **cobe** v2 for the WebGL globe in Bento (we drive our own rAF loop — v2 has no `onRender`)
-- **LangChain** (`@langchain/openai`) → **OpenAI** `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back (it ignored grounding rules; `gpt-4o-mini` follows them reliably).
+- **OpenAI REST via `fetch`, no SDK** (`lib/openai.ts` streams chat via SSE; embeddings/HyDE/captioning/suggestions call the API directly) — `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back (it ignored grounding rules; `gpt-4o-mini` follows them reliably).
 - **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2`, which crashed on Vercel with `DOMMatrix is not defined`; `pdf-parse` must stay out of `package.json`)
 - Deployed on **Vercel**: `dev` → preview, `main` → production. **The apex `rithvik.ai` is the serving host and `www` 307s to it** — a Vercel domain setting, not code. `siteUrl` in `app/(site)/layout.tsx` (→ `metadataBase` + `alternates.canonical`) must keep pointing at the apex to match. It was the other way round once, and Google ended up caching the favicon under `www` while indexing the apex, which is why search results showed a blank globe. Don't "fix" `siteUrl` to `www`.
 - **Performance** (`next.config.ts` + `docs/plans/performance-improvement.md`): homepage uses **ISR** (`export const revalidate = 60` in `app/(site)/layout.tsx` and `app/(site)/page.tsx`), NOT `force-dynamic` (which cost ~5 uncached Supabase round-trips per visit); `next/image` with AVIF/WebP formats for the hero photo; `optimizePackageImports: ["motion"]` to tree-shake the motion barrel; the globe rAF and the RAG/composer overlays are deferred/paused (see their sections).
@@ -298,6 +298,7 @@ lib/
   types.ts            — Project, Experience, Education, SiteContent, Theme, Database
   embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
   chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
+  openai.ts           — fetch + SSE streaming chat client (`streamChat`, pure `parseSSEDeltas`, tested)
   suggestion-protocol.ts — chat stream wire format: sentinel + splitStream (shared client/server, tested)
   rag-settings.ts     — runtime-tunable RAG settings (temperature clamp, never-embedded `rag.` prefix); tested
   chat-actions.ts     — deterministic bot actions from retrieval metadata + URL allowlist (tested)
