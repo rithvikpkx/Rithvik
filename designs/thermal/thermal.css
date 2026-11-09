@@ -2,7 +2,7 @@
    then the site (nav, hero viewfinder, hot spots, record, map, bench, about, contact), then the core
    chrome restyled as instrument panels. Palette stops mirror STOPS in thermal.js. */
 :root[data-design="thermal"] {
-  --th-bg: #05070D; --th-bg2: #080B14; --th-bg3: #0B0F1A; --th-fg: #E8EDF5; --th-soft: #C9D2DF; --th-mut: #8C98AB; --th-dim: #5D6879;
+  --th-bg: #05070D; --th-bg2: #080B14; --th-bg3: #0B0F1A; --th-fg: #E8EDF5; --th-soft: #C9D2DF; --th-mut: #8C98AB; --th-dim: #7A8699;
   --th-line: rgba(150, 175, 210, .14); --th-line2: rgba(150, 175, 210, .28);
   --th-sans: "Space Grotesk", -apple-system, "Segoe UI", system-ui, sans-serif; --th-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --stops-iron: #04060C 0%, #1A0852 20%, #800A85 40%, #DB294D 56%, #FC780F 72%, #FFD138 87%, #FFFADB 100%;
