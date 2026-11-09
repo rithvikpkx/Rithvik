@@ -51,7 +51,6 @@
 .ch-tl-name small { display: block; color: var(--ch-muted); font-size: 11px; }
 .ch-tl-bar { position: absolute; top: 50%; height: 12px; margin-top: -6px; border-radius: 4px; background: var(--ch-1); }
 .ch-tl-bar.open { border-top-right-radius: 0; border-bottom-right-radius: 0; background: linear-gradient(90deg, var(--ch-1) 70%, color-mix(in srgb, var(--ch-1) 35%, transparent)); }
-.ch-tl-dates { grid-column: 2; color: var(--ch-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
 /* table, stats */
 .ch-scroll { overflow-x: auto; }

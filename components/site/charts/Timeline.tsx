@@ -23,9 +23,8 @@ export default function Timeline({ title, items }: { title: string; items: Timel
         const r = rows[i];
         return (
           <div className="ch-tl-row" key={i} aria-hidden="true">
-            <div className="ch-tl-name">{it.label}{it.note && <small>{it.note}</small>}</div>
+            <div className="ch-tl-name">{it.label}{it.note && <small>{it.note}</small>}<small>{span(it).replace(" to ", " – ")}</small></div>
             <div className="ch-tl-track">{r && <span className={`ch-tl-bar ch-in${/^(present|now)$/i.test(it.end ?? "") ? " open" : ""}`} style={{ left: `${r.left}%`, width: `${Math.min(r.width, 100 - r.left)}%` }} title={span(it)} />}</div>
-            <div className="ch-tl-dates">{span(it).replace(" to ", " – ")}</div>
           </div>
         );
       })}
