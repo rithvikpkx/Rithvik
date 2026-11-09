@@ -53,8 +53,10 @@ function subscribeLite(cb: () => void) {
 }
 
 /** Provides useSite() and wires the mockup's declarative hooks (data-case, data-compose,
- *  data-resume, data-agent, data-play, data-copy) so designs stay plain markup. */
-export default function SiteProvider({ content, children }: { content: Content; children: React.ReactNode }) {
+ *  data-resume, data-agent, data-play, data-copy) so designs stay plain markup. `overlays` defaults to the
+ *  stock layer stack; SitePage passes null and mounts <Overlays /> itself inside DesignProvider, so the agent
+ *  and composer can read the active design (rendered here they sit outside that context). */
+export default function SiteProvider({ content, children, overlays = <Overlays /> }: { content: Content; children: React.ReactNode; overlays?: React.ReactNode }) {
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   // `html.lite` is the single source of truth (set pre-paint by the design engine), so
@@ -105,7 +107,7 @@ export default function SiteProvider({ content, children }: { content: Content; 
   return (
     <Ctx.Provider value={value}>
       {children}
-      <Overlays />
+      {overlays}
     </Ctx.Provider>
   );
 }
