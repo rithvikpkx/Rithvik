@@ -1,6 +1,8 @@
 import { adminClient } from "@/lib/supabase-server";
 import { sanitizeEmailHtml, htmlToText } from "@/lib/sanitize-html";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { buildContextFooter, escapeHtml as esc } from "@/lib/contact-context";
+import { geoFromHeaders, isUuid } from "@/lib/agent/obs";
 
 const MAX_SUBJECT = 200;
 const MAX_BODY = 20000;                       // raw HTML length cap
@@ -8,19 +10,13 @@ const RATE_LIMIT = 3;                         // sends per IP (IPv6: per /64) pe
 const RATE_LIMIT_GLOBAL = 50;                 // all senders per hour; protects domain reputation
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Payload = { from?: string; subject?: string; bodyHtml?: string; honeypot?: string };
+// agentSessionId / pageUrl / design / referrer feed the owner-only Context footer; they are untrusted.
+type Payload = { from?: string; subject?: string; bodyHtml?: string; honeypot?: string; agentSessionId?: string; pageUrl?: string; design?: string; referrer?: string };
 
 // Best-effort client IP from Vercel's forwarding header.
 function clientIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   return (fwd?.split(",")[0] ?? "").trim() || "unknown";
-}
-
-// Escape HTML-significant chars. The email regex permits <, >, " in the local
-// part, so the sender address must be escaped before interpolating into HTML.
-function esc(s: string): string {
-  return s.replace(/[<>"'&]/g, (c) =>
-    ({ "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "&": "&amp;" })[c] as string);
 }
 
 export async function POST(req: Request) {
@@ -66,12 +62,29 @@ export async function POST(req: Request) {
 
   const sender = from.trim();
 
+  // The transcript link only goes out for a session that really exists: a guessed or stale id is dropped.
+  let agentSessionId: string | null = null;
+  if (isUuid(body.agentSessionId)) {
+    const { data } = await db.from("agent_sessions").select("id").eq("id", body.agentSessionId).maybeSingle();
+    if (data) agentSessionId = data.id as string;
+  }
+  const context = buildContextFooter({
+    agentSessionId,
+    origin: new URL(req.url).origin,
+    pageUrl: typeof body.pageUrl === "string" ? body.pageUrl : req.headers.get("referer"),
+    design: typeof body.design === "string" ? body.design : null,
+    geo: geoFromHeaders(req.headers),
+    userAgent: req.headers.get("user-agent"),
+    referrer: typeof body.referrer === "string" ? body.referrer : null,
+    at: new Date(),
+  });
+
   // Log row before sending, marked 'sent' or 'failed' once we know the outcome.
-  const { data: logRow } = await db
-    .from("contact_submissions")
-    .insert({ ip, from_email: sender, subject: subject.trim(), status: "pending" })
-    .select("id")
-    .single();
+  // agent_session_id needs supabase/contact_agent_session_migration.sql; until it is applied the insert
+  // is retried without it so the log row (and the rate-limit record) still lands.
+  const row = { ip, from_email: sender, subject: subject.trim(), status: "pending" };
+  const first = await db.from("contact_submissions").insert({ ...row, agent_session_id: agentSessionId }).select("id").single();
+  const { data: logRow } = first.error ? await db.from("contact_submissions").insert(row).select("id").single() : first;
 
   // Send via the Resend HTTP API (fetch — no SDK). from MUST be a verified
   // rithvik.ai address; the visitor goes in reply_to so "reply" reaches them.
@@ -94,8 +107,8 @@ export async function POST(req: Request) {
       to: process.env.CONTACT_TO!,
       reply_to: sender,        // reply reaches the visitor
       subject: `[rithvik.ai] ${subject.trim()}`,
-      html: headerLine + cleanHtml,
-      text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}`,
+      html: headerLine + cleanHtml + context.html,
+      text: `Sent from rithvik.ai by ${sender}\n\n${htmlToText(cleanHtml)}${context.text}`,
     }),
   });
 

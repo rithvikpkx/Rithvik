@@ -11,6 +11,7 @@ import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from 
 import { GAMES } from "@/lib/play/games";
 import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
+import type { ComposerMeta } from "../SiteProvider";
 import { usageLines, type Usage } from "@/lib/agent/status";
 import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 import { runSlash } from "./slash";
@@ -23,7 +24,7 @@ export type Host = {
   design: Design;
   openCase: (slug: string) => void;
   openResume: () => void;
-  openComposer: (subject?: string, body?: string) => void;
+  openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void;
   openPlay: (id?: string) => void;
   close: () => void;
   toggleFull: () => void;
@@ -150,10 +151,13 @@ export function useAgent(host: Host) {
     return target === "top" ? "the top" : target;
   }, [host]);
 
+  /** Opens the composer from the agent, tagged with this conversation so the email's owner-only context links to it. */
+  const compose = useCallback((subject?: string, body?: string) => host.openComposer(subject, body, { agentSessionId: readSession() ?? undefined }), [host]);
+
   /** Turns a fallback server action (a record name, never a URL the model wrote) into a confirmation row. */
   const queueAction = useCallback((a: ChatAction) => {
     if (a.type === "open_link") return ask(`Open "${a.label}" in a new tab?`, "link", () => window.open(a.url, "_blank", "noopener,noreferrer"));
-    if (a.type === "open_composer") return ask("Draft an email to Rithvik?", "compose", () => host.openComposer(""));
+    if (a.type === "open_composer") return ask("Draft an email to Rithvik?", "compose", () => compose(""));
     const r = resolveTarget(a.target);
     if (r.kind === "case") {
       const title = host.content.projects.find((p) => p.slug === r.slug)?.title;
@@ -161,7 +165,7 @@ export function useAgent(host: Host) {
     }
     const section = a.target.startsWith("experience") ? "experience" : a.target.startsWith("education") ? "education" : a.target.startsWith("project") ? "work" : "about";
     ask(`Scroll to ${section}?`, "navigate", () => scroll(r.kind === "scroll" ? r.ids : ["work", "top"]));
-  }, [ask, host, scroll]);
+  }, [ask, compose, host, scroll]);
 
   /** Sends a meeting request the visitor just confirmed; the row shows the outcome. Only ever called from the confirmation. */
   const sendMeeting = useCallback(async (m: Record<string, string>) => {
@@ -227,10 +231,10 @@ export function useAgent(host: Host) {
         return;
       }
       case "draft_email":
-        ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => host.openComposer(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
+        ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => compose(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
         return;
     }
-  }, [add, ask, host, scroll, sectionName, sendMeeting]);
+  }, [add, ask, compose, host, scroll, sectionName, sendMeeting]);
 
   const copy = useCallback((text: string, msg: string) => {
     navigator.clipboard?.writeText(text).then(() => host.toast(msg), () => {});
@@ -464,13 +468,13 @@ export function useAgent(host: Host) {
       runSlash(q, {
         add, ask, clear, scroll, copy, turns, exportMd, usage: showUsage, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
-        openCase: host.openCase, openResume: host.openResume, openComposer: host.openComposer,
+        openCase: host.openCase, openResume: host.openResume, openComposer: compose,
       });
     }
     // Starter chips answer instantly from content, with no /api/chat call.
     else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
-  }, [add, ask, clear, converse, cooldown, copy, exportMd, history, host, interrupt, scroll, showUsage, turns]);
+  }, [add, ask, clear, compose, converse, cooldown, copy, exportMd, history, host, interrupt, scroll, showUsage, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {

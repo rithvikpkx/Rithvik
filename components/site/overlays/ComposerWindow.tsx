@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { DesignContext } from "../DesignProvider";
 import Window from "../windows/Window";
 import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
@@ -13,8 +14,9 @@ function toHtml(text: string) {
 }
 
 /** The v7 floating email window; posts the same payload as the old composer to /api/contact. */
-export default function ComposerWindow({ subject: initialSubject, body: initialBody = "" }: { subject: string; body?: string }) {
+export default function ComposerWindow({ subject: initialSubject, body: initialBody = "", agentSessionId }: { subject: string; body?: string; agentSessionId?: string }) {
   const { content, close, toast } = useSite();
+  const design = useContext(DesignContext); // null in the lab harness
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody] = useState(initialBody);
@@ -33,7 +35,9 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: from.trim(), subject: subject.trim(), bodyHtml: toHtml(body.trim()), honeypot }),
+        body: JSON.stringify({ from: from.trim(), subject: subject.trim(), bodyHtml: toHtml(body.trim()), honeypot,
+          // Owner-only context for the email footer (the route validates all of it).
+          agentSessionId, pageUrl: location.href, design: design?.current, referrer: document.referrer }),
       });
       if (res.ok) { toast("Sent. I'll reply to " + from.trim()); close(); return; }
       setError(res.status === 429 ? "You've sent a few already. Try again in a bit." : "Couldn't send. Please try again.");
