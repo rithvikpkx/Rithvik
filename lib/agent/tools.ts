@@ -59,7 +59,6 @@ export function toolDefs(a: Allowed): ToolDef[] {
       company: { type: "string", description: "Visitor's company or school" },
       role: { type: "string", description: "Visitor's role or the role being discussed" },
       times: { type: "array", items: { type: "string" }, maxItems: 5, description: "1-5 proposed times, each with a date and time, ideally checked free" },
-      timeZone: { type: "string", description: "IANA zone the times are in, e.g. America/New_York" },
       notes: { type: "string", description: "Anything else the visitor wants Rithvik to know" },
     }, ["name", "email", "times"]),
   ];
@@ -76,11 +75,13 @@ function plain(v: unknown, max: number): string {
 }
 
 /** Runs the same checks the send path uses (meeting.ts) over model-supplied fields; notes lose URLs like draft_email's. */
-function checkMeeting(raw: Record<string, unknown>) {
+function checkMeeting(raw: Record<string, unknown>): ReturnType<typeof validateMeeting> {
   const s = (v: unknown) => (typeof v === "string" ? v : undefined);
+  const times = Array.isArray(raw.times) ? raw.times.filter((t): t is string => typeof t === "string") : [];
+  // The card is read by a person: each time states its own zone, so ISO strings are bounced back to the model.
+  if (times.some((t) => /^\d{4}-\d\d-\d\dT/.test(t.trim()))) return { ok: false, error: 'Write each time as readable text with its zone, like "Tue Nov 10, 10:00 AM PT", not an ISO string.' };
   return validateMeeting({
-    name: s(raw.name) ?? "", email: s(raw.email) ?? "", company: s(raw.company), role: s(raw.role), timeZone: s(raw.timeZone),
-    times: Array.isArray(raw.times) ? raw.times.filter((t): t is string => typeof t === "string") : [],
+    name: s(raw.name) ?? "", email: s(raw.email) ?? "", company: s(raw.company), role: s(raw.role), times,
     notes: plain(raw.notes, 2000) || undefined,
     sessionId: NO_SESSION,
   });
@@ -155,7 +156,7 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
       if (!m.ok) return null;
       const v = m.value;
       // times travel as one newline-joined string (each was collapsed to a single line); undefined fields are dropped
-      const args = Object.fromEntries(Object.entries({ name: v.name, email: v.email, company: v.company, role: v.role, times: v.times.join("\n"), timeZone: v.timeZone, notes: v.notes }).filter(([, x]) => x));
+      const args = Object.fromEntries(Object.entries({ name: v.name, email: v.email, company: v.company, role: v.role, times: v.times.join("\n"), notes: v.notes }).filter(([, x]) => x));
       return { id, name: call.name, args: args as Record<string, string> };
     }
     case "local_time": {
@@ -182,7 +183,6 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
       replies.push({ id: c.id, content: why ? `Rejected: ${why} Ask the visitor to fix it, then call request_meeting again.` : "Rejected: unknown tool or argument. Do not retry it; answer in text." });
       continue;
     }
-    if (v.name === "request_meeting" && visitorTz && !v.args.timeZone) v.args.timeZone = visitorTz; // the visitor sees it on the card
     if (CALENDAR.has(v.name)) {
       if (++lookups > MAX_CALENDAR) { replies.push({ id: c.id, content: "Rejected: too many calendar lookups this step." }); continue; }
       const out = await runCalendarTool(v.name, { ...JSON.parse(c.arguments || "{}"), ...(visitorTz ? { visitorTz } : {}) }, now.getTime());

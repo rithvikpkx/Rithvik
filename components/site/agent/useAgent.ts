@@ -213,7 +213,7 @@ export function useAgent(host: Host) {
       case "request_meeting": {
         if (!a.name || !a.email || !a.times) return;
         const detail = [`To: Rithvik`, `Name: ${a.name}`, `Email: ${a.email}`, a.company && `Company: ${a.company}`, a.role && `Role: ${a.role}`,
-          `Times${a.timeZone ? ` (${a.timeZone})` : ""}: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
+          `Times: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
         ask("Send this to Rithvik?", "meeting", () => void sendMeeting(a), { name: "RequestMeeting", args: a.name }, { detail, once: true });
         return;
       }
