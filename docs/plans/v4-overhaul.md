@@ -397,6 +397,19 @@ visitor tracking + replay + owner exclusion, /privacy, /status. Launch-day tasks
 job (commented in supabase/agent_cache_metrics_migration.sql) once the apex serves /api/health; confirm Vercel env vars
 for Production (CRON_SECRET, CALENDAR_ICS_URL, IP_HASH_SALT, TRACKING_OWNER_KEY, TRACKING_EXCLUDE_IPS, IPINFO_TOKEN).
 
+### Owner review round 1 (2026-11-09) — in progress
+- "I am Rithvik" button in the HEADER of every design (visible on purpose: curiosity about the admin side); playful
+  Rithvik-only login panel; movable admin bar (inline editing on/off, Dashboard, Edit content, Exit); in-place editing
+  restored across all ten looks via `data-edit` keys + one validated `saveField`.
+- /admin: themed (carries the active look), stunning analytics + observability dashboard: summary (deterministic +
+  on-demand AI write-up), traffic, cobe globe + countries/orgs/devices/sources, feature usage most→least, RAG analytics,
+  outreach ranking with intent signals, visitor inspector (timeline, replay, chats as a replica of the RAG window).
+- /status = condensed, PII-free public version of the dashboard; reachable via a discreet status dot + footer links.
+- Owner chats logged with `agent_sessions.is_owner` (so Share works for him) and excluded from every analytic.
+- Dial gains a "Warren Buffett" entry; RAG commands cover everything a visitor can do, `/help` as clickable chips.
+- /buffett rebuilt as a faithful raw-HTML homage to berkshirehathaway.com with an inspiration blurb + link.
+- Owner has more general UI/UX grievances queued for a later "general fixups" round.
+
 ### Step 4: verification and merge
 Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
 throttle, contrast audit, preview review by the owner. Merge to `main` only on "merge to main".
