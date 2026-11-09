@@ -7,6 +7,7 @@ export default async function Projects() {
   const { data } = await serverClient()
     .from("projects")
     .select("*")
+    .eq("published", true) // service role bypasses RLS, so drafts must be filtered here
     .order("sort_order");
   const projects = (data ?? []) as Project[];
 

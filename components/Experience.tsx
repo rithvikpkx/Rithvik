@@ -7,6 +7,7 @@ export default async function Experience() {
   const { data } = await serverClient()
     .from("experience")
     .select("*")
+    .eq("published", true) // service role bypasses RLS, so drafts must be filtered here
     .order("sort_order");
   const entries = (data ?? []) as ExperienceRow[];
 

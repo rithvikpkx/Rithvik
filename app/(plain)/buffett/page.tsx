@@ -48,17 +48,15 @@ export default async function Buffett() {
 	const sb = serverClient();
 	const [contentRes, eduRes, projRes, expRes] = await Promise.all([
 		sb.from("site_content").select("key, value"),
-		sb.from("education").select("*").order("sort_order"),
-		sb.from("projects").select("*").order("sort_order"),
-		sb.from("experience").select("*").order("sort_order"),
+		sb.from("education").select("*").eq("published", true).order("sort_order"),
+		sb.from("projects").select("*").eq("published", true).order("sort_order"),
+		sb.from("experience").select("*").eq("published", true).order("sort_order"),
 	]);
 
 	const content = Object.fromEntries(
 		((contentRes.data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
 	);
-	const education = ((eduRes.data ?? []) as EducationRow[]).filter((e) => e.published);
-	// Mirror the homepage exactly: Projects.tsx and Experience.tsx show all rows
-	// regardless of `published`; only Education filters. Keeps /buffett seamless.
+	const education = (eduRes.data ?? []) as EducationRow[];
 	const projects = (projRes.data ?? []) as Project[];
 	const experience = (expRes.data ?? []) as ExperienceRow[];
 
