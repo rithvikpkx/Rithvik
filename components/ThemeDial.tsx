@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import type { CSSProperties } from "react";
+import "./ThemeDial.css";
 
 /**
  * Radial liquid-glass theme dial — tucked to the left edge.
@@ -36,10 +37,31 @@ const WIGGLE_DELAY_MS  = 5000;  // wait after first paint
 // sync so we can clear the class once the animation finishes.
 const WIGGLE_DURATION_MS = 1800;
 
+/** One pill: colours for its face, optional font. */
+export type DialItem = { id: string; name: string; bg: string; fg: string; accent: string; font?: string };
+
+type ViewProps = {
+  items: DialItem[];
+  current: string;
+  onSelect: (id: string, from?: [x: number, y: number]) => void; // `from` = click point
+  dividerAt?: number; // index of the first item of the second group (draws a divider before it)
+  style?: CSSProperties; // e.g. colour tokens when the page has no palette vars
+};
+
+/** Old site: the palette rows from ThemeProvider. */
 export default function ThemeDial() {
   const { themes, currentSlug, setTheme } = useTheme();
-  const sorted = [...themes].sort((a, b) => a.sort_order - b.sort_order);
-  const selectedIdx = Math.max(0, sorted.findIndex((t) => t.slug === currentSlug));
+  const items = [...themes]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((t) => ({ id: t.slug, name: t.name, bg: t.tokens.bg, fg: t.tokens.text, accent: t.tokens.accent, font: t.tokens.font }));
+  return <ThemeDialView items={items} current={currentSlug} onSelect={setTheme} />;
+}
+
+/** The dial itself, driven by any item list (the v7 site passes designs + palettes). */
+export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: setTheme, dividerAt, style }: ViewProps) {
+  const selectedIdx = Math.max(0, sorted.findIndex((t) => t.id === currentSlug));
+  // Fan position; items past the divider sit a little further out to make room for it.
+  const slot = (i: number) => i + (dividerAt !== undefined && i >= dividerAt ? 0.6 : 0);
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -73,7 +95,7 @@ export default function ThemeDial() {
 
     kickoff = setTimeout(() => {
       // If the user switched themes during the wait, suppress and remember.
-      if (wiggleAbortedRef.current || stateRef.current.sorted[stateRef.current.selectedIdx]?.slug !== initialSlug) {
+      if (wiggleAbortedRef.current || stateRef.current.sorted[stateRef.current.selectedIdx]?.id !== initialSlug) {
         try { localStorage.setItem(WIGGLE_SHOWN_KEY, "1"); } catch {}
         return;
       }
@@ -113,7 +135,7 @@ export default function ThemeDial() {
       s.lastWheel = now;
       const dir = e.deltaY > 0 ? 1 : -1;
       const next = Math.max(0, Math.min(s.sorted.length - 1, s.selectedIdx + dir));
-      if (next !== s.selectedIdx) s.setTheme(s.sorted[next].slug);
+      if (next !== s.selectedIdx) s.setTheme(s.sorted[next].id);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
@@ -157,7 +179,7 @@ export default function ThemeDial() {
     const stepDir = e.pointerType === "touch" ? -1 : 1;
     const steps = Math.trunc(dy / DRAG_STEP_PX) * stepDir;
     const next = Math.max(0, Math.min(sorted.length - 1, d.startIdx + steps));
-    if (next !== selectedIdx) setTheme(sorted[next].slug);
+    if (next !== selectedIdx) setTheme(sorted[next].id);
   };
   const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
@@ -179,7 +201,7 @@ export default function ThemeDial() {
     e.preventDefault();
     next = Math.max(0, Math.min(sorted.length - 1, next));
     if (next === selectedIdx) return;
-    const targetSlug = sorted[next].slug;
+    const targetSlug = sorted[next].id;
     setTheme(targetSlug);
     requestAnimationFrame(() => {
       buttonRefs.current[targetSlug]?.focus();
@@ -193,6 +215,7 @@ export default function ThemeDial() {
       className={`theme-dial-aside${isWiggling ? " is-wiggling" : ""}`}
       role="radiogroup"
       aria-label="Theme selector"
+      style={style}
     >
       <div
         ref={contentRef}
@@ -212,38 +235,49 @@ export default function ThemeDial() {
 
         {/* Fan of theme pills — visible on hover or when a child is keyboard-focused */}
         <div className="theme-dial-fan">
+          {dividerAt !== undefined && (
+            <span
+              className="theme-strip-divider"
+              aria-hidden
+              style={{ transform: `translate(0, calc(-50% + ${(dividerAt - 0.2 - slot(selectedIdx)) * ITEM_SPACING}px)) rotate(${(dividerAt - 0.2 - slot(selectedIdx)) * STEP_DEG}deg)` }}
+            />
+          )}
           {sorted.map((t, i) => {
-            const active = t.slug === currentSlug;
-            const distance = i - selectedIdx;
+            const active = t.id === currentSlug;
+            const distance = slot(i) - slot(selectedIdx);
             const angle = distance * STEP_DEG;
             const yOffset = distance * ITEM_SPACING;
 
             const optionStyle: CSSProperties = {
               transform: `translate(0, calc(-50% + ${yOffset}px)) rotate(${angle}deg)`,
-              background: t.tokens.bg,
-              color: t.tokens.text,
-              fontFamily: t.tokens.font ?? undefined,
+              background: t.bg,
+              color: t.fg,
+              fontFamily: t.font ?? undefined,
             };
 
             return (
               <button
-                ref={(el) => { buttonRefs.current[t.slug] = el; }}
-                key={t.slug}
+                ref={(el) => { buttonRefs.current[t.id] = el; }}
+                key={t.id}
                 type="button"
                 className={`theme-strip-option${active ? " is-active" : ""}`}
                 role="radio"
                 aria-checked={active}
                 aria-label={`Switch to ${t.name}`}
                 tabIndex={active ? 0 : -1}
-                onClick={() => setTheme(t.slug)}
+                onClick={(e) => {
+                  // Pill centre, not the pointer: keyboard-activated clicks report (0, 0).
+                  const r = e.currentTarget.getBoundingClientRect();
+                  setTheme(t.id, [r.left + r.width / 2, r.top + r.height / 2]);
+                }}
                 style={optionStyle}
               >
                 <span className="theme-strip-name">{t.name}</span>
                 {active && (
                   <span className="theme-strip-dots" aria-hidden>
-                    <span style={{ background: t.tokens.bg, boxShadow: `inset 0 0 0 1px ${t.tokens.text}` }} />
-                    <span style={{ background: t.tokens.accent }} />
-                    <span style={{ background: t.tokens.text }} />
+                    <span style={{ background: t.bg, boxShadow: `inset 0 0 0 1px ${t.fg}` }} />
+                    <span style={{ background: t.accent }} />
+                    <span style={{ background: t.fg }} />
                   </span>
                 )}
               </button>
