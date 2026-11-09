@@ -2,19 +2,19 @@
 
 Guidance for Claude Code in this repo. Project: a personal portfolio for **Rithvik Praveen Kumar** at [rithvik.ai](https://rithvik.ai) — a showcase plus a playground for live inline editing and an AI chatbot.
 
-> **In progress: the overhaul, approved for development (v7 design, 2026-11-08).** Read `docs/plans/v4-overhaul.md` first and start at "Development plan" → Step 0 (general fixes), then Step 1 (design engine + shared components), Step 2 (port the nine designs: Nimbus default, Stipple, Glyph, Prism, Mercury, Thermal, Starlight, Tracker, Foil). Mockup source of truth: `docs/mockups/v7/` (published at https://claude.ai/artifact/GiBtDmZtV7hf7uLv7PrArV; rules in `docs/mockups/v7/CONTRACT.md`). Earlier mockups: `docs/mockups/v6/`, `v5/`, `v4/`, `v3/`. The sections below describe the **current production** site, which the overhaul replaces (Bento, the floating RAG launcher, the dial and the palette themes go away).
+> **The overhaul is live on `dev`** (v7 design; Steps 0–2 done, tags `step0-done` / `step1-done` / `step2-done`). `/` serves the v7 site; `main`/production still runs the old site until "merge to main". Plan + status: `docs/plans/v4-overhaul.md` (next: Step 3 features). Design source of truth: `docs/mockups/v7/` (rules `CONTRACT.md`); porting pattern: `designs/PORTING.md`; shared interfaces: `docs/plans/step1-contract.md`.
 
 ## Stack
 
-- **Next.js 16** (App Router), React 19, TypeScript, Tailwind v4 (CSS in `app/globals.css`)
+- **Next.js 16** (App Router), React 19, TypeScript; plain global CSS per component/design (no Tailwind classes in use)
 - **Supabase** (Postgres + Auth) — `@supabase/ssr` for cookie sessions, `@supabase/supabase-js` for the server admin client. Auth is **passwordless OTP** (email code + magic link); the password column is unused by the UI.
 - **Resend** — two distinct paths: (1) custom SMTP for Supabase Auth emails (`auth@rithvik.ai`); (2) the contact composer POSTs directly to the **Resend HTTP API** (`fetch` to `https://api.resend.com/emails`, no SDK) from `contact@rithvik.ai`. Verified domain `rithvik.ai` covers both.
 - **Motion** (`motion/react`) for animation
-- **cobe** v2 for the WebGL globe in Bento (we drive our own rAF loop — v2 has no `onRender`)
+- **WebGL**: one hand-rolled shader runtime (`lib/shader/`), no 3D library
 - **OpenAI REST via `fetch`, no SDK** (`lib/openai.ts` streams chat via SSE; embeddings/HyDE/captioning/suggestions call the API directly) — `gpt-4o-mini` for chat, HyDE, image captioning; `text-embedding-3-small` for embeddings (`app/api/chat`). DeepSeek was tried and rolled back (it ignored grounding rules; `gpt-4o-mini` follows them reliably).
 - **unpdf** for serverless PDF text extraction (replaced `pdf-parse@2`, which crashed on Vercel with `DOMMatrix is not defined`; `pdf-parse` must stay out of `package.json`)
-- Deployed on **Vercel**: `dev` → preview, `main` → production. **The apex `rithvik.ai` is the serving host and `www` 307s to it** — a Vercel domain setting, not code. `siteUrl` in `app/(site)/layout.tsx` (→ `metadataBase` + `alternates.canonical`) must keep pointing at the apex to match. It was the other way round once, and Google ended up caching the favicon under `www` while indexing the apex, which is why search results showed a blank globe. Don't "fix" `siteUrl` to `www`.
-- **Performance** (`next.config.ts` + `docs/plans/performance-improvement.md`): homepage uses **ISR** (`export const revalidate = 60` in `app/(site)/layout.tsx` and `app/(site)/page.tsx`), NOT `force-dynamic` (which cost ~5 uncached Supabase round-trips per visit); `next/image` with AVIF/WebP formats for the hero photo; `optimizePackageImports: ["motion"]` to tree-shake the motion barrel; the globe rAF and the RAG/composer overlays are deferred/paused (see their sections).
+- Deployed on **Vercel**: `dev` → preview, `main` → production. **The apex `rithvik.ai` is the serving host and `www` 307s to it** — a Vercel domain setting, not code. `siteUrl` in `app/(v7)/layout.tsx` (→ `metadataBase` + `alternates.canonical`) must keep pointing at the apex to match. It was the other way round once, and Google ended up caching the favicon under `www` while indexing the apex, which is why search results showed a blank globe. Don't "fix" `siteUrl` to `www`.
+- **Performance**: v7 pages render per request (design cookie) but every DB read is cached (`getContent`, `getPalettes`, 60s), so Supabase stays off the hot path; overlays, designs and admin chrome are lazy chunks; one WebGL context with adaptive resolution; 45–60fps target, performance mode (`html.lite`) for low-power machines.
 
 - **Security headers** (`next.config.ts` `headers()`): static CSP + nosniff/Referrer-Policy/X-Frame-Options/Permissions-Policy/HSTS. `script-src` keeps `'unsafe-inline'` on purpose: per-request nonces would force every page dynamic and kill ISR, and Next's inline hydration scripts have no stable hash. Previews also allow `vercel.live`. A new third-party host (fonts, images, embeds) needs a CSP entry or it is blocked.
 
@@ -56,61 +56,32 @@ Two long-lived branches, both wired to Vercel:
 
 ## Architecture
 
-### Page composition
+### Page composition (v7)
 
-The app uses **two Next.js root layouts via route groups**: `app/(site)/` holds the themed portfolio, and `app/(plain)/` holds a deliberately bare layout for the `/buffett` easter-egg page (see Buffett mode). There is **no** top-level `app/layout.tsx` — crossing between the groups is a full document load.
+Three root layouts via route groups, no top-level `app/layout.tsx` (crossing groups is a full document load):
+- `app/(v7)/` — the site: `/` and `/work/[slug]` (a deep link = the full site with that case sheet open). Layout sets `<html data-design data-theme>` from the `rithvik-design` cookie, injects palette tokens (`ThemeStyleInjector`), runs the pre-paint `BOOT_SCRIPT`, and mounts `EditModeProvider` + lazy `EditModeOverlays`. SEO metadata lives here.
+- `app/(plain)/` — `/buffett` (below).
+- `app/(lab)/` — `/lab/<stream>` component harnesses (noindex, unlinked).
 
-`app/(site)/page.tsx` is a server component: fetches `site_content` once, passes typed props to client section components. Sections (`Hero`, `Bento`, `Education`, `Projects`, `Experience`, `Contact`) render identically for visitors but adapt to edit mode via `useEditMode()`.
+`components/site/SitePage.tsx` renders every v7 page: `getContent()` + `getPalettes()` + `getLook()` (cookie or `?theme=`) → `SiteProvider` → `DesignProvider` → `ActiveDesign` → the design component, plus `DesignDial` and `LiteToggle`. **Pages are per-request** (they read the cookie), so there is no page ISR; instead the reads are cached: `getContent()` is `unstable_cache` 60s tagged `v7-content` (admin actions call `updateTag(CONTENT_TAG)` so saves show at once) and `getPalettes()` 60s.
+
+- **Content** (`lib/content/`): `Content` = the mockup's `C` shape; `map.ts` `toContent()` (tested) maps DB rows, falling back per field to `fixture.ts`. DB: v7 columns on `projects`/`experience`/`education` + `site_content` keys `v7.*` (status, line, thesis, about, now, places, stack, faq, numbers) + `profile.work_authorization`. `v7.*` keys are NOT embedded (skipped in backfill) until Step 3 adds proper text builders.
+- **Designs** (`lib/designs/registry.ts` + `designs/<id>/`): nine designs (Nimbus, Stipple, Glyph, Prism, Mercury, Thermal, Starlight, Tracker, Foil), each `index.tsx` + `motion.ts` (the mockup's `mount()` as one effect with full cleanup) + `<id>.css` scoped under `[data-design="<id>"]`, lazy-loaded. **Classic** (`designs/classic/`) renders every legacy palette and is the first-visit default (GitHub Light). New design → follow `designs/PORTING.md`.
+- **Switching** (`components/site/DesignProvider.tsx`, `useDesign()`): cookie + localStorage, no flash on reload, a view-transition sweep that grows out of the dial (the dial is its own transition layer, `view-transition-name: v7-dial`, so its pill rotation stays live during the sweep), `T` cycles Classic + the nine designs, `?theme=` deep links, `data-theme-go` hooks, toast with Undo.
+- **Shared components** (`components/site/`): `SiteProvider` (`useSite()`: content, overlays, toasts, `html.lite`; wires `data-case/compose/resume/agent/play/copy` clicks), lazy overlays (`CaseSheet`, `ComposerWindow`, `ResumeWindow`, `PlayWindow`, `AgentDock`, `Toasts`), `portrait/Portrait` (**the photo is never filtered, tinted, blended or masked**), `mark/Mark` (ouroboros), `graph/KnowledgeGraph` (`lib/graph/kg.ts`, tested), `Glyph` (`Icon`/`Logo` from `lib/assets`), `Clock`, `ShaderCanvas`.
+- **Shader runtime** (`lib/shader/`): ONE WebGL context for the page (a switch swaps programs), shared GLSL head, per-design `setUniform` API (`uniforms` prop / `useShaderUniforms()`), adaptive resolution, pause off-screen/hidden, a single still frame under `html.lite` or reduced motion, fps watchdog that offers performance mode once. No design may create a second context or a 2D canvas for effects.
+- **Performance mode** = the `html.lite` class (single source of truth; `LiteToggle` bottom-left, restored pre-paint from `localStorage[rithvik-lite]`). Designs must render a designed still under it.
+- **Edit mode on v7**: the site has no visible login button — `rithvik.ai/?edit` opens the login panel (or edit mode if the tab is signed in). Edit chrome CSS: `components/EditMode.css` (old tokens mapped from `--ui-*`). Editing the v7 content fields is Step 3.
 
 ### Buffett mode (`/buffett`)
 
+A bare-HTML homage to berkshirehathaway.com, linked as **For Warren Buffett** from Classic's footer. Own root layout `app/(plain)/layout.tsx` (own `<html>`/`<body>`, inline styling, no providers/theme/JS). `app/(plain)/buffett/page.tsx` is a server component reading the same Supabase data, filtered `published = true` like every public read. Internal `/` links are plain `<a>` (full nav across the layout boundary), so the file disables `@next/next/no-html-link-for-pages` file-wide.
+
 A bare-HTML homage to berkshirehathaway.com, reached via the **For Warren Buffett** link near the theme dial (`components/BuffettLink.tsx`, with a hover tooltip). It lives in its own root layout `app/(plain)/layout.tsx` (own `<html>`/`<body>`, all styling inline, no providers/theme/JS). `app/(plain)/buffett/page.tsx` is a server component that pulls the **same** Supabase data as the homepage and renders it as plain semantic HTML, mirroring the homepage's published-visibility (Education filtered by `published`; Projects/Experience not). Internal `/` links use plain `<a>` for a full nav across the layout boundary — the page disables `@next/next/no-html-link-for-pages` file-wide for that reason (a line-level directive kept getting detached by editor auto-formatting).
 
-### Server / client section split
+### Palette themes (`lib/themes.ts`, `components/ThemeStyleInjector.tsx`)
 
-Table-backed sections (`Projects`, `Experience`, `Education`) use two files:
-- `Component.tsx` — server: fetches rows, renders wrapper + header, passes `initialRows` down.
-- `ComponentClient.tsx` — `"use client"`: local state, edit-mode UI (sort/add/delete, `EditableText` per field, `EditableTagList` for tag arrays), and the public view when not editing.
-
-`site_content`-only sections (`Hero`, `Bento`, `Contact`) are single client components taking content as props, swapping to `EditableText` when editing.
-
-Project/Experience descriptions are stored **one bullet per line** (newline-separated, no dash prefix) and rendered by `components/DescriptionBlock.tsx` — a list when multi-line, a plain `<p>` for a single line (bullet marker is CSS, `.desc-bullets` in `globals.css`). `supabase/bulletize_descriptions.sql` is the migration that converted the old prose blurbs.
-
-### Theme system (`lib/themes.ts`, `components/Theme{Provider,StyleInjector,Dial}.tsx`)
-
-Themes are rows in the `themes` table with a `tokens` JSONB column. **Only the primary palette is per-theme**: `bg, bg-soft, text, muted, accent, accent-glow, green` (+ optional `font`). Surface tokens are **derived in CSS via `color-mix()`** — `--card`/`--card-hover`/`--border`/`--border-hover` mix `--text` into transparent; `--nav-glass`/`--panel-glass` mix `--bg`. So **adding a theme is one DB row** — define 7 tokens, every surface adapts, no CSS changes.
-
-The dial fans out the `themes` rows ordered by `sort_order`, **all light themes first, then dark** (`sort_order` 0–4 light, 10–22 dark). Current set: light — GitHub Light (the default), Rithvik Light, High Contrast Light; dark — Rithvik Dark, Rithvik Terminal, One Dark Pro, Dracula, GitHub Dark, Tokyo Night, Night Owl, Catppuccin Mocha, SynthWave '84, Ayu Mirage, Monokai Pro (Filter Octagon), High Contrast Dark, Tokyo Night Horizon. (Monokai Pro Light and Atom One Light were removed.)
-
-At SSR, `ThemeStyleInjector` emits one `<style id="theme-tokens">` with `:root[data-theme="<slug>"]{…}` for every theme. Active theme is set on `<html data-theme>` by (1) a hardcoded `github-light` default in JSX (`DEFAULT_THEME_SLUG` in `lib/themes.ts`), then (2) an inline boot script that reads `localStorage[rithvik-theme]` and overwrites the attribute before first paint (no FOUC).
-
-`ThemeProvider` exposes `useTheme()` → `{ themes, currentSlug, setTheme }`. `setTheme` is an **instant flip**: writes localStorage, swaps `<html data-theme>`, updates `currentSlug`. No page-wide transition animation (two approaches — `startViewTransition` and a glass-wash overlay — were rolled back).
-
-**The homepage uses ISR (`export const revalidate = 60`)**, not `force-dynamic`. Inline edits call `revalidatePath("/")` so editor changes appear instantly; theme rows inserted directly into Supabase (raw SQL/dashboard) appear within 60s without a redeploy.
-
-### Theme transition + first-visit wiggle
-
-The only animation on a theme change is the dial pill rotation; page colors swap instantly. `.theme-strip-option { transition: transform 0.42s cubic-bezier(0.32,0.72,0,1) }` interpolates each pill's `transform` when `selectedIdx` changes.
-
-A one-time dial **wiggle** (in `ThemeDial.tsx` + `.is-wiggling` in `globals.css`) nudges discovery: fires 5s after landing if `localStorage[rithvik-theme-wiggle-shown]` is unset, suppressed the moment `currentSlug` changes, 3 cycles (~1.8s), hover/focus-paused, honors `prefers-reduced-motion`. Pure client-side. (An earlier auto-rotate-to-SynthWave idea was rejected as invasive.)
-
-### Bento globe (`components/Globe.tsx`, `BentoGlobeCard.tsx`, `MarkerEditorPanel.tsx`)
-
-The Location tile is an interactive cobe globe. Markers live as a JSON array in `site_content` under `bento.globe_markers` (one chunk, not per-marker), each `{ id, city, region, country, lat, lng, timezone (IANA), kind: "home"|"current"|"default" }`. Seeds: Boston (home, `--accent`), West Lafayette (default, dim accent), San Francisco (current, `--green`).
-
-- **No animation loop** — cobe v2 renders once and exposes `update(opts)`. `Globe.tsx` owns a `requestAnimationFrame` loop pushing `{phi, width, height}` every frame, which also positions the DOM marker overlay (cobe v2 has no `onRender` — all motion must come from a caller-owned rAF). The loop **pauses when the globe scrolls off-screen (`IntersectionObserver`) or the tab is hidden (`visibilitychange`)** so it doesn't burn CPU/GPU below the fold (a perf-plan change).
-- **Theme reactivity** — reads `--bg`/`--text`/`--accent` via `getComputedStyle`, converts each to a [0,1] RGB triple through an offscreen 1×1 canvas (parses any CSS color incl. `oklch`). On `data-theme` change (MutationObserver) the instance is destroyed and rebuilt (cobe can't live-mutate colors). `dark` flag derives from `--bg` luminance, so new themes need zero JS.
-- **Hover/tooltip** — canvas has no DOM hit testing, so per-frame a projection helper maps each marker's (lat,lng)→(x,y) using the same `phi` and fixed `theta: 0.3` and positions an absolutely-placed `<button>`. Back-hemisphere markers (post-rotation z ≥ 0) get `opacity:0` + `pointer-events:none`. Tooltip is driven from the rAF loop (`tooltipRef`) so it tracks rotation live; content is `Intl.DateTimeFormat`-driven (city local time + tz short code).
-- **Editing** — `MarkerEditorPanel.tsx` mounts only in edit mode; Save calls `updateGlobeMarkers` (`app/admin/actions.ts`), which validates (lat/lng range, IANA tz via `new Intl.DateTimeFormat` in try/catch, kind enum) then delegates to `upsertSiteContent`. For `bento.globe_markers`, the async `buildSiteContentText` → `buildGlobeMarkersText` joins the `education` table to produce a "he attends Purdue" clause for any default marker whose city matches a school name (case-insensitive substring).
-
-### Hero connect cluster (`components/HeroConnect.tsx`, `ui/animated-beam.tsx`, `SocialIcons.tsx`)
-
-The hero is a two-column grid (`.hero-content`): text left, "connect cluster" right. The cluster is the profile photo (`public/images/rithvik.jpeg`, served via `next/image` with `fill`/`priority`) above three circular social buttons (GitHub/LinkedIn/Email) joined by animated beams pulsing **upward** into the photo.
-
-- `HeroConnect.tsx` owns the refs and renders three `<AnimatedBeam>` sharing `delay`/`duration`/`repeatDelay` (unison pulse). Buttons mirror `contact.link.*` (read-only here — URLs are edited in Contact); Email copies to clipboard.
-- `ui/animated-beam.tsx` — vendored MagicUI, `cn` helper stripped, `prefers-reduced-motion` gate added, plus a **`vertical` prop** (upstream only animates horizontal beams).
-- The cluster entrance animates **opacity + blur only, never `y`** — a translate would leave the ref-measured beams pointing at stale coords.
-- Flickering-grid particle color derives from the active theme's `--bg` luminance (`gridColorForBg` in `Hero.tsx`), not a slug check, so new light themes need zero code.
+Legacy palettes are rows in the `themes` table (`tokens` JSONB: `bg, bg-soft, text, muted, accent, accent-glow, green`). `ThemeStyleInjector` emits `:root[data-theme="<slug>"]{…}` for every row (slugs + values validated against an allowlist before injection). On v7 a palette renders **Classic**, which maps the 7 tokens onto the shared `--ui-*` / `--pt-*` / `--kg-*` tokens so overlays follow the palette. Classic lifts `--muted` per slug where a palette failed 4.5:1 — **a palette added later must pass 4.5:1 on its own** (or add a line in `designs/classic/classic.css`). The dial (`components/ThemeDial.tsx` → `ThemeDialView`, CSS in `ThemeDial.css`) lists designs, a divider, then palettes (`components/site/DesignDial.tsx`).
 
 ### Inline editing (passwordless OTP)
 
@@ -125,55 +96,31 @@ The hero is a two-column grid (`.hero-content`): text left, "connect cluster" ri
 - Server actions in `app/admin/actions.ts` (`create/update/deleteProject`, same for Experience, `updateEducation`, `upsertSiteContent`, `updateGlobeMarkers`) all call `requireAuth()` + `revalidatePath("/")`.
 - Callback `app/auth/callback/route.ts` exchanges the PKCE code for a session, redirects to `/?auth=ok` or `/?auth_error=…`.
 
-### Inline email composer (`components/ContactComposer.tsx`, `ContactComposerProvider.tsx`, `RichTextEditor.tsx`, `app/api/contact/route.ts`, `lib/sanitize-html.ts`)
+### Email composer (`components/site/overlays/ComposerWindow.tsx`, `app/api/contact/route.ts`, `lib/sanitize-html.ts`)
 
-Visitors can email Rithvik directly from the site via a draggable, resizable, theme-aware floating window — no mailto, no clipboard copy required.
+Visitors email Rithvik from a draggable, non-modal floating window (`components/site/windows/Window.tsx`; full-screen sheet ≤640px), opened by any `data-compose` hook. The body is a plain textarea converted to escaped `<p>`/`<br>` HTML; the payload is `{ from, subject, bodyHtml, honeypot }`.
 
-- **`ContactComposerProvider.tsx`** — context exposing `useContactComposer()` → `{ isOpen, open, close }`. Wraps the page tree in `app/(site)/page.tsx`. Both the Hero connect-cluster email button and the Contact-section email button call `open()`.
-- **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` is `pointer-events:none` so the site stays interactive; only the panel captures events. Draggable via header; resizable from bottom-right; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the centered start position (not an effect — avoids `react-hooks/set-state-in-effect`), so `left/top/width/height` are always inline. Mobile (≤640px) overrides to a full-screen sheet with `!important`. Esc closes; From autofocuses; the "To" row has a **copy-address fallback** button.
-- **`RichTextEditor.tsx`** — contentEditable body editor with a toolbar (bold/italic/underline/strikethrough/bullet list/numbered list/link) via `document.execCommand` — deprecated but dep-free, matching `SimpleMarkdown`'s philosophy.
 - **`lib/sanitize-html.ts`** — allowlist sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:`) never survive; drops `<script>`/`<style>` entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`), which needed `allowImportingTsExtensions: true` in `tsconfig.json` (valid under `noEmit`).
 - **`app/api/contact/route.ts`** — POST handler. **Honeypot**: hidden field filled → fake 200, dropped. Validates email/subject/body, **re-sanitizes body server-side** (server is the gate). **Rate limit**: 3 sends/hr per IP (IPv6 /64) + 50/hr global via `lib/rate-limit.ts` → `rate_limit_hit` RPC (atomic, fails closed); `contact_submissions` stays the send log. Sends via Resend HTTP API (`fetch`) from `CONTACT_FROM` to `CONTACT_TO`, visitor address in `reply_to` only (never `from` — SPF/DKIM). Sender display name HTML-escaped before header interpolation. Logs each send.
-- **`components/DeferredOverlays.tsx`** — mounts `RagBot`, `SecondaryContextPanel`, `ContactComposer`, all `dynamic(..., { ssr:false })`, split out of the initial bundle. Derives composer `toAddress` from `contact.link.email`.
-
-**Phase 2 polish:**
-- **Rainbow shine border** — `.composer-shine` mirrors `.rag-shine`: a 1px masked radial-gradient ring (`@keyframes rag-shine`); panel surface stays theme-aware, ring is fixed purple/orange. `prefers-reduced-motion` disables it.
-- **Drag hint** — three-dot `.composer-grip` in the header, `cursor: grab`/`grabbing` + "Drag to move" tooltip.
-- **Peek-through** — `.composer-peek` eye button; pure CSS `:has(...:hover, :focus-visible)` drops the panel to `opacity: 0.12` to glance behind. No JS.
-- **Send animation** — `components/SendAnimation.tsx`: viewport `<canvas>` dematerializing particles into a paper-airplane fly-off (~2.2s rAF). Rendered as a **sibling** of `.composer-panel` so `overflow:hidden`/`isolation`/drag-transform can't clip it. Honors `prefers-reduced-motion`. Success/error gated on BOTH animation finishing AND request settling (two refs + `finalize()`) so neither a slow nor fast network desyncs.
-- **No CC to sender** — `/api/contact` sets `reply_to: sender` only. It used to `cc: [sender]`, but `from` is unverified visitor input, so cc'ing it made the route a small open relay: anyone could have rithvik.ai deliver arbitrary (sanitized) HTML to an address of their choosing, on the same domain that sends auth mail. Don't reinstate the CC without verifying the address first.
+- **No CC to sender** — `/api/contact` sets `reply_to: sender` only. It used to `cc: [sender]`, but `from` is unverified visitor input, so cc'ing it made the route a small open relay. Don't reinstate the CC without verifying the address first.
 
 **DB:** `contact_submissions` table (id, created_at, ip, from_email, subject, status) — service-role only, RLS enabled with no anon policies. Migration: `supabase/contact_submissions_migration.sql`.
 
 **Env (server-only):** `RESEND_API_KEY`, `CONTACT_FROM`, `CONTACT_TO`.
 
-### RAG bot (`components/RagBot.tsx`, `SimpleMarkdown.tsx`, `SecondaryContextPanel.tsx`, `app/api/chat/route.ts`)
+### Agent + RAG (`components/site/agent/*`, `overlays/AgentDock.tsx`, `lib/agent/*`, `app/api/chat/route.ts`)
 
-Floating **"Ask RAG"** launcher (bottom-right, lazy via `DeferredOverlays`) opens a glass panel streaming from `/api/chat`. `SecondaryContextPanel` is a second launcher, edit-mode only.
+A Claude Code-style agent docked bottom-centre on every design (⌘K or `/` to summon): `❯` prompt, slash commands (`lib/agent/commands.ts`: `/help /resume /projects /experience /contact /theme /now /clear /export /history /fullscreen /quit`), `⏺ Search(site, "q")` tool rows, streamed answers, a status line (`⚠ rate limited · retry in Xm` from `Retry-After`), Esc interrupts (AbortController) then closes, ↑/↓ history. Side effects (open a project, a link, the composer) ask first: `[⏎ Yes] [n No] [a Always this session]`. History sent to the server = real turns only. `SecondaryContextPanel` (uploaded docs, re-embed, temperature) is edit-mode only.
 
 > Deep dives: `docs/explanations/rag-pipeline.md` (retrieval), `docs/plans/feat-agentic-actions.md` (actions + the calibration data behind the thresholds). This is the quick reference.
 
-**Panel UI**
-- **Theme-independent**: private `--rag-*` tokens on `.rag-launcher` — the gradient/shine effects need a fixed dark base, so it looks identical on every site theme.
-- Resizable from the top-left, clamped 320×420 → 720×820, persisted to `localStorage[rag-panel-size]` via lazy `useState`.
-- `SimpleMarkdown` is hand-rolled and dep-free, and returns **React elements, never `dangerouslySetInnerHTML`** — so model output can't inject HTML.
-- **Three control types, styled differently because they behave differently:**
-
-| Control | Behaviour |
-|---|---|
-| Starter chips (`.rag-chip`, welcome screen only) | **Send instantly** — precomputed Q+A in `STARTERS`, no API call. Update if schools/stack/contact drift. |
-| Suggestion chips (`.rag-suggest-chip`, dashed) | **Fill the input, never send.** Picking one swaps: the displaced suggestion returns to the row. |
-| Action buttons (`.rag-action`, solid) | **Do something** — open a link, scroll+highlight, open the composer. |
-
-  Identical-looking controls with opposite behaviour would be a trap; keep them distinct.
-- **Ghost text is the input's native `placeholder`**, not an overlay — it only ever shows while the field is empty, which removes all font-metric and scroll-sync fragility. Tab or → accepts, Esc dismisses. ≤640px has no Tab key, so everything renders as chips.
-- **Transcript export** — header buttons copy or download `rag-chat-<stamp>.md` including each turn's suggestions (`lib/transcript.ts`, pure + tested). Suggestions are stored per-message so every round is captured.
+**Controls**: suggestion chips **fill the input, never send**; actions are confirmation rows, never automatic. `SimpleMarkdown` returns React elements (never `dangerouslySetInnerHTML`) and renders only http/https/mailto links. Transcript export via `/export` (`lib/transcript.ts`, tested).
 
 **Bot actions** (`lib/chat-actions.ts`, `lib/action-links.ts`) — max 2 per turn, always a button, never automatic.
 - **Derived deterministically from retrieval metadata: no model, no extra LLM call.** `match_primary` returns `source_table`/`metadata`/`similarity`; `source_table` → anchor, `metadata.slug` → DB row.
 - **The model never supplies a URL.** Actions name a record; `action-links.ts` resolves it from published rows and `safeUrl()` permits only `http(s)`; scroll targets must match `/^[a-zA-Z0-9_-]+$/`. A model-authored link behind a button is a phishing vector, and secondary documents are a prompt-injection surface.
 - **Gate on a SEPARATE bare-question retrieval, never the HyDE embedding.** HyDE writes a Rithvik-flavoured hypothetical for *any* input, so off-topic questions land inside the corpus — "who won the world cup?" scores 0.732 with HyDE, 0.099 without. `ACTION_SIMILARITY_FLOOR` applies to the bare-question score; the HyDE chunks still choose *what* to point at, so the button matches what the answer discussed. Also suppressed behind a refusal (`isDeclineAnswer`).
-- Scroll targets: `#about`, `#bento`, `#education`, `#experience-<slug>`, `#project-<slug>`. A new section needs an `id` **and** a mapping in `deriveActions`.
+- Scroll targets map to section ids (`#about`, `#education`, `#experience-<slug>`, `#project-<slug>`); not every design carries every id yet — Step 3's agent work aligns them.
 
 **Two pgvector stores**, both **HNSW** (NOT IVFFlat — it under-retrieved with `lists` ≫ rows):
 - `primary_embeddings` — one row per `projects`/`experience`/`education`/`site_content` record, auto-upserted on inline edit inside `safeEmbed` (save first, embed second). `syncPrimary` respects `published`; `site_content` has no such column and always embeds. Chunk text is statement-form prose with a name anchor ("Rithvik Praveen Kumar studies at Purdue…"); dotted keys map to readable phrases.
@@ -224,7 +171,7 @@ Temperature changes phrasing variety, **not** how much the model may extrapolate
 All in the Supabase public schema:
 
 - `projects`, `experience`, `education` (single-row Purdue today)
-- `site_content` — key/value for editable text + structured JSON: `hero.tagline`, `hero.sub_line`, `hero.name.{line1,line2}`, `bento.{building,stack,interests}`, `bento.globe_markers` (JSON array, see globe section), `contact.{headline,sub}`, optional `contact.link.{github,linkedin,email}`. The Growth bento tile is hardcoded in `components/Bento.tsx`, not a row.
+- `site_content` — key/value: v7 keys `v7.{role,status,line,thesis,about,now,places,stack,faq,numbers}` (JSON as text), `profile.work_authorization` (shown only in resume fine print + the agent), `hero.name.{line1,line2}`, `contact.link.{github,linkedin,email}`, `rag.temperature`; legacy `hero.*`/`bento.*`/`contact.*` rows from the old site remain (embedded for the bot) and are harmless.
 - `themes` — `{ slug, name, tokens(JSONB), sort_order, published }`
 - `primary_embeddings` — pgvector for live content; auto-upserted on edits; respects `published` (except `site_content`). Service-role only.
 - `secondary_documents` — uploaded-file metadata.
@@ -251,77 +198,53 @@ RLS: content tables are `SELECT`-public (each gated on `published` where the col
 - `tighten_content_rls.sql` — **security**: drops the `auth.role() = 'authenticated'` write policies on `projects`/`experience`/`site_content` (see the RLS note above). Idempotent.
 - `chat_rate_limit_migration.sql` — `chat_requests` table for the `/api/chat` per-IP limit, plus tightens `education`'s public-read to `published = true` (drafts were readable via the anon API)
 - `rate_limit_rpc_migration.sql` — `rate_limit_hits` + atomic `rate_limit_hit()` RPC (per-bucket advisory lock, per-key + global caps; execute revoked from anon/authenticated); prunes `chat_requests`
+- `v7_content_migration.sql` — v7 columns (projects headline/kind/icon/ctx/v7_order, experience period, education focus/grad) + `v7.*` site_content seeds; seed-only, never overwrites edits
+- `v7_faq_refresh_migration.sql` — owner's general FAQ, no graduation/start-date placeholders, `profile.work_authorization`
 
 The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 
 ## File layout cheat sheet
 
 ```
-next.config.ts        — AVIF/WebP image formats + optimizePackageImports:["motion"]
+next.config.ts        — images, CSP + security headers, /preview → / redirect
 app/
-  (site)/layout.tsx   — ISR root (revalidate=60) for the themed site: themes fetch, ThemeStyleInjector + FOUC script + ThemeProvider + (EditModeProvider wrapping children + InlineLoginPanel + EditBar) + ThemeDial + BuffettLink
-  (site)/page.tsx     — ISR (revalidate=60): fetches site_content + parses globe markers; renders sections + DeferredOverlays  → "/"
-  (plain)/layout.tsx  — bare second root layout (own <html>/<body>, inline CSS, no providers/theme/JS) for /buffett
-  (plain)/buffett/page.tsx — plain-HTML homage page (server component, same DB data, no animations)  → "/buffett"
-  globals.css         — tokens, dial, bento (globe/markers/growth), rag chat (theme-independent), OTP login, composer (mobile sheet inset between nav + RAG), buffett link/tooltip
-  icon.tsx / apple-icon.tsx / opengraph-image.tsx — dynamic favicon / iOS icon / OG image
-  admin/actions.ts    — server actions for all tables (incl. updateGlobeMarkers)
-  admin/rag-actions.ts— backfillPrimaryEmbeddings, reembedSecondaryDocuments, list/upload/delete secondary docs
-  admin/auth-helper.ts— shared requireAuth
-  api/chat/route.ts   — HyDE → match_primary + match_secondary → gpt-4o-mini stream
-  api/contact/route.ts — honeypot + validation + rate-limit + Resend HTTP API send
-  auth/callback/route.ts — exchanges PKCE code, redirects to /?auth=ok or /?auth_error=…
-
+  (v7)/layout.tsx     — site root: design cookie → <html data-design data-theme>, palette tokens, BOOT_SCRIPT, EditModeProvider + EditModeOverlays, SEO metadata
+  (v7)/page.tsx       — "/" = SitePage;  (v7)/work/[slug]/page.tsx — full site with that case open
+  (v7)/core.css       — v7 base tokens, type, view-transition sweep, shared chrome primitives, lite toggle
+  (plain)/            — /buffett (bare layout + page)
+  (lab)/              — /lab/<stream> dev harnesses (noindex)
+  icon.tsx / apple-icon.tsx / opengraph-image.tsx
+  admin/actions.ts, admin/rag-actions.ts, admin/auth-helper.ts (requireAuth)
+  api/chat/route.ts   — guard rails → rate limit → HyDE → match_primary + match_secondary → gpt-4o-mini stream → suggestions/actions trailer
+  api/contact/route.ts — honeypot + validation + rate limit + Resend send
+  auth/callback/route.ts — PKCE exchange → /?auth=ok or /?auth_error=…
+designs/
+  registry: lib/designs/registry.ts;  <id>/index.tsx + motion.ts + <id>.css;  classic/ (palettes);  PORTING.md
 components/
-  Nav, Footer, Hero, Bento, Education(+Client), Projects(+Client), Experience(+Client), Contact
-  EditModeProvider, InlineLoginPanel, EditBar, EditableText, EditableTagList
-  ThemeProvider, ThemeStyleInjector, ThemeDial
-  FadeIn, KineticText, FlickeringGrid, TimelineBeam, LocalTime, EduLogo
-  Globe                 — cobe canvas + rAF loop + DOM marker projection + tooltip
-  BentoGlobeCard        — mounts Globe + (edit mode) MarkerEditorPanel
-  MarkerEditorPanel     — edit-mode marker add/edit/delete
-  RagBot                — chat launcher + streaming panel (resizable, markdown)
-  SimpleMarkdown        — hand-rolled markdown renderer
-  SecondaryContextPanel — edit-mode: secondary docs + backfill
-  HeroConnect           — photo + 3 social buttons + beams
-  SocialIcons           — shared GitHub/LinkedIn/Email SVGs
-  ContactComposer       — draggable/resizable floating email window (non-modal, lazy-init centering, shine/peek/drag-hint)
-  ContactComposerProvider — context: isOpen/open/close for the composer
-  RichTextEditor        — contentEditable + execCommand toolbar (bold/italic/underline/etc.)
-  SendAnimation         — viewport canvas: particle dematerialise → paper-airplane fly-off (~2.2s); sibling of composer panel
-  DescriptionBlock      — renders a project/experience description as a bullet list (multi-line) or <p> (single line)
-  DeferredOverlays      — mounts RagBot + SecondaryContextPanel + ContactComposer (all dynamic, ssr:false)
-  BuffettLink           — easter-egg "For Warren Buffett" link to /buffett + hover tooltip (rendered in (site) layout)
-  ui/animated-beam      — vendored MagicUI (cn stripped, reduced-motion + vertical added)
-
+  site/               — SitePage, SiteProvider, DesignProvider, ActiveDesign, DesignDial, ShaderCanvas, LiteToggle, Glyph, Clock,
+                        EditModeOverlays, overlays/*, agent/*, case/*, windows/*, play/*, portrait/*, mark/*, graph/*
+  EditModeProvider, InlineLoginPanel, EditBar, EditMode.css, SecondaryContextPanel, EditableText, EditableTagList
+  ThemeDial (+ .css), ThemeProvider, ThemeStyleInjector, SimpleMarkdown
 lib/
-  supabase-browser.ts — browser client (createBrowserClient; lazy-loaded)
-  supabase-server.ts  — `server-only` service-role clients (serverClient/adminClient)
-  themes.ts           — token list, fallbacks, buildThemeStyleSheet
-  types.ts            — Project, Experience, Education, SiteContent, Theme, Database
-  embeddings.ts       — embedText (single) + embedTexts (batched), HyDE, row→text builders, upsert helpers
-  chunk-text.ts       — dependency-free recursive splitter (CHUNK_TARGET/OVERLAP/HARD_MAX)
-  openai.ts           — fetch + SSE streaming chat client (`streamChat`, pure `parseSSEDeltas`, tested)
-  suggestion-protocol.ts — chat stream wire format: sentinel + splitStream (shared client/server, tested)
-  rag-settings.ts     — runtime-tunable RAG settings (temperature clamp, never-embedded `rag.` prefix); tested
-  chat-actions.ts     — deterministic bot actions from retrieval metadata + URL allowlist (tested)
-  action-links.ts     — server-only: loads the allowed URLs from published DB rows
-  scroll-highlight.ts — scrollIntoView + temporary highlight ring for the "show me" action
-  suggestions.ts      — server-only: generates grounded follow-ups (parallel to the answer)
-  transcript.ts       — pure Markdown transcript builder for the export button (tested)
-  file-extractors.ts  — PDF/DOCX/TXT/MD readers + image captioner
-  sanitize-html.ts    — allowlist HTML sanitizer + htmlToText (unit-tested via node:test)
-
-docs/plans/*          — phase1 design/dev, inline-editing, theme, rag-pipeline, bento-globe, passwordless-otp, inline-email-composer, performance-improvement (all implemented)
-docs/explanations/rag-pipeline.md — RAG deep dive
+  content/            — Content type, fixture, toContent (tested), getContent (cached)
+  designs/            — registry (+ tested), server (getPalettes, getLook), types
+  shader/             — GLSL head, runtime (one context, uniforms), helpers (tested)
+  agent/, graph/, play/ — pure logic for the agent, knowledge graph, games (tested)
+  assets/             — icons/logos, land, spinners/banner/commits, SITE_CREDITS
+  supabase-browser.ts / supabase-server.ts, rate-limit.ts (tested), openai.ts (tested), embeddings.ts, chunk-text.ts,
+  suggestion-protocol.ts, rag-settings.ts, chat-actions.ts, action-links.ts, suggestions.ts, transcript.ts,
+  file-extractors.ts, sanitize-html.ts, themes.ts, words.ts, types.ts
+docs/plans/v4-overhaul.md (plan + status), step1-contract.md;  docs/mockups/v7/ (design source);  docs/explanations/rag-pipeline.md
 ```
 
 ## Where to look first when something breaks
 
-- **Theme not switching** → `ThemeProvider` console errors; check `localStorage[rithvik-theme]`; force `data-theme` in devtools to isolate CSS.
+- **Wrong design on load / flash** → check the `rithvik-design` cookie and `BOOT_SCRIPT` in `lib/designs/registry.ts`; `<html data-design data-theme>` must match before first paint.
+- **Design looks unstyled** → its CSS must be scoped `:root[data-design="<id>"]` and imported by `designs/<id>/index.tsx`; shared chrome primitives live in `app/(v7)/core.css`.
+- **Shader blank / two canvases** → `lib/shader/runtime.ts` logs compile errors with design line numbers; a design must render exactly one `<ShaderCanvas>`.
 - **Edit-mode save / `requireAuth()` redirects to login** → browser client isn't `createBrowserClient` (cookie mismatch in `lib/supabase-browser.ts`).
-- **Dial rotation doesn't animate** → `.theme-strip-option` lost `transition: transform …`, or pills regained `view-transition-name`.
-- **Theme missing from the dial** → reapply themes migration; `SELECT slug,name,sort_order FROM themes`. ISR means raw SQL inserts surface within 60s (instant after any inline edit's `revalidatePath`).
+- **Dial rotation doesn't animate during a switch** → `.theme-dial-aside` lost `view-transition-name: v7-dial` (app/(v7)/core.css), or a pill gained its own `view-transition-name`.
+- **Theme missing from the dial** → `SELECT slug,name,sort_order,published FROM themes`; palette rows are cached 60s (`getPalettes`).
 - **RAG hallucinating wildly** → right chunk missing/low-ranked. Embed the question, query `match_primary` with `match_count=17`; if buried, check logs for `[rag] hyde failed`. Recovery: re-embed primary.
 - **RAG canned refusal for known facts** → `[rag] empty-context guard fired` = both retrievals hit 0 rows. Verify index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.
 - **RAG 500 "Embedding failed"** → `OPENAI_API_KEY` missing/exhausted (embeddings, HyDE, captioning, chat all use OpenAI).
@@ -330,7 +253,7 @@ docs/explanations/rag-pipeline.md — RAG deep dive
 - **PDF upload crashes Vercel bundle** → `pdf-parse` crept back in (DOMMatrix). Use `unpdf`; `pdf-parse` MUST NOT be in `package.json`.
 - **Secondary upload "MIME not supported"** → add to `TEXT_MIMES`/`IMAGE_MIMES` or add extractor in `lib/file-extractors.ts`. **"N chunks (cap 200)"** → split the file.
 - **`match_primary`/`match_secondary` not found** → `rag_pipeline_migration.sql` not applied (or wrong project). Re-apply (idempotent).
-- **Secondary panel missing** → self-gates on `useEditMode().isEditing`; log in first.
+- **Secondary panel missing** → edit mode only; open `/?edit` and log in first.
 - **OTP email never arrives** → Resend logs first (delivered? → spam/DNS); if empty, Supabase didn't hand off → SMTP settings/key. 422 in auth logs = email not in `auth.users` or `shouldCreateUser:false` rejected it.
 - **Magic link → Supabase error page** → redirect URL not allow-listed; add wildcard, re-request.
 - **Magic link doesn't enter edit mode in new tab** → `?auth=ok` stripped early or callback failed; check `/auth/callback` logs.
