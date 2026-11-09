@@ -86,6 +86,7 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 .t-sources button:hover { color: var(--a-fg); }
 .agent-pending .q { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
 .t-interrupted.warn { color: var(--a-accent); }
+.t-detail { grid-column: 2; margin: 6px 0 0; padding: 8px 12px; list-style: none; border: 1px solid var(--a-line); border-radius: 8px; font: 400 12.5px/1.6 var(--a-mono); overflow-wrap: anywhere; }
 .t-confirm { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .t-key { border: 1px solid var(--a-line); background: transparent; color: var(--a-fg); border-radius: 6px; padding: 4px 10px; font: 400 12.5px/1.4 var(--a-mono); cursor: pointer; }
 .t-key:hover { border-color: var(--a-accent); }

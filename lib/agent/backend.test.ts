@@ -64,6 +64,25 @@ test("tools: calendar tools keep only known scalar args and are not side effects
   assert.match(r.replies[1].content, /error/); // bad input comes back as an error the model can relay, never a throw
 });
 
+test("tools: request_meeting runs meeting.ts's checks, strips URLs from notes, and is a side effect", async () => {
+  const good = { name: "Jane", email: "jane@acme.com", company: "Acme", times: ["Tue Dec 8, 10:00 AM PT"], notes: "see https://evil.example/x ok" };
+  const v = validateToolCall(call("request_meeting", good), A)!;
+  assert.deepEqual(v.args, { name: "Jane", email: "jane@acme.com", company: "Acme", times: "Tue Dec 8, 10:00 AM PT", notes: "see  ok" });
+  for (const bad of [{ ...good, email: "nope" }, { ...good, email: "a@b.co\nBcc: x@y.z" }, { ...good, name: " " }, { ...good, times: [] }, { ...good, times: Array(6).fill("x") }, { ...good, timeZone: "Mars/Base" }, { ...good, times: "Tue" }]) {
+    assert.equal(validateToolCall(call("request_meeting", bad), A), null);
+  }
+  const r = await screenCalls([call("request_meeting", { ...good, email: "nope" }, "m")], A);
+  assert.equal(r.kept.length, 0);
+  assert.match(r.replies[0].content, /valid email.*call request_meeting again/);
+  // the server-known zone fills in a missing one, and the model is told it is only queued for confirmation
+  const ok = await screenCalls([call("request_meeting", good, "m")], A, new Date(), "America/New_York");
+  assert.equal(ok.kept[0].args.timeZone, "America/New_York");
+  assert.match(ok.replies[0].content, /Queued/);
+  // three actions in a step: the third is trimmed, meetings count against the same cap
+  const cap = await screenCalls([call("open_resume", {}, "a"), call("request_meeting", good, "b"), call("start_game", { id: "typeracer" }, "c")], A);
+  assert.deepEqual(cap.kept.map((k) => k.id), ["a", "b"]);
+});
+
 test("tools: screenCalls caps side effects per step and answers every call", async () => {
   const calls = [call("open_project", { slug: "qrify" }, "a"), call("open_resume", {}, "b"), call("start_game", { id: "typeracer" }, "c"), call("local_time", { place: "Boston" }, "d"), call("nope", {}, "e")];
   const { kept, replies } = await screenCalls(calls, A);
@@ -76,7 +95,7 @@ test("tools: definitions carry enums from content", () => {
   const defs = toolDefs(A);
   const op = defs.find((d) => d.function.name === "open_project")!;
   assert.deepEqual((op.function.parameters as { properties: { slug: { enum: string[] } } }).properties.slug.enum, ["boilerframe", "qrify"]);
-  assert.equal(defs.length, 9);
+  assert.equal(defs.length, 10);
 });
 
 test("profile: renders every project and role with slugs, no graduation date", () => {

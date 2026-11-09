@@ -13,8 +13,9 @@ export type Item =
   | { id: number; kind: "answer"; text: string; streaming: boolean }
   | { id: number; kind: "suggest"; chips: string[] }
   /** A permission confirmation for a side effect (the action itself is held by the hook until answered).
-   *  `tool` is set when the model requested it, so the row reads as a tool call. */
-  | { id: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string } }
+   *  `tool` is set when the model requested it, so the row reads as a tool call. `detail` lists exactly what
+   *  will happen (the meeting card); `once` means the visitor must confirm every time (no "Always"). */
+  | { id: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string }; detail?: string[]; once?: boolean }
   /** Footnotes for the [n] markers the answer actually cited. */
   | { id: number; kind: "sources"; items: { n: number; label: string; anchor?: string }[] }
   | { id: number; kind: "note"; text: string; tone?: "warn" };
