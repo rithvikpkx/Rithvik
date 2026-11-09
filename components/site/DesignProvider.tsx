@@ -1,11 +1,17 @@
 "use client";
-import { createContext, useContext } from "react";
-import type { DesignMeta } from "@/lib/designs/types";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentType } from "react";
+import { flushSync } from "react-dom";
+import type { DesignMeta, DesignProps } from "@/lib/designs/types";
+import type { Theme } from "@/lib/types";
+import { THEME_STORAGE_KEY } from "@/lib/themes";
+import { DESIGNS, DESIGN_KEY, designById, fontsHref, htmlAttrsFor, isDarkColor, loadClassic } from "@/lib/designs/registry";
+import { useSite } from "./SiteProvider";
 
 /** A dial entry: one of the nine designs, or a legacy palette rendered by Classic. */
 export type DialEntry =
   | { kind: "design"; id: string; meta: DesignMeta }
-  | { kind: "palette"; id: string; name: string; dark: boolean };
+  | { kind: "palette"; id: string; name: string; dark: boolean; swatch: [bg: string, text: string, accent: string] };
 
 type DesignCtx = {
   entries: DialEntry[];
@@ -16,10 +22,144 @@ type DesignCtx = {
 
 export const DesignContext = createContext<DesignCtx | null>(null);
 
-/** Current design/palette and the switch API. Provided by the design engine
- *  (feat/design-engine); this file defines the contract other streams code against. */
+/** Current design/palette and the switch API. */
 export function useDesign(): DesignCtx {
   const c = useContext(DesignContext);
   if (!c) throw new Error("useDesign outside DesignContext provider");
   return c;
+}
+
+// Resolved design modules, keyed by layout id ("classic" for every palette). ActiveDesign renders
+// from here synchronously, so a switch never suspends mid view-transition.
+const loaded = new Map<string, ComponentType<DesignProps>>();
+
+/** The already-loaded component for a layout id, if any. */
+export function loadedDesign(layoutId: string): ComponentType<DesignProps> | undefined {
+  return loaded.get(layoutId);
+}
+
+/** Loads (once) the layout module for a look. */
+async function ensureLoaded(look: string) {
+  const layoutId = htmlAttrsFor(look).design;
+  if (loaded.has(layoutId)) return;
+  const mod = await (designById(look)?.load() ?? loadClassic());
+  loaded.set(layoutId, mod.default);
+}
+
+/** Adds the design's Google Fonts stylesheet once. */
+function ensureFonts(meta: DesignMeta | undefined) {
+  const href = fontsHref(meta);
+  if (!href || document.head.querySelector(`link[data-font="${meta!.id}"]`)) return;
+  const l = Object.assign(document.createElement("link"), { rel: "stylesheet", href });
+  l.dataset.font = meta!.id;
+  document.head.appendChild(l);
+}
+
+/** Saves the look for the next SSR (cookie) and the client (localStorage); palettes also keep the
+ *  old site's key so both sites agree. */
+function persist(look: string) {
+  document.cookie = `${DESIGN_KEY}=${look}; path=/; max-age=31536000; samesite=lax`;
+  try {
+    localStorage.setItem(DESIGN_KEY, look);
+    if (!designById(look)) localStorage.setItem(THEME_STORAGE_KEY, look);
+  } catch {}
+}
+
+type Opts = { from?: [number, number]; silent?: boolean; instant?: boolean };
+type Live = { current: string; entries: DialEntry[]; setCurrent: (id: string) => void; toast: (m: string, undo?: () => void) => void };
+
+/** Switches to a look: load its module + fonts, then swap inside a view transition (circular reveal
+ *  from `from`, a crossfade under reduced motion, instant without the API). Reads `live` fresh so
+ *  the toast's Undo still sees the real current look later. */
+async function switchLook(live: { current: Live }, id: string, opts: Opts = {}) {
+  const prev = live.current.current;
+  const entry = live.current.entries.find((e) => e.id === id);
+  if (!entry || id === prev) return;
+  const meta = designById(id);
+  ensureFonts(meta);
+  // Load before swapping so the reveal uncovers the new site, not an empty frame.
+  try { await ensureLoaded(id); } catch (e) { console.error(e); return; }
+
+  const html = document.documentElement;
+  const go = () => {
+    flushSync(() => live.current.setCurrent(id));
+    live.current.current = id;
+    const { design, theme } = htmlAttrsFor(id);
+    html.dataset.design = design;
+    html.dataset.theme = theme;
+    html.style.colorScheme = (entry.kind === "design" ? entry.meta.dark : entry.dark) ? "dark" : "light";
+    persist(id);
+  };
+  if (opts.instant || !document.startViewTransition) go();
+  else {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const cls = reduce ? "vt-fade" : "vt-reveal";
+    const [x, y] = opts.from ?? [innerWidth / 2, innerHeight / 2];
+    html.style.setProperty("--vt-x", `${x}px`);
+    html.style.setProperty("--vt-y", `${y}px`);
+    html.classList.add(cls);
+    document.startViewTransition(go).finished.finally(() => html.classList.remove(cls));
+  }
+  const name = meta?.name ?? (entry.kind === "palette" ? entry.name : id);
+  if (!opts.silent) live.current.toast(`Now viewing ${name}`, () => void switchLook(live, prev, { silent: true }));
+}
+
+/** Owns the active design or palette: switching, persistence, the `T` key, `?theme=` deep links
+ *  and `data-theme-go` clicks. `initial` is the look the server rendered. */
+export default function DesignProvider({ initial, palettes, children }: { initial: string; palettes: Theme[]; children: React.ReactNode }) {
+  const { toast } = useSite();
+  const [current, setCurrent] = useState(initial);
+
+  const entries = useMemo<DialEntry[]>(() => [
+    ...DESIGNS.map((meta): DialEntry => ({ kind: "design", id: meta.id, meta })),
+    ...[...palettes].sort((a, b) => a.sort_order - b.sort_order).map((t): DialEntry => ({
+      kind: "palette", id: t.slug, name: t.name, dark: isDarkColor(t.tokens.bg), swatch: [t.tokens.bg, t.tokens.text, t.tokens.accent],
+    })),
+  ], [palettes]);
+
+  // Latest values for the once-bound listeners and the async switch.
+  const live = useRef<Live>({ current, entries, setCurrent, toast });
+  useEffect(() => { live.current = { current, entries, setCurrent, toast }; }, [current, entries, toast]);
+
+  const apply = useCallback((id: string, opts?: Opts) => switchLook(live, id, opts), []);
+
+  const setDesign = useCallback((id: string, from?: [number, number]) => { void apply(id, { from }); }, [apply]);
+  const cycle = useCallback((dir: 1 | -1 = 1) => {
+    const { entries: es, current: cur } = live.current;
+    const i = es.findIndex((e) => e.id === cur);
+    void apply(es[(i + dir + es.length) % es.length].id);
+  }, [apply]);
+
+  useEffect(() => {
+    // Mount: the boot script may have corrected <html> (legacy palette, lost cookie, deep link);
+    // adopt that look, then drop `?theme=` so a reload or shared URL isn't pinned to it.
+    const html = document.documentElement;
+    const url = new URL(location.href);
+    const deep = url.searchParams.has("theme");
+    if (deep) { url.searchParams.delete("theme"); history.replaceState(history.state, "", url); }
+    const fromDom = html.dataset.theme;
+    if (fromDom && fromDom !== live.current.current && live.current.entries.some((e) => e.id === fromDom)) void apply(fromDom, { instant: true, silent: true });
+    else if (deep) persist(live.current.current);
+    if (designById(live.current.current)) ensureFonts(designById(live.current.current));
+
+    const onClick = (e: MouseEvent) => {
+      const el = (e.target as Element | null)?.closest<HTMLElement>("[data-theme-go]");
+      if (!el) return;
+      e.preventDefault();
+      void apply(el.dataset.themeGo!, { from: [e.clientX, e.clientY] });
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "t" && e.key !== "T") || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.isContentEditable || t?.closest("input, textarea, select")) return;
+      e.preventDefault();
+      cycle(e.shiftKey ? -1 : 1);
+    };
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("click", onClick); document.removeEventListener("keydown", onKey); };
+  }, [apply, cycle]);
+
+  const value = useMemo<DesignCtx>(() => ({ entries, current, setDesign, cycle }), [entries, current, setDesign, cycle]);
+  return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;
 }
