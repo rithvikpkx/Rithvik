@@ -81,6 +81,9 @@ export default function RagBot() {
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  // Id of the newest request. Only that request may unlock the composer, so a
+  // slower earlier request finishing can't re-enable input mid-stream.
+  const requestIdRef = useRef(0);
   // Epoch ms until which the composer stays locked after a 429. Derived from the
   // server's Retry-After so the countdown matches the real window, not a guess.
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
@@ -243,6 +246,7 @@ export default function RagBot() {
     // path can spend a request while the window is closed.
     if (!text || loading || cooldownUntil !== null) return;
 
+    const requestId = ++requestIdRef.current;
     setInput("");
     setLoading(true);
 
@@ -322,7 +326,7 @@ export default function RagBot() {
         // the visitor wait on chips they may not even use.
         if (!answerDone && acc.includes(SUGGESTIONS_SENTINEL)) {
           answerDone = true;
-          setLoading(false);
+          if (requestId === requestIdRef.current) setLoading(false);
         }
       }
 
@@ -346,7 +350,7 @@ export default function RagBot() {
         return updated;
       });
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }
 
