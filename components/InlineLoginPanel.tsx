@@ -80,9 +80,10 @@ export default function InlineLoginPanel() {
             onClick={closePanel}
           />
 
-          {/* Panel — springs in from top-right anchored to nav button */}
+          {/* Panel — springs in from top-right anchored to nav button. `rr-block` keeps the whole panel (inputs AND the
+              "check <email>" line) out of session replays; `data-rr-mask` on the inputs is the second layer. */}
           <motion.div
-            className="login-panel"
+            className="login-panel rr-block"
             initial={{ opacity: 0, scale: 0.93, y: -8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.93, y: -8 }}
@@ -104,6 +105,7 @@ export default function InlineLoginPanel() {
                   <label htmlFor="il-email">Email</label>
                   <input
                     id="il-email"
+                    data-rr-mask
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -131,6 +133,7 @@ export default function InlineLoginPanel() {
                   <label htmlFor="il-code">Code</label>
                   <input
                     id="il-code"
+                    data-rr-mask
                     type="text"
                     inputMode="numeric"
                     pattern="\d{6,10}"

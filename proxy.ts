@@ -15,7 +15,7 @@ export function proxy(req: NextRequest) {
   const res = NextResponse.redirect(url);
   const secret = process.env.TRACKING_OWNER_KEY;
   if (secret && supplied && safeEqual(supplied, secret)) {
-    for (const c of ownerCookies(!off, url.protocol === "https:")) res.cookies.set(c.name, c.value, c.options);
+    for (const c of ownerCookies(!off, url.protocol === "https:" || process.env.NODE_ENV === "production")) res.cookies.set(c.name, c.value, c.options);
   }
   res.headers.set("Cache-Control", "no-store");
   return res;
