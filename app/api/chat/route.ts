@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import { embedText, generateHypotheticalAnswer } from "@/lib/embeddings";
 import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";

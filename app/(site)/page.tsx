@@ -8,7 +8,7 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import DeferredOverlays from "@/components/DeferredOverlays";
 import { ContactComposerProvider } from "@/components/ContactComposerProvider";
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { GlobeMarker } from "@/lib/types";
 
 // Match the layout's ISR window so the homepage data (site_content, projects,

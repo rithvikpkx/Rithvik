@@ -1,4 +1,4 @@
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Project } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import ProjectsClient from "./ProjectsClient";

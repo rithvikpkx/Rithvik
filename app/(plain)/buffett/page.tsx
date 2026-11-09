@@ -2,7 +2,7 @@
    /buffett lives in a separate root layout; next/link client-nav would skip that
    layout's bootstrap, so the internal "/" links use a plain <a> for a full load.
    File-level so editor reformatting can't detach an inline directive. */
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Project, Experience as ExperienceRow, Education as EducationRow, GlobeMarker } from "@/lib/types";
 
 // Match the homepage ISR cadence so content stays in sync.

@@ -1,5 +1,5 @@
 "use server";
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import {
   embedPrimary, buildProjectText, buildExperienceText,
   buildEducationText, buildSiteContentText,

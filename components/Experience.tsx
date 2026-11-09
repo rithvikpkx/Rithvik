@@ -1,4 +1,4 @@
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Experience as ExperienceRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import ExperienceClient from "./ExperienceClient";

@@ -8,7 +8,7 @@ import ThemeStyleInjector from "@/components/ThemeStyleInjector";
 import ThemeProvider from "@/components/ThemeProvider";
 import ThemeDial from "@/components/ThemeDial";
 import BuffettLink from "@/components/BuffettLink";
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Theme } from "@/lib/types";
 import { FALLBACK_THEMES, DEFAULT_THEME_SLUG, THEME_STORAGE_KEY } from "@/lib/themes";
 

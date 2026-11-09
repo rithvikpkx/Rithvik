@@ -1,5 +1,5 @@
 import React from "react";
-import { serverClient } from "@/lib/supabase";
+import { serverClient } from "@/lib/supabase-server";
 import type { Education as EducationRow } from "@/lib/types";
 import FadeIn from "./FadeIn";
 import EducationClient from "./EducationClient";

@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import {
   embedPrimary, deletePrimary,
   buildProjectText, buildExperienceText, buildEducationText, buildSiteContentText,
