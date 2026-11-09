@@ -29,7 +29,7 @@ function useFpsWatchdog(armed: boolean) {
       avg.clear();
       if (slow.push(fps) && !offered) {
         offered = true;
-        toast("This device is working hard. Switch to performance mode?", () => setLite(true));
+        toast("This device is working hard. Switch to performance mode?", () => setLite(true), "Switch");
       }
     };
     const start = setTimeout(() => { raf = requestAnimationFrame(tick); timer = setInterval(sample, 3000); }, 3500);

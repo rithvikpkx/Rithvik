@@ -23,7 +23,7 @@ minimal code, granular conventional commits).
 - Content: `getContent()` from `@/lib/content` (server only) → `Content` (`lib/content/types.ts`,
   mirrors v7 `C`). Client code reads it via `useSite().content`. `lib/content/fixture.ts` = test data.
 - Site shell: `components/site/SiteProvider.tsx` → `useSite()`: `content, overlay, openCase(slug),
-  openComposer(subject?), openResume(), openAgent(q?), openPlay(id?), close(), toast(msg, undo?),
+  openComposer(subject?), openResume(), openAgent(q?), openPlay(id?), close(), toast(msg, undo?, label? = "Undo"),
   toasts, dismissToast, lite, setLite`. It already wires `data-case / data-compose / data-resume /
   data-agent / data-play / data-copy` clicks. Overlay slots: `components/site/overlays/<Name>.tsx`
   (default export, placeholder until your stream fills it; keep the prop signature).

@@ -12,7 +12,7 @@ export type Overlay =
   | { kind: "play"; id?: string }
   | null;
 
-export type Toast = { id: number; message: string; undo?: () => void };
+export type Toast = { id: number; message: string; undo?: () => void; label?: string }; // label defaults to "Undo"
 
 type SiteCtx = {
   content: Content;
@@ -24,7 +24,7 @@ type SiteCtx = {
   openPlay: (id?: string) => void;
   close: () => void;
   toasts: Toast[];
-  toast: (message: string, undo?: () => void) => void;
+  toast: (message: string, undo?: () => void, label?: string) => void;
   dismissToast: (id: number) => void;
   lite: boolean; // performance mode (`html.lite`)
   setLite: (on: boolean) => void;
@@ -59,9 +59,9 @@ export default function SiteProvider({ content, children }: { content: Content; 
   const lite = useSyncExternalStore(subscribeLite, () => document.documentElement.classList.contains("lite"), () => false);
 
   const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
-  const toast = useCallback((message: string, undo?: () => void) => {
+  const toast = useCallback((message: string, undo?: () => void, label?: string) => {
     const id = ++toastSeq;
-    setToasts((t) => [...t.slice(-2), { id, message, undo }]);
+    setToasts((t) => [...t.slice(-2), { id, message, undo, label }]);
     setTimeout(() => dismissToast(id), 4000);
   }, [dismissToast]);
 
