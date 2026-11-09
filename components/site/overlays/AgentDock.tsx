@@ -44,12 +44,17 @@ export default function AgentDock() {
     else if (overlay?.kind !== "agent") setCaseSlug(null);
   }
 
-  const host = useMemo(() => ({
-    content, design, caseSlug,
-    view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
-    openCase: site.openCase, openResume: site.openResume, openComposer: site.openComposer, openPlay: site.openPlay,
-    close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
-  }), [content, design, caseSlug, site, close]);
+  // Overlays restore focus to whatever had it when they close; if that is this input, its onFocus
+  // would reopen the agent over them (instantly under StrictMode's double effect). So blur first.
+  const host = useMemo(() => {
+    const away = <A extends unknown[]>(f: (...a: A) => void) => (...a: A) => { inputRef.current?.blur(); f(...a); };
+    return {
+      content, design, caseSlug,
+      view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
+      openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay),
+      close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
+    };
+  }, [content, design, caseSlug, site, close]);
   const agent = useAgent(host);
   const { items, busySince } = agent;
   const busy = busySince !== null;
@@ -138,7 +143,7 @@ export default function AgentDock() {
   };
 
   return (
-    <div className="agent" data-open={open} data-full={open && full}>
+    <div className="agent" data-open={open} data-full={open && full} data-pending={!open && !!agent.pending}>
       {open && (
         <section className="agent-panel" aria-label="Rithvik's agent">
           <header className="agent-head">
