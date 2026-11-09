@@ -66,7 +66,7 @@ export function dashboardFixture(period: Period = "7d", now = Date.UTC(2026, 10,
       conversations: k.chats, chatters: Math.round(k.chats * 0.86), turns: Math.round(k.chats * 3.1), answers: Math.round(k.chats * 3.1), cached: Math.round(k.chats * 0.6), errors: f(2), declines: f(9),
       ttfbP50: 640, ttfbP95: 1490, totalP50: 2400, totalP95: 5300, tokens, costUsd: tokens * 0.000000155,
       models: [{ model: "gpt-6-luna", requests: Math.round(k.chats * 2.8), tokens: Math.round(tokens * 0.94) }, { model: "gpt-5-nano", requests: Math.round(k.chats * 0.3), tokens: Math.round(tokens * 0.06) }],
-      tools: [["search", 96], ["open_case", 41], ["calendar", 18], ["open_resume", 15], ["draft_email", 11], ["request_meeting", 4], ["set_theme", 9]].map(([l, v]) => ({ label: l as string, value: f(v as number) })),
+      tools: [["search", 96], ["open_case", 41], ["calendar", 18], ["open_resume", 15], ["draft_email", 11], ["request_meeting", 4], ["set_theme", 9]].map(([l, v]) => ({ label: l as string, value: f(v as number) })).sort((a, b) => b.value - a.value),
       series: fillSeries([], since ?? new Date(now - 60 * 86400_000), until, bucket, ["turns"]).map((s, i) => ({ ...s, turns: Math.round(series[i]?.visits * 0.42 * (0.6 + r() * 0.8)) || 0 })),
       questions: clusterQuestions([
         ...Array(14).fill({ q: "What has he built?", sid: "123e4567-e89b-12d3-a456-426614174999" }), ...Array(5).fill({ q: "what did he build" }),
