@@ -34,6 +34,7 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
   const [projects, setProjects] = useState(initialProjects);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync server data back in when not editing (catches revalidation updates)
   // without clobbering in-progress edits — done during render rather than in an
@@ -52,28 +53,38 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
       await updateProject(id, toInput(updated));
     } catch {
       setProjects((ps) => ps.map((p) => (p.id === id ? prev : p)));
+      throw new Error("save failed"); // let EditableText/tag list show the error
     }
   };
 
-  const swap = async (idxA: number, idxB: number) => {
+  // Runs a toggle/reorder/delete action; on failure rolls back and shows the notice.
+  const run = async (fn: () => Promise<unknown>, rollback: () => void) => {
+    setError(null);
+    try { await fn(); } catch { rollback(); setError("Save failed. Change reverted."); }
+  };
+
+  const swap = (idxA: number, idxB: number) => {
+    const before = projects;
     const next = [...projects];
     [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
     const reindexed = next.map((p, i) => ({ ...p, sort_order: i }));
     setProjects(reindexed);
-    await Promise.all([
+    return run(() => Promise.all([
       updateProject(reindexed[idxA].id, toInput(reindexed[idxA])),
       updateProject(reindexed[idxB].id, toInput(reindexed[idxB])),
-    ]);
+    ]), () => setProjects(before));
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    const before = projects;
     setProjects((ps) => ps.filter((p) => p.id !== id));
     setConfirmDelete(null);
-    await deleteProject(id);
+    return run(() => deleteProject(id), () => setProjects(before));
   };
 
   const handleAdd = async () => {
     setAdding(true);
+    setError(null);
     try {
       const created = await createProject({
         slug: `project-${Date.now()}`,
@@ -88,6 +99,8 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
         sort_order: projects.length,
       });
       setProjects((ps) => [...ps, created]);
+    } catch {
+      setError("Couldn't add project.");
     } finally {
       setAdding(false);
     }
@@ -142,11 +155,11 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
               </div>
               <div className="proj-toggles">
                 <label className="proj-toggle">
-                  <input type="checkbox" checked={project.published} onChange={(e) => patch(project.id, { published: e.target.checked })} />
+                  <input type="checkbox" checked={project.published} onChange={(e) => run(() => patch(project.id, { published: e.target.checked }), () => {})} />
                   Published
                 </label>
                 <label className="proj-toggle">
-                  <input type="checkbox" checked={project.featured} onChange={(e) => patch(project.id, { featured: e.target.checked })} />
+                  <input type="checkbox" checked={project.featured} onChange={(e) => run(() => patch(project.id, { featured: e.target.checked }), () => {})} />
                   Featured
                 </label>
               </div>
@@ -181,6 +194,7 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: P
         <button className="proj-add-btn" onClick={handleAdd} disabled={adding}>
           {adding ? "Adding…" : "+ Add Project"}
         </button>
+        {error && <small role="alert" className="edit-error">{error}</small>}
       </div>
     </div>
   );
