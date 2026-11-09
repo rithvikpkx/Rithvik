@@ -19,6 +19,7 @@ import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
 import "./starlight.css";
 import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
@@ -88,10 +89,10 @@ export default function Starlight({ content: C }: DesignProps) {
         <section className="sl-hero" id="top" aria-labelledby="sl-h1">
           <div className="sl-hero-txt">
             <p className="sl-k"><i className="sl-dot" aria-hidden="true" />CH 1 · Night vision<span className="sl-k-x"> · Starlight only</span></p>
-            <h1 id="sl-h1" className="sl-h1"><span>{C.first}</span><span>{C.last}</span></h1>
-            <p className="sl-role-l">{C.role}</p>
-            <p className="sl-lede">{C.line}</p>
-            <p className="sl-status">{C.status}</p>
+            <h1 id="sl-h1" className="sl-h1"><span data-edit="name.first">{C.first}</span><span data-edit="name.last">{C.last}</span></h1>
+            <p className="sl-role-l" data-edit="v7.role">{C.role}</p>
+            <p className="sl-lede" data-edit="v7.line">{C.line}</p>
+            <p className="sl-status" data-edit="v7.status">{C.status}</p>
             <div className="sl-acts">
               <a className="sl-btn sl-hot sl-cta" href="#" data-resume=""><Icon name="file-text" />Resume</a>
               <button type="button" className="sl-btn sl-cta" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
@@ -114,11 +115,11 @@ export default function Starlight({ content: C }: DesignProps) {
                 <a className="sl-tg" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
                   <span className="sl-tg-n">T-{pad(i)}</span>
                   <span className="sl-tg-b">
-                    <span className="sl-tg-t">{p.title}</span>
-                    <span className="sl-tg-h">{p.headline}</span>
-                    <span className="sl-tg-ir sl-ir" data-ir=""><Icon name="crosshair" />{p.ctx}</span>
+                    <span className="sl-tg-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+                    <span className="sl-tg-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
+                    <span className="sl-tg-ir sl-ir" data-ir=""><Icon name="crosshair" /><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
                   </span>
-                  <span className="sl-tg-k">{p.kind}</span>
+                  <span className="sl-tg-k" data-edit={`project:${p.slug}:kind`}>{p.kind}</span>
                   <span className="sl-tg-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
                   <i className="sl-lock" aria-hidden="true"><i /><i /><i /><i /></i>
                 </a>
@@ -137,11 +138,11 @@ export default function Starlight({ content: C }: DesignProps) {
           <ol className="sl-log">
             {C.experience.map((x) => (
               <li className="sl-role" id={`experience-${x.slug}`} key={x.slug}>
-                <p className="sl-when"><time>{x.when}</time><span>{x.where}</span></p>
+                <p className="sl-when"><time data-edit={`role:${x.slug}:when`}>{x.when}</time><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
                 <div className="sl-role-b">
-                  <h3>{x.role}</h3>
-                  <p className="sl-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                  <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
+                  <p className="sl-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
                   <p className="sl-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
                 </div>
               </li>
@@ -154,23 +155,23 @@ export default function Starlight({ content: C }: DesignProps) {
             </span>
             <div>
               <p className="sl-k">Education</p>
-              <h3>{C.education.school}</h3>
-              <p>{C.education.degree}</p>
-              <p className="sl-edu-m">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p>
+              <h3 data-edit="edu:school">{C.education.school}</h3>
+              <p data-edit="edu:degree">{C.education.degree}</p>
+              <p className="sl-edu-m"><EduMeta e={C.education} /></p>
             </div>
           </div>
         </section>
 
         <section className="sl-sec sl-about" id="about" aria-labelledby="sl-h-about">
           <div className="sl-about-g">
-            <header className="sl-sh"><p className="sl-k">05 · Field notes</p><h2 id="sl-h-about" className="sl-h2">Hi, I&apos;m {C.first}.</h2></header>
-            <div className="sl-about-t">{C.about.map((a, i) => <p key={i}>{a}</p>)}</div>
+            <header className="sl-sh"><p className="sl-k">05 · Field notes</p><h2 id="sl-h-about" className="sl-h2">Hi, I&apos;m <span data-edit="name.first">{C.first}</span>.</h2></header>
+            <div className="sl-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
           </div>
           <div className="sl-now" id="now">
             <dl className="sl-now-l">
-              <div><dt>Building</dt><dd>{C.now.building}</dd></div>
-              <div><dt>Researching</dt><dd>{C.now.researching}</dd></div>
-              <div><dt>Learning</dt><dd>{C.now.learning}</dd></div>
+              <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+              <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+              <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
             </dl>
             <ol className="sl-places" aria-label="Places">
               {C.places.map((pl) => (
@@ -182,7 +183,7 @@ export default function Starlight({ content: C }: DesignProps) {
               ))}
             </ol>
           </div>
-          <dl className="sl-nums">{C.numbers.map(([n, l]) => <div key={l}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+          <dl className="sl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
         </section>
 
         <section className="sl-sec sl-play" id="play" aria-labelledby="sl-h-play">

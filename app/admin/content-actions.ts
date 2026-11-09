@@ -7,7 +7,8 @@ import {
   checkProject, checkExperience, checkEducation, type Errs,
 } from "@/lib/content/validate";
 import { adminClient } from "@/lib/supabase-server";
-import { requireAuth } from "./auth-helper";
+import { requireAuth, isAdmin } from "./auth-helper";
+import { parseFieldKey, applyField } from "@/lib/content/field";
 import {
   createProject, updateProject, createExperience, updateExperience, updateEducation, createEducation,
   upsertSiteContent, deleteProject, deleteExperience,
@@ -43,30 +44,33 @@ async function setV7(rows: Record<string, string>) {
 /** Everything the edit window shows, in one read: all projects/experience incl. drafts, plus effective site copy. */
 export async function loadEditData(): Promise<Result<EditData>> {
   await requireAuth();
-  try {
-    const db = adminClient();
-    const [p, e, ed, s] = await Promise.all([
-      db.from("projects").select("*").order("sort_order"), db.from("experience").select("*").order("sort_order"),
-      db.from("education").select("*").order("sort_order"), db.from("site_content").select("key,value"),
-    ]);
-    const err = p.error ?? e.error ?? ed.error ?? s.error;
-    if (err) throw new Error(err.message);
-    const site = Object.fromEntries((s.data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
-    const content = toContent({ projects: [], experience: [], education: ed.data as Rows["education"], site });
-    // Same ordering the site uses: v7_order first, then sort_order.
-    const prows = [...(p.data ?? [])].sort((a, b) => (a.v7_order ?? 99) - (b.v7_order ?? 99));
-    const projects = prows.map((r): EditProject => ({
-      id: r.id, slug: r.slug, title: r.title ?? "", headline: r.headline ?? "", kind: r.kind || r.badge || "", icon: r.icon || "cpu", ctx: r.ctx ?? "",
-      desc: lines(r.description), tags: r.tags ?? [], published: !!r.published,
-      links: Object.entries((r.links ?? {}) as Record<string, string>).map(([label, url]) => ({ label, url })),
-    }));
-    const experience = (e.data ?? []).map((r): EditRole => ({
-      id: r.id, slug: r.slug, role: r.role ?? "", org: r.org ?? "", when: r.period || r.date_range || "", where: r.location ?? "",
-      desc: lines(r.description), tags: r.tags ?? [], published: !!r.published,
-    }));
-    const row = ed.data?.[0];
-    return { ok: true, data: { content, projects, experience, education: { id: row?.id ?? null, school: content.education.school, degree: content.education.degree, focus: content.education.focus, grad: content.education.grad } } };
-  } catch (x) { return fatal(x); }
+  try { return { ok: true, data: await readEditData() }; } catch (x) { return fatal(x); }
+}
+
+/** The read behind loadEditData and saveField (callers do the auth check). Throws on a DB error. */
+async function readEditData(): Promise<EditData> {
+  const db = adminClient();
+  const [p, e, ed, s] = await Promise.all([
+    db.from("projects").select("*").order("sort_order"), db.from("experience").select("*").order("sort_order"),
+    db.from("education").select("*").order("sort_order"), db.from("site_content").select("key,value"),
+  ]);
+  const err = p.error ?? e.error ?? ed.error ?? s.error;
+  if (err) throw new Error(err.message);
+  const site = Object.fromEntries((s.data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+  const content = toContent({ projects: [], experience: [], education: ed.data as Rows["education"], site });
+  // Same ordering the site uses: v7_order first, then sort_order.
+  const prows = [...(p.data ?? [])].sort((a, b) => (a.v7_order ?? 99) - (b.v7_order ?? 99));
+  const projects = prows.map((r): EditProject => ({
+    id: r.id, slug: r.slug, title: r.title ?? "", headline: r.headline ?? "", kind: r.kind || r.badge || "", icon: r.icon || "cpu", ctx: r.ctx ?? "",
+    desc: lines(r.description), tags: r.tags ?? [], published: !!r.published,
+    links: Object.entries((r.links ?? {}) as Record<string, string>).map(([label, url]) => ({ label, url })),
+  }));
+  const experience = (e.data ?? []).map((r): EditRole => ({
+    id: r.id, slug: r.slug, role: r.role ?? "", org: r.org ?? "", when: r.period || r.date_range || "", where: r.location ?? "",
+    desc: lines(r.description), tags: r.tags ?? [], published: !!r.published,
+  }));
+  const row = ed.data?.[0];
+  return { content, projects, experience, education: { id: row?.id ?? null, school: content.education.school, degree: content.education.degree, focus: content.education.focus, grad: content.education.grad } };
 }
 
 /** Saves one site_content-backed section: validates, then writes the keys exactly as lib/content/map.ts reads them. */
@@ -171,5 +175,27 @@ export async function saveEducation(id: string | null, input: unknown): Promise<
     if (id) await updateEducation(id, { school: v.school, degree: v.degree, focus: v.focus, grad: v.grad } as never); // focus/grad are v7 columns, not in EducationInput
     else await createEducation({ school: v.school, school_url: null, degree: v.degree, concentrations: [], logo_path: null, sort_order: 0, published: true, ...{ focus: v.focus, grad: v.grad } } as never);
     return { ok: true, data: null };
+  } catch (x) { return fatal(x); }
+}
+
+/** Inline editing: saves ONE text field (`data-edit` key, see lib/content/field.ts). Reads the current record, patches the field,
+ *  validates the whole record with the Edit content window's checkers, then writes through the same actions, so embeddings and
+ *  cache tags behave identically. The admin check is isAdmin (requireAuth's non-redirecting twin) so an expired session returns
+ *  an error the page can show instead of navigating away mid-edit; every write below still runs requireAuth itself. */
+export async function saveField(key: string, value: string): Promise<Result> {
+  if (!(await isAdmin())) return { ok: false, error: "You are signed out. Sign in again to save." };
+  const target = parseFieldKey(key);
+  if (!target) return { ok: false, error: "Unknown field" };
+  if (typeof value !== "string" || value.length > 2000) return { ok: false, error: "Too long" };
+  try {
+    const a = applyField(await readEditData(), target, value);
+    if (!a.ok) return { ok: false, error: a.error };
+    switch (a.op) {
+      case "section": return await saveSection(a.section, a.input);
+      case "project": { const r = await saveProject(a.id, a.input); return r.ok ? { ok: true, data: null } : r; }
+      case "role": { const r = await saveExperience(a.id, a.input); return r.ok ? { ok: true, data: null } : r; }
+      case "edu": return await saveEducation(a.id, a.input);
+      case "name": await requireAuth(); await upsertSiteContent(a.key, a.value); bust(); return { ok: true, data: null };
+    }
   } catch (x) { return fatal(x); }
 }

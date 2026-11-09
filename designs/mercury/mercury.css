@@ -378,3 +378,5 @@
 :root[data-design="mercury"] .mc-nav-r .mc-pill { margin-left: 0; }
 :root[data-design="mercury"] .mc-iam { gap: 7px; background: transparent; cursor: pointer; }
 @media (max-width: 640px) { :root[data-design="mercury"] .mc-iam { width: 34px; padding: 0; justify-content: center; } }
+/* inline-edit wrapper for the "when" text must not take the dim "where" styling */
+:root[data-design="mercury"] .mc-when .mc-when-v { color: inherit; font-size: inherit; }

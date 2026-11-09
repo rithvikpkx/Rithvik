@@ -20,6 +20,7 @@ import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
 import "./nimbus.css";
 import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("nimbus")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
@@ -105,8 +106,8 @@ export default function Nimbus({ content: C }: DesignProps) {
               <span className="nb-l1">Head in the clouds,<span className="nb-tile" aria-hidden="true"><Px className="nb-tile-sky" html={skyTile(5, 32, 8, 16, -0.05, 0.4)} /><span className="nb-tile-m"><Mark label="" /></span></span></span>{" "}
               <span className="nb-l2">hands on the hardware.</span>
             </h1>
-            <p className="nb-lede"><b>{C.role}.</b> {C.line}</p>
-            <p className="nb-status"><span className="nb-sun-dot" aria-hidden="true" />{C.status}</p>
+            <p className="nb-lede"><b><span data-edit="v7.role">{C.role}</span>.</b> <span data-edit="v7.line">{C.line}</span></p>
+            <p className="nb-status"><span className="nb-sun-dot" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
             <div className="nb-acts">
               <a className="nb-btn nb-ink nb-px-c" href="#" data-resume="">Resume<span className="nb-btn-ar"><Icon name="arrow-up-right" /></span></a>
               <button type="button" className="nb-btn nb-white nb-px-c" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
@@ -125,9 +126,9 @@ export default function Nimbus({ content: C }: DesignProps) {
             </div>
             <div className="nb-about-txt">
               <p className="nb-kicker">About</p>
-              <h2 id="nb-h-about" className="nb-h2">Hi, I&apos;m {C.first}.</h2>
-              {C.about.map((a, i) => <p className="nb-p" key={i}>{a}</p>)}
-              <ul className="nb-thesis">{C.thesis.map((t, i) => <li key={i}>{bullet}{t}</li>)}</ul>
+              <h2 id="nb-h-about" className="nb-h2">Hi, I&apos;m <span data-edit="name.first">{C.first}</span>.</h2>
+              {C.about.map((a, i) => <p className="nb-p" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
+              <ul className="nb-thesis">{C.thesis.map((t, i) => <li key={i}>{bullet}<span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
             </div>
           </div>
 
@@ -137,9 +138,9 @@ export default function Nimbus({ content: C }: DesignProps) {
             <article className="nb-wx" aria-label={`${C.first} right now`}>
               <WxTop city={C.now.city} tz={C.now.tz} />
               <ul className="nb-wx-rows">
-                <li><Px html={glyph("sun")} /><span>Building</span><b>{C.now.building}</b></li>
-                <li><Px html={glyph("part")} /><span>Researching</span><b>{C.now.researching}</b></li>
-                <li><Px html={glyph("bolt")} /><span>Learning</span><b>{C.now.learning}</b></li>
+                <li><Px html={glyph("sun")} /><span>Building</span><b data-edit="v7.now.building">{C.now.building}</b></li>
+                <li><Px html={glyph("part")} /><span>Researching</span><b data-edit="v7.now.researching">{C.now.researching}</b></li>
+                <li><Px html={glyph("bolt")} /><span>Learning</span><b data-edit="v7.now.learning">{C.now.learning}</b></li>
               </ul>
               <ol className="nb-wx-places" aria-label="Places">
                 {C.places.map((pl) => (
@@ -150,7 +151,7 @@ export default function Nimbus({ content: C }: DesignProps) {
                 ))}
               </ol>
             </article>
-            <dl className="nb-nums">{C.numbers.map(([n, l]) => <div key={l}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+            <dl className="nb-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
           </div>
         </section>
 
@@ -163,12 +164,12 @@ export default function Nimbus({ content: C }: DesignProps) {
                   <Px className="nb-drift" html={skyTile(11 + i * 17, 64, 20, 32, -0.34 - (i % 3) * 0.04, 0.55, "nb-tile")} />
                   <Px className="nb-card-ic" html={icon16(p.slug, ON_SKY)} />
                   <span className="nb-card-n">{pad(i)}</span>
-                  <span className="nb-card-kind"><Icon name={p.icon} />{p.kind}</span>
+                  <span className="nb-card-kind"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
                   <span className="nb-card-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
                 </span>
                 <span className="nb-card-tags">{p.tags.slice(0, 3).map((t) => <span key={t}>{t}</span>)}</span>
-                <span className="nb-card-t">{p.title}</span>
-                <span className="nb-card-h">{p.headline}</span>
+                <span className="nb-card-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+                <span className="nb-card-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
               </a>
             ))}
           </div>
@@ -179,11 +180,11 @@ export default function Nimbus({ content: C }: DesignProps) {
           <ol className="nb-roles">
             {C.experience.map((x) => (
               <li className="nb-role" id={`experience-${x.slug}`} key={x.slug}>
-                <p className="nb-when">{x.when}<span>{x.where}</span></p>
+                <p className="nb-when"><span className="nb-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
                 <div className="nb-role-b">
-                  <h3>{x.role}</h3>
-                  <p className="nb-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{bullet}{d}</li>)}</ul>
+                  <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
+                  <p className="nb-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i}>{bullet}<span data-edit={`role:${x.slug}:desc.${i}`}>{d}</span></li>)}</ul>
                   <p className="nb-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
                 </div>
               </li>
@@ -195,9 +196,9 @@ export default function Nimbus({ content: C }: DesignProps) {
             <img src={logoSrc(C.education.logo)} alt={C.education.school} width={64} height={64} loading="lazy" />
             <div>
               <p className="nb-kicker">Education</p>
-              <h3>{C.education.school}</h3>
-              <p>{C.education.degree}</p>
-              <p className="nb-edu-m">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p>
+              <h3 data-edit="edu:school">{C.education.school}</h3>
+              <p data-edit="edu:degree">{C.education.degree}</p>
+              <p className="nb-edu-m"><EduMeta e={C.education} /></p>
             </div>
           </div>
         </section>
@@ -255,8 +256,8 @@ export default function Nimbus({ content: C }: DesignProps) {
             </form>
           </div>
           <div className="nb-qs">
-            {C.faq.map(([q, a]) => (
-              <details className="nb-q" key={q} onToggle={oneOpen}><summary>{q}<span className="nb-plus" aria-hidden="true" /></summary><p>{a}</p></details>
+            {C.faq.map(([q, a], i) => (
+              <details className="nb-q" key={q} onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="nb-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
             ))}
           </div>
         </section>

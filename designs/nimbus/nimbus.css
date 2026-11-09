@@ -486,3 +486,5 @@
 /* "I am Rithvik" header button: the white pixel-cornered twin of Resume */
 :root[data-design="nimbus"] .nb-iam { gap: 8px; }
 @media (max-width: 640px) { :root[data-design="nimbus"] .nb-nav-r .nb-iam { width: 46px; padding: 0; } }
+/* inline-edit wrapper for the "when" text must not take the dim "where" styling */
+:root[data-design="nimbus"] .nb-when .nb-when-v { color: inherit; font-weight: inherit; }

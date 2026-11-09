@@ -87,10 +87,10 @@ export default function Foil({ content: C }: DesignProps) {
         <section className="fo-hero" id="top" aria-labelledby="fo-h1">
           <div className="fo-hero-in">
             <div className="fo-hero-txt">
-              <p className="fo-eyebrow"><span className="fo-dot" aria-hidden="true" />{C.role}</p>
-              <h1 id="fo-h1" className="fo-h1"><span>{C.first}</span><span>{C.last}</span></h1>
-              <p className="fo-lede">{C.line}</p>
-              <p className="fo-status"><span className="fo-pulse" aria-hidden="true" />{C.status}</p>
+              <p className="fo-eyebrow"><span className="fo-dot" aria-hidden="true" /><span data-edit="v7.role">{C.role}</span></p>
+              <h1 id="fo-h1" className="fo-h1"><span data-edit="name.first">{C.first}</span><span data-edit="name.last">{C.last}</span></h1>
+              <p className="fo-lede" data-edit="v7.line">{C.line}</p>
+              <p className="fo-status"><span className="fo-pulse" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
               <div className="fo-acts">
                 <a className="fo-btn fo-btn-foil" href="#" data-resume="">Resume <Icon name="arrow-up-right" /></a>
                 <button type="button" className="fo-btn" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
@@ -105,7 +105,7 @@ export default function Foil({ content: C }: DesignProps) {
                   <button type="button" className="fo-card-art" aria-label="Spin the mark"><span className="fo-deboss"><span className="fo-deboss-hi"><Mark label="" /></span><span className="fo-deboss-ink"><Mark label="" /></span></span></button>
                   <div className="fo-card-plate">
                     <p className="fo-lent" id="fo-lent"><span className="fo-lent-a">{C.name}</span><span className="fo-lent-b" aria-hidden="true">{C.role}</span><i className="fo-lent-r" aria-hidden="true" /></p>
-                    <dl className="fo-stats">{C.numbers.slice(0, 3).map(([n, l]) => <div key={l}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+                    <dl className="fo-stats">{C.numbers.slice(0, 3).map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
                   </div>
                   <i className="fo-card-glare" aria-hidden="true" />
                 </article>
@@ -120,16 +120,16 @@ export default function Foil({ content: C }: DesignProps) {
             <div className="fo-sleeve"><Portrait id="foil" className="fo-pt" /></div>
             <div className="fo-about-txt">
               <Kick n="01" label="About" />
-              <h2 id="fo-h-about" className="fo-h2">Hi, I&apos;m {C.first}.</h2>
-              {C.about.map((a, i) => <p key={i} className="fo-p">{a}</p>)}
-              <ul className="fo-thesis">{C.thesis.map((t) => <li key={t}><i aria-hidden="true" />{t}</li>)}</ul>
+              <h2 id="fo-h-about" className="fo-h2">Hi, I&apos;m <span data-edit="name.first">{C.first}</span>.</h2>
+              {C.about.map((a, i) => <p key={i} className="fo-p" data-edit={`v7.about.${i}`}>{a}</p>)}
+              <ul className="fo-thesis">{C.thesis.map((t, i) => <li key={t}><i aria-hidden="true" /><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
             </div>
           </div>
           <div className="fo-now" id="now" aria-label="Right now">
             <dl className="fo-now-l">
-              <div><dt>Building</dt><dd>{C.now.building}</dd></div>
-              <div><dt>Researching</dt><dd>{C.now.researching}</dd></div>
-              <div><dt>Learning</dt><dd>{C.now.learning}</dd></div>
+              <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+              <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+              <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
             </dl>
             <ul className="fo-places" aria-label="Places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE_LABEL[pl.key] || pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="" /></li>)}</ul>
           </div>
@@ -140,7 +140,7 @@ export default function Foil({ content: C }: DesignProps) {
           <ul className="fo-set" id="fo-set">{C.projects.map((p, i) => (
             <li key={p.slug} className="fo-pc-li">
               <a className="fo-pc" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-fo-case={p.slug} style={{ "--h": `${(i * 57) % 360}deg`, "--hp": `${((i * 57) % 360) / 3.6}%` } as CSSProperties} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-                <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind">{p.kind}</span></span>
+                <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
                 <span className="fo-pc-art" aria-hidden="true">
                   <span className="fo-pc-holo"><i /></span>
                   <span className="fo-pc-glit"><i /></span>
@@ -149,11 +149,11 @@ export default function Foil({ content: C }: DesignProps) {
                   <img className="fo-pc-img" src={`/v7/projects/${p.slug}.webp`} alt="" width={1280} height={960} loading="lazy" decoding="async" onError={hide} />
                   <span className="fo-pc-wm"><Mark label="" /></span>
                 </span>
-                <span className="fo-pc-t">{p.title}</span>
-                <span className="fo-pc-h">{p.headline}</span>
+                <span className="fo-pc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+                <span className="fo-pc-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
                 <span className="fo-pc-stats">
                   <span><b>Stack</b>{p.tags.join(" · ")}</span>
-                  <span><b>Context</b>{p.ctx}</span>
+                  <span><b>Context</b><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
                 </span>
                 <span className="fo-pc-go">Open the case <Icon name="arrow-up-right" /></span>
               </a>
@@ -166,9 +166,9 @@ export default function Foil({ content: C }: DesignProps) {
           <ol className="fo-roles">
             {C.experience.map((x) => (
               <li key={x.slug} className="fo-role" id={`experience-${x.slug}`}>
-                <p className="fo-when">{x.when}<span>{x.where}</span></p>
-                <div className="fo-role-h"><h3>{x.role}</h3><p>{x.org}</p></div>
-                <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
+                <p className="fo-when"><span className="fo-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
+                <div className="fo-role-h"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p data-edit={`role:${x.slug}:org`}>{x.org}</p></div>
+                <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
               </li>
             ))}
           </ol>
@@ -177,8 +177,8 @@ export default function Foil({ content: C }: DesignProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
             </span>
-            <div><p className="fo-edu-k">Education</p><h3>{C.education.school}</h3><p>{C.education.degree}</p></div>
-            <p className="fo-edu-m">{C.education.focus}{C.education.grad && <><br />{C.education.grad}</>}</p>
+            <div><p className="fo-edu-k">Education</p><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p></div>
+            <p className="fo-edu-m"><span data-edit="edu:focus">{C.education.focus}</span>{C.education.grad && <><br /><span data-edit="edu:grad">{C.education.grad}</span></>}</p>
           </article>
         </section>
 
@@ -199,7 +199,7 @@ export default function Foil({ content: C }: DesignProps) {
 
         <section className="fo-sec fo-faq" id="questions" aria-labelledby="fo-h-faq">
           <div className="fo-faq-l"><Kick n="06" label="Questions" /><h2 id="fo-h-faq" className="fo-h2">Short answers</h2><p className="fo-sub">Anything else, <button type="button" className="fo-inl" data-agent="">ask my agent</button>. It only answers from what&apos;s on record.</p></div>
-          <div className="fo-qs">{C.faq.map(([q, a]) => <details key={q} className="fo-q" onToggle={oneOpen}><summary>{q}<i aria-hidden="true" /></summary><p>{a}</p></details>)}</div>
+          <div className="fo-qs">{C.faq.map(([q, a], i) => <details key={q} className="fo-q" onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>
         </section>
 
         <section className="fo-sec fo-contact" id="contact" aria-labelledby="fo-h-contact">

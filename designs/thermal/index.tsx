@@ -74,7 +74,7 @@ export default function Thermal({ content: C }: DesignProps) {
   }), [ranked, pal]);
   const stripImg = useMemo(() => ({ cool: bmp(strip, pal, 0), warm: bmp(strip, pal, 0.2) }), [pal]);
   const ed = C.education, em = C.links.email;
-  const nowRows: [string, string][] = [["Building", C.now.building], ["Researching", C.now.researching], ["Learning", C.now.learning]];
+  const nowRows: [string, string, string][] = [["Building", C.now.building, "building"], ["Researching", C.now.researching, "researching"], ["Learning", C.now.learning, "learning"]];
 
   return (
     <main className="stage" id="stage" tabIndex={-1}>
@@ -95,10 +95,10 @@ export default function Thermal({ content: C }: DesignProps) {
             <span className={`th-vf-bl${nuc ? " on" : ""}`} id="th-nuc">{nuc ? "NUC · calibrating" : "e 0.95 · 9 Hz"}</span>
           </div>
           <div className="th-copy">
-            <p className="th-status"><span className="th-dot" aria-hidden="true" />{C.status}</p>
-            <h1 className="th-name" id="th-name"><span>{C.first}</span> <span>{C.last}</span></h1>
-            <p className="th-role">{C.role}</p>
-            <p className="th-line">{C.line}</p>
+            <p className="th-status"><span className="th-dot" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
+            <h1 className="th-name" id="th-name"><span data-edit="name.first">{C.first}</span> <span data-edit="name.last">{C.last}</span></h1>
+            <p className="th-role" data-edit="v7.role">{C.role}</p>
+            <p className="th-line" data-edit="v7.line">{C.line}</p>
             <div className="th-acts">
               <button type="button" className="th-btn th-btn-hot" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
               <button type="button" className="th-btn" data-resume=""><Icon name="file-text" />Resume</button>
@@ -142,9 +142,9 @@ export default function Thermal({ content: C }: DesignProps) {
                     </span>
                   </span>
                   <span className="th-spot-m">
-                    <span className="th-spot-k"><Icon name={p.icon} />{p.kind}</span>
-                    <span className="th-spot-t">{p.title}</span>
-                    <span className="th-spot-h">{p.headline}</span>
+                    <span className="th-spot-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
+                    <span className="th-spot-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+                    <span className="th-spot-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
                     <span className="th-spot-go">Open the case <Icon name="arrow-up-right" /></span>
                   </span>
                 </a>
@@ -162,12 +162,12 @@ export default function Thermal({ content: C }: DesignProps) {
                 <details open={i === 0}>
                   <summary>
                     <span className="th-heat" aria-hidden="true" />
-                    <span className="th-when">{x.when}</span>
-                    <span className="th-what"><b>{x.role}</b><span>{x.org}</span></span>
-                    <span className="th-where">{x.where}</span>
+                    <span className="th-when" data-edit={`role:${x.slug}:when`}>{x.when}</span>
+                    <span className="th-what"><b data-edit={`role:${x.slug}:role`}>{x.role}</b><span data-edit={`role:${x.slug}:org`}>{x.org}</span></span>
+                    <span className="th-where" data-edit={`role:${x.slug}:where`}>{x.where}</span>
                     <span className="th-plus" aria-hidden="true" />
                   </summary>
-                  <div className="th-role-b"><ul className="th-list">{x.desc.map((d, j) => <li key={j}>{d}</li>)}</ul><div className="chips">{x.tags.map((t) => <Chip t={t} key={t} />)}</div></div>
+                  <div className="th-role-b"><ul className="th-list">{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><div className="chips">{x.tags.map((t) => <Chip t={t} key={t} />)}</div></div>
                 </details>
               </li>
             ))}
@@ -177,8 +177,8 @@ export default function Thermal({ content: C }: DesignProps) {
               {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
               <img src={logoSrc(ed.logo)} alt="" width={56} height={56} loading="lazy" decoding="async" />
             </span>
-            <div className="th-edu-t"><p className="th-edu-k">Education</p><h3>{ed.school}</h3><p>{ed.degree}</p></div>
-            <dl className="th-edu-d"><div><dt>Focus</dt><dd>{ed.focus}</dd></div>{ed.grad && <div><dt>Graduation</dt><dd>{ed.grad}</dd></div>}</dl>
+            <div className="th-edu-t"><p className="th-edu-k">Education</p><h3 data-edit="edu:school">{ed.school}</h3><p data-edit="edu:degree">{ed.degree}</p></div>
+            <dl className="th-edu-d"><div><dt>Focus</dt><dd data-edit="edu:focus">{ed.focus}</dd></div>{ed.grad && <div><dt>Graduation</dt><dd data-edit="edu:grad">{ed.grad}</dd></div>}</dl>
           </div>
         </section>
 
@@ -207,17 +207,17 @@ export default function Thermal({ content: C }: DesignProps) {
         <section id="about" className="th-sec" aria-labelledby="th-about-h">
           <header className="th-head"><Idx n="05" label="About" /><h2 className="th-h2" id="th-about-h">Close to the hardware.</h2></header>
           <div className="th-about">
-            <div className="th-about-t">{C.about.map((a, i) => <p key={i}>{a}</p>)}</div>
+            <div className="th-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
             <aside className="th-now" aria-label="Now">
               <p className="th-panel-k">Now</p>
-              <dl>{nowRows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+              <dl>{nowRows.map(([k, v, f]) => <div key={k}><dt>{k}</dt><dd data-edit={`v7.now.${f}`}>{v}</dd></div>)}</dl>
               <p className="th-panel-k">Places</p>
               <ul className="th-places">
                 {C.places.map((pl) => <li key={pl.key}><span className="th-pl-k">{PLACE_LABEL[pl.key] ?? pl.key}</span><span className="th-pl-c">{pl.city}</span><Clock tz={pl.tz} className="th-pl-t" /></li>)}
               </ul>
             </aside>
           </div>
-          <ul className="th-reads" aria-label="In numbers">{C.numbers.map(([n, l], i) => <li key={l} style={{ ["--heat" as string]: `var(--rh${i})` }}><b>{n}</b><span>{l}</span></li>)}</ul>
+          <ul className="th-reads" aria-label="In numbers">{C.numbers.map(([n, l], i) => <li key={l} style={{ ["--heat" as string]: `var(--rh${i})` }}><b data-edit={`numbers.${i}.v`}>{n}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}</ul>
         </section>
 
         <section id="contact" className="th-sec th-contact" aria-labelledby="th-contact-h">

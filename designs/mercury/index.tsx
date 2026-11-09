@@ -19,6 +19,7 @@ import { Icon, Logo } from "@/components/site/Glyph";
 import { useMercuryMotion } from "./motion";
 import "./mercury.css";
 import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("mercury")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
@@ -81,10 +82,10 @@ export default function Mercury({ content: C }: DesignProps) {
 
         <section className="mc-hero" id="top" aria-labelledby="mc-h1">
           <div className="mc-hero-in">
-            <p className="mc-eyebrow">{C.role}</p>
-            <h1 className="mc-h1" id="mc-h1"><span className="mc-chrome-t">{C.first}</span> <em>{C.last}</em></h1>
-            <p className="mc-lede">{C.line}</p>
-            <p className="mc-status"><i className="mc-dot" aria-hidden="true" />{C.status}</p>
+            <p className="mc-eyebrow" data-edit="v7.role">{C.role}</p>
+            <h1 className="mc-h1" id="mc-h1"><span className="mc-chrome-t" data-edit="name.first">{C.first}</span> <em data-edit="name.last">{C.last}</em></h1>
+            <p className="mc-lede" data-edit="v7.line">{C.line}</p>
+            <p className="mc-status"><i className="mc-dot" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
             <div className="mc-acts">
               <a className="mc-btn mc-solid" href="#" data-resume="">Resume<Icon name="arrow-up-right" /></a>
               <button type="button" className="mc-btn" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
@@ -100,19 +101,19 @@ export default function Mercury({ content: C }: DesignProps) {
             <div className="mc-pt"><i className="mc-bezel" aria-hidden="true" /><Portrait id="mercury" /></div>
             <div className="mc-about-txt">
               <p className="mc-kicker">About</p>
-              <h2 className="mc-h2" id="mc-h-about">Hi, I&apos;m {C.first}.</h2>
-              {C.about.map((a, i) => <p className="mc-p" key={i}>{a}</p>)}
-              <ul className="mc-thesis">{C.thesis.map((t, i) => <li key={i}><span className="mc-bul" aria-hidden="true"><Mark label="" /></span>{t}</li>)}</ul>
+              <h2 className="mc-h2" id="mc-h-about">Hi, I&apos;m <span data-edit="name.first">{C.first}</span>.</h2>
+              {C.about.map((a, i) => <p className="mc-p" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
+              <ul className="mc-thesis">{C.thesis.map((t, i) => <li key={i}><span className="mc-bul" aria-hidden="true"><Mark label="" /></span><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
             </div>
           </div>
-          <dl className="mc-nums">{C.numbers.map(([n, l]) => <div key={l}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+          <dl className="mc-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
           <div className="mc-now" id="now">
             <div className="mc-now-a">
               <p className="mc-kicker">Now</p>
               <ul className="mc-now-list">
-                <li><span>Building</span><b>{C.now.building}</b></li>
-                <li><span>Researching</span><b>{C.now.researching}</b></li>
-                <li><span>Learning</span><b>{C.now.learning}</b></li>
+                <li><span>Building</span><b data-edit="v7.now.building">{C.now.building}</b></li>
+                <li><span>Researching</span><b data-edit="v7.now.researching">{C.now.researching}</b></li>
+                <li><span>Learning</span><b data-edit="v7.now.learning">{C.now.learning}</b></li>
               </ul>
             </div>
             <ol className="mc-places" aria-label="Places">
@@ -130,7 +131,7 @@ export default function Mercury({ content: C }: DesignProps) {
             {C.projects.map((p, i) => (
               <li key={p.slug} id={`project-${p.slug}`}>
                 <a className="mc-row" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-                  <span className="mc-n">{pad(i)}</span><span className="mc-t">{p.title}</span><span className="mc-k"><Icon name={p.icon} />{p.kind}</span><span className="mc-hl">{p.headline}</span><span className="mc-go"><Icon name="arrow-up-right" /></span>
+                  <span className="mc-n">{pad(i)}</span><span className="mc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span><span className="mc-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span><span className="mc-hl" data-edit={`project:${p.slug}:headline`}>{p.headline}</span><span className="mc-go"><Icon name="arrow-up-right" /></span>
                 </a>
               </li>
             ))}
@@ -143,16 +144,16 @@ export default function Mercury({ content: C }: DesignProps) {
           <ol className="mc-roles">
             {C.experience.map((x) => (
               <li className="mc-role" id={`experience-${x.slug}`} key={x.slug}>
-                <p className="mc-when">{x.when}<span>{x.where}</span></p>
-                <div className="mc-role-b"><h3>{x.role}</h3><p className="mc-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                <p className="mc-when"><span className="mc-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
+                <div className="mc-role-b"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p className="mc-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
                   <p className="mc-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
               </li>
             ))}
           </ol>
           <div className="mc-edu" id="education">
             <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-            <div><p className="mc-kicker">Education</p><h3>{C.education.school}</h3><p>{C.education.degree}</p><p className="mc-edu-m">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p></div>
+            <div><p className="mc-kicker">Education</p><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p><p className="mc-edu-m"><EduMeta e={C.education} /></p></div>
           </div>
         </section>
 
@@ -192,8 +193,8 @@ export default function Mercury({ content: C }: DesignProps) {
               </form>
             </div>
             <div className="mc-qs">
-              {C.faq.map(([q, a]) => (
-                <details className="mc-q" key={q} onToggle={oneOpen}><summary>{q}<span className="mc-plus" aria-hidden="true" /></summary><p>{a}</p></details>
+              {C.faq.map(([q, a], i) => (
+                <details className="mc-q" key={q} onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="mc-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
               ))}
             </div>
           </div>

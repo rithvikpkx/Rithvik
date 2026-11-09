@@ -43,10 +43,10 @@ function Hero({ c }: { c: Content }) {
   return (
     <section className="cl-hero cl-wrap" id="top" aria-label="Introduction">
       <div className="cl-hero-copy">
-        <p className="cl-status"><span className="cl-live" aria-hidden="true" />{c.status}</p>
-        <h1 className="cl-name"><span>{c.first}</span> <span>{c.last}</span></h1>
-        <p className="cl-role">{c.role}</p>
-        <p className="cl-line">{c.line}</p>
+        <p className="cl-status"><span className="cl-live" aria-hidden="true" /><span data-edit="v7.status">{c.status}</span></p>
+        <h1 className="cl-name"><span data-edit="name.first">{c.first}</span> <span data-edit="name.last">{c.last}</span></h1>
+        <p className="cl-role" data-edit="v7.role">{c.role}</p>
+        <p className="cl-line" data-edit="v7.line">{c.line}</p>
         <div className="cl-actions">
           <button type="button" className="cl-btn" data-resume="">Resume</button>
           <a className="cl-btn ghost" href={`mailto:${c.links.email}`} data-compose="">Write to me</a>
@@ -74,12 +74,12 @@ function Work({ c }: { c: Content }) {
             <a className="cl-card" href={`/work/${p.slug}`} data-case={p.slug}>
               <div className="cl-card-top">
                 <span className="cl-card-ic"><Icon name={p.icon} /></span>
-                <span className="cl-kind">{p.kind}</span>
+                <span className="cl-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span>
                 <span className="cl-view" aria-hidden="true">View<Icon name="arrow-up-right" /></span>
               </div>
               <div className="cl-card-body">
-                <h3 className="cl-card-title">{p.headline}</h3>
-                <span className="cl-card-ctx">{p.title}{p.ctx && ` · ${p.ctx}`}</span>
+                <h3 className="cl-card-title" data-edit={`project:${p.slug}:headline`}>{p.headline}</h3>
+                <span className="cl-card-ctx"><span data-edit={`project:${p.slug}:title`}>{p.title}</span>{p.ctx && <> · <span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></>}</span>
                 {p.tags.length > 0 && <span className="chips">{p.tags.map((t) => <span key={t} className="chip">{t}</span>)}</span>}
               </div>
               <Mark kind="hatch" label="" className="cl-card-mark" />
@@ -102,14 +102,14 @@ function Experience({ c }: { c: Content }) {
           <li key={r.slug} id={`experience-${r.slug}`}>
             <details className="cl-row">
               <summary>
-                <span className="cl-when">{r.when}</span>
-                <span className="cl-what"><b>{r.role}</b>{r.org && <span>{r.org}</span>}</span>
-                {r.where && <span className="cl-where">{r.where}</span>}
+                <span className="cl-when" data-edit={`role:${r.slug}:when`}>{r.when}</span>
+                <span className="cl-what"><b data-edit={`role:${r.slug}:role`}>{r.role}</b>{r.org && <span data-edit={`role:${r.slug}:org`}>{r.org}</span>}</span>
+                {r.where && <span className="cl-where" data-edit={`role:${r.slug}:where`}>{r.where}</span>}
                 <span className="cl-plus" aria-hidden="true" />
               </summary>
               {(r.desc.length > 0 || r.tags.length > 0) && (
                 <div className="cl-row-body">
-                  {r.desc.length > 0 && <ul className="cl-bullets">{r.desc.map((d) => <li key={d}>{d}</li>)}</ul>}
+                  {r.desc.length > 0 && <ul className="cl-bullets">{r.desc.map((d, i) => <li key={d} data-edit={`role:${r.slug}:desc.${i}`}>{d}</li>)}</ul>}
                   {r.tags.length > 0 && <span className="chips">{r.tags.map((t) => <span key={t} className="chip">{t}</span>)}</span>}
                 </div>
               )}
@@ -120,8 +120,8 @@ function Experience({ c }: { c: Content }) {
       {e.school && (
         <div className="cl-edu" id="education">
           {e.logo && <Image src={`/images/${e.logo}`} alt="" width={36} height={36} />}
-          <span className="cl-what"><b>{e.school}</b>{e.degree && <span>{e.degree}</span>}</span>
-          {(e.focus || e.grad) && <span className="cl-where">{e.focus}{e.focus && e.grad && <br />}{e.grad}</span>}
+          <span className="cl-what"><b data-edit="edu:school">{e.school}</b>{e.degree && <span data-edit="edu:degree">{e.degree}</span>}</span>
+          {(e.focus || e.grad) && <span className="cl-where">{e.focus && <span data-edit="edu:focus">{e.focus}</span>}{e.focus && e.grad && <br />}{e.grad && <span data-edit="edu:grad">{e.grad}</span>}</span>}
         </div>
       )}
     </section>
@@ -132,16 +132,16 @@ function Experience({ c }: { c: Content }) {
 function About({ c }: { c: Content }) {
   const rows: [string, React.ReactNode][] = [
     ...c.places.map((p): [string, React.ReactNode] => [PLACE_LABEL[p.key], p.key === "now" ? <>{p.city} <Clock tz={p.tz} /></> : p.city]),
-    ["Building", c.now.building],
-    ["Researching", c.now.researching],
-    ["Learning", c.now.learning],
+    ["Building", c.now.building && <span data-edit="v7.now.building">{c.now.building}</span>],
+    ["Researching", c.now.researching && <span data-edit="v7.now.researching">{c.now.researching}</span>],
+    ["Learning", c.now.learning && <span data-edit="v7.now.learning">{c.now.learning}</span>],
   ];
   return (
     <section className="cl-sec cl-wrap" id="about" aria-labelledby="about-h">
       <div className="cl-about">
         <div className="cl-about-copy">
           <Title id="about">About</Title>
-          {c.about.map((p) => <p key={p}>{p}</p>)}
+          {c.about.map((p, i) => <p key={p} data-edit={`v7.about.${i}`}>{p}</p>)}
         </div>
         <dl className="cl-kv">
           {rows.filter(([, v]) => v).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
@@ -149,7 +149,7 @@ function About({ c }: { c: Content }) {
       </div>
       {c.numbers.length > 0 && (
         <ul className="cl-numbers">
-          {c.numbers.map(([v, l]) => <li key={l}><b>{v}</b><span>{l}</span></li>)}
+          {c.numbers.map(([v, l], i) => <li key={l}><b data-edit={`numbers.${i}.v`}>{v}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}
         </ul>
       )}
       <div className="cl-graph"><KnowledgeGraph id="classic" /></div>
@@ -186,10 +186,10 @@ function Questions({ c }: { c: Content }) {
         <button type="button" className="cl-btn ghost" data-agent="">Ask something else<kbd>⌘K</kbd></button>
       </div>
       <div className="cl-faq-list">
-        {c.faq.map(([q, a]) => (
+        {c.faq.map(([q, a], i) => (
           <details key={q}>
-            <summary>{q}<span className="cl-plus" aria-hidden="true" /></summary>
-            <p>{a}</p>
+            <summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="cl-plus" aria-hidden="true" /></summary>
+            <p data-edit={`faq.${i}.a`}>{a}</p>
           </details>
         ))}
       </div>

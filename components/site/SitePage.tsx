@@ -5,6 +5,7 @@ import DesignDial from "@/components/site/DesignDial";
 import LiteToggle from "@/components/site/LiteToggle";
 import AskSelection from "@/components/site/AskSelection";
 import Tracker from "@/components/site/Tracker";
+import InlineEdit from "@/components/site/InlineEdit";
 import Overlays from "@/components/site/overlays/Overlays";
 import { getContent } from "@/lib/content";
 import { designById, loadClassic } from "@/lib/designs/registry";
@@ -27,6 +28,7 @@ export default async function SitePage({ theme, children }: { theme?: string | n
         <LiteToggle className="v7-lite" />
         <AskSelection />
         <Tracker />
+        <InlineEdit />
         {children}
         <Overlays />
       </DesignProvider>

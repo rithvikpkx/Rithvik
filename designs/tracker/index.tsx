@@ -20,6 +20,7 @@ import { TOY_LBL, fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import "./tracker.css";
 import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("tracker")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
@@ -62,10 +63,10 @@ export default function Tracker({ content: C }: DesignProps) {
 
         <section className="tk-hero" id="top" aria-labelledby="tk-h1">
           <div className="tk-hero-txt">
-            <p className="tk-k"><span>01</span>{C.role}</p>
-            <h1 className="tk-name" id="tk-h1" data-tk="text" data-tk-label="name" data-tk-static="name 0.99">{C.first}<br /><span>{C.last}</span></h1>
-            <p className="tk-lede">{C.line}</p>
-            <p className="tk-status"><i className="tk-dot" aria-hidden="true" />{C.status}</p>
+            <p className="tk-k"><span>01</span><span data-edit="v7.role">{C.role}</span></p>
+            <h1 className="tk-name" id="tk-h1" data-tk="text" data-tk-label="name" data-tk-static="name 0.99"><span data-edit="name.first">{C.first}</span><br /><span data-edit="name.last">{C.last}</span></h1>
+            <p className="tk-lede" data-edit="v7.line">{C.line}</p>
+            <p className="tk-status"><i className="tk-dot" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
             <div className="tk-acts">
               <a className="tk-btn tk-btn-ink" href="#" data-resume="" data-tk="cta" data-tk-static="cta 0.94"><Icon name="file-text" />Resume</a>
               <button type="button" className="tk-btn" data-compose="Internship opportunity" data-tk="cta"><Icon name="mail" />Email me</button>
@@ -88,7 +89,7 @@ export default function Tracker({ content: C }: DesignProps) {
         </section>
 
         <section className="tk-readout" aria-label="In numbers">
-          <dl className="tk-nums">{C.numbers.map(([n, l]) => <div key={l} data-tk="metric"><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+          <dl className="tk-nums">{C.numbers.map(([n, l], i) => <div key={l} data-tk="metric"><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
         </section>
 
         <section className="tk-sec" id="work" aria-labelledby="tk-h-work">
@@ -98,8 +99,8 @@ export default function Tracker({ content: C }: DesignProps) {
               <li key={p.slug}>
                 <a className="tk-proj" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-case={p.slug} data-tk="project" data-tk-static={projLabel(p.slug)} aria-label={`${p.title}: ${p.headline}. Open the case`}>
                   <span className="tk-pn">{pad(i + 1)}</span>
-                  <span className="tk-pb"><b className="tk-pt-t">{p.title}</b><span className="tk-ph">{p.headline}</span><span className="tk-ptags">{p.tags.slice(0, 4).map((t) => <span key={t}>{t}</span>)}</span></span>
-                  <span className="tk-pk"><Icon name={p.icon} />{p.kind}</span>
+                  <span className="tk-pb"><b className="tk-pt-t" data-edit={`project:${p.slug}:title`}>{p.title}</b><span className="tk-ph" data-edit={`project:${p.slug}:headline`}>{p.headline}</span><span className="tk-ptags">{p.tags.slice(0, 4).map((t) => <span key={t}>{t}</span>)}</span></span>
+                  <span className="tk-pk"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
                   <svg className="tk-fm" viewBox="0 0 8 5" shapeRendering="crispEdges" aria-hidden="true" focusable="false" dangerouslySetInnerHTML={{ __html: fmap(p.slug) }} />
                   <span className="tk-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
                 </a>
@@ -118,9 +119,9 @@ export default function Tracker({ content: C }: DesignProps) {
           <ol className="tk-roles">
             {C.experience.map((x) => (
               <li className="tk-role" id={`experience-${x.slug}`} key={x.slug} data-tk="role">
-                <p className="tk-when"><b>{x.when}</b><span>{x.where}</span></p>
-                <div className="tk-rb"><h3>{x.role}</h3><p className="tk-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                <p className="tk-when"><b data-edit={`role:${x.slug}:when`}>{x.when}</b><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
+                <div className="tk-rb"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p className="tk-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
                   <p className="tk-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
               </li>
             ))}
@@ -128,22 +129,22 @@ export default function Tracker({ content: C }: DesignProps) {
           <div className="tk-edu" id="education" data-tk="school">
             {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
             <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-            <div><p className="tk-k tk-k-s">Education</p><h3>{C.education.school}</h3><p>{C.education.degree}</p><p className="tk-edu-m">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p></div>
+            <div><p className="tk-k tk-k-s">Education</p><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p><p className="tk-edu-m"><EduMeta e={C.education} /></p></div>
           </div>
         </section>
 
         <section className="tk-sec" id="about" aria-labelledby="tk-h-about">
           <Sh n={5} k="About" title={`Hi, I'm ${C.first}.`} id="tk-h-about" />
           <div className="tk-about">
-            <div className="tk-about-txt">{C.about.map((a, i) => <p key={i}>{a}</p>)}
-              <ul className="tk-thesis">{C.thesis.map((t, i) => <li key={i}><span>{pad(i + 1)}</span>{t}</li>)}</ul>
+            <div className="tk-about-txt">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
+              <ul className="tk-thesis">{C.thesis.map((t, i) => <li key={i}><span>{pad(i + 1)}</span><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
             </div>
             <aside className="tk-pane tk-now" id="now" aria-label="Right now">
               <p className="tk-pane-h"><span>now</span><span><Clock tz={C.now.tz} className="tk-clock" /></span></p>
               <dl className="tk-kv">
-                <div><dt>Building</dt><dd>{C.now.building}</dd></div>
-                <div><dt>Researching</dt><dd>{C.now.researching}</dd></div>
-                <div><dt>Learning</dt><dd>{C.now.learning}</dd></div>
+                <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+                <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+                <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
               </dl>
               <p className="tk-pane-h tk-pane-h2"><span>places</span></p>
               <ol className="tk-places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span className="tk-pl-k">{PLACE_LABEL[pl.key] ?? pl.key}</span><b>{pl.city}</b><span><Clock tz={pl.tz} className="tk-clock" /></span></li>)}</ol>
@@ -172,7 +173,7 @@ export default function Tracker({ content: C }: DesignProps) {
           <section className="tk-sec" id="questions" aria-labelledby="tk-h-faq">
             <Sh n={7} k="Questions" title="Short answers" sub="Anything else, ask my agent. It only answers from what's on record." id="tk-h-faq" />
             <div className="tk-qs">
-              {C.faq.map(([q, a]) => <details className="tk-q" key={q}><summary>{q}<i aria-hidden="true" /></summary><p>{a}</p></details>)}
+              {C.faq.map(([q, a], i) => <details className="tk-q" key={q}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}
             </div>
           </section>
         )}

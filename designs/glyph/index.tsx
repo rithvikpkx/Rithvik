@@ -45,11 +45,11 @@ function Commit({ x, lane, deco, open }: { x: DesignProps["content"]["experience
       <span className="gl-node" aria-hidden="true">*</span>
       <details open={open}>
         <summary>
-          <span className="gl-c-h"><span className="gl-hash">{hash7(x.slug)}</span>{deco && <> <span className="gl-deco">({deco})</span></>} <span className="gl-dim">{x.when}</span></span>
-          <span className="gl-c-s">{x.role}</span>
-          <span className="gl-c-o">{x.org}</span>
+          <span className="gl-c-h"><span className="gl-hash">{hash7(x.slug)}</span>{deco && <> <span className="gl-deco">({deco})</span></>} <span className="gl-dim" data-edit={`role:${x.slug}:when`}>{x.when}</span></span>
+          <span className="gl-c-s" data-edit={`role:${x.slug}:role`}>{x.role}</span>
+          <span className="gl-c-o" data-edit={`role:${x.slug}:org`}>{x.org}</span>
         </summary>
-        <div className="gl-c-body"><ul className="gl-dash">{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul><Tags tags={x.tags} /></div>
+        <div className="gl-c-body"><ul className="gl-dash">{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><Tags tags={x.tags} /></div>
       </details>
     </li>
   );
@@ -105,9 +105,9 @@ export default function Glyph({ content: C }: DesignProps) {
         <section id="top" className="gl-sec gl-hero" data-hue="amber" aria-labelledby="gl-name">
           <p className="gl-meta"><span><span className="gl-led" aria-hidden="true" />open to SWE and AI internships</span><span>{C.now.city} · <Clock tz={C.now.tz} /></span></p>
           <div className="gl-stage">
-            <p className="gl-cond">{C.thesis.map((t) => <span key={t} data-scr>{t}</span>)}</p>
+            <p className="gl-cond">{C.thesis.map((t, i) => <span key={t} data-scr data-edit={`v7.thesis.${i}`}>{t}</span>)}</p>
             <div className="gl-card">
-              <p className="gl-card-p">{C.line}</p>
+              <p className="gl-card-p" data-edit="v7.line">{C.line}</p>
               <form className="gl-ask" id="gl-ask" autoComplete="off" onSubmit={ask}>
                 <span className="gl-ask-p" aria-hidden="true">❯</span>
                 <label className="sr-only" htmlFor="gl-ask-in">Ask the agent about {C.first}</label>
@@ -127,8 +127,8 @@ export default function Glyph({ content: C }: DesignProps) {
           <div className="gl-who-pt"><Portrait id="glyph" /></div>
           <div className="gl-who-r">
             <p className="gl-who-h" id="whoami-h"><span data-scr>{C.first.toLowerCase()}</span><span className="gl-caret" aria-hidden="true" /></p>
-            <p className="gl-who-s">{C.status}</p>
-            <dl className="gl-nums">{C.numbers.map(([n, l]) => <div key={l}><dt>{n}</dt><dd>{l}</dd></div>)}</dl>
+            <p className="gl-who-s" data-edit="v7.status">{C.status}</p>
+            <dl className="gl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
           </div>
         </Pane>
 
@@ -141,9 +141,9 @@ export default function Glyph({ content: C }: DesignProps) {
             ))}</ol>
             <div className="gl-prev">{C.projects.map((p, i) => (
               <article className="gl-pv" key={p.slug} hidden={i !== sel}>
-                <h3>{p.title}</h3>
-                <p className="gl-pv-head">{p.headline}</p>
-                <p className="gl-pv-d">{p.ctx}</p>
+                <h3 data-edit={`project:${p.slug}:title`}>{p.title}</h3>
+                <p className="gl-pv-head" data-edit={`project:${p.slug}:headline`}>{p.headline}</p>
+                <p className="gl-pv-d" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</p>
                 <Tags tags={p.tags} />
                 <p className="gl-pv-acts"><button type="button" className="gl-btn gl-btn-hue" data-case={p.slug}><kbd>⏎</kbd>open case</button>{Object.entries(p.links).map(([k, v]) => <a key={k} className="gl-btn" href={v} target="_blank" rel="noopener">{k.toLowerCase()} ↗</a>)}</p>
               </article>
@@ -160,12 +160,12 @@ export default function Glyph({ content: C }: DesignProps) {
             <li className="gl-c gl-edu" id="education">
               <span className="gl-node" aria-hidden="true">*</span>
               <div className="gl-edu-in">
-                <span className="gl-c-h"><span className="gl-hash">{hash7(ed.school)}</span> <span className="gl-deco">(<b className="d-tag">tag: education</b>)</span>{ed.grad && <> <span className="gl-dim">{ed.grad}</span></>}</span>
+                <span className="gl-c-h"><span className="gl-hash">{hash7(ed.school)}</span> <span className="gl-deco">(<b className="d-tag">tag: education</b>)</span>{ed.grad && <> <span className="gl-dim" data-edit="edu:grad">{ed.grad}</span></>}</span>
                 <div className="gl-edu-row">
                   {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-                  <img src={logoSrc(ed.logo)} alt="" width={36} height={36} /><span className="gl-c-s">{ed.degree}</span>
+                  <img src={logoSrc(ed.logo)} alt="" width={36} height={36} /><span className="gl-c-s" data-edit="edu:degree">{ed.degree}</span>
                 </div>
-                <span className="gl-c-o">{ed.school} · {ed.focus}</span>
+                <span className="gl-c-o"><span data-edit="edu:school">{ed.school}</span> · <span data-edit="edu:focus">{ed.focus}</span></span>
               </div>
             </li>
           </ol>
@@ -177,21 +177,21 @@ export default function Glyph({ content: C }: DesignProps) {
               <h3 className="gl-mh">NAME</h3>
               <p className="gl-mb"><b>rithvik</b> — {C.role.toLowerCase()}</p>
               <h3 className="gl-mh">DESCRIPTION</h3>
-              {C.about.map((a, i) => <p className="gl-mb" key={i}>{a}</p>)}
+              {C.about.map((a, i) => <p className="gl-mb" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
             </div>
             <div className="gl-man-b">
               <h3 className="gl-mh">ENVIRONMENT</h3>
               <dl className="gl-env">
-                <div><dt>BUILDING</dt><dd>{C.now.building}</dd></div>
-                <div><dt>RESEARCHING</dt><dd>{C.now.researching}</dd></div>
-                <div><dt>LEARNING</dt><dd>{C.now.learning}</dd></div>
+                <div><dt>BUILDING</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+                <div><dt>RESEARCHING</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+                <div><dt>LEARNING</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
               </dl>
               <h3 className="gl-mh">FILES</h3>
               <dl className="gl-files">{C.places.map((pl) => <div key={pl.key}><dt>~/{pl.key}</dt><dd>{pl.city}</dd><dd className="gl-clk"><Clock tz={pl.tz} /></dd></div>)}</dl>
               <details className="gl-more"><summary><span className="gl-flag">--stack</span></summary><ul className="gl-tree">{stackKeys.map(([k, v], i, a) => (
                 <li key={k}><span className="gl-dim">{i === a.length - 1 ? "└──" : "├──"}</span> <b>{k.toLowerCase()}/</b><ul>{v.map((x, j) => <li key={x}><span className="gl-dim">{i === a.length - 1 ? "    " : "│   "}{j === v.length - 1 ? "└──" : "├──"}</span> {x}</li>)}</ul></li>
               ))}</ul></details>
-              <details className="gl-more" id="questions"><summary><span className="gl-flag">--faq</span></summary><dl className="gl-faq">{C.faq.map(([q, a]) => <div key={q}><dt>{q}</dt><dd>{a}</dd></div>)}</dl></details>
+              <details className="gl-more" id="questions"><summary><span className="gl-flag">--faq</span></summary><dl className="gl-faq">{C.faq.map(([q, a], i) => <div key={q}><dt data-edit={`faq.${i}.q`}>{q}</dt><dd data-edit={`faq.${i}.a`}>{a}</dd></div>)}</dl></details>
             </div>
           </div>
         </Pane>

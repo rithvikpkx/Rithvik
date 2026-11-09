@@ -20,6 +20,7 @@ import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import "./stipple.css";
 import IAmRithvik from "@/components/site/IAmRithvik";
+import EduMeta from "@/components/site/EduMeta";
 
 const META = designById("stipple")!;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
@@ -74,14 +75,14 @@ export default function Stipple({ content: C }: DesignProps) {
               <div className="st-name-crisp" aria-hidden="true">{nameInner}</div>
               <span className="st-lens-frame" aria-hidden="true"><i /><b className="st-lens-xy">x 000 · y 000</b></span>
             </div>
-            <p className="st-status"><span className="st-pulse" aria-hidden="true" /><span>{C.status}</span></p>
+            <p className="st-status"><span className="st-pulse" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
           </div>
-          <p className="st-thesis">{C.thesis.map((t, i) => <Fragment key={i}>{i > 0 && <span aria-hidden="true"> ⁂ </span>}{t}</Fragment>)}</p>
+          <p className="st-thesis">{C.thesis.map((t, i) => <Fragment key={i}>{i > 0 && <span aria-hidden="true"> ⁂ </span>}<span data-edit={`v7.thesis.${i}`}>{t}</span></Fragment>)}</p>
 
           <div className="st-cover-row">
             <div className="st-cover-l">
-              <p className="st-role"><i>{C.role}</i></p>
-              <p className="st-line">{C.line}</p>
+              <p className="st-role"><i data-edit="v7.role">{C.role}</i></p>
+              <p className="st-line" data-edit="v7.line">{C.line}</p>
               <nav className="st-acts" aria-label="Act">
                 <a href="#" className="st-a st-a-solid" data-resume=""><Icon name="file-text" /><span>Read the resume</span></a>
                 <span className="st-acts-2">
@@ -108,15 +109,15 @@ export default function Stipple({ content: C }: DesignProps) {
         <section id="about" className="st-ch st-plate" aria-labelledby="st-h-about">
           <Chapter n={0} id="st-h-about" title="Foreword" folio={2} plate />
           <div className="st-prose">
-            <p className="st-drop">{C.about[0]}</p>
-            <p>{C.about[1]}<span className="st-endmark" aria-hidden="true"><Mark label="" /></span></p>
+            <p className="st-drop" data-edit="v7.about.0">{C.about[0]}</p>
+            <p><span data-edit="v7.about.1">{C.about[1]}</span><span className="st-endmark" aria-hidden="true"><Mark label="" /></span></p>
           </div>
           <div className="st-now" id="now">
             <p className="st-label">On the press this season</p>
             <dl>
-              <div><dt>Building</dt><dd>{C.now.building}</dd></div>
-              <div><dt>Researching</dt><dd>{C.now.researching}</dd></div>
-              <div><dt>Learning</dt><dd>{C.now.learning}</dd></div>
+              <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+              <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+              <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
             </dl>
             <ul className="st-places" aria-label="Places">
               {C.places.map((p) => <li key={p.key} className={`st-place st-place-${p.key}`}><span className="st-pk">{PLACE_KEY[p.key] ?? p.key}</span><b>{p.city}</b><Clock tz={p.tz} className="st-clk" /></li>)}
@@ -125,7 +126,7 @@ export default function Stipple({ content: C }: DesignProps) {
         </section>
 
         <section className="st-ch st-figs-sec" aria-label="Figures">
-          <ol className="st-figs">{C.numbers.map(([v, l], i) => <li className="st-plate-sm" key={l}><span className="st-fig-n">Fig. {i + 1}</span><b>{v}</b><span>{l}</span></li>)}</ol>
+          <ol className="st-figs">{C.numbers.map(([v, l], i) => <li className="st-plate-sm" key={l}><span className="st-fig-n">Fig. {i + 1}</span><b data-edit={`numbers.${i}.v`}>{v}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}</ol>
         </section>
 
         <section id="work" className="st-ch st-wide" aria-labelledby="st-h-work">
@@ -140,10 +141,10 @@ export default function Stipple({ content: C }: DesignProps) {
                   <svg className="st-art-crisp" viewBox="0 0 320 200"><g fill="#FF3B1F" stroke="#FF3B1F" dangerouslySetInnerHTML={{ __html: ART[p.slug] ?? "" }} /></svg>
                   <span className="st-lens-frame"><i /></span>
                 </span>
-                <span className="st-kind"><Icon name={p.icon} />{p.kind}</span>
-                <span className="st-dsp-t">{p.title}</span>
-                <span className="st-dsp-h">{p.headline}</span>
-                {i === 0 && <><span className="st-dsp-c">{p.ctx}</span><span className="st-dsp-d">{p.desc.join(" ")}</span><span className="st-dsp-tags">{p.tags.join(" · ")}</span></>}
+                <span className="st-kind"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
+                <span className="st-dsp-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+                <span className="st-dsp-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
+                {i === 0 && <><span className="st-dsp-c" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span><span className="st-dsp-d">{p.desc.map((d, k) => <Fragment key={k}>{k > 0 && " "}<span data-edit={`project:${p.slug}:desc.${k}`}>{d}</span></Fragment>)}</span><span className="st-dsp-tags">{p.tags.join(" · ")}</span></>}
                 <span className="st-more"><span>Read the dispatch</span> <span aria-hidden="true">→</span></span>
               </a>
             ))}
@@ -157,10 +158,10 @@ export default function Stipple({ content: C }: DesignProps) {
             <ol className="st-errata">
               {C.experience.map((x) => (
                 <li id={`experience-${x.slug}`} key={x.slug}>
-                  <p className="st-er-top"><span>{x.when}</span><span className="st-lead" aria-hidden="true" /><span>{x.where}</span></p>
-                  <h3>{x.role}</h3>
-                  <p className="st-er-org">{x.org}</p>
-                  <ul>{x.desc.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                  <p className="st-er-top"><span data-edit={`role:${x.slug}:when`}>{x.when}</span><span className="st-lead" aria-hidden="true" /><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
+                  <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
+                  <p className="st-er-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
+                  <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
                 </li>
               ))}
             </ol>
@@ -169,9 +170,9 @@ export default function Stipple({ content: C }: DesignProps) {
               <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" />
               <div>
                 <p className="st-label">Schooling</p>
-                <h3>{C.education.school}</h3>
-                <p>{C.education.degree}</p>
-                <p className="st-er-tags">{[C.education.focus, C.education.grad].filter(Boolean).join(" · ")}</p>
+                <h3 data-edit="edu:school">{C.education.school}</h3>
+                <p data-edit="edu:degree">{C.education.degree}</p>
+                <p className="st-er-tags"><EduMeta e={C.education} /></p>
               </div>
             </div>
           </div>
@@ -189,8 +190,8 @@ export default function Stipple({ content: C }: DesignProps) {
         <section id="questions" className="st-ch st-plate" aria-labelledby="st-h-faq">
           <Chapter n={4} id="st-h-faq" title="Correspondence" folio={6} plate />
           <div className="st-letters">
-            {C.faq.map(([q, a]) => (
-              <details className="st-letter" key={q} onToggle={oneOpen}><summary><span className="st-q">{q}</span><span className="st-plus" aria-hidden="true" /></summary><p>{a}</p></details>
+            {C.faq.map(([q, a], i) => (
+              <details className="st-letter" key={q} onToggle={oneOpen}><summary><span className="st-q" data-edit={`faq.${i}.q`}>{q}</span><span className="st-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
             ))}
           </div>
         </section>
