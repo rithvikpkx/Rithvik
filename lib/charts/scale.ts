@@ -10,6 +10,15 @@ export const round = (n: number, d = 2): number => Number(n.toFixed(d));
 export function niceScale(lo: number, hi: number, count = 4): { min: number; max: number; ticks: number[] } {
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) return { min: 0, max: 1, ticks: [0, 1] };
   if (lo === hi) { if (lo === 0) hi = 1; else if (lo > 0) lo = 0; else hi = 0; }
+  // A near-flat range (e.g. two latencies 3.38k and 3.42k) would get ticks finer than the labels can show
+  // ("3.4k" six times); give it at least 20% of its magnitude, without dipping below zero for positive data.
+  const minSpan = Math.max(Math.abs(lo), Math.abs(hi)) * 0.2;
+  if (hi - lo < minSpan) {
+    const mid = (lo + hi) / 2;
+    const pos = lo >= 0;
+    lo = mid - minSpan / 2; hi = mid + minSpan / 2;
+    if (pos && lo < 0) { hi -= lo; lo = 0; }
+  }
   const raw = (hi - lo) / count;
   const mag = 10 ** Math.floor(Math.log10(raw));
   const f = raw / mag;

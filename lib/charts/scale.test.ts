@@ -65,3 +65,10 @@ test("describeSeries reads out ranges and the latest value", () => {
   assert.equal(s, "Line chart: TTFB. 3 points from Mon to Wed. p50: from 100 ms to 300 ms, latest 300 ms.");
   assert.match(describeSeries("Bar", "", ["a"], [{ name: "x", values: [null] }]), /x: no data/);
 });
+
+test("niceScale keeps a near-flat range readable (distinct tick labels)", () => {
+  const sc = niceScale(3380, 3420);
+  const labels = sc.ticks.map((t) => compact(t));
+  assert.equal(new Set(labels).size, labels.length);
+  assert.ok(sc.min >= 0);
+});
