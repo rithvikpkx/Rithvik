@@ -111,7 +111,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     // Belt + suspenders on top of shouldCreateUser: false — fail instantly
     // without burning Supabase's 4-per-hour OTP rate limit.
     if (ADMIN_EMAIL && normalized !== ADMIN_EMAIL) {
-      return "This email isn't allowed.";
+      return "Nice try. That is not the Rithvik email.";
     }
     const supabase = await getClient();
     const { error } = await supabase.auth.signInWithOtp({
