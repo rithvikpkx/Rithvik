@@ -83,6 +83,11 @@ test("unknown header facts are omitted and rows without a time have no stamp", (
   assert.ok(m.includes("### You\n"));
 });
 
+test("a tool row's detail lines (the /usage row) become sub-bullets", () => {
+  const m = buildTranscriptMarkdown([{ kind: "user", text: "/usage" }, { kind: "tool", name: "Usage", args: "", result: "This visitor", lines: [["Rate limit", "19/60 used"], ["Model", "gpt-x"]] }], AT);
+  assert.ok(m.includes("- **Usage**() — This visitor\n  - Rate limit: 19/60 used\n  - Model: gpt-x"));
+});
+
 test("formatTimestamp handles missing and invalid input", () => {
   assert.equal(formatTimestamp(undefined), "");
   assert.equal(formatTimestamp(Number.NaN), "");

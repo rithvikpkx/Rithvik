@@ -188,7 +188,7 @@ export default function AgentDock() {
               ))}
             </div>
           )}
-          <StatusLine turns={agent.turns.length} busySince={busySince} cooldown={agent.cooldown} />
+          <StatusLine turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} />
         </section>
       )}
       {!open && agent.pending && (

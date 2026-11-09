@@ -11,7 +11,7 @@
  *  hook's items pass straight in; `banner` and `help` are chrome and are skipped. */
 export type TranscriptItem =
   | { kind: "user"; text: string; at?: number }
-  | { kind: "tool"; name: string; args: string; result?: string; at?: number }
+  | { kind: "tool"; name: string; args: string; result?: string; lines?: [string, string][]; at?: number }
   | { kind: "answer"; text: string; at?: number }
   | { kind: "suggest"; chips: string[]; at?: number }
   | { kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string }; detail?: string[]; once?: boolean; at?: number }
@@ -107,6 +107,7 @@ export function buildTranscriptMarkdown(items: TranscriptItem[], exportedAt: num
       case "tool":
         list = true;
         out.push(`- **${i.name}**(${i.args})${i.result !== undefined ? ` — ${i.result}` : ""}`);
+        for (const [k, v] of i.lines ?? []) out.push(`  - ${k}: ${v}`);
         break;
       case "ask": {
         const call = i.tool ? `**${i.tool.name}**(${i.tool.args}) — ${i.question}` : `**${i.question}**`;

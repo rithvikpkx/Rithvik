@@ -58,6 +58,9 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
               {item.undo && <button type="button" className="t-key inline" onClick={() => h.undo(item.id)}>u Undo</button>}
             </span>
           )}
+          {item.lines && (
+            <dl className="t-facts">{item.lines.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          )}
         </div>
       );
     case "help":

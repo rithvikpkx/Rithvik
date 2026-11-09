@@ -91,6 +91,11 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 .t-detail { grid-column: 2; margin: 6px 0 0; padding: 8px 12px; list-style: none; border: 1px solid var(--a-line); border-radius: 8px; font: 400 12.5px/1.6 var(--a-mono); overflow-wrap: anywhere; }
 /* Only inside a tool row (a 2-column .t-line); a bare grid-column on a log child once split the whole log in two. */
 .t-line > .t-confirm { grid-column: 2; }
+.t-line > .t-facts { grid-column: 2; margin: 4px 0 0; display: grid; gap: 2px; font: 400 12.5px/1.6 var(--a-mono); }
+.t-facts > div { display: grid; grid-template-columns: 84px minmax(0, 1fr); column-gap: 12px; }
+.t-facts dt { color: var(--a-muted); }
+.t-facts dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .t-facts > div { grid-template-columns: minmax(0, 1fr); } .t-facts dd { margin-bottom: 4px; } }
 .t-confirm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .t-key { border: 1px solid var(--a-line); background: transparent; color: var(--a-fg); border-radius: 6px; padding: 4px 10px; font: 400 12.5px/1.4 var(--a-mono); cursor: pointer; }
 .t-key:hover { border-color: var(--a-accent); }
@@ -108,6 +113,11 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 .agent-palette button span { color: var(--a-muted); }
 .agent-palette button[aria-selected="true"] { background: color-mix(in srgb, var(--a-accent) 14%, transparent); }
 .agent-status { display: flex; gap: 12px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--a-line); font: 400 12px/1.4 var(--a-mono); color: var(--a-muted); white-space: nowrap; overflow: hidden; }
+.agent-status span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; } /* a narrow panel clips the tail, never wraps */
+.agent-status span:first-child { flex: none; }
+@media (max-width: 640px) { .agent-status .s-hint { display: none; } }
+@media (max-width: 440px) { .agent-status .s-time { display: none; } }
+@media (max-width: 370px) { .agent-status .s-tok { display: none; } }
 .agent-status .spin { color: var(--a-accent); }
 .agent-status .warn { color: var(--a-accent); }
 

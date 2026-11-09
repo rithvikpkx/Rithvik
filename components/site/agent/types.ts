@@ -9,7 +9,7 @@ export type Item =
   | { id: number; at?: number; kind: "banner" }
   | { id: number; at?: number; kind: "user"; text: string }
   /** A tool call row. `result` undefined = still running (no result line yet); `undo` shows an Undo key (the callback lives in the hook). */
-  | { id: number; at?: number; kind: "tool"; name: string; args: string; result?: string; undo?: boolean }
+  | { id: number; at?: number; kind: "tool"; name: string; args: string; result?: string; undo?: boolean; lines?: [label: string, value: string][] }
   | { id: number; at?: number; kind: "help" }
   | { id: number; at?: number; kind: "answer"; text: string; streaming: boolean }
   | { id: number; at?: number; kind: "suggest"; chips: string[] }

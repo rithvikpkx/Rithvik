@@ -15,6 +15,8 @@ export type SlashCtx = {
   turns: Turn[];
   /** The whole panel as Markdown (rows, tool calls, sources, header). */
   exportMd: () => string;
+  /** Adds the /usage row (rate limit, tokens, timings). */
+  usage: () => void;
   content: Content;
   design: Design;
   openCase: (slug: string) => void;
@@ -81,6 +83,7 @@ export function runSlash(raw: string, c: SlashCtx): void {
       tool("Export", "markdown", `${c.turns.length} turn${c.turns.length === 1 ? "" : "s"} copied`);
       break;
     }
+    case "/usage": c.usage(); break;
     case "/history": tool("History", "recent", c.history.slice(0, 6).join(" · ") || "No prompts yet"); break;
     case "/fullscreen": c.toggleFull(); break;
     case "/quit": c.close(); break;
