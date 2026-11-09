@@ -9,6 +9,7 @@ import { scrollAndHighlight } from "./highlight";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from "@/lib/suggestion-protocol";
 import { GAMES } from "@/lib/play/games";
+import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
@@ -232,6 +233,19 @@ export function useAgent(host: Host) {
     navigator.clipboard?.writeText(text).then(() => host.toast(msg), () => {});
   }, [host]);
 
+  /** Copies a read-only link to this conversation (the server mints it for the session this tab holds). */
+  const share = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const r = await createShareLink(sessionId);
+      if (!r.ok) return host.toast(r.error);
+      await navigator.clipboard.writeText(location.origin + r.path);
+      host.toast("Link copied · expires in 30 days");
+    } catch {
+      host.toast("Could not copy the link");
+    }
+  }, [host, sessionId]);
+
   /** Marks every answer row of the turn as finished. */
   const settle = useCallback((ids: number[]) => ids.forEach((id) => patch(id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i))), [patch]);
   const answerIds = useRef<number[]>([]);
@@ -424,5 +438,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, sessionId, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
 }
