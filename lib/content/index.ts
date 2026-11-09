@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { serverClient } from "@/lib/supabase-server";
 import type { Content } from "./types";
 import { fixture } from "./fixture";
@@ -6,8 +7,14 @@ import { toContent, type Rows } from "./map";
 
 export type { Content, ContentProject, ContentRole, Place } from "./types";
 
-/** Reads the published rows + site_content and maps them to the v7 `Content`; serves the fixture if the DB read fails. */
-export async function getContent(): Promise<Content> {
+/** Cache tag for getContent(); admin actions revalidate it so edits show at once. */
+export const CONTENT_TAG = "v7-content";
+
+/** Reads the published rows + site_content and maps them to the v7 `Content`; serves the fixture if the DB read fails.
+ *  Cached 60s: v7 pages read the design cookie, so they render per request and this cache keeps Supabase off that path. */
+export const getContent = unstable_cache(readContent, ["v7-content"], { revalidate: 60, tags: [CONTENT_TAG] });
+
+async function readContent(): Promise<Content> {
   const db = serverClient();
   // select("*") so columns the migration hasn't added yet don't error; `as Rows` since v7 columns aren't in the generated types.
   const [p, e, ed, s] = await Promise.all([

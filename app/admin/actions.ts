@@ -1,5 +1,6 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { CONTENT_TAG } from "@/lib/content";
 import { adminClient } from "@/lib/supabase-server";
 import {
   embedPrimary, deletePrimary,
@@ -46,6 +47,7 @@ async function safeEmbed(label: string, fn: () => Promise<void>): Promise<void> 
 
 function revalidate() {
   revalidatePath("/");
+  updateTag(CONTENT_TAG); // v7 pages read cached getContent(); expire it so the editor sees the save
 }
 
 export interface ProjectInput {
