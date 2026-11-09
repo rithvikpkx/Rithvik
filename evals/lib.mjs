@@ -29,6 +29,7 @@ export function extractTools(frames) {
   const visit = (v, key) => {
     if (Array.isArray(v)) return v.forEach((x) => visit(x, key));
     if (!v || typeof v !== "object") return;
+    if (v.t === "artifact") return add("render_artifact", v.spec?.type); // its spec has a `type` of its own: don't mistake it for a v1 action
     if (["actions", "tools", "tool_calls", "toolCalls"].includes(key) || "type" in v || "tool" in v || v.t === "tool") {
       add(v.type ?? v.tool ?? v.name, v.target ?? v.args?.target ?? v.args?.slug ?? v.args?.id ?? v.args?.place ??v.arguments?.target ?? v.arguments?.slug);
     }
@@ -83,6 +84,9 @@ export function scoreCase(c, r) {
   for (const e of c.exclude ?? []) check("exclude", !hit(r.answer, e), JSON.stringify(e));
   for (const re of c.excludeRe ?? []) check("excludeRe", !new RegExp(re, "i").test(r.answer), re);
   if (c.tool) check("tool", hasTool(c.tool, r.tools), `${c.tool} (got ${r.tools.map((t) => t.name).join(", ") || "none"})`);
+  // artifact: any-of chart forms the render_artifact call may use; noTool: a tool that must NOT have been called
+  if (c.artifact) check("artifact", r.tools.some((t) => t.name === "render_artifact" && c.artifact.includes(t.target)), `${c.artifact.join("|")} (got ${r.tools.map((t) => `${t.name}:${t.target}`).join(", ") || "none"})`);
+  if (c.noTool) check("noTool", !hasTool(c.noTool, r.tools), `${c.noTool} was called`);
   return { pass: checks.every((k) => k.ok), checks };
 }
 

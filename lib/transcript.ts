@@ -7,6 +7,19 @@
  * header Copy / Download buttons and the /export command.
  */
 
+import { artifactTable, type ArtifactSpec } from "./agent/artifacts.ts";
+
+/** A Markdown table cell: pipes and line breaks would break the row. */
+const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
+
+/** An artifact as Markdown: its title, then its data as a table (the picture itself cannot be exported). */
+export function artifactMarkdown(spec: ArtifactSpec): string[] {
+  const { columns, rows } = artifactTable(spec);
+  const line = (cs: string[]) => `| ${cs.map(cell).join(" | ")} |`;
+  const head = columns.map((c) => c || " ");
+  return [`**${cell(spec.title)}** _(${spec.type})_`, "", line(head), line(head.map(() => "---")), ...rows.map(line), ""];
+}
+
 /** The rows the export understands. Structurally a subset of the panel's `Item`, so the
  *  hook's items pass straight in; `banner` and `help` are chrome and are skipped. */
 export type TranscriptItem =
@@ -14,6 +27,7 @@ export type TranscriptItem =
   | { kind: "tool"; name: string; args: string; result?: string; lines?: [string, string][]; at?: number }
   | { kind: "answer"; text: string; at?: number }
   | { kind: "suggest"; chips: string[]; at?: number }
+  | { kind: "artifact"; spec: ArtifactSpec; at?: number }
   | { kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string }; detail?: string[]; once?: boolean; at?: number }
   | { kind: "sources"; items: { n: number; label: string; anchor?: string }[]; at?: number }
   | { kind: "note"; text: string; tone?: "warn"; at?: number }
@@ -118,6 +132,9 @@ export function buildTranscriptMarkdown(items: TranscriptItem[], exportedAt: num
       }
       case "answer":
         para(i.text.trim(), "");
+        break;
+      case "artifact":
+        para(...artifactMarkdown(i.spec));
         break;
       case "sources":
         para("_Sources_", "", ...i.items.map((s) => `- [${s.n}] ${s.label}`), "");

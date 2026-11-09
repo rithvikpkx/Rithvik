@@ -5,6 +5,7 @@
 import type { ToolCall, ToolDef } from "../openai.ts";
 import { calendarTools, runCalendarTool } from "../calendar/tools.ts";
 import { validateMeeting } from "./meeting.ts";
+import { ARTIFACT_TYPES, MAX_COLS, MAX_POINTS, MAX_ROWS, MAX_SERIES, MAX_TEXT, parseArtifact, type ArtifactSpec } from "./artifacts.ts";
 
 /** Whole-page sections every design carries (plus project-<slug> / experience-<slug>). */
 export const SECTION_IDS = ["top", "work", "experience", "about", "play", "questions", "contact"];
@@ -15,6 +16,8 @@ export const MAX_SIDE_EFFECTS = 2;
 /** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
 const CALENDAR = new Set(["check_availability", "suggest_times"]);
 const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
+/** At most this many artifacts per step; extras are rejected. */
+const MAX_ARTIFACTS = 1;
 /** At most this many calendar lookups per step; extras are rejected. */
 const MAX_CALENDAR = 4;
 const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting"]);
@@ -30,7 +33,8 @@ export type Allowed = {
   places: { key: string; city: string; tz: string }[];
 };
 
-export type ValidCall = { id: string; name: string; args: Record<string, string>; result?: string };
+/** `artifact` is set only for render_artifact: the rebuilt spec the route sends as an `artifact` frame (no tool row). */
+export type ValidCall = { id: string; name: string; args: Record<string, string>; result?: string; artifact?: ArtifactSpec };
 
 const fn = (name: string, description: string, properties: Record<string, unknown> = {}, required: string[] = []): ToolDef => ({
   type: "function",
@@ -52,6 +56,12 @@ export function toolDefs(a: Allowed): ToolDef[] {
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
     fn("local_time", "Current local time in one of Rithvik's places.", { place: enumOf(a.places.map((p) => p.city), "City") }, ["place"]),
+    fn("render_artifact", `Show the visitor a small chart or table of facts that are in the Profile or Records, drawn by the site from your data. Use only when a visual genuinely beats prose: a timeline of roles, a comparison of projects, skills by area, a few headline stats. Never invent numbers or dates; if the facts aren't there, answer in text. It renders at once and nothing needs confirming. Limits: up to ${MAX_POINTS} points, ${MAX_SERIES} series, ${MAX_ROWS} rows x ${MAX_COLS} columns, text up to ${MAX_TEXT} chars, finite numbers, no links or markup. data shape by type: bar|line|area {labels:[..], series:[{name, values:[numbers, one per label]}]}; donut {slices:[{label, value}]} (up to 8); timeline {items:[{label, start:"2024" or "2024-06", end?:"2025-01" or "present", note?}]}; table {columns:[..], rows:[[cells..]]}; stats {items:[{label, value, note?}]} (up to 8); graph {nodes:[{id,label,group?}], edges:[{from,to}]}.`, {
+      type: enumOf([...ARTIFACT_TYPES], "Chart form"),
+      title: { type: "string", description: "A few words naming what is shown" },
+      unit: { type: "string", description: "Optional unit for numbers, like % or ms" },
+      data: { type: "object", description: "Shape depends on type (see tool description)" },
+    }, ["type", "title", "data"]),
     ...(calendarTools as unknown as ToolDef[]),
     fn("request_meeting", "Prepare a meeting or interview request to Rithvik from what the visitor told you. It is NOT sent: the visitor reviews and confirms it on the page first.", {
       name: { type: "string", description: "Visitor's name" },
@@ -96,6 +106,12 @@ function meetingError(args: string): string {
   } catch {
     return "";
   }
+}
+
+/** Why a render_artifact call was refused, worded for the model to fix and retry; "" when it parses. */
+function artifactError(args: string): string {
+  const p = parseArtifact(args.trim() ? args : "{}");
+  return p.ok ? "" : p.error;
 }
 
 /** "7:42 PM EST" in `tz` at `now`. */
@@ -145,6 +161,10 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
       const body = plain(raw.body, 2000);
       return subject || body ? { id, name: call.name, args: { subject, body } } : null;
     }
+    case "render_artifact": {
+      const p = parseArtifact(raw);
+      return p.ok ? { id, name: call.name, args: { type: p.spec.type, title: p.spec.title }, artifact: p.spec } : null;
+    }
     case "check_availability":
     case "suggest_times": {
       // Values are range-checked by runCalendarTool; here only the known keys survive, as strings for the tool row.
@@ -176,11 +196,19 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
   const replies: { id: string; content: string }[] = [];
   let effects = 0;
   let lookups = 0;
+  let artifacts = 0;
   for (const c of calls) {
     const v = validateToolCall(c, a, now);
     if (!v) {
       const why = c.name === "request_meeting" ? meetingError(c.arguments) : "";
-      replies.push({ id: c.id, content: why ? `Rejected: ${why} Ask the visitor to fix it, then call request_meeting again.` : "Rejected: unknown tool or argument. Do not retry it; answer in text." });
+      const bad = c.name === "render_artifact" ? artifactError(c.arguments) : "";
+      replies.push({ id: c.id, content: why ? `Rejected: ${why} Ask the visitor to fix it, then call request_meeting again.` : bad ? `Rejected: ${bad} Fix the data and call render_artifact once more, or answer in text.` : "Rejected: unknown tool or argument. Do not retry it; answer in text." });
+      continue;
+    }
+    if (v.artifact) {
+      if (++artifacts > MAX_ARTIFACTS) { replies.push({ id: c.id, content: "Rejected: one artifact per answer." }); continue; }
+      kept.push(v);
+      replies.push({ id: c.id, content: "Rendered for the visitor. Do not repeat its data in text; add at most one sentence of takeaway." });
       continue;
     }
     if (CALENDAR.has(v.name)) {
