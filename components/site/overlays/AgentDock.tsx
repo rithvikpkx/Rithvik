@@ -148,7 +148,7 @@ export default function AgentDock() {
         <section className="agent-panel" aria-label="Rithvik's agent">
           <header className="agent-head">
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
-            <span className="agent-model">gpt-4o-mini</span>
+            <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
               <button type="button" className="ag-btn" aria-label="Full screen (Cmd+Enter)" title="Full screen" onClick={host.toggleFull}><Icon name={full ? "minimize-2" : "maximize-2"} /></button>
               <button type="button" className="ag-btn" aria-label="Close (Esc)" title="Close" onClick={close}><Icon name="chevron-down" /></button>
