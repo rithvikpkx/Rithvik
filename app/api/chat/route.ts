@@ -6,6 +6,7 @@ import { generateSuggestions, SUGGESTIONS_SENTINEL } from "@/lib/suggestions";
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 import { deriveActions, isDeclineAnswer } from "@/lib/chat-actions";
 import { loadActionLinks } from "@/lib/action-links";
+import { rateLimit, clientKey } from "@/lib/rate-limit";
 
 // gpt-4o-mini follows the "refuse if not in context" rule reliably, unlike
 // the previous deepseek-chat which routinely fabricated facts (Penn State,
@@ -50,8 +51,8 @@ const MAX_INPUT_LENGTH = 500;
 const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the RagBot client slice
 const MAX_HISTORY_CHARS = 2000; // per-turn cap; history is client-supplied, so it needs its own bound
 const MATCH_COUNT_PER_SOURCE = 10; // top-N chunks pulled per store
-const RATE_LIMIT = 30; // chat turns per IP per window
-const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT = 30; // chat turns per IP (IPv6: per /64) per hour
+const RATE_LIMIT_GLOBAL = 600; // all callers per hour; caps OpenAI spend if many IPs are used
 const CANNED_NO_CONTEXT_REPLY =
 	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
 
@@ -67,12 +68,6 @@ function streamText(text: string): Response {
 	return new Response(readable, {
 		headers: { "Content-Type": "text/plain; charset=utf-8" },
 	});
-}
-
-/** Best-effort client IP from Vercel's forwarding header. Mirrors /api/contact. */
-function clientIp(req: Request): string {
-	const fwd = req.headers.get("x-forwarded-for");
-	return (fwd?.split(",")[0] ?? "").trim() || "unknown";
 }
 
 /** Keep only well-formed turns and clamp each one. `messages` arrives from the
@@ -124,41 +119,21 @@ export async function POST(req: Request) {
 
 	// Rate limit BEFORE spending anything on OpenAI — this endpoint is public and
 	// each accepted turn costs three API calls (HyDE, embedding, completion).
-	const ip = clientIp(req);
-	const db = adminClient();
-	const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
-	const { count } = await db
-		.from("chat_requests")
-		.select("id", { count: "exact", head: true })
-		.eq("ip", ip)
-		.gte("created_at", since);
-	if ((count ?? 0) >= RATE_LIMIT) {
-		// Tell the client when the window actually reopens: the oldest request
-		// still inside it ages out first. Only queried on the limited path, so
-		// the normal path still costs one round-trip.
-		const { data: oldest } = await db
-			.from("chat_requests")
-			.select("created_at")
-			.eq("ip", ip)
-			.gte("created_at", since)
-			.order("created_at", { ascending: true })
-			.limit(1)
-			.maybeSingle();
-		const resetAt = oldest?.created_at
-			? new Date(oldest.created_at).getTime() + RATE_WINDOW_MS
-			: Date.now() + RATE_WINDOW_MS;
-		const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
-		return new Response("You've reached the message limit. Please try again later.", {
-			status: 429,
+	// The hit is recorded atomically before the work, so bursts and failed turns both count.
+	const limited = await rateLimit("chat", clientKey(req), RATE_LIMIT, RATE_LIMIT_GLOBAL);
+	if (!limited.ok) {
+		const text = limited.status === 429
+			? "You've reached the message limit. Please try again later."
+			: "Chat is temporarily unavailable. Please try again shortly.";
+		return new Response(text, {
+			status: limited.status,
 			headers: {
-				"Retry-After": String(retryAfter),
+				"Retry-After": String(limited.retryAfter),
 				"Content-Type": "text/plain; charset=utf-8",
 			},
 		});
 	}
-	// Record the attempt before doing the work, so concurrent bursts can't all
-	// slip through the check and a failed turn still counts against the window.
-	await db.from("chat_requests").insert({ ip });
+	const db = adminClient();
 
 	// HyDE (Hypothetical Document Embeddings): generate a plausible 1-2 sentence
 	// statement-form answer to the user's question, then embed BOTH the question

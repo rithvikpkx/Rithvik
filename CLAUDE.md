@@ -131,7 +131,7 @@ Visitors can email Rithvik directly from the site via a draggable, resizable, th
 - **`ContactComposer.tsx`** — the floating window. **Non-modal**: `.composer-overlay` is `pointer-events:none` so the site stays interactive; only the panel captures events. Draggable via header; resizable from bottom-right; size persisted to `localStorage[contact-composer-size]`. **Lazy useState initializer** computes the centered start position (not an effect — avoids `react-hooks/set-state-in-effect`), so `left/top/width/height` are always inline. Mobile (≤640px) overrides to a full-screen sheet with `!important`. Esc closes; From autofocuses; the "To" row has a **copy-address fallback** button.
 - **`RichTextEditor.tsx`** — contentEditable body editor with a toolbar (bold/italic/underline/strikethrough/bullet list/numbered list/link) via `document.execCommand` — deprecated but dep-free, matching `SimpleMarkdown`'s philosophy.
 - **`lib/sanitize-html.ts`** — allowlist sanitizer (`sanitizeEmailHtml`, `htmlToText`). Reconstructs each kept tag from scratch so raw attributes (`onclick`/`style`/`javascript:`) never survive; drops `<script>`/`<style>` entirely. Allowlist: `b, strong, i, em, u, s, strike, ul, ol, li, p, br, a[safe href]`. Unit-tested via `node:test` (`node --experimental-strip-types --test lib/sanitize-html.test.ts`), which needed `allowImportingTsExtensions: true` in `tsconfig.json` (valid under `noEmit`).
-- **`app/api/contact/route.ts`** — POST handler. **Honeypot**: hidden field filled → fake 200, dropped. Validates email/subject/body, **re-sanitizes body server-side** (server is the gate). **Rate limit**: 3 sends/hr/IP via `contact_submissions`. Sends via Resend HTTP API (`fetch`) from `CONTACT_FROM` to `CONTACT_TO`, visitor address in `reply_to` only (never `from` — SPF/DKIM). Sender display name HTML-escaped before header interpolation. Logs each send.
+- **`app/api/contact/route.ts`** — POST handler. **Honeypot**: hidden field filled → fake 200, dropped. Validates email/subject/body, **re-sanitizes body server-side** (server is the gate). **Rate limit**: 3 sends/hr per IP (IPv6 /64) + 50/hr global via `lib/rate-limit.ts` → `rate_limit_hit` RPC (atomic, fails closed); `contact_submissions` stays the send log. Sends via Resend HTTP API (`fetch`) from `CONTACT_FROM` to `CONTACT_TO`, visitor address in `reply_to` only (never `from` — SPF/DKIM). Sender display name HTML-escaped before header interpolation. Logs each send.
 - **`components/DeferredOverlays.tsx`** — mounts `RagBot`, `SecondaryContextPanel`, `ContactComposer`, all `dynamic(..., { ssr:false })`, split out of the initial bundle. Derives composer `toAddress` from `contact.link.email`.
 
 **Phase 2 polish:**
@@ -180,7 +180,7 @@ Floating **"Ask RAG"** launcher (bottom-right, lazy via `DeferredOverlays`) open
   - Embedding is **batched** (`embedTexts`, 64/request) — that is what keeps a re-chunk inside the serverless timeout. There is no `maxDuration` in the repo.
 
 `app/api/chat/route.ts` per turn:
-0. **Guard rails before any spend** — malformed JSON → 400; `message` ≤500 chars; client `messages` filtered and clamped to 5 turns × 2000 chars (history enters the system prompt *and* replays as real turns, so uncapped it is both a cost amplifier and a way to forge an assistant turn); then 30/hr/IP via `chat_requests`, recorded *before* the work so bursts and failures both count. The 429 carries `Retry-After`.
+0. **Guard rails before any spend** — malformed JSON → 400; `message` ≤500 chars; client `messages` filtered and clamped to 5 turns × 2000 chars (history enters the system prompt *and* replays as real turns, so uncapped it is both a cost amplifier and a way to forge an assistant turn); then 30/hr per IP (IPv6 /64) + 600/hr global via `lib/rate-limit.ts` → `rate_limit_hit` RPC, recorded atomically *before* the work so bursts and failures both count; limiter error → 503 (fails closed). The 429 carries `Retry-After`.
 1. **HyDE** — question + hypothetical embedded together, so question-form queries match statement-form chunks.
 2. **Parallel retrieval** — `match_primary` + `match_secondary`, top 10 each; a failed source falls back to `[]`.
 3. **Empty-context guard** — both empty → canned refusal, no LLM call. Returns via `streamText()`, so it carries no trailer.
@@ -229,9 +229,10 @@ All in the Supabase public schema:
 - `secondary_embeddings` — pgvector for secondary chunks; FK to `secondary_documents` `on delete cascade`.
 - `contact_submissions` — rate-limit window + contact log for the inline email composer (id, created_at, ip, from_email, subject, status). Service-role only; RLS enabled with no anon policies.
 
-- `chat_requests` — per-IP rate-limit window for `/api/chat` (id, created_at, ip). Service-role only. A counter, not a log: rows outside the window are disposable.
+- `rate_limit_hits` — generic rate-limit window (bucket, key, created_at) behind the `rate_limit_hit` RPC; pruned per call. Service-role only.
+- `chat_requests` — legacy `/api/chat` counter, no longer written (superseded by `rate_limit_hits`).
 
-RLS: content tables are `SELECT`-public (each gated on `published` where the column exists), **writes via service-role in server actions only — no table carries a write policy**; the RAG tables + `contact_submissions` + `chat_requests` are service-role for read+write.
+RLS: content tables are `SELECT`-public (each gated on `published` where the column exists), **writes via service-role in server actions only — no table carries a write policy**; the RAG tables + `contact_submissions` + `chat_requests` + `rate_limit_hits` are service-role for read+write.
 
 > `projects`/`experience`/`site_content` once carried `FOR ALL USING (auth.role() = 'authenticated')`, which is true for *any* signed-in user of the project — combined with open signups that let anyone rewrite the site through PostgREST with the public anon key, bypassing every app-layer guard. `supabase/tighten_content_rls.sql` removed them. **Never add a write policy keyed on `auth.role()`**; the service role bypasses RLS, so server actions need no policy at all.
 
@@ -247,6 +248,7 @@ RLS: content tables are `SELECT`-public (each gated on `published` where the col
 - `seed_missing_site_content.sql` — upserts `hero.name.line2`, `contact.link.github`, `contact.link.email` (previously only component fallbacks; now DB-backed so /buffett + RAG see them)
 - `tighten_content_rls.sql` — **security**: drops the `auth.role() = 'authenticated'` write policies on `projects`/`experience`/`site_content` (see the RLS note above). Idempotent.
 - `chat_rate_limit_migration.sql` — `chat_requests` table for the `/api/chat` per-IP limit, plus tightens `education`'s public-read to `published = true` (drafts were readable via the anon API)
+- `rate_limit_rpc_migration.sql` — `rate_limit_hits` + atomic `rate_limit_hit()` RPC (per-bucket advisory lock, per-key + global caps; execute revoked from anon/authenticated); prunes `chat_requests`
 
 The linked project is **`Rithvik`** (not `rithvikpkx's Project` or `Grind-Catapult26` — three under the same org).
 
