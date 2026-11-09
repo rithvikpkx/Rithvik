@@ -46,6 +46,7 @@ type ViewProps = {
   onSelect: (id: string, from?: [x: number, y: number]) => void; // `from` = click point
   dividerAt?: number; // index of the first item of the second group (draws a divider before it)
   style?: CSSProperties; // e.g. colour tokens when the page has no palette vars
+  link?: { href: string; label: string }; // a plain page link after the pills; never selectable, so never cycled
 };
 
 /** Old site: the palette rows from ThemeProvider. */
@@ -58,10 +59,15 @@ export default function ThemeDial() {
 }
 
 /** The dial itself, driven by any item list (the v7 site passes designs + palettes). */
-export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: setTheme, dividerAt, style }: ViewProps) {
+export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: setTheme, dividerAt, style, link }: ViewProps) {
   const selectedIdx = Math.max(0, sorted.findIndex((t) => t.id === currentSlug));
   // Fan position; items past the divider sit a little further out to make room for it.
   const slot = (i: number) => i + (dividerAt !== undefined && i >= dividerAt ? 0.6 : 0);
+
+  // The link sits one group further out (after its own divider) than the last pill.
+  const linkSlot = slot(sorted.length - 1) + 1.6;
+  const linkRef = useRef<HTMLAnchorElement | null>(null);
+  const place = (sl: number) => { const d = sl - slot(selectedIdx); return `translate(0, calc(-50% + ${d * ITEM_SPACING}px)) rotate(${d * STEP_DEG}deg)`; };
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -199,6 +205,7 @@ export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: s
     else if (e.key === "End") next = sorted.length - 1;
     else return;
     e.preventDefault();
+    if (next >= sorted.length && link) { linkRef.current?.focus(); return; } // past the last pill: the link
     next = Math.max(0, Math.min(sorted.length - 1, next));
     if (next === selectedIdx) return;
     const targetSlug = sorted[next].id;
@@ -213,7 +220,7 @@ export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: s
   return (
     <aside
       className={`theme-dial-aside${isWiggling ? " is-wiggling" : ""}`}
-      role="radiogroup"
+      role="group"
       aria-label="Theme selector"
       style={style}
     >
@@ -242,6 +249,7 @@ export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: s
               style={{ transform: `translate(0, calc(-50% + ${(dividerAt - 0.2 - slot(selectedIdx)) * ITEM_SPACING}px)) rotate(${(dividerAt - 0.2 - slot(selectedIdx)) * STEP_DEG}deg)` }}
             />
           )}
+          <div role="radiogroup" aria-label="Themes" style={{ display: "contents" }}>
           {sorted.map((t, i) => {
             const active = t.id === currentSlug;
             const distance = slot(i) - slot(selectedIdx);
@@ -283,6 +291,30 @@ export function ThemeDialView({ items: sorted, current: currentSlug, onSelect: s
               </button>
             );
           })}
+          </div>
+          {link && (
+            <>
+              <span className="theme-strip-divider" aria-hidden style={{ transform: place(linkSlot - 0.8) }} />
+              {/* Plain <a>: /buffett is its own root layout, so this must be a full document load. */}
+              <a
+                ref={linkRef}
+                href={link.href}
+                className="theme-strip-link"
+                style={{ transform: place(linkSlot) }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") return;
+                  e.stopPropagation(); // the container's arrows would change the theme
+                  if (e.key !== "ArrowUp" && e.key !== "ArrowLeft") return;
+                  e.preventDefault();
+                  const last = sorted[sorted.length - 1].id;
+                  if (last !== currentSlug) setTheme(last);
+                  buttonRefs.current[last]?.focus();
+                }}
+              >
+                {link.label}
+              </a>
+            </>
+          )}
         </div>
       </div>
     </aside>

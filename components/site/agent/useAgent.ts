@@ -27,6 +27,8 @@ export type Host = {
   openResume: () => void;
   openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void;
   openPlay: (id?: string) => void;
+  lite: boolean;
+  setLite: (on: boolean) => void;
   close: () => void;
   toggleFull: () => void;
   toast: (message: string) => void;
@@ -477,12 +479,13 @@ export function useAgent(host: Host) {
         add, ask, clear, scroll, copy, turns, exportMd, usage: showUsage, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
         openCase: host.openCase, openResume: host.openResume, openComposer: compose,
+        openPlay: host.openPlay, lite: host.lite, setLite: host.setLite, share, canShare: !!sessionId && turns.length > 0, download: downloadChat,
       });
     }
     // Starter chips answer instantly from content, with no /api/chat call.
     else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
-  }, [add, ask, clear, compose, converse, cooldown, copy, exportMd, history, host, interrupt, scroll, showUsage, turns]);
+  }, [add, ask, clear, compose, converse, cooldown, copy, exportMd, downloadChat, history, host, interrupt, scroll, sessionId, share, showUsage, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {

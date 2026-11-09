@@ -57,7 +57,7 @@ export default function AgentDock() {
     return {
       content, design, caseSlug,
       view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
-      openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay),
+      openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay), lite: site.lite, setLite: site.setLite,
       close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
     };
   }, [content, design, caseSlug, site, close]);

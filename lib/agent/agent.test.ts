@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ADMIN_COMMANDS, COMMANDS, formatDocs, formatEmbed, isAdminCommand, matchCommands, parseCommand, parseTemp } from "./commands.ts";
+import { ADMIN_COMMANDS, COMMANDS, NEEDS_ARG, NO_ARG, runsOnClick, formatDocs, formatEmbed, isAdminCommand, matchCommands, parseCommand, parseTemp } from "./commands.ts";
 import { HISTORY_MAX, loadHistory, pushHistory, saveHistory, stepHistory } from "./history.ts";
 import { formatRetry, formatTokens, spinFrame, statusSegments, usageLines, verbAt, VERBS } from "./status.ts";
 
@@ -46,12 +46,21 @@ test("parseCommand splits name and arg, flags unknown", () => {
 });
 
 test("every documented command parses as known", () => {
-  assert.equal(COMMANDS.length, 13);
+  assert.equal(COMMANDS.length, 26);
   for (const [c] of COMMANDS) assert.equal(parseCommand(c)?.known, true);
 });
 
+test("every visitor command is documented once and help chips fill only when an argument is required", () => {
+  assert.equal(new Set(COMMANDS.map(([c]) => c)).size, COMMANDS.length);
+  for (const c of ["/home", "/status", "/buffett", "/compose", "/play", "/palette", "/lite", "/share", "/download", "/voice"]) assert.equal(parseCommand(c)?.known, true, c);
+  for (const [c] of COMMANDS) if (NO_ARG.has(c)) assert.equal(runsOnClick(c), true);
+  assert.equal(runsOnClick("/palette"), false);
+  assert.equal([...NEEDS_ARG].every((c) => !NO_ARG.has(c)), true);
+});
+
 test("matchCommands completes prefixes and stops at an argument", () => {
-  assert.deepEqual(matchCommands("/p").map(([c]) => c), ["/projects"]);
+  assert.deepEqual(matchCommands("/pr").map(([c]) => c), ["/projects"]);
+  assert.deepEqual(matchCommands("/p").map(([c]) => c), ["/projects", "/play", "/palette"]);
   assert.equal(matchCommands("/").length, COMMANDS.length);
   assert.deepEqual(matchCommands("/theme random"), []);
   assert.deepEqual(matchCommands("hello"), []);

@@ -13,5 +13,5 @@ export default function DesignDial() {
   // Designs define no palette vars, so the dial is tinted from the active entry instead.
   const style = { "--bg": cur.bg, "--text": cur.fg, "--accent": cur.accent, "--panel-glass": `color-mix(in srgb, ${cur.bg} 90%, transparent)` } as CSSProperties;
   const split = entries.findIndex((e) => e.kind === "palette");
-  return <ThemeDialView items={items} current={current} onSelect={setDesign} dividerAt={split > 0 ? split : undefined} style={style} />;
+  return <ThemeDialView items={items} current={current} onSelect={setDesign} dividerAt={split > 0 ? split : undefined} style={style} link={{ href: "/buffett", label: "Warren Buffett" }} />;
 }

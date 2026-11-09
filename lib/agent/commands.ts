@@ -3,16 +3,29 @@
 
 export const COMMANDS: [name: string, help: string][] = [
   ["/help", "Show commands and shortcuts"],
-  ["/resume", "Open the resume"],
+  ["/home", "Scroll to the top"],
+  ["/about", "Jump to the about section"],
+  ["/work", "Jump to the work section"],
   ["/projects", "List projects, or /projects <name>"],
   ["/experience", "Show experience"],
-  ["/contact", "Draft an email to Rithvik"],
+  ["/resume", "Open the resume"],
+  ["/contact", "Jump to the contact section"],
+  ["/compose", "Draft an email to Rithvik: /compose [subject]"],
+  ["/play", "List the games, or /play <game>"],
   ["/theme", "Switch design: /theme <name|random|list>"],
+  ["/palette", "Switch palette: /palette <slug>"],
+  ["/lite", "Performance mode: /lite [on|off]"],
+  ["/status", "Open the live status page"],
+  ["/buffett", "Open the plain-HTML Warren Buffett page"],
   ["/now", "Where Rithvik is right now"],
-  ["/clear", "Clear the conversation"],
+  ["/share", "Copy a link to this conversation"],
+  ["/copy", "Copy the transcript as Markdown"],
   ["/export", "Copy the transcript as Markdown"],
+  ["/download", "Download the transcript as Markdown"],
+  ["/voice", "How to talk to the agent"],
   ["/history", "Show recent prompts"],
   ["/usage", "Rate limit, tokens and timings"],
+  ["/clear", "Clear the conversation"],
   ["/fullscreen", "Toggle full screen"],
   ["/quit", "Close the agent"],
 ];
@@ -32,7 +45,13 @@ export function isAdminCommand(cmd: { name: string; arg: string }): boolean {
 }
 
 /** Commands that take no argument, so the palette runs them on Enter instead of completing. */
-export const NO_ARG = new Set(["/help", "/resume", "/experience", "/now", "/clear", "/export", "/history", "/usage", "/fullscreen", "/quit", "/embed", "/docs", "/resume sync"]);
+export const NO_ARG = new Set(["/help", "/home", "/about", "/work", "/resume", "/experience", "/contact", "/status", "/buffett", "/now", "/share", "/copy", "/download", "/voice", "/clear", "/export", "/history", "/usage", "/fullscreen", "/quit", "/embed", "/docs", "/resume sync"]);
+
+/** Commands that do nothing without an argument: a /help chip fills the input instead of running them. */
+export const NEEDS_ARG = new Set(["/palette"]);
+
+/** True when clicking a /help chip for this command should run it (everything but NEEDS_ARG). */
+export const runsOnClick = (name: string): boolean => !NEEDS_ARG.has(name);
 
 /** Splits "/projects boiler frame" into name and argument; null when the input is not a command. */
 export function parseCommand(raw: string): { name: string; arg: string; known: boolean } | null {

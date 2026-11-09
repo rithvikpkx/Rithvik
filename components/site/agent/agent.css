@@ -48,6 +48,8 @@
 .t-starters, .t-sugg { display: flex; flex-wrap: wrap; gap: 8px; }
 .t-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid var(--a-line); background: transparent; color: var(--a-fg); border-radius: 8px; padding: 6px 10px; font: 400 13px/1.3 var(--a-mono); cursor: pointer; text-align: left; }
 .t-chip:hover { border-color: var(--a-accent); }
+.t-cmds { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.t-cmds .t-chip { padding: 3px 8px; margin-right: 6px; } /* a chip per command: click runs it, or fills it when it needs an argument */
 .t-chip.sugg { border-style: dashed; } /* fills the input, never sends */
 .t-user { margin: 8px 0 0; white-space: pre-wrap; font: 400 14px/1.6 var(--a-mono); color: var(--a-fg); overflow-wrap: anywhere; }
 .t-user::before { content: "❯ "; color: var(--a-accent); }

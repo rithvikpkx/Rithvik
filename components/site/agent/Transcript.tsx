@@ -1,6 +1,6 @@
 "use client";
 import { memo } from "react";
-import { COMMANDS } from "@/lib/agent/commands";
+import { COMMANDS, runsOnClick } from "@/lib/agent/commands";
 import { STARTER_QUESTIONS } from "@/lib/agent/starters";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
@@ -69,7 +69,13 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
         <div className="t-line">
           <span className="t-dot" aria-hidden="true">⏺</span>
           <div className="t-body">
-            <p>{COMMANDS.map(([c, d]) => <span key={c}><code>{c}</code> {d}<br /></span>)}</p>
+            <ul className="t-cmds" aria-label="Commands">
+              {COMMANDS.map(([c, d]) => (
+                <li key={c}>
+                  <button type="button" className="t-chip" title={runsOnClick(c) ? `Run ${c}` : `Fill ${c}`} onClick={() => (runsOnClick(c) ? h.send(c) : h.fill(`${c} `))}>{c}</button> {d}
+                </li>
+              ))}
+            </ul>
             <p className="t-tips">Cmd+K or / to summon · up arrow for earlier prompts · esc interrupts, then closes · Cmd+Enter full screen · Ctrl+L clear · Ctrl+U clear line</p>
           </div>
         </div>
