@@ -146,9 +146,9 @@ export default function AgentDock() {
   return (
     <div className="agent" data-open={open} data-full={open && full} data-pending={!open && !!agent.pending}>
       {open && (
-        <section className="agent-panel" aria-label="Rithvik's agent">
+        <section className="agent-panel" aria-label="RAG, Rithvik's agent">
           <header className="agent-head">
-            <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
+            <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
               <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>

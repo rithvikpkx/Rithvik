@@ -21,14 +21,14 @@ const ASK_DONE: Record<string, string> = { yes: "Allowed", no: "Skipped", always
 /** Welcome box: rows are padded to a fixed width so the box-drawing frame lines up in a mono font. */
 function banner(projects: number, roles: number): string {
   const W = 36;
-  const rows = ["✻ rithvik.ai agent", `  grounded in ${projects} projects + ${roles} roles`, "  /help · esc to interrupt"];
+  const rows = ["✻ RAG · Rithvik Augmented Generation", `  grounded in ${projects} projects + ${roles} roles`, "  /help · esc to interrupt"];
   const pad = (t: string) => t + " ".repeat(Math.max(0, W - [...t].length));
   return `╭${"─".repeat(W + 2)}╮\n${rows.map((r) => `│ ${pad(r)} │`).join("\n")}\n╰${"─".repeat(W + 2)}╯`;
 }
 
 /** Wraps the mark and /help in accent spans without ever touching the text itself. */
 function accent(box: string) {
-  return box.split(/(✻|\/help)/).map((p, i) => (p === "✻" || p === "/help" ? <span key={i} className="acc">{p}</span> : p));
+  return box.split(/(✻|\/help|RAG)/).map((p, i) => (p === "✻" || p === "/help" || p === "RAG" ? <span key={i} className="acc">{p}</span> : p));
 }
 
 const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item; h: RowHandlers; projects: number; roles: number; first: boolean }) {
