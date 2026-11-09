@@ -3,7 +3,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
 import { DesignContext } from "../DesignProvider";
 import { useSite } from "../SiteProvider";
-import Icon from "../agent/Icon";
+import { Icon } from "../Glyph";
 import StatusLine from "../agent/StatusLine";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";

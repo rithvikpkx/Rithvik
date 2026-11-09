@@ -2,7 +2,7 @@
 import { memo } from "react";
 import { COMMANDS } from "@/lib/agent/commands";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
-import Icon from "./Icon";
+import { Icon } from "../Glyph";
 import type { Choice, Item } from "./types";
 
 export type RowHandlers = {
