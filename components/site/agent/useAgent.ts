@@ -9,6 +9,7 @@ import { scrollAndHighlight } from "./highlight";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from "@/lib/suggestion-protocol";
 import { GAMES } from "@/lib/play/games";
+import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
@@ -33,7 +34,12 @@ export type Host = {
 
 type Cooldown = { until: number; status: 429 | 503 };
 type Run = { ctl: AbortController; answered: boolean };
-type Ask = { question: string; key: string; go: () => void; tool?: { name: string; args: string } };
+type Ask = { question: string; key: string; go: () => void; tool?: { name: string; args: string }; detail?: string[]; once?: boolean };
+
+const SESSION_KEY = "rithvik-agent-session";
+/** The server-issued conversation id for this tab, or null (no storage, or no turn answered yet). */
+const readSession = () => { try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; } };
+const writeSession = (id: string | null) => { try { if (id) sessionStorage.setItem(SESSION_KEY, id); else sessionStorage.removeItem(SESSION_KEY); } catch { /* private mode: the id just isn't remembered */ } };
 
 /** Clips a question for the Search(...) row. */
 const clip = (s: string, n = 48) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -49,6 +55,7 @@ export function useAgent(host: Host) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [cooldown, setCooldown] = useState<Cooldown | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(readSession); // lazy: the dock only mounts client-side
   // Lazy init (not an effect): the dock only mounts client-side, so localStorage is there.
   const [history, setHistory] = useState<string[]>(() => loadHistory(typeof localStorage === "undefined" ? undefined : localStorage));
 
@@ -104,20 +111,20 @@ export function useAgent(host: Host) {
         a.go();
         continue;
       }
-      asks.current.set(add({ kind: "ask", question: a.question, state: "pending", tool: a.tool }), a);
+      asks.current.set(add({ kind: "ask", question: a.question, state: "pending", tool: a.tool, detail: a.detail, once: a.once }), a);
     }
   }, [add]);
 
   /** Queues a side effect behind a permission row. One row is pending at a time, in request order. */
-  const ask = useCallback((question: string, key: string, go: () => void, tool?: Ask["tool"]) => {
-    queue.current.push({ question, key, go, tool });
+  const ask = useCallback((question: string, key: string, go: () => void, tool?: Ask["tool"], extra?: Pick<Ask, "detail" | "once">) => {
+    queue.current.push({ question, key, go, tool, ...extra });
     pump();
   }, [pump]);
 
   /** Resolves a confirmation: Yes and Always run it, No drops it; then the next one shows. */
   const answerAsk = useCallback((id: number, choice: Choice) => {
     const a = asks.current.get(id);
-    if (!a) return;
+    if (!a || (a.once && choice === "always")) return; // a send is confirmed every time
     asks.current.delete(id);
     if (choice === "always") always.current.add(a.key);
     patch(id, (i) => (i.kind === "ask" ? { ...i, state: choice } : i));
@@ -153,6 +160,23 @@ export function useAgent(host: Host) {
     ask(`Scroll to ${section}?`, "navigate", () => scroll(r.kind === "scroll" ? r.ids : ["work", "top"]));
   }, [ask, host, scroll]);
 
+  /** Sends a meeting request the visitor just confirmed; the row shows the outcome. Only ever called from the confirmation. */
+  const sendMeeting = useCallback(async (m: Record<string, string>) => {
+    const rid = add({ kind: "tool", name: "Meeting", args: m.email });
+    const done = (result: string) => patch(rid, (i) => (i.kind === "tool" ? { ...i, result } : i));
+    try {
+      const res = await fetch("/api/agent/meeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...m, times: (m.times ?? "").split("\n"), sessionId: readSession() }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      done(res.ok ? `Sent. Rithvik will reply to ${m.email}` : j.error || "Could not send right now.");
+    } catch {
+      done("Could not send right now.");
+    }
+  }, [add, patch]);
+
   /** Runs a model tool call the server already validated; the client re-checks names against
    *  content before acting. Side effects ask first; switch_design runs at once with Undo. */
   const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>) => {
@@ -161,6 +185,11 @@ export function useAgent(host: Host) {
     switch (e.name) {
       case "local_time":
         add({ kind: "tool", name: tool.name, args: tool.args, result: e.result ?? "time unavailable" });
+        return;
+      case "check_availability":
+      case "suggest_times":
+        // The server already ran it; the summary is free/busy and times only.
+        add({ kind: "tool", name: "Calendar", args: [e.name, a.startISO ?? a.fromISO].filter(Boolean).join(", "), result: e.result ?? "Calendar unavailable" });
         return;
       case "switch_design": {
         const d = host.design;
@@ -181,6 +210,13 @@ export function useAgent(host: Host) {
         ask(`Scroll to ${sectionName(a.id)}?`, "navigate", () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)), tool);
         return;
       }
+      case "request_meeting": {
+        if (!a.name || !a.email || !a.times) return;
+        const detail = [`To: Rithvik`, `Name: ${a.name}`, `Email: ${a.email}`, a.company && `Company: ${a.company}`, a.role && `Role: ${a.role}`,
+          `Times: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
+        ask("Send this to Rithvik?", "meeting", () => void sendMeeting(a), { name: "RequestMeeting", args: a.name }, { detail, once: true });
+        return;
+      }
       case "open_resume": ask("Open the resume?", "resume", host.openResume, tool); return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
@@ -191,11 +227,24 @@ export function useAgent(host: Host) {
         ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => host.openComposer(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
         return;
     }
-  }, [add, ask, host, scroll, sectionName]);
+  }, [add, ask, host, scroll, sectionName, sendMeeting]);
 
   const copy = useCallback((text: string, msg: string) => {
     navigator.clipboard?.writeText(text).then(() => host.toast(msg), () => {});
   }, [host]);
+
+  /** Copies a read-only link to this conversation (the server mints it for the session this tab holds). */
+  const share = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const r = await createShareLink(sessionId);
+      if (!r.ok) return host.toast(r.error);
+      await navigator.clipboard.writeText(location.origin + r.path);
+      host.toast("Link copied · expires in 30 days");
+    } catch {
+      host.toast("Could not copy the link");
+    }
+  }, [host, sessionId]);
 
   /** Marks every answer row of the turn as finished. */
   const settle = useCallback((ids: number[]) => ids.forEach((id) => patch(id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i))), [patch]);
@@ -252,9 +301,13 @@ export function useAgent(host: Host) {
           messages: turns.flatMap((t) => [{ role: "user", content: t.q }, { role: "assistant", content: t.a }]).slice(-5),
           offered: turns.slice(-2).flatMap((t) => t.suggestions),
           context,
+          sessionId: readSession() ?? undefined,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
       if (gone()) return;
+      const sid = res.headers.get("X-Agent-Session");
+      if (sid && sid !== readSession()) { writeSession(sid); setSessionId(sid); }
       if (!res.ok) {
         const text = (await res.text().catch(() => "")).trim();
         if (res.status === 429 || res.status === 503) {
@@ -337,6 +390,8 @@ export function useAgent(host: Host) {
     undos.current.clear();
     setBusySince(null);
     setTurns([]);
+    writeSession(null); // a cleared transcript is a new conversation server-side too
+    setSessionId(null);
     setItems([{ id: ++seq.current, kind: "banner" }]);
   }, []);
 
@@ -383,5 +438,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
 }

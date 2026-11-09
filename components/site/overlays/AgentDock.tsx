@@ -151,6 +151,7 @@ export default function AgentDock() {
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
             <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
+              <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>
               <button type="button" className="ag-btn" aria-label="Full screen (Cmd+Enter)" title="Full screen" onClick={host.toggleFull}><Icon name={full ? "minimize-2" : "maximize-2"} /></button>
               <button type="button" className="ag-btn" aria-label="Close (Esc)" title="Close" onClick={close}><Icon name="chevron-down" /></button>
             </span>
@@ -174,9 +175,9 @@ export default function AgentDock() {
       {!open && agent.pending && (
         // A multi-step turn can open a case sheet (collapsing the panel) with more steps queued: confirm them here.
         <div className="agent-pending" role="group" aria-label="Agent wants to">
-          <span className="q">{agent.pending.question}</span>
-          <button type="button" className="t-key primary" onClick={() => agent.answerAsk(agent.pending!.id, "yes")}>⏎ Yes</button>
-          <button type="button" className="t-key" onClick={() => agent.answerAsk(agent.pending!.id, "no")}>n No</button>
+          <span className="q">{agent.pending.question}{agent.pending.detail && ` ${agent.pending.detail.slice(1).join(" · ")}`}</span>
+          <button type="button" className="t-key primary" onClick={() => agent.answerAsk(agent.pending!.id, "yes")}>{agent.pending.once ? "⏎ Send" : "⏎ Yes"}</button>
+          <button type="button" className="t-key" onClick={() => agent.answerAsk(agent.pending!.id, "no")}>{agent.pending.once ? "n Edit" : "n No"}</button>
         </div>
       )}
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>

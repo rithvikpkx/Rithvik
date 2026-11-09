@@ -3,6 +3,8 @@
  *  against content/registry here and anything unknown is dropped. No tool takes or returns a
  *  URL. Pure (no "@/" imports) so node:test can load it. */
 import type { ToolCall, ToolDef } from "../openai.ts";
+import { calendarTools, runCalendarTool } from "../calendar/tools.ts";
+import { validateMeeting } from "./meeting.ts";
 
 /** Whole-page sections every design carries (plus project-<slug> / experience-<slug>). */
 export const SECTION_IDS = ["top", "work", "experience", "about", "play", "questions", "contact"];
@@ -10,7 +12,14 @@ export const SECTION_IDS = ["top", "work", "experience", "about", "play", "quest
 export const MAX_STEPS = 3;
 /** At most this many side-effect tools per step; extras are dropped. */
 export const MAX_SIDE_EFFECTS = 2;
-const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email"]);
+/** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
+const CALENDAR = new Set(["check_availability", "suggest_times"]);
+const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
+/** At most this many calendar lookups per step; extras are rejected. */
+const MAX_CALENDAR = 4;
+const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting"]);
+/** Stands in for the real session id when validating a meeting request's fields; the id is checked again at send time. */
+const NO_SESSION = "00000000-0000-4000-8000-000000000000";
 
 /** What tool arguments may name, built from the published content + registry for this turn. */
 export type Allowed = {
@@ -43,6 +52,15 @@ export function toolDefs(a: Allowed): ToolDef[] {
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
     fn("local_time", "Current local time in one of Rithvik's places.", { place: enumOf(a.places.map((p) => p.city), "City") }, ["place"]),
+    ...(calendarTools as unknown as ToolDef[]),
+    fn("request_meeting", "Prepare a meeting or interview request to Rithvik from what the visitor told you. It is NOT sent: the visitor reviews and confirms it on the page first.", {
+      name: { type: "string", description: "Visitor's name" },
+      email: { type: "string", description: "Visitor's email, exactly as they gave it" },
+      company: { type: "string", description: "Visitor's company or school" },
+      role: { type: "string", description: "Visitor's role or the role being discussed" },
+      times: { type: "array", items: { type: "string" }, maxItems: 5, description: "1-5 proposed times, each with a date and time, ideally checked free" },
+      notes: { type: "string", description: "Anything else the visitor wants Rithvik to know" },
+    }, ["name", "email", "times"]),
   ];
 }
 
@@ -54,6 +72,30 @@ function plain(v: unknown, max: number): string {
     .replace(/\b(?:https?|javascript|data):\S*/gi, "")
     .trim()
     .slice(0, max);
+}
+
+/** Runs the same checks the send path uses (meeting.ts) over model-supplied fields; notes lose URLs like draft_email's. */
+function checkMeeting(raw: Record<string, unknown>): ReturnType<typeof validateMeeting> {
+  const s = (v: unknown) => (typeof v === "string" ? v : undefined);
+  const times = Array.isArray(raw.times) ? raw.times.filter((t): t is string => typeof t === "string") : [];
+  // The card is read by a person: each time states its own zone, so ISO strings are bounced back to the model.
+  if (times.some((t) => /^\d{4}-\d\d-\d\dT/.test(t.trim()))) return { ok: false, error: 'Write each time as readable text with its zone, like "Tue Nov 10, 10:00 AM PT", not an ISO string.' };
+  return validateMeeting({
+    name: s(raw.name) ?? "", email: s(raw.email) ?? "", company: s(raw.company), role: s(raw.role), times,
+    notes: plain(raw.notes, 2000) || undefined,
+    sessionId: NO_SESSION,
+  });
+}
+
+/** Why a request_meeting call was refused, worded for the model to relay; "" for any other cause. */
+function meetingError(args: string): string {
+  try {
+    const raw = JSON.parse(args || "{}");
+    const m = checkMeeting(raw && typeof raw === "object" ? raw : {});
+    return m.ok ? "" : m.error;
+  } catch {
+    return "";
+  }
 }
 
 /** "7:42 PM EST" in `tz` at `now`. */
@@ -103,6 +145,20 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
       const body = plain(raw.body, 2000);
       return subject || body ? { id, name: call.name, args: { subject, body } } : null;
     }
+    case "check_availability":
+    case "suggest_times": {
+      // Values are range-checked by runCalendarTool; here only the known keys survive, as strings for the tool row.
+      const args = Object.fromEntries(Object.entries(raw).filter(([k, v]) => CALENDAR_KEYS.has(k) && (typeof v === "string" || typeof v === "number")).map(([k, v]) => [k, String(v)]));
+      return { id, name: call.name, args };
+    }
+    case "request_meeting": {
+      const m = checkMeeting(raw);
+      if (!m.ok) return null;
+      const v = m.value;
+      // times travel as one newline-joined string (each was collapsed to a single line); undefined fields are dropped
+      const args = Object.fromEntries(Object.entries({ name: v.name, email: v.email, company: v.company, role: v.role, times: v.times.join("\n"), notes: v.notes }).filter(([, x]) => x));
+      return { id, name: call.name, args: args as Record<string, string> };
+    }
     case "local_time": {
       const v = s("place");
       const p = a.places.find((x) => x.city.toLowerCase() === v || x.key === v) ?? a.places.find((x) => v && v.startsWith(x.city.toLowerCase()));
@@ -112,15 +168,28 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
   return null;
 }
 
-/** Validates a step's calls in order and caps side effects. Returns the kept calls and, for every
- *  call (kept or not), the tool message the model sees next step. */
-export function screenCalls(calls: ToolCall[], a: Allowed, now = new Date()): { kept: ValidCall[]; replies: { id: string; content: string }[] } {
+/** Validates a step's calls in order, caps side effects, and runs calendar lookups (`visitorTz` is the server-checked
+ *  zone and overrides whatever the model passed). Returns the kept calls and, for every call (kept or not), the
+ *  tool message the model sees next step. */
+export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
   const kept: ValidCall[] = [];
   const replies: { id: string; content: string }[] = [];
   let effects = 0;
+  let lookups = 0;
   for (const c of calls) {
     const v = validateToolCall(c, a, now);
-    if (!v) { replies.push({ id: c.id, content: "Rejected: unknown tool or argument. Do not retry it; answer in text." }); continue; }
+    if (!v) {
+      const why = c.name === "request_meeting" ? meetingError(c.arguments) : "";
+      replies.push({ id: c.id, content: why ? `Rejected: ${why} Ask the visitor to fix it, then call request_meeting again.` : "Rejected: unknown tool or argument. Do not retry it; answer in text." });
+      continue;
+    }
+    if (CALENDAR.has(v.name)) {
+      if (++lookups > MAX_CALENDAR) { replies.push({ id: c.id, content: "Rejected: too many calendar lookups this step." }); continue; }
+      const out = await runCalendarTool(v.name, { ...JSON.parse(c.arguments || "{}"), ...(visitorTz ? { visitorTz } : {}) }, now.getTime());
+      kept.push({ ...v, result: out.summary });
+      replies.push({ id: c.id, content: JSON.stringify(out.result) });
+      continue;
+    }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }
     kept.push(v);
     replies.push({ id: c.id, content: v.result ?? "Queued: the visitor is asked to confirm on the page. Do not claim it already happened." });

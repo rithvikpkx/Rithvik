@@ -100,14 +100,17 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
           ) : (
             <span className="t-tool"><b>{item.question}</b></span>
           )}
+          {item.detail && (
+            <ul className="t-detail" aria-label="What will be sent">{item.detail.map((d) => <li key={d}>{d}</li>)}</ul>
+          )}
           {item.state === "pending" ? (
             <div className="t-confirm">
-              <button type="button" className="t-key primary" onClick={() => h.answer(item.id, "yes")}>⏎ Yes</button>
-              <button type="button" className="t-key" onClick={() => h.answer(item.id, "no")}>n No</button>
-              <button type="button" className="t-key" onClick={() => h.answer(item.id, "always")}>a Always this session</button>
+              <button type="button" className="t-key primary" onClick={() => h.answer(item.id, "yes")}>{item.once ? "⏎ Send" : "⏎ Yes"}</button>
+              <button type="button" className="t-key" onClick={() => h.answer(item.id, "no")}>{item.once ? "n Edit" : "n No"}</button>
+              {!item.once && <button type="button" className="t-key" onClick={() => h.answer(item.id, "always")}>a Always this session</button>}
             </div>
           ) : (
-            <span className="t-res">{ASK_DONE[item.state]}</span>
+            <span className="t-res">{item.once ? (item.state === "yes" ? "Confirmed" : "Not sent. Tell me what to change.") : ASK_DONE[item.state]}</span>
           )}
         </div>
       );
