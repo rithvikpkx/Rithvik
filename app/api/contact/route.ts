@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { adminClient } from "@/lib/supabase-server";
+import { identifyFromRequest } from "@/lib/track/store";
 import { sanitizeEmailHtml, htmlToText } from "@/lib/sanitize-html";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { buildContextFooter, escapeHtml as esc } from "@/lib/contact-context";
@@ -125,5 +127,7 @@ export async function POST(req: Request) {
   }
 
   await settle("sent");
+  // Attach this visitor's browsing history to the address they just wrote from.
+  after(() => identifyFromRequest(req, { email: sender }));
   return Response.json({ ok: true });
 }
