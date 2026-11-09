@@ -1,4 +1,5 @@
 "use client";
+import "./EditMode.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";

@@ -70,6 +70,10 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["motion"],
   },
   /** Applies the security headers to every route (both root layouts). */
+  /** /preview hosted the v7 site before the switch-over; keep old links working. */
+  async redirects() {
+    return [{ source: "/preview", destination: "/", permanent: false }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

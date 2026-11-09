@@ -85,6 +85,11 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
         window.history.replaceState({}, "", url.pathname + url.search);
         // Defer the setState off the effect's synchronous path (next frame).
         raf = requestAnimationFrame(() => setIsEditing(true));
+      } else if (url.searchParams.has("edit")) {
+        // The v7 site has no visible login button: rithvik.ai/?edit opens the panel (or edit mode if this tab is signed in).
+        url.searchParams.delete("edit");
+        window.history.replaceState({}, "", url.pathname + url.search);
+        raf = requestAnimationFrame(() => (tabAuth.current ? setIsEditing(true) : setPanelOpen(true)));
       }
     }
 

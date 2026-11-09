@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./core.css";
 import EditModeProvider from "@/components/EditModeProvider";
+import EditModeOverlays from "@/components/site/EditModeOverlays";
 import ThemeStyleInjector from "@/components/ThemeStyleInjector";
 import { BOOT_SCRIPT, designById, fontsHref, htmlAttrsFor, isDarkColor } from "@/lib/designs/registry";
 import { getLook, getPalettes } from "@/lib/designs/server";
@@ -9,14 +10,26 @@ import { getLook, getPalettes } from "@/lib/designs/server";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const siteUrl = "https://rithvik.ai"; // the apex is the serving host (www 307s to it); see CLAUDE.md
+const ogAlt = "Rithvik Praveen Kumar — CS + Math @ Purdue"; // kept in sync with app/opengraph-image.tsx
+const description =
+  "Software and AI engineer studying CS + Math at Purdue. Brain-computer interfaces, computer vision, and ML small enough for a microcontroller.";
+
 export const metadata: Metadata = {
-  // Separate root layout: inherits nothing from (site), so metadataBase is repeated.
-  metadataBase: new URL("https://rithvik.ai"),
-  title: "Rithvik Praveen Kumar",
-  robots: { index: false, follow: false },
+  metadataBase: new URL(siteUrl),
+  title: { default: "Rithvik Praveen Kumar", template: "%s · Rithvik Praveen Kumar" },
+  description,
+  openGraph: {
+    type: "website", url: siteUrl, siteName: "Rithvik Praveen Kumar", title: "Rithvik Praveen Kumar", description, locale: "en_US",
+    // Declaring openGraph suppresses the opengraph-image file convention, so point at the route by hand.
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }],
+  },
+  twitter: { card: "summary_large_image", title: "Rithvik Praveen Kumar", description, images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }] },
+  robots: { index: true, follow: true },
+  alternates: { canonical: siteUrl },
 };
 
-/** Root layout for the v7 site. The design cookie picks <html data-design data-theme> on the
+/** Root layout for the site (v7). The design cookie picks <html data-design data-theme> on the
  *  server, and BOOT_SCRIPT corrects it before first paint when the cookie can't (see registry). */
 export default async function V7Layout({ children }: { children: React.ReactNode }) {
   const themes = await getPalettes();
@@ -44,7 +57,10 @@ export default async function V7Layout({ children }: { children: React.ReactNode
         {/* Palette tokens for every slug; BOOT_SCRIPT reads this sheet, so it must come first. */}
         <ThemeStyleInjector themes={themes} />
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
-        <EditModeProvider>{children}</EditModeProvider>
+        <EditModeProvider>
+          {children}
+          <EditModeOverlays />
+        </EditModeProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 "use client";
+import "./EditMode.css";
 import { motion, AnimatePresence } from "motion/react";
 import { useEditMode } from "./EditModeProvider";
 
