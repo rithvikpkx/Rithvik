@@ -55,11 +55,11 @@ export default function Contact({
         <p className="eyebrow">Contact</p>
         <EditableText
           tag="h2" value={headline}
-          onSave={async (v) => { setHeadline(v); await upsertSiteContent("contact.headline", v); }}
+          onSave={async (v) => { await upsertSiteContent("contact.headline", v); setHeadline(v); }}
         />
         <EditableText
           tag="p" className="contact-sub" value={sub} multiline
-          onSave={async (v) => { setSub(v); await upsertSiteContent("contact.sub", v); }}
+          onSave={async (v) => { await upsertSiteContent("contact.sub", v); setSub(v); }}
         />
       </FadeIn>
 
@@ -89,7 +89,7 @@ export default function Contact({
             {isEditing && (
               <EditableText
                 tag="span" className="contact-edit-url" value={href}
-                onSave={async (v) => { setter(v); await upsertSiteContent(key, v); }}
+                onSave={async (v) => { await upsertSiteContent(key, v); setter(v); }}
                 placeholder="URL…"
               />
             )}

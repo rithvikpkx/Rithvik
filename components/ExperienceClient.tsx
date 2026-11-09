@@ -29,6 +29,7 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
   const [entries, setEntries] = useState(initialEntries);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Mirror server data into local state when not editing (catches revalidation
   // updates) without clobbering in-progress edits — done during render to avoid
@@ -47,28 +48,38 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
       await updateExperience(id, toInput(updated));
     } catch {
       setEntries((es) => es.map((e) => (e.id === id ? prev : e)));
+      throw new Error("save failed"); // let EditableText/tag list show the error
     }
   };
 
-  const swap = async (idxA: number, idxB: number) => {
+  // Runs a toggle/reorder/delete action; on failure rolls back and shows the notice.
+  const run = async (fn: () => Promise<unknown>, rollback: () => void) => {
+    setError(null);
+    try { await fn(); } catch { rollback(); setError("Save failed. Change reverted."); }
+  };
+
+  const swap = (idxA: number, idxB: number) => {
+    const before = entries;
     const next = [...entries];
     [next[idxA], next[idxB]] = [next[idxB], next[idxA]];
     const reindexed = next.map((e, i) => ({ ...e, sort_order: i }));
     setEntries(reindexed);
-    await Promise.all([
+    return run(() => Promise.all([
       updateExperience(reindexed[idxA].id, toInput(reindexed[idxA])),
       updateExperience(reindexed[idxB].id, toInput(reindexed[idxB])),
-    ]);
+    ]), () => setEntries(before));
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
+    const before = entries;
     setEntries((es) => es.filter((e) => e.id !== id));
     setConfirmDelete(null);
-    await deleteExperience(id);
+    return run(() => deleteExperience(id), () => setEntries(before));
   };
 
   const handleAdd = async () => {
     setAdding(true);
+    setError(null);
     try {
       const created = await createExperience({
         slug: `entry-${Date.now()}`,
@@ -87,6 +98,8 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
         sort_order: entries.length,
       });
       setEntries((es) => [...es, created]);
+    } catch {
+      setError("Couldn't add entry.");
     } finally {
       setAdding(false);
     }
@@ -134,11 +147,11 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
                 </div>
                 <div className="proj-toggles">
                   <label className="proj-toggle">
-                    <input type="checkbox" checked={entry.published} onChange={(e) => patch(entry.id, { published: e.target.checked })} />
+                    <input type="checkbox" checked={entry.published} onChange={(e) => run(() => patch(entry.id, { published: e.target.checked }), () => {})} />
                     Published
                   </label>
                   <label className="proj-toggle">
-                    <input type="checkbox" checked={entry.featured} onChange={(e) => patch(entry.id, { featured: e.target.checked })} />
+                    <input type="checkbox" checked={entry.featured} onChange={(e) => run(() => patch(entry.id, { featured: e.target.checked }), () => {})} />
                     Featured
                   </label>
                 </div>
@@ -187,6 +200,7 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
         <button className="proj-add-btn" onClick={handleAdd} disabled={adding}>
           {adding ? "Adding…" : "+ Add Entry"}
         </button>
+        {error && <small role="alert" className="edit-error">{error}</small>}
       </div>
     </div>
   );

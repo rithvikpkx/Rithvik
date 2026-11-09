@@ -41,6 +41,7 @@ export default function EducationClient({ initialEntries }: { initialEntries: Ed
       });
     } catch {
       setEntries((es) => es.map((e) => (e.id === id ? prev : e)));
+      throw new Error("save failed"); // let EditableText/tag list show the error
     }
   };
 

@@ -69,8 +69,8 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
 
   const saveBld = async (patch: Partial<Building>) => {
     const u = { ...bld, ...patch };
-    setBld(u);
     await upsertSiteContent("bento.building", JSON.stringify(u));
+    setBld(u);
   };
 
   // `id` is a scroll target for the RAG bot's "show me on the page" action.
@@ -88,8 +88,8 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
         <BentoGlobeCard
           markers={markers}
           onSave={async (next) => {
-            setMarkers(next);
             await updateGlobeMarkers(next);
+            setMarkers(next);
           }}
         />
 
@@ -134,7 +134,7 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
           {isEditing ? (
             <EditableTagList
               tags={stack}
-              onSave={async (tags) => { setStack(tags); await upsertSiteContent("bento.stack", JSON.stringify(tags)); }}
+              onSave={async (tags) => { await upsertSiteContent("bento.stack", JSON.stringify(tags)); setStack(tags); }}
               className="bento-stack-edit"
             />
           ) : (
@@ -152,7 +152,7 @@ export default function Bento({ building: bp, stack: skp, interests: ip, markers
           {isEditing ? (
             <EditableTagList
               tags={interests}
-              onSave={async (tags) => { setInterests(tags); await upsertSiteContent("bento.interests", JSON.stringify(tags)); }}
+              onSave={async (tags) => { await upsertSiteContent("bento.interests", JSON.stringify(tags)); setInterests(tags); }}
               className="interests-list"
             />
           ) : (

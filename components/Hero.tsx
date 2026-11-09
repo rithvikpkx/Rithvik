@@ -1,5 +1,4 @@
 "use client";
-import { motion } from "motion/react";
 import FlickeringGrid from "./FlickeringGrid";
 import { KineticText } from "./KineticText";
 import EditableText from "./EditableText";
@@ -28,21 +27,9 @@ function gridColorForBg(bgHex: string): string {
   return luminance > 0.5 ? "#0e0b0a" : "#ffffff";
 }
 
-const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
-};
-const item = {
-  hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: "easeOut" as const } },
-};
-// Connect cluster fades in but does NOT translate — a `y` shift would move its
-// layout box mid-animation, leaving the ref-measured beams (HeroConnect) stale.
-// Opacity-only keeps the beam endpoints fixed; no blur to avoid per-frame raster.
-const connectCol = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.7, ease: "easeOut" as const, delay: 0.35 } },
-};
+// Entrance is CSS-driven (.hero-enter / .hero-connect-col in globals.css) so the SSR
+// HTML is visible without JS. The connect cluster never translates: a `y` shift would
+// leave the ref-measured beams (HeroConnect) stale.
 
 interface Props {
   subLine?:     string;
@@ -86,7 +73,7 @@ export default function Hero({
       <FlickeringGrid className="hero-flickering-grid" color={gridColor} squareSize={4} gridGap={6} maxOpacity={0.1} flickerChance={0.08} />
 
       <div className="hero-content">
-        <motion.div className="hero-text" variants={container} initial="hidden" animate="visible">
+        <div className="hero-text">
 
           {/* Name */}
           <h1 className="hero-title">
@@ -105,7 +92,7 @@ export default function Hero({
             )}
           </h1>
 
-          <motion.div className="hero-sub" variants={item}>
+          <div className="hero-sub hero-enter">
             {/* Tagline */}
             {isEditing ? (
               <EditableText tag="p" className="hero-tagline" value={tagLine}
@@ -127,18 +114,13 @@ export default function Hero({
             <EditableText tag="p" className="hero-sub-line" value={subLine}
               onSave={(v) => upsertSiteContent("hero.sub_line", v)}
               placeholder="Enter a sub-headline…" />
-          </motion.div>
+          </div>
 
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="hero-connect-col"
-          variants={connectCol}
-          initial="hidden"
-          animate="visible"
-        >
+        <div className="hero-connect-col">
           <HeroConnect githubUrl={githubUrl} linkedinUrl={linkedinUrl} emailUrl={emailUrl} />
-        </motion.div>
+        </div>
       </div>
     </section>
   );
