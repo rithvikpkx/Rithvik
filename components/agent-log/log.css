@@ -55,7 +55,7 @@
 .alog-forms { display: grid; gap: 16px; margin-top: 16px; max-width: 640px; }
 
 .alog-msgs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; }
-.alog-msg { padding: 12px 14px; border: 1px solid var(--ui-line); border-radius: var(--ui-r); }
+.alog .alog-msg { max-width: none; padding: 12px 14px; border: 1px solid var(--ui-line); border-radius: var(--ui-r); }
 .alog-msg[data-role="user"] { background: var(--ui-field); }
 .alog-msg[data-role="tool"] { border-style: dashed; }
 .alog-role { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; font-size: 12.5px; color: var(--ui-muted); }
