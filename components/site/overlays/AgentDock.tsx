@@ -168,6 +168,8 @@ export default function AgentDock() {
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
+              <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
+              <button type="button" className="ag-btn" aria-label="Download chat as Markdown" title="Download chat" disabled={!agent.canExport} onClick={agent.downloadChat}><Icon name="download" /></button>
               <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>
               <button type="button" className="ag-btn" aria-label="Full screen (Cmd+Enter)" title="Full screen" onClick={host.toggleFull}><Icon name={full ? "minimize-2" : "maximize-2"} /></button>
               <button type="button" className="ag-btn" aria-label="Close (Esc)" title="Close" onClick={close}><Icon name="chevron-down" /></button>

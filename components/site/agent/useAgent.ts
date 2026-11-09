@@ -11,6 +11,7 @@ import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from 
 import { GAMES } from "@/lib/play/games";
 import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
+import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
 import type { Choice, Design, Item, NewItem, Turn } from "./types";
@@ -97,7 +98,7 @@ export function useAgent(host: Host) {
   const add = useCallback((it: NewItem, undo?: () => void): number => {
     const id = ++seq.current;
     if (undo) undos.current.set(id, undo);
-    setItems((p) => [...p, { ...it, ...(undo ? { undo: true } : {}), id } as Item]);
+    setItems((p) => [...p, { ...it, ...(undo ? { undo: true } : {}), at: Date.now(), id } as Item]);
     return id;
   }, []);
   const patch = useCallback((id: number, f: (i: Item) => Item) => setItems((p) => p.map((i) => (i.id === id ? f(i) : i))), []);
@@ -245,6 +246,26 @@ export function useAgent(host: Host) {
       host.toast("Could not copy the link");
     }
   }, [host, sessionId]);
+
+  // The export reads the latest rows through a ref, so the callbacks below stay stable.
+  const itemsRef = useRef(items);
+  useEffect(() => { itemsRef.current = items; });
+
+  /** The whole conversation as Markdown: every row the panel shows, under a session/model header. */
+  const exportMd = useCallback(() => buildTranscriptMarkdown(itemsRef.current, Date.now(), {
+    session: readSession(), model: process.env.NEXT_PUBLIC_CHAT_MODEL, design: host.design?.current,
+  }), [host]);
+
+  const copyChat = useCallback(() => copy(exportMd(), "Chat copied"), [copy, exportMd]);
+
+  /** Saves the Markdown as rag-chat-<date-time>.md through a throwaway link. */
+  const downloadChat = useCallback(() => {
+    const url = URL.createObjectURL(new Blob([exportMd()], { type: "text/markdown;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = transcriptFilename(Date.now());
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000); // after the click has been handled
+  }, [exportMd]);
 
   /** Marks every answer row of the turn as finished. */
   const settle = useCallback((ids: number[]) => ids.forEach((id) => patch(id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i))), [patch]);
@@ -412,7 +433,7 @@ export function useAgent(host: Host) {
     add({ kind: "user", text: q });
     if (isSlash) {
       runSlash(q, {
-        add, ask, clear, scroll, copy, turns, history: next,
+        add, ask, clear, scroll, copy, turns, exportMd, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
         openCase: host.openCase, openResume: host.openResume, openComposer: host.openComposer,
       });
@@ -420,7 +441,7 @@ export function useAgent(host: Host) {
     // Starter chips answer instantly from content, with no /api/chat call.
     else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
-  }, [add, ask, clear, converse, cooldown, copy, history, host, interrupt, scroll, turns]);
+  }, [add, ask, clear, converse, cooldown, copy, exportMd, history, host, interrupt, scroll, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {
@@ -438,5 +459,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
 }
