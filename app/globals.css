@@ -520,6 +520,16 @@ a { color: inherit; text-decoration: none; }
 .hero-connect-col {
   display: flex;
   justify-content: center;
+  animation: hero-fade 0.7s ease-out 0.35s backwards;
+}
+
+/* Hero entrance in pure CSS: the element is visible in SSR HTML (and with JS off);
+   `backwards` only applies the from-state while the animation is delayed/running. */
+.hero-enter { animation: hero-rise 0.55s ease-out 0.12s backwards; }
+@keyframes hero-rise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes hero-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter, .hero-connect-col { animation: none; }
 }
 
 /* Ref container for the beams — must be position:relative so the absolutely
