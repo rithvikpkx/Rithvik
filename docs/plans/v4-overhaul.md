@@ -349,6 +349,10 @@ replacing it.
   (query rewrite, full-profile context, tool calling, abort on `req.signal`, eval set) can follow in Step 3.
 - Done when: Nimbus renders end to end from DB content on the preview with all shared components.
 
+Status (2026-11-09): **Step 1 done** (tag `step1-done`). /preview renders Classic (default, every palette) and
+Nimbus from DB content with all shared components; see docs/plans/step1-contract.md and designs/PORTING.md.
+Open for the switch-over: mount InlineLoginPanel + EditBar in the (v7) layout; move `/` into (v7).
+
 ### Step 2: port the designs
 Order: Nimbus → Glyph → Stipple → Prism → Mercury → Thermal → Starlight → Tracker → Foil. Each port turns
 `render(C,H)` into JSX and `mount()` into effects with cleanup, reuses its shader and CSS, and keeps the
