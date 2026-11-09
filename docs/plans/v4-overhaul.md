@@ -389,7 +389,7 @@ and outreach after launch (first-party events, review queue, never auto-send).
 - Model (eval 2026-11-09, 43 cases, scorer bugs corrected): **CHAT_MODEL gpt-6-luna** ($0.10/$0.50 per 1M) — facts/FAQ/follow-ups perfect, injection 4/4, tools 6/6, TTFB ~2.5s, ~$0.0007/turn; beat gpt-4o-mini (tools 5/6), gpt-5.4-mini (5/6), gpt-5.5 (6/6 but ~50× cost). AUX_MODEL gpt-5-nano. Agent name stays **RAG** (owner).
 - Tracking (owner, 2026-11-09): no consent banner anywhere; raw IP, 1-year first-party visitor cookie, full event stream, IP→company, identity stitching, admin visitor timeline; session replay WITH typed text (security fields still masked). Disclosed on /privacy.
 - Order: agent backend → wave A (conversations + metrics logging + share + /privacy + meeting email; calendar;
-  voice) → wave B (cache + /status; artifacts + brief + GitHub). All Sonnet/high.
+  voice) → wave B (cache + /status; JSON chat artifacts). All Sonnet/high. Tailored brief + GitHub activity dropped for now (owner, 2026-11-09).
 
 ### Step 4: verification and merge
 Playwright contact sheets per design × 1440/390 (normal + performance mode), fps check under 4× CPU
