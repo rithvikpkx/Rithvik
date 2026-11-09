@@ -8,6 +8,7 @@ import { useMemo, useRef, type FormEvent, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
+import { countWord } from "@/lib/words";
 import { useSite } from "@/components/site/SiteProvider";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Portrait from "@/components/site/portrait/Portrait";
@@ -152,7 +153,7 @@ export default function Nimbus({ content: C }: DesignProps) {
         </section>
 
         <section className="nb-sec nb-work" id="work" aria-labelledby="nb-h-work">
-          <header className="nb-sec-h"><p className="nb-kicker">Work</p><h2 id="nb-h-work" className="nb-h2">Things I&apos;ve built</h2><p className="nb-sub">Six projects, from headsets to the cloud. Each one opens.</p></header>
+          <header className="nb-sec-h"><p className="nb-kicker">Work</p><h2 id="nb-h-work" className="nb-h2">Things I&apos;ve built</h2><p className="nb-sub">{countWord(C.projects.length)} projects, from headsets to the cloud. Each one opens.</p></header>
           <div className="nb-cards">
             {C.projects.map((p, i) => (
               <a key={p.slug} id={`project-${p.slug}`} className="nb-card" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
@@ -214,7 +215,7 @@ export default function Nimbus({ content: C }: DesignProps) {
                 </span>
               ))}
             </div>
-            <header className="nb-sec-h nb-band-h"><p className="nb-kicker">Play</p><h2 id="nb-h-play" className="nb-h2">Recess</h2><p className="nb-sub">Six small toys for a slow afternoon. The games keep my score next to yours.</p></header>
+            <header className="nb-sec-h nb-band-h"><p className="nb-kicker">Play</p><h2 id="nb-h-play" className="nb-h2">Recess</h2><p className="nb-sub">{countWord(PLAY.length)} small toys for a slow afternoon. The games keep my score next to yours.</p></header>
             <ul className="nb-stamps">
               {PLAY.map((t, i) => {
                 const bg = STAMP_BG[i % STAMP_BG.length], map = bg === "sky" ? ON_SKY : bg === "sun" ? ON_SUN : ON_PALE;

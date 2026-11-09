@@ -53,3 +53,9 @@ reference port; copy its shape.
 `python3 -m http.server --directory docs/mockups/v7 8707` vs `/preview?theme=<id>` at 1440×900 and 390×844
 (normal + `html.lite`), section by section; rAF fps over 3s; no horizontal overflow; tab through the first
 screen; no console errors; `tsc`, `eslint designs/<id>`, `next build --webpack`.
+
+## Counts in copy
+Never hardcode counts the mockup wrote as words ("Six projects"): use `countWord(content.projects.length)` from `lib/words.ts`.
+
+## Performance mode
+The site-wide toggle is `<LiteToggle className="v7-lite" />`, mounted once by `components/site/SitePage.tsx`; designs only react to `html.lite`.

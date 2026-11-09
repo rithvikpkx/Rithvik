@@ -70,3 +70,9 @@ input.field::placeholder, textarea.field::placeholder { color: var(--ui-muted); 
 :is(input, textarea).field[aria-invalid="true"] { border-color: #ff5a5a; }
 .field-err { margin: 4px 0 0; font-size: 13px; color: #ff6b6b; }
 textarea.field { resize: vertical; min-height: 140px; }
+
+/* Performance-mode button: the mockup kept it in the bottom-left switcher; the side dial took the switcher's
+   job, so it sits alone in that corner. Pressed = lite on. */
+.v7-lite { position: fixed; left: 16px; bottom: 16px; z-index: 40; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; border: var(--bw) solid var(--ui-line); background: var(--ui-panel, var(--ui-bg)); color: var(--ui-muted); cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.v7-lite[aria-pressed="true"] { color: var(--ui-accent); border-color: var(--ui-accent); }
+.v7-lite:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
