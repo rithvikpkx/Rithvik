@@ -46,6 +46,14 @@ export default function InlineLoginPanel() {
     }
   }
 
+  // Esc closes the panel from anywhere on the page, not only while focus is inside it.
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closePanel(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [panelOpen, closePanel]);
+
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -90,9 +98,8 @@ export default function InlineLoginPanel() {
             aria-labelledby="il-title"
             initial={{ opacity: 0, scale: 0.94, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 10 }}
+            exit={{ opacity: 0, scale: 0.94, y: 10, transition: { duration: 0.14 } }}
             transition={{ type: "spring", stiffness: 440, damping: 32 }}
-            onKeyDown={(e) => { if (e.key === "Escape") closePanel(); }}
           >
             <button className="login-panel-close" onClick={closePanel} aria-label="Close">
               ×
