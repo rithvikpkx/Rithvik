@@ -1,54 +1,11 @@
-/* /status: a neutral layout that borrows the active look only through colour. Palette looks (Classic) bring
-   --bg/--text/--accent from the injected theme sheet; design looks fall back to light/dark by the look's
-   color-scheme. The --ui-* tokens are re-declared here so the shared chart components read the same values. */
-.st {
-  --ui-bg: var(--bg, light-dark(#ffffff, #0f0f12)); --ui-fg: var(--text, light-dark(#18181b, #f4f4f5));
-  --ui-accent: var(--accent, light-dark(#1d4ed8, #8ab4ff));
-  --ui-muted: color-mix(in srgb, var(--ui-fg) 64%, var(--ui-bg));
-  --ui-line: color-mix(in srgb, var(--ui-fg) 14%, transparent); --ui-field: color-mix(in srgb, var(--ui-fg) 5%, transparent);
-  --st-good: light-dark(#0b7a0b, #35c35a); --st-bad: light-dark(#c42d2d, #ff7a7a);
-  min-height: 100vh; background: linear-gradient(var(--ui-bg), var(--ui-bg)), Canvas; color: var(--ui-fg);
-  font: 400 15px/1.55 var(--ui-font); -webkit-font-smoothing: antialiased;
-}
-.st-wrap { max-width: 880px; margin: 0 auto; padding: 40px 16px 72px; display: grid; gap: 32px; }
-.st h1 { margin: 0; font: 600 clamp(28px, 5vw, 38px)/1.1 var(--ui-font); letter-spacing: -.02em; }
-.st h2 { margin: 0; font: 600 15px/1.3 var(--ui-font); }
-.st-head { display: grid; gap: 8px; justify-items: start; }
-.st-back { color: var(--ui-muted); font-size: 13px; text-decoration: none; }
-.st-back:hover { color: var(--ui-fg); text-decoration: underline; text-underline-offset: 3px; }
-.st-pill { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 0; padding: 5px 12px 5px 10px; border-radius: 999px; border: 1px solid var(--ui-line); font-weight: 500; font-size: 14px; }
-.st-pill .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ui-muted); }
-.st-pill.good .dot { background: var(--st-good); } .st-pill.bad .dot { background: var(--st-bad); }
-.st-sub { margin: 0; color: var(--ui-muted); font-size: 13px; }
-.st-block { display: grid; gap: 12px; }
-.st-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.st-seg { display: inline-flex; padding: 2px; border: 1px solid var(--ui-line); border-radius: 10px; }
-.st-seg button { border: 0; padding: 5px 12px; border-radius: 8px; background: none; color: var(--ui-muted); font: 500 13px/1.2 var(--ui-font); cursor: pointer; }
-.st-seg button[aria-pressed="true"] { background: var(--ui-field); color: var(--ui-fg); box-shadow: inset 0 0 0 1px var(--ui-line); }
-.st-seg button:focus-visible, .st-back:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
-
-.st-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; padding: 0; list-style: none; }
-.st-tiles.three { margin: 0; }
-.st-tile { padding: 12px 14px; border: 1px solid var(--ui-line); border-radius: 12px; min-width: 0; }
-.st-tile .l { display: block; color: var(--ui-muted); font-size: 12.5px; }
-.st-tile .v { display: block; margin-top: 2px; font: 600 clamp(22px, 4vw, 28px)/1.15 var(--ui-font); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.st-tile .n { display: block; margin-top: 2px; color: var(--ui-muted); font-size: 12px; }
-
-.st-card { margin: 0; padding: 14px 16px; border: 1px solid var(--ui-line); border-radius: 12px; min-width: 0; }
-.st-card figcaption { margin-bottom: 8px; font-weight: 600; font-size: 13px; }
-.st-note { margin: 10px 0 0; color: var(--ui-muted); font-size: 12.5px; }
-.st-empty { margin: 0; color: var(--ui-muted); }
-.st-down { color: var(--ui-muted); }
-.st-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.st-card.wide { grid-column: 1 / -1; }
-.st-dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.st-dl div { min-width: 0; } .st-dl dt { color: var(--ui-muted); font-size: 12.5px; } .st-dl dd { margin: 2px 0 0; overflow-wrap: anywhere; }
-.st-dl code { font: 500 13px var(--ui-mono); }
+/* /status reuses the admin dashboard's styles (components/admin/admin.css) on a .adm.st wrapper that carries the
+   visitor's look; only the few status-specific bits live here. */
+.st .st-main { max-width: 1080px; }
+.st .adm-hero h1 { font-size: clamp(22px, 3vw, 30px); }
+.st .adm-hero .adm-health::before { width: 12px; height: 12px; }
+.st-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .st-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .st-foot { display: grid; gap: 8px; padding-top: 20px; border-top: 1px solid var(--ui-line); }
-.st-foot p { margin: 0; max-width: 68ch; color: var(--ui-muted); font-size: 13.5px; }
-
-@media (max-width: 720px) {
-  .st-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .st-charts { grid-template-columns: minmax(0, 1fr); } .st-dl { grid-template-columns: minmax(0, 1fr); }
-  .st-tiles.three .v { font-size: 20px; }
-}
+.st-foot h2 { margin: 0; font: 600 15px/1.3 var(--ui-font); }
+.st-foot p { margin: 0; max-width: 72ch; color: var(--ui-muted); font-size: 13.5px; line-height: 1.6; }
+.st .adm-top-in { max-width: 1080px; }

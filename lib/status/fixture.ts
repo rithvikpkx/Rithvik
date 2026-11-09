@@ -1,6 +1,7 @@
 /** A deterministic sample payload in the /api/status shape: used by tests and by STATUS_FIXTURE=1 for design work
  *  before real traffic exists. Never served in production unless that env var is set. */
 import type { Bucket, Check, StatusData, StatusWindow } from "./types.ts";
+import type { PublicTraffic } from "../analytics/types";
 
 const HOUR = 3_600_000;
 
@@ -42,7 +43,19 @@ export function statusFixture(now = Date.UTC(2026, 10, 9, 18, 0, 0)): StatusData
   return {
     generatedAt: now,
     windows: { "24h": windowOf(now, 24, HOUR, 14, 7), "7d": windowOf(now, 28, 6 * HOUR, 52, 11) },
-    uptime: { "24h": 99.31, "7d": 99.88, "30d": 99.96, recent },
+    uptime: { "24h": 0.9931, "7d": 0.9988, "30d": 0.9996, recent },
     build: { commit: "a2afbc4d3f9e1c0b7a5d", model: "gpt-5.4-mini", auxModel: "gpt-5.4-nano" },
   };
+}
+
+/** Sample /status visitor numbers (already folded: no country under the floor is named). */
+export function trafficFixture(kind: "24h" | "7d", now = Date.UTC(2026, 10, 9, 18, 0, 0)): PublicTraffic {
+  const r = rng(kind === "24h" ? 3 : 5);
+  const n = kind === "24h" ? 24 : 7, step = kind === "24h" ? HOUR : 24 * HOUR;
+  const series = Array.from({ length: n }, (_, i) => ({ t: new Date(Math.floor(now / step) * step - (n - 1 - i) * step).toISOString(), visits: Math.round((kind === "24h" ? 7 : 52) * (0.5 + r())) }));
+  const visits = series.reduce((s, b) => s + b.visits, 0);
+  const k = kind === "24h" ? 0.15 : 1;
+  const countries = [["US", "United States", 196], ["IN", "India", 39], ["GB", "United Kingdom", 17], ["CA", "Canada", 11], ["DE", "Germany", 9], ["SG", "Singapore", 7]]
+    .map(([code, name, v]) => ({ code: code as string, name: name as string, visitors: Math.round((v as number) * k) })).filter((c) => c.visitors >= 3);
+  return { visits, visitors: Math.round(visits * 0.74), series, countries, other: Math.round(12 * k) };
 }

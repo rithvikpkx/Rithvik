@@ -67,7 +67,7 @@ export const ACTION_SIMILARITY_FLOOR = 0.45;
 
 /** Phrases the bot uses when it declines or redirects. If the answer is one of
  *  these, there is nothing to point at, so no actions are offered. */
-const DECLINE_MARKERS = [
+export const DECLINE_MARKERS = [
   "i don't have that specific detail",
   "i'm here specifically to answer questions about rithvik",
   "i'm only set up to discuss rithvik",

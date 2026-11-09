@@ -25,7 +25,7 @@ export default function Graph({ title, nodes, edges }: { title: string; nodes: G
           const a = pos.get(e.from), b = pos.get(e.to);
           if (!a || !b) return null;
           const lit = hover === null || e.from === hover || e.to === hover;
-          return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--ch-base)" strokeWidth={lit && hover !== null ? 2 : 1} opacity={lit ? 1 : 0.25} />;
+          return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} style={{ stroke: "var(--ch-base)" }} strokeWidth={lit && hover !== null ? 2 : 1} opacity={lit ? 1 : 0.25} />;
         })}
         {nodes.map((nd) => {
           const p = pos.get(nd.id)!;
@@ -34,7 +34,7 @@ export default function Graph({ title, nodes, edges }: { title: string; nodes: G
           return (
             <g key={nd.id} opacity={near(nd.id) ? 1 : 0.35} onPointerEnter={() => setHover(nd.id)} onPointerDown={() => setHover(nd.id)}>
               <circle cx={p.x} cy={p.y} r={14} fill="transparent" />
-              <circle className="ch-ring ch-in" cx={p.x} cy={p.y} r={5} fill={seriesColor(Math.max(0, groups.indexOf(nd.group ?? "")))} />
+              <circle className="ch-ring ch-in" cx={p.x} cy={p.y} r={5} style={{ color: seriesColor(Math.max(0, groups.indexOf(nd.group ?? ""))) }} fill="currentColor" />
               <text x={p.x + (right ? 10 : left ? -10 : 0)} y={p.y + (right || left ? 4 : Math.cos(p.angle) > 0 ? -10 : 18)} textAnchor={right ? "start" : left ? "end" : "middle"}>{lab}</text>
             </g>
           );

@@ -43,8 +43,8 @@ export function Sparkline({ values, label, unit, height = 28 }: { values: (numbe
   return (
     <div className="ch" ref={ref}>
       <svg viewBox={`0 0 ${w} ${height}`} height={height} role={label ? "img" : undefined} aria-label={label ? `${label}: latest ${withUnit(lastV, unit)}, range ${compact(Math.min(...nums))} to ${compact(Math.max(...nums))}` : undefined} aria-hidden={label ? undefined : true}>
-        <path d={linePath(pts)} fill="none" stroke="var(--ch-1)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        <circle className="ch-ring" cx={last.x} cy={last.y} r={4} fill="var(--ch-1)" />
+        <path d={linePath(pts)} fill="none" style={{ color: "var(--ch-1)" }} stroke="currentColor" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        <circle className="ch-ring" cx={last.x} cy={last.y} r={4} style={{ color: "var(--ch-1)" }} fill="currentColor" />
       </svg>
     </div>
   );
@@ -72,7 +72,7 @@ export function UptimeStrip({ checks }: { checks: Check[] }) {
         onPointerMove={(e) => setHover(Math.min(n - 1, Math.max(0, Math.floor((e.clientX - e.currentTarget.getBoundingClientRect().left) / step))))} onPointerLeave={() => setHover(null)}>
         {checks.map((c, i) => (
           <rect key={i} x={i * step} y={c.ok ? 6 : 0} width={tw} height={c.ok ? H - 12 : H} rx={Math.min(2, tw / 2)}
-            fill={c.ok ? "var(--ch-good)" : "var(--ch-bad)"} opacity={hover === null || hover === i ? 1 : 0.55} />
+            style={{ fill: c.ok ? "var(--ch-good)" : "var(--ch-bad)" }} opacity={hover === null || hover === i ? 1 : 0.55} />
         ))}
       </svg>
       {hover !== null && checks[hover] && (
