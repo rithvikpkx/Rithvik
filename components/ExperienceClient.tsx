@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useEditMode } from "./EditModeProvider";
 import EditableText from "./EditableText";
 import EditableTagList from "./EditableTagList";
@@ -8,6 +8,7 @@ import FadeIn from "./FadeIn";
 import TimelineBeam from "./TimelineBeam";
 import {
   createExperience,
+  listAllExperience,
   updateExperience,
   deleteExperience,
   type ExperienceInput,
@@ -39,6 +40,17 @@ export default function ExperienceClient({ initialEntries }: { initialEntries: E
     setSyncedInit(initialEntries);
     setEntries(initialEntries);
   }
+
+  // Public rows exclude drafts; in edit mode load every row so drafts stay editable.
+  // Resetting syncedInit makes the block above restore the public rows on exit.
+  useEffect(() => {
+    if (!isEditing) return;
+    let live = true;
+    listAllExperience()
+      .then((rows) => { if (live) { setEntries(rows); setSyncedInit([]); } })
+      .catch(() => setError("Couldn't load drafts."));
+    return () => { live = false; };
+  }, [isEditing]);
 
   const patch = async (id: string, changes: Partial<ExperienceInput>) => {
     const prev = entries.find((e) => e.id === id)!;

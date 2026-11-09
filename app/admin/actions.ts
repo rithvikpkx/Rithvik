@@ -6,7 +6,7 @@ import {
   buildProjectText, buildExperienceText, buildEducationText, buildSiteContentText,
 } from "@/lib/embeddings";
 import { requireAuth } from "./auth-helper";
-import type { GlobeMarker, GlobeMarkerKind } from "@/lib/types";
+import type { GlobeMarker, GlobeMarkerKind, Project, Experience } from "@/lib/types";
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 
 type PublishableRow = { id: string; published: boolean };
@@ -61,6 +61,14 @@ export interface ProjectInput {
   sort_order: number;
 }
 
+/** Every project row including drafts, for edit mode (public reads filter published). */
+export async function listAllProjects() {
+  await requireAuth();
+  const { data, error } = await adminClient().from("projects").select("*").order("sort_order");
+  if (error) throw new Error(error.message);
+  return data as Project[];
+}
+
 export async function createProject(data: ProjectInput) {
   await requireAuth();
   const { data: created, error } = await adminClient()
@@ -110,6 +118,14 @@ export interface ExperienceInput {
   featured: boolean;
   published: boolean;
   sort_order: number;
+}
+
+/** Every experience row including drafts, for edit mode (public reads filter published). */
+export async function listAllExperience() {
+  await requireAuth();
+  const { data, error } = await adminClient().from("experience").select("*").order("sort_order");
+  if (error) throw new Error(error.message);
+  return data as Experience[];
 }
 
 export async function createExperience(data: ExperienceInput) {
