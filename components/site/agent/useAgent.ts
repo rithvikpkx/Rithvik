@@ -168,6 +168,11 @@ export function useAgent(host: Host) {
       case "local_time":
         add({ kind: "tool", name: tool.name, args: tool.args, result: e.result ?? "time unavailable" });
         return;
+      case "check_availability":
+      case "suggest_times":
+        // The server already ran it; the summary is free/busy and times only.
+        add({ kind: "tool", name: "Calendar", args: [e.name, a.startISO ?? a.fromISO].filter(Boolean).join(", "), result: e.result ?? "Calendar unavailable" });
+        return;
       case "switch_design": {
         const d = host.design;
         if (!d || !d.entries.some((x) => x.id === a.id)) { add({ kind: "tool", name: tool.name, args: tool.args, result: "Not available here" }); return; }

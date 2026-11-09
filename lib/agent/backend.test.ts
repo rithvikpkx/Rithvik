@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "../content/fixture.ts";
 import { renderProfile, scrubPrivate } from "./profile.ts";
-import { contextPrompt, nearestLandmark, sanitizeContext } from "./context.ts";
+import { cleanTimeZone, contextPrompt, nearestLandmark, sanitizeContext } from "./context.ts";
 import { cleanRewrite, rewriteMessages } from "./rewrite.ts";
 import { anchorFor, autoScrollTarget, citedNumbers } from "./highlight.ts";
 import { screenCalls, toolDefs, validateToolCall, type Allowed } from "./tools.ts";
@@ -48,9 +48,25 @@ test("tools: local_time resolves a place and runs server-side", () => {
   assert.equal(validateToolCall(call("local_time", { place: "Paris" }), A), null);
 });
 
-test("tools: screenCalls caps side effects per step and answers every call", () => {
+test("tools: calendar tools keep only known scalar args and are not side effects", async () => {
+  const v = validateToolCall(call("check_availability", { startISO: "2026-12-08T10:00:00-08:00", durationMin: 30, evil: "x", visitorTz: ["a"] }), A)!;
+  assert.deepEqual(v.args, { startISO: "2026-12-08T10:00:00-08:00", durationMin: "30" });
+  assert.equal(validateToolCall(call("suggest_times", "{oops"), A), null);
+  assert.equal(cleanTimeZone("America/New_York"), "America/New_York");
+  assert.equal(cleanTimeZone("Mars/Base"), undefined);
+  assert.equal(cleanTimeZone({}), undefined);
+  // lookups run server-side inside screenCalls and carry a summary for the tool row
+  process.env.CALENDAR_ICS_URL = "https://calendar.example/private/TOKEN.ics";
+  globalThis.fetch = (async () => new Response("BEGIN:VCALENDAR\r\nEND:VCALENDAR")) as typeof fetch;
+  const r = await screenCalls([call("suggest_times", { days: 3 }, "a"), call("check_availability", { startISO: "garbage" }, "b")], A, new Date("2026-12-07T18:00:00Z"), "America/New_York");
+  assert.deepEqual(r.kept.map((k) => k.id), ["a", "b"]);
+  assert.ok(r.kept.every((k) => typeof k.result === "string"));
+  assert.match(r.replies[1].content, /error/); // bad input comes back as an error the model can relay, never a throw
+});
+
+test("tools: screenCalls caps side effects per step and answers every call", async () => {
   const calls = [call("open_project", { slug: "qrify" }, "a"), call("open_resume", {}, "b"), call("start_game", { id: "typeracer" }, "c"), call("local_time", { place: "Boston" }, "d"), call("nope", {}, "e")];
-  const { kept, replies } = screenCalls(calls, A);
+  const { kept, replies } = await screenCalls(calls, A);
   assert.deepEqual(kept.map((k) => k.id), ["a", "b", "d"]);
   assert.equal(replies.length, 5);
   assert.match(replies.find((r) => r.id === "e")!.content, /Rejected/);
@@ -60,7 +76,7 @@ test("tools: definitions carry enums from content", () => {
   const defs = toolDefs(A);
   const op = defs.find((d) => d.function.name === "open_project")!;
   assert.deepEqual((op.function.parameters as { properties: { slug: { enum: string[] } } }).properties.slug.enum, ["boilerframe", "qrify"]);
-  assert.equal(defs.length, 7);
+  assert.equal(defs.length, 9);
 });
 
 test("profile: renders every project and role with slugs, no graduation date", () => {

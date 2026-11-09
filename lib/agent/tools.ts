@@ -3,6 +3,7 @@
  *  against content/registry here and anything unknown is dropped. No tool takes or returns a
  *  URL. Pure (no "@/" imports) so node:test can load it. */
 import type { ToolCall, ToolDef } from "../openai.ts";
+import { calendarTools, runCalendarTool } from "../calendar/tools.ts";
 
 /** Whole-page sections every design carries (plus project-<slug> / experience-<slug>). */
 export const SECTION_IDS = ["top", "work", "experience", "about", "play", "questions", "contact"];
@@ -10,6 +11,11 @@ export const SECTION_IDS = ["top", "work", "experience", "about", "play", "quest
 export const MAX_STEPS = 3;
 /** At most this many side-effect tools per step; extras are dropped. */
 export const MAX_SIDE_EFFECTS = 2;
+/** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
+const CALENDAR = new Set(["check_availability", "suggest_times"]);
+const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
+/** At most this many calendar lookups per step; extras are rejected. */
+const MAX_CALENDAR = 4;
 const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email"]);
 
 /** What tool arguments may name, built from the published content + registry for this turn. */
@@ -43,6 +49,7 @@ export function toolDefs(a: Allowed): ToolDef[] {
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
     fn("local_time", "Current local time in one of Rithvik's places.", { place: enumOf(a.places.map((p) => p.city), "City") }, ["place"]),
+    ...(calendarTools as unknown as ToolDef[]),
   ];
 }
 
@@ -103,6 +110,12 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
       const body = plain(raw.body, 2000);
       return subject || body ? { id, name: call.name, args: { subject, body } } : null;
     }
+    case "check_availability":
+    case "suggest_times": {
+      // Values are range-checked by runCalendarTool; here only the known keys survive, as strings for the tool row.
+      const args = Object.fromEntries(Object.entries(raw).filter(([k, v]) => CALENDAR_KEYS.has(k) && (typeof v === "string" || typeof v === "number")).map(([k, v]) => [k, String(v)]));
+      return { id, name: call.name, args };
+    }
     case "local_time": {
       const v = s("place");
       const p = a.places.find((x) => x.city.toLowerCase() === v || x.key === v) ?? a.places.find((x) => v && v.startsWith(x.city.toLowerCase()));
@@ -112,15 +125,24 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
   return null;
 }
 
-/** Validates a step's calls in order and caps side effects. Returns the kept calls and, for every
- *  call (kept or not), the tool message the model sees next step. */
-export function screenCalls(calls: ToolCall[], a: Allowed, now = new Date()): { kept: ValidCall[]; replies: { id: string; content: string }[] } {
+/** Validates a step's calls in order, caps side effects, and runs calendar lookups (`visitorTz` is the server-checked
+ *  zone and overrides whatever the model passed). Returns the kept calls and, for every call (kept or not), the
+ *  tool message the model sees next step. */
+export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
   const kept: ValidCall[] = [];
   const replies: { id: string; content: string }[] = [];
   let effects = 0;
+  let lookups = 0;
   for (const c of calls) {
     const v = validateToolCall(c, a, now);
     if (!v) { replies.push({ id: c.id, content: "Rejected: unknown tool or argument. Do not retry it; answer in text." }); continue; }
+    if (CALENDAR.has(v.name)) {
+      if (++lookups > MAX_CALENDAR) { replies.push({ id: c.id, content: "Rejected: too many calendar lookups this step." }); continue; }
+      const out = await runCalendarTool(v.name, { ...JSON.parse(c.arguments || "{}"), ...(visitorTz ? { visitorTz } : {}) }, now.getTime());
+      kept.push({ ...v, result: out.summary });
+      replies.push({ id: c.id, content: JSON.stringify(out.result) });
+      continue;
+    }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }
     kept.push(v);
     replies.push({ id: c.id, content: v.result ?? "Queued: the visitor is asked to confirm on the page. Do not claim it already happened." });
