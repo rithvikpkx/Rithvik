@@ -10,6 +10,8 @@ export type CartesianProps = {
   series: Series[];
   unit?: string;
   height?: number;
+  /** Force upright bars: a single series of bars is horizontal by default (ranked categories), but time series are not. */
+  upright?: boolean;
 };
 
 const M = { top: 8, bottom: 22, left: 40, right: 10 };
@@ -17,7 +19,7 @@ const M = { top: 8, bottom: 22, left: 40, right: 10 };
 /** Bar, line and area charts on one frame: zero-based bars with 4px rounded data ends, 2px lines, a 10% area wash,
  *  recessive hairline grid, end-of-line labels when they cannot collide, a legend for 2+ series, a hover readout
  *  and a hidden data table. A single series of bars turns horizontal so the labels stay readable. */
-export default function CartesianChart({ kind, title, labels, series, unit, height = 180 }: CartesianProps) {
+export default function CartesianChart({ kind, title, labels, series, unit, height = 180, upright }: CartesianProps) {
   const ref = useRef<HTMLDivElement>(null);
   const width = useWidth(ref);
   const [hover, setHover] = useState<number | null>(null);
@@ -25,7 +27,7 @@ export default function CartesianChart({ kind, title, labels, series, unit, heig
   const nums = series.flatMap((s) => s.values).filter((v): v is number => typeof v === "number");
   const zero = kind !== "line";
   const sc = niceScale(Math.min(...nums, zero ? 0 : Infinity), Math.max(...nums, zero ? 0 : -Infinity));
-  const horizontal = kind === "bar" && series.length === 1 && n > 1;
+  const horizontal = kind === "bar" && series.length === 1 && !upright;
   const summary = describeSeries(kind === "bar" ? "Bar" : kind === "line" ? "Line" : "Area", title, labels, series, unit);
   const table = <DataTable caption={title || summary} columns={["", ...series.map((s) => s.name)]} rows={labels.map((l, i) => [l, ...series.map((s) => s.values[i] ?? "")])} />;
   const legend = series.length > 1 ? <Legend names={series.map((s) => s.name)} line={kind !== "bar"} /> : null;
@@ -78,7 +80,7 @@ export default function CartesianChart({ kind, title, labels, series, unit, heig
   const iw = iw0 - labW;
   const band = iw / Math.max(1, n);
   const xAt = (i: number) => (kind === "bar" ? M.left + band * (i + 0.5) : M.left + (n === 1 ? iw / 2 : (i * iw) / (n - 1)));
-  const stride = labelStride(n, iw);
+  const stride = labelStride(n, iw, Math.max(56, Math.max(...labels.map((l) => l.length)) * 6.4 + 18)); // wide labels need more room
   const S = series.length;
   const gap = 2;
   const bw = Math.max(2, Math.min(24, (band * 0.8 - gap * (S - 1)) / S));
@@ -97,7 +99,7 @@ export default function CartesianChart({ kind, title, labels, series, unit, heig
             <text x={M.left - 8} y={y(t) + 4} textAnchor="end">{withUnit(t, unit)}</text>
           </g>
         ))}
-        {labels.map((l, i) => i % stride === 0 && <text key={i} x={xAt(i)} y={height - 6} textAnchor={i === 0 && kind !== "bar" ? "start" : "middle"}>{l}</text>)}
+        {labels.map((l, i) => i % stride === 0 && <text key={i} x={xAt(i)} y={height - 6} textAnchor="middle">{l}</text>)}
         {hover !== null && kind === "bar" && <rect className="ch-band" x={M.left + band * hover} y={M.top} width={band} height={ih} rx={6} />}
         {hover !== null && kind !== "bar" && <line className="ch-cross" x1={xAt(hover)} x2={xAt(hover)} y1={M.top} y2={baseY} />}
         {series.map((s, si) => {

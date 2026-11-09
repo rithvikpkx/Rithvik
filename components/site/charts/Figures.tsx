@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
-import { compact, linePath, niceScale, toMs, withUnit } from "@/lib/charts/scale";
+import { compact, linePath, niceScale, withUnit } from "@/lib/charts/scale";
+import { fmtStamp } from "@/lib/status/format";
 import { DataTable, Tip, useWidth } from "./shared";
 
 /** A plain table of strings (numbers right-aligned when a column is numeric). */
@@ -61,8 +62,9 @@ export function UptimeStrip({ checks }: { checks: Check[] }) {
   const failed = checks.filter((c) => !c.ok).length;
   const H = 32;
   const step = n ? w / n : w;
-  const tw = Math.max(1, Math.min(8, step - 1.5));
-  const fmt = (t: number | string) => new Date(toMs(t)).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  // a 1.5px gap between ticks when there is room; on a phone the ticks touch instead of aliasing into stripes
+  const tw = step >= 3 ? Math.min(8, step - 1.5) : step;
+  const fmt = fmtStamp; // UTC and locale-free, so the server render and the browser agree
   const summary = n ? `Uptime strip: ${n} checks, ${failed === 0 ? "all passed" : `${failed} failed`}, from ${fmt(checks[0].t)} to ${fmt(checks[n - 1].t)}.` : "Uptime strip: no checks recorded yet.";
   return (
     <div className="ch" ref={ref}>
