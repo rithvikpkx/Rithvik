@@ -317,6 +317,12 @@ From the codebase scan; each item is its own commit.
   a thin `lib/openai.ts` (the RAG pipeline otherwise unchanged).
 - Done when: tsc + eslint + `next build` clean, preview renders, chat and contact still work.
 
+### Final-site vision (owner, 2026-11-08; supersedes "dial and palette themes go away")
+The page always uses the v7 layout. The existing side pill dial (`ThemeDial`) stays and gains the nine
+designs alongside the legacy palette themes, which stay selectable. A legacy palette = a "classic" design:
+the v7 layout coloured by that palette's 7 tokens. Step 1's switcher work extends the dial rather than
+replacing it.
+
 ### Step 1: foundation for the overhaul
 - Content: extend the DB to the `C` shape in `docs/mockups/v7/content.js` (projects: headline, kind,
   icon, ctx, desc lines, tags, links jsonb, sort_order, featured; experience; education expected_grad;
