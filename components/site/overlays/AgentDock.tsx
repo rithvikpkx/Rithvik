@@ -1,9 +1,11 @@
 "use client";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
+import { EditModeContext } from "@/components/EditModeProvider";
 import { DesignContext } from "../DesignProvider";
 import { useSite } from "../SiteProvider";
 import { Icon } from "../Glyph";
+import { setAdminMode } from "../agent/adminCommands";
 import StatusLine from "../agent/StatusLine";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
@@ -21,6 +23,8 @@ export default function AgentDock() {
   const { overlay, content, openAgent, close } = site;
   const design = useContext(DesignContext); // null in the lab harness: /theme then says so instead of throwing
   const open = overlay?.kind === "agent";
+  const admin = useContext(EditModeContext)?.isEditing ?? false; // null in the lab harness
+  useEffect(() => { setAdminMode(admin); return () => setAdminMode(false); }, [admin]);
   const [full, setFull] = useState(false);
   const [input, setInput] = useState("");
   const [palIdx, setPalIdx] = useState(0);
@@ -84,7 +88,7 @@ export default function AgentDock() {
     return () => document.removeEventListener("keydown", onKey);
   }, [openAgent, close]);
 
-  const matches = open ? matchCommands(input) : [];
+  const matches = open ? matchCommands(input, admin) : [];
   const pal = Math.min(palIdx, Math.max(0, matches.length - 1));
 
   /** Prompt keys: palette, history, confirmations (Enter/n/a), full screen, Ctrl+L / Ctrl+U, "?" for help. */
