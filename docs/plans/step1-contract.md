@@ -15,7 +15,9 @@ minimal code, granular conventional commits).
   designs restyle shared components through those names and `--pt-*`-style tokens (v7 CONTRACT.md).
   Port each component's rules from `core.css` into that component's own global `.css` file.
 - Assets you need from `docs/mockups/v7/assets/` → copy into `public/v7/…` (keep originals).
-- Per-stream test harness: `app/(v7)/preview/lab/<stream>/page.tsx` (noindex). Throwaway, fine to keep.
+- Per-stream test harness: `app/(lab)/lab/<stream>/page.tsx` → `/lab/<stream>` (bare root layout already in
+  `app/(lab)/layout.tsx`, noindex). Wrap in `<SiteProvider content={fixture}>` and import your own CSS plus
+  `docs/mockups/v7/core.css`-equivalent tokens you need. Throwaway, fine to keep.
 
 ## Interfaces (already in `dev`; extend, don't rename)
 - Content: `getContent()` from `@/lib/content` (server only) → `Content` (`lib/content/types.ts`,
