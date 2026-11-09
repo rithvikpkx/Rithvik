@@ -4,7 +4,7 @@ import { safeUrl } from "@/lib/chat-actions";
 /* Minimal markdown renderer for chat messages.
    Handles: headings (#/##/###), bold (**), italic (*), inline code (`),
    fenced code blocks (```), bullet/numbered lists, links, paragraphs.
-   Output is wrapped in a <div class="rag-md"> so styling lives in globals.css. */
+   Output is wrapped in a <div class="rag-md">; the agent styles it in components/site/agent/agent.css. */
 
 type Block =
   | { type: "p"; lines: string[] }

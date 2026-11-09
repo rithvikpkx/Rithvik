@@ -5,7 +5,7 @@ import type { Theme } from "./types";
  * -----------------
  * Themes only NEED to define a small primary palette: bg, text, accent, etc.
  * Surface tokens (--card, --border, --nav-glass, --panel-glass) are derived in
- * globals.css via color-mix() so they auto-adapt to any theme's primary values.
+ * CSS via color-mix() (Classic maps them onto --ui-*; edit chrome in components/EditMode.css).
  *
  * Themes MAY still override any derived token by including it in their tokens map;
  * the per-theme value wins over the derived default. The set below documents which
