@@ -10,3 +10,6 @@ supabase/.temp/
 sql-schema.md
 .vscode/
 public/images/rithvik-original.jpeg
+
+# graphify knowledge graph output
+graphify-out/
