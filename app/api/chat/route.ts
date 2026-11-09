@@ -84,11 +84,16 @@ function unpack(label: string, res: PromiseSettledResult<{ data: unknown; error:
 	return (res.value.data as Row[] | null) ?? [];
 }
 
-/** The answer model for this request: `x-eval-model` only when EVAL_TOKEN is set and matches. */
-function modelFor(req: Request): string {
+/** True for an eval run: EVAL_TOKEN is set and the request carries it. */
+function isEval(req: Request): boolean {
 	const token = process.env.EVAL_TOKEN;
+	return !!token && req.headers.get("x-eval-token") === token;
+}
+
+/** The answer model for this request: `x-eval-model` only on an authenticated eval run. */
+function modelFor(req: Request): string {
 	const m = req.headers.get("x-eval-model");
-	return token && req.headers.get("x-eval-token") === token && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
+	return isEval(req) && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
 }
 
 function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string): string {
@@ -174,7 +179,8 @@ export async function POST(req: Request) {
 		getContent(),
 		getPalettes(),
 		calendarPromptContext(),
-		startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
+		// Eval runs never reach the conversation log or the public metrics.
+		isEval(req) ? Promise.resolve(null) : startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
 	]);
 	const allowed: Allowed = {
 		projects: content.projects.map((p) => ({ slug: p.slug, title: p.title })),
@@ -204,6 +210,7 @@ export async function POST(req: Request) {
 			// shortcut: total tokens (in + out) go in tokens_out; split them if the dashboard needs per-direction cost
 			{ role: "assistant", content: log.answer, sources: log.sources, model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, error: log.errorKind },
 		];
+		if (isEval(req)) return;
 		await Promise.all([
 			logTurn(sessionId, rows),
 			logRequest({ model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, errorKind: log.errorKind, toolCount: log.tools.length }),
