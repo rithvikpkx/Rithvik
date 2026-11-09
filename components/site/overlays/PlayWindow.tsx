@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PLAY } from "@/lib/play/games";
 import { useSite } from "../SiteProvider";
-import Ic from "../play/Ic";
+import { Icon as Ic } from "../Glyph";
 import "../play/play.css";
 
 // Each toy is its own chunk, so Web Audio and canvas code only load when its tab first opens.

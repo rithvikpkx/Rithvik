@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Ic from "./Ic";
+import { Icon as Ic } from "../Glyph";
 
 type Stroke = { pts: [number, number][]; size: number; color: string; erase: boolean; mirror: boolean };
 

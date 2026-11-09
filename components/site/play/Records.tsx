@@ -1,8 +1,9 @@
 "use client";
+import Mark from "../mark/Mark";
 import { useEffect, useRef, useState } from "react";
 import { useSite } from "../SiteProvider";
 import { Deck } from "./deck";
-import Ic from "./Ic";
+import { Icon as Ic } from "../Glyph";
 
 const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 
@@ -70,7 +71,7 @@ export default function Records() {
               {/* a rotating LP photo: next/image adds nothing here */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="rec-photo" src="/v7/record.jpg" alt="" width={960} height={960} draggable={false} />
-              <div className="rec-label"><span className="rl-title">Chili Pepper</span><span className="rl-sub">Fred Longshaw · 1927</span><span className="rl-side">Side A · 78</span></div>
+              <div className="rec-label"><span className="rl-mark"><Mark label="" /></span><span className="rl-title">Chili Pepper</span><span className="rl-sub">Fred Longshaw · 1927</span><span className="rl-side">Side A · 78</span></div>
             </div>
             <i className="rec-sheen" aria-hidden="true" />
             <i className="rec-spindle" aria-hidden="true" />
@@ -107,7 +108,7 @@ export default function Records() {
             </span>
           </div>
           <button className="rec-play" type="button" aria-pressed={on} aria-label={on ? "Pause" : "Play"} onClick={() => deck.current?.toggle()}>
-            <Ic name="play" className="ic-play" /><Ic name="pause" className="ic-pause" />
+            <Ic name="play" className="ic ic-play" /><Ic name="pause" className="ic ic-pause" />
           </button>
         </div>
         <p className="rec-hint">Drag the record to scratch. Arrow keys work too.</p>
