@@ -361,6 +361,11 @@ Order: Nimbus → Glyph → Stipple → Prism → Mercury → Thermal → Starli
 ≥ 4.5:1, keyboard reachable, no console errors. Move generated assets from `docs/mockups/v7/assets/` to
 `public/` (Figma source file: https://www.figma.com/design/pCufh6qWiIDnYAls4uTMVE).
 
+Status (2026-11-09): **Step 2 done** (tag `step2-done`). All nine designs ported per designs/PORTING.md and verified:
+60fps normal + lite at 1440/390 (Metal GPU), no console errors, portrait unfiltered in every design, design
+cycling keeps one WebGL context. FAQ is rendered by Classic, Nimbus, Prism, Tracker (+ others where the
+mockup had it); Starlight and Thermal have none (owner can ask for one).
+
 ### Step 3: features
 Resume (Google Doc is master → PDF export sync to Storage; admin Sync now / Upload override), knowledge
 graph from DB, agent upgrades (above), edit mode for the new content fields, `/buffett` unchanged,
