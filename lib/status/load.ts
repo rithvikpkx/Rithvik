@@ -1,5 +1,7 @@
 import type { StatusData } from "./types";
-import { statusFixture } from "./fixture";
+import { statusFixture, trafficFixture } from "./fixture";
+import { getPublicTrafficCached } from "@/lib/analytics/server";
+import type { PublicTraffic } from "@/lib/analytics/types";
 import { getStatus } from "@/lib/agent/status-server";
 
 /** True when `v` looks like the payload (enough to render without throwing); anything else is treated as unavailable. */
@@ -17,5 +19,15 @@ export async function loadStatus(): Promise<StatusData | null> {
     return isStatus(data) ? data : null;
   } catch {
     return null;
+  }
+}
+
+/** Visitor counts for /status (counts and folded country totals only); null per window when unavailable. */
+export async function loadTraffic(): Promise<Record<"24h" | "7d", PublicTraffic | null>> {
+  if (process.env.STATUS_FIXTURE === "1") return { "24h": trafficFixture("24h"), "7d": trafficFixture("7d") };
+  try {
+    return await getPublicTrafficCached();
+  } catch {
+    return { "24h": null, "7d": null };
   }
 }

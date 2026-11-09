@@ -11,6 +11,6 @@ export type Check = { t: number | string; ok: boolean; ms: number | null };
 export type StatusData = {
   generatedAt: number | string;
   windows: { "24h": StatusWindow; "7d": StatusWindow };
-  uptime: { "24h": number | null; "7d": number | null; "30d": number | null; recent: Check[] };
+  uptime: { /** fractions 0-1 */ "24h": number | null; "7d": number | null; "30d": number | null; recent: Check[] };
   build: { commit: string | null; model: string; auxModel: string };
 };
