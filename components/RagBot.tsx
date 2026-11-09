@@ -251,9 +251,13 @@ export default function RagBot() {
     setLoading(true);
 
     // Build history from current messages before adding the new ones.
-    // Map "bot" -> "assistant" for the API, skip empty streaming placeholders.
+    // Map "bot" -> "assistant" for the API. Only real exchanges go up: no
+    // welcome text, empty streaming placeholders, or notices (errors / rate
+    // limits) — nor the question a notice answered, which was never answered.
+    // Starter chips DO count: the visitor saw them as a real turn, and the
+    // server uses history for follow-ups and to avoid re-suggesting them.
     const history = messages
-      .filter((m) => m.content.length > 0)
+      .filter((m, i) => m !== WELCOME && m.content.length > 0 && !m.isNotice && !messages[i + 1]?.isNotice)
       .slice(-5)
       .map((m) => ({
         role: m.role === "user" ? ("user" as const) : ("assistant" as const),
