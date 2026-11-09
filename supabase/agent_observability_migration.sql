@@ -71,7 +71,8 @@ alter table public.agent_requests enable row level security;
 -- Intentionally no policies: anon and authenticated users get nothing.
 
 -- Retention: conversations 180 days (messages cascade), metrics 400 days.
--- Schedule with pg_cron if available:  select cron.schedule('agent-prune', '17 3 * * *', 'select public.agent_prune()');
+-- Scheduled by Vercel Cron (/api/cron/agent-prune, vercel.json); pg_cron works too:
+--   select cron.schedule('agent-prune', '17 3 * * *', 'select public.agent_prune()');
 create or replace function public.agent_prune() returns void
 language sql
 set search_path = public
@@ -79,4 +80,5 @@ as $$
   delete from public.agent_sessions where last_at < now() - interval '180 days';
   delete from public.agent_requests where created_at < now() - interval '400 days';
 $$;
-revoke all on function public.agent_prune() from public, anon, authenticated;
+revoke execute on function public.agent_prune() from public, anon, authenticated;
+grant execute on function public.agent_prune() to service_role;

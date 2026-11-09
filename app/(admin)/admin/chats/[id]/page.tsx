@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/app/admin/auth-helper";
 import { saveNotes, setFollowUp } from "@/app/admin/chats-actions";
@@ -18,7 +19,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
       <div className="alog-wrap">
         <div className="alog-top">
           <h1>Conversation</h1>
-          <a href="/admin/chats">All chats</a>
+          <Link href="/admin/chats">All chats</Link>
         </div>
         <SessionMeta s={s} />
         <div className="alog-forms">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAuth } from "@/app/admin/auth-helper";
 import { parseFilters } from "@/lib/agent/chats";
 import { listSessions } from "@/lib/agent/chats-query";
@@ -15,7 +16,7 @@ export default async function ChatsPage({ searchParams }: { searchParams: Promis
       <div className="alog-wrap">
         <div className="alog-top">
           <h1>Chats</h1>
-          <a href="/">Back to site</a>
+          <Link href="/">Back to site</Link>
         </div>
         <FilterForm f={filters} />
         <SessionTable rows={rows} />
