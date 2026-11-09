@@ -1,9 +1,10 @@
 import { ICONS, LOGOS } from "@/lib/assets/icons";
 
-/** Lucide icon by name (24px stroke set from lib/assets). The markup is our own static asset, never user input. */
+/** Lucide icon by name (24px stroke set from lib/assets). The markup is our own static asset, never user input.
+ *  The 16px attributes are only the intrinsic default; component CSS sizes it. */
 export function Icon({ name, className = "ic" }: { name: string; className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONS[name] ?? "" }} />
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONS[name] ?? "" }} />
   );
 }
 

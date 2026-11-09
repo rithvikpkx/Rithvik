@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import Icon from "./Icon";
+import { Icon } from "../Glyph";
 import "./windows.css";
 
 type Props = {

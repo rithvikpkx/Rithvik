@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { useSite } from "../SiteProvider";
-import { Icon, Logo } from "./Glyph";
+import { Icon, Logo } from "../Glyph";
 import "./portrait.css";
 
 // Geometry lives in a 400x470 box: photo centre (200,200) r=150; nodes on r=228 at 126/90/54 degrees.

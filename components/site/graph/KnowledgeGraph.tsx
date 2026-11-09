@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { buildKG, kgLayout, KG_TYPES, type KGNode, type KGType } from "@/lib/graph/kg";
-import { Icon } from "../portrait/Glyph";
+import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
 import KgShape from "./KgShape";
 import "./graph.css";

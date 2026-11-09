@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Window from "../windows/Window";
-import Icon from "../windows/Icon";
+import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;

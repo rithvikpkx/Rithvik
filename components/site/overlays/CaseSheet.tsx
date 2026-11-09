@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Icon from "../windows/Icon";
+import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
 import "../case/case.css";
 
