@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
 import { EditModeContext } from "@/components/EditModeProvider";
 import { DesignContext } from "../DesignProvider";
@@ -18,6 +18,10 @@ function isTyping(t: EventTarget | null): boolean {
   return t instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable);
 }
 
+/** Narrow screens get a shorter placeholder: a wrapped one makes the prompt two lines tall. */
+const NARROW = "(max-width: 560px)";
+const subscribeNarrow = (cb: () => void) => { const m = matchMedia(NARROW); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb); };
+
 /** The bottom-centre agent prompt. Always mounted so the transcript survives while another overlay
  *  is open; the panel expands when overlay.kind === "agent" (the bar itself is always there). */
 export default function AgentDock() {
@@ -27,6 +31,7 @@ export default function AgentDock() {
   const open = overlay?.kind === "agent";
   const admin = useContext(EditModeContext)?.isEditing ?? false; // null in the lab harness
   useEffect(() => { setAdminMode(admin); return () => setAdminMode(false); }, [admin]);
+  const narrow = useSyncExternalStore(subscribeNarrow, () => matchMedia(NARROW).matches, () => false);
   const [full, setFull] = useState(false);
   const [input, setInput] = useState("");
   const [palIdx, setPalIdx] = useState(0);
@@ -78,10 +83,10 @@ export default function AgentDock() {
   useLayoutEffect(() => {
     const el = inputRef.current;
     if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = "auto"; // empty: stay one row (scrollHeight would count a wrapped placeholder)
+    if (input) el.style.height = `${el.scrollHeight}px`;
     // Pill-shaped bars (999px radius) would clip a tall draft, so CSS squares them once it wraps.
-    if (el.form) el.form.dataset.grown = String(el.scrollHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5);
+    if (el.form) el.form.dataset.grown = String(!!input && el.scrollHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5);
   }, [input]);
 
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
@@ -203,7 +208,7 @@ export default function AgentDock() {
         <span className="ab-prompt" aria-hidden="true">❯</span>
         <label htmlFor="agent-input" className="sr-only">Ask about Rithvik</label>
         <textarea id="agent-input" ref={inputRef} className="ab-input" rows={1} value={input} maxLength={500} enterKeyHint="send"
-          placeholder="Ask about Rithvik, or type / for commands"
+          placeholder={narrow ? "Ask about Rithvik" : "Ask about Rithvik, or type / for commands"}
           onChange={(e) => { setInput(e.target.value); setPalIdx(0); }}
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />

@@ -269,6 +269,7 @@
 :root[data-design="tracker"] .sw-card { border-radius: 2px; }
 :root[data-design="tracker"] .sw-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--tk-red); }
 
+:root[data-design="tracker"] .agent { gap: 22px; } /* room for the "#00 agent" tab that sits above the bar */
 :root[data-design="tracker"] .agent-bar { position: relative; min-height: 52px; padding: 0 6px 0 16px; border-color: var(--tk-line2); }
 :root[data-design="tracker"] .agent-bar::before { content: "#00 agent ⌘K"; position: absolute; left: -1px; top: -18px; height: 17px; padding: 0 6px; background: var(--tk-acc); color: #fff; font: 600 10.5px/17px var(--tk-mono); letter-spacing: .01em; pointer-events: none; }
 :root[data-design="tracker"] .agent-bar:focus-within { border-color: var(--tk-acc); box-shadow: 0 0 0 1px var(--tk-acc), var(--ui-shadow); }

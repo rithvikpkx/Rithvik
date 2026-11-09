@@ -88,7 +88,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "suggest":
       return (
         <div className="t-sugg">
-          {item.chips.map((c) => <button key={c} type="button" className="t-chip sugg" onClick={() => h.fill(c)}>{c}</button>)}
+          {item.chips.map((c) => <button key={c} type="button" className="t-chip sugg" title={c} onClick={() => h.fill(c)}>{c}</button>)}
         </div>
       );
     case "ask":
