@@ -8,9 +8,10 @@ const subscribe = (cb: () => void) => {
 };
 const minute = () => Math.floor(Date.now() / 60000);
 
-/** Live local time in an IANA zone ("9:27 PM"). Empty on the server so SSR and hydration agree. */
-export default function Clock({ tz }: { tz: string }) {
+/** Live local time in an IANA zone ("9:27 PM"). Empty on the server so SSR and hydration agree.
+ *  Shared by every design (the mockup's `data-clock`). */
+export default function Clock({ tz, className = "cl-clock" }: { tz: string; className?: string }) {
   const m = useSyncExternalStore(subscribe, minute, () => null);
   const text = m === null ? "" : new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz }).format(new Date(m * 60000));
-  return <time className="cl-clock">{text}</time>;
+  return <time className={className}>{text}</time>;
 }

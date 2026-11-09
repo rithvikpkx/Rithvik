@@ -59,3 +59,6 @@ Never hardcode counts the mockup wrote as words ("Six projects"): use `countWord
 
 ## Performance mode
 The site-wide toggle is `<LiteToggle className="v7-lite" />`, mounted once by `components/site/SitePage.tsx`; designs only react to `html.lite`.
+
+## Clocks
+`data-clock="<tz>"` → `<Clock tz={…} className="…" />` from `components/site/Clock.tsx` (hydration-safe, minute resolution). Nimbus keeps its own `time.ts` only because it also bakes the visitor's hour into its shader.

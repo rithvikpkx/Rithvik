@@ -9,7 +9,7 @@ import Mark from "@/components/site/mark/Mark";
 import { PLAY } from "@/lib/play/games";
 import { SITE_CREDITS } from "@/lib/assets/misc";
 import Nav from "./Nav";
-import Clock from "./Clock";
+import Clock from "@/components/site/Clock";
 import "./classic.css";
 
 // Italic serif for the name only (hero + footer signature); loaded with this design's chunk.
