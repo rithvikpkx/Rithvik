@@ -133,7 +133,7 @@ export default function Glyph({ content: C }: DesignProps) {
         <Pane id="work" hue="amber" win={win(1)} cmd="ls ~/work" note={`${C.projects.length} entries`} word="WORK">
           <div className="gl-ranger">
             <ol className="gl-ls">{C.projects.map((p, i) => (
-              <li key={p.slug}><button type="button" className="gl-row" data-case={p.slug} aria-current={i === sel ? "true" : undefined} onPointerEnter={() => setSel(i)} onFocus={() => setSel(i)}>
+              <li key={p.slug} id={`project-${p.slug}`}><button type="button" className="gl-row" data-case={p.slug} aria-current={i === sel ? "true" : undefined} onPointerEnter={() => setSel(i)} onFocus={() => setSel(i)}>
                 <span className="c-name"><span data-scr>{p.slug}</span>/</span><span className="c-kind">{p.kind.toLowerCase()}</span><span className="c-go" aria-hidden="true">⏎</span>
               </button></li>
             ))}</ol>
@@ -189,7 +189,7 @@ export default function Glyph({ content: C }: DesignProps) {
               <details className="gl-more"><summary><span className="gl-flag">--stack</span></summary><ul className="gl-tree">{stackKeys.map(([k, v], i, a) => (
                 <li key={k}><span className="gl-dim">{i === a.length - 1 ? "└──" : "├──"}</span> <b>{k.toLowerCase()}/</b><ul>{v.map((x, j) => <li key={x}><span className="gl-dim">{i === a.length - 1 ? "    " : "│   "}{j === v.length - 1 ? "└──" : "├──"}</span> {x}</li>)}</ul></li>
               ))}</ul></details>
-              <details className="gl-more"><summary><span className="gl-flag">--faq</span></summary><dl className="gl-faq">{C.faq.map(([q, a]) => <div key={q}><dt>{q}</dt><dd>{a}</dd></div>)}</dl></details>
+              <details className="gl-more" id="questions"><summary><span className="gl-flag">--faq</span></summary><dl className="gl-faq">{C.faq.map(([q, a]) => <div key={q}><dt>{q}</dt><dd>{a}</dd></div>)}</dl></details>
             </div>
           </div>
         </Pane>

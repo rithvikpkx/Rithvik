@@ -208,7 +208,7 @@ export default function Prism({ content: C }: DesignProps) {
           </ul>
         </section>
 
-        <section className="pr-sec pr-faq" id="faq" aria-labelledby="pr-h-faq">
+        <section className="pr-sec pr-faq" id="questions" aria-labelledby="pr-h-faq">
           <div className="pr-faq-grid">
             <div className="pr-faq-l">
               <p className="pr-kicker"><span className="pr-k-n">06</span>Questions</p>

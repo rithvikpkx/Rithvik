@@ -1,7 +1,8 @@
-import { COMMANDS, parseCommand } from "@/lib/agent/commands";
+import { COMMANDS, isAdminCommand, parseCommand } from "@/lib/agent/commands";
 import { findEntry } from "@/lib/agent/targets";
 import type { Content } from "@/lib/content/types";
 import { buildTranscriptMarkdown } from "@/lib/transcript";
+import { adminMode, runAdmin } from "./adminCommands";
 import type { Design, NewItem, Turn } from "./types";
 
 /** Everything a slash command may touch; the hook supplies it so this file stays free of React. */
@@ -37,6 +38,8 @@ export function runSlash(raw: string, c: SlashCtx): void {
   const cmd = parseCommand(raw);
   if (!cmd) return;
   const { arg } = cmd;
+  // Edit-mode commands (hidden from /help); for a visitor they fall through to "Unknown command".
+  if (adminMode() && isAdminCommand(cmd)) { void runAdmin(cmd.name, arg, c.add); return; }
   const tool = (name: string, args: string, result: string, undo?: () => void) => c.add({ kind: "tool", name, args, result }, undo);
   switch (cmd.name) {
     case "/help": c.add({ kind: "help" }); break;

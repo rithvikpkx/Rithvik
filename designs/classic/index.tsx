@@ -70,7 +70,7 @@ function Work({ c }: { c: Content }) {
       <Title id="work">Work</Title>
       <ul className="cl-grid">
         {c.projects.map((p, i) => (
-          <li key={p.slug} className={i === 0 ? "feat" : i < 3 ? "side" : undefined}>
+          <li key={p.slug} id={`project-${p.slug}`} className={i === 0 ? "feat" : i < 3 ? "side" : undefined}>
             <a className="cl-card" href={`/work/${p.slug}`} data-case={p.slug}>
               <div className="cl-card-top">
                 <span className="cl-card-ic"><Icon name={p.icon} /></span>
@@ -99,7 +99,7 @@ function Experience({ c }: { c: Content }) {
       <Title id="experience">Experience</Title>
       <ul className="cl-ledger">
         {c.experience.map((r) => (
-          <li key={r.slug}>
+          <li key={r.slug} id={`experience-${r.slug}`}>
             <details className="cl-row">
               <summary>
                 <span className="cl-when">{r.when}</span>

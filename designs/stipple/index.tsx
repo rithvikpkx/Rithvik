@@ -22,7 +22,7 @@ import "./stipple.css";
 
 const META = designById("stipple")!;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
-const TOC = [["Foreword", "about"], ["Dispatches", "work"], ["Errata", "experience"], ["The map", "graph"], ["Correspondence", "faq"], ["Supplement", "play"], ["The seal", "contact"]];
+const TOC = [["Foreword", "about"], ["Dispatches", "work"], ["Errata", "experience"], ["The map", "graph"], ["Correspondence", "questions"], ["Supplement", "play"], ["The seal", "contact"]];
 const PLACE_KEY: Record<string, string> = { home: "home", school: "school", now: "here now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
@@ -184,7 +184,7 @@ export default function Stipple({ content: C }: DesignProps) {
           </div>
         </section>
 
-        <section id="faq" className="st-ch st-plate" aria-labelledby="st-h-faq">
+        <section id="questions" className="st-ch st-plate" aria-labelledby="st-h-faq">
           <Chapter n={4} id="st-h-faq" title="Correspondence" folio={6} plate />
           <div className="st-letters">
             {C.faq.map(([q, a]) => (

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { COMMANDS, matchCommands, parseCommand } from "./commands.ts";
+import { ADMIN_COMMANDS, COMMANDS, formatDocs, formatEmbed, isAdminCommand, matchCommands, parseCommand, parseTemp } from "./commands.ts";
 import { HISTORY_MAX, loadHistory, pushHistory, saveHistory, stepHistory } from "./history.ts";
 import { formatRetry, spinFrame, statusSegments, verbAt, VERBS } from "./status.ts";
 import { findEntry, resolveTarget } from "./targets.ts";
@@ -86,4 +86,38 @@ test("resolveTarget sends projects to the case sheet and others down the anchor 
   assert.deepEqual(resolveTarget("experience-hack-the-future"), { kind: "scroll", ids: ["experience-hack-the-future", "experience", "top"] });
   assert.deepEqual(resolveTarget("education"), { kind: "scroll", ids: ["education", "experience", "top"] });
   assert.deepEqual(resolveTarget("bento"), { kind: "scroll", ids: ["bento", "about", "top"] });
+});
+
+test("admin commands stay out of the visitor palette and /help list", () => {
+  assert.equal(COMMANDS.some(([c]) => /embed|temp|docs|sync/.test(c)), false);
+  assert.deepEqual(matchCommands("/em"), []);
+  assert.deepEqual(matchCommands("/em", true).map(([c]) => c), ["/embed"]);
+  assert.equal(matchCommands("/", true).length, COMMANDS.length + ADMIN_COMMANDS.length);
+  assert.deepEqual(matchCommands("/resume s", true).map(([c]) => c), ["/resume sync"]);
+  assert.deepEqual(matchCommands("/theme random", true), []);
+});
+
+test("isAdminCommand matches /resume only with the sync argument", () => {
+  assert.equal(isAdminCommand({ name: "/embed", arg: "" }), true);
+  assert.equal(isAdminCommand({ name: "/resume", arg: "sync" }), true);
+  assert.equal(isAdminCommand({ name: "/resume", arg: "" }), false);
+  assert.equal(isAdminCommand({ name: "/projects", arg: "" }), false);
+});
+
+test("parseTemp accepts 0-1.2 and refuses the rest", () => {
+  assert.deepEqual(parseTemp("0.7"), { ok: true, value: 0.7 });
+  assert.deepEqual(parseTemp(" 1.2 "), { ok: true, value: 1.2 });
+  assert.deepEqual(parseTemp("0"), { ok: true, value: 0 });
+  assert.deepEqual(parseTemp(".5"), { ok: true, value: 0.5 });
+  assert.equal(parseTemp("1.3").ok, false);
+  assert.equal(parseTemp("-1").ok, false);
+  assert.equal(parseTemp("hot").ok, false);
+  assert.equal(parseTemp("").ok, false);
+});
+
+test("admin result formatters", () => {
+  assert.equal(formatEmbed({ projects: 6, experience: 4, education: 1, site_content: 20, errors: [] }), "31 records (6 projects, 4 roles, 1 education, 20 site)");
+  assert.match(formatEmbed({ projects: 1, experience: 0, education: 0, site_content: 0, errors: ["boom"] }), /1 error: boom/);
+  assert.equal(formatDocs([]), "No documents uploaded");
+  assert.equal(formatDocs([{ filename: "a.pdf", chunk_count: 3 }]), "a.pdf (3 chunks)");
 });

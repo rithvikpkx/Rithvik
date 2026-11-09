@@ -173,7 +173,7 @@ export default function Mercury({ content: C }: DesignProps) {
           </ul>
         </section>
 
-        <section className="mc-sec" id="faq" aria-labelledby="mc-h-faq">
+        <section className="mc-sec" id="questions" aria-labelledby="mc-h-faq">
           <Divider />
           <div className="mc-faq">
             <div className="mc-faq-l">

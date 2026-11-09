@@ -167,7 +167,7 @@ export default function Tracker({ content: C }: DesignProps) {
         </section>
 
         {C.faq.length > 0 && (
-          <section className="tk-sec" id="faq" aria-labelledby="tk-h-faq">
+          <section className="tk-sec" id="questions" aria-labelledby="tk-h-faq">
             <Sh n={7} k="Questions" title="Short answers" sub="Anything else, ask my agent. It only answers from what's on record." id="tk-h-faq" />
             <div className="tk-qs">
               {C.faq.map(([q, a]) => <details className="tk-q" key={q}><summary>{q}<i aria-hidden="true" /></summary><p>{a}</p></details>)}

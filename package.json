@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "eval": "node scripts/eval-agent.mjs",
+    "check:anchors": "node scripts/check-anchors.mjs",
     "lint": "eslint"
   },
   "dependencies": {
