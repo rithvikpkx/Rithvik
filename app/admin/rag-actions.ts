@@ -65,6 +65,9 @@ export async function backfillPrimaryEmbeddings(): Promise<{
     // Settings rows (rag.*) are configuration, not content. Embedding them
     // would let the bot retrieve its own temperature as a fact about Rithvik.
     if (row.key.startsWith(RAG_SETTING_PREFIX)) continue;
+    // shortcut: v7.* copy still holds {{placeholders}} and JSON blobs the text builder doesn't read
+    // well; embed it once Step 3 adds proper builders and the owner fills the placeholders.
+    if (row.key.startsWith("v7.")) continue;
     await collect("site_content", row.key, row.key, () => buildSiteContentText(row.key, row.value), { key: row.key });
   }
 

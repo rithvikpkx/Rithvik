@@ -8,21 +8,22 @@ alter table projects   add column if not exists headline text, add column if not
 alter table experience add column if not exists period text;  -- short "2026 – now"; date_range keeps the long form for the old site
 alter table education  add column if not exists focus text, add column if not exists grad text;
 
-update projects set headline='A robotic arm driven by thought alone', kind='BCI / Hardware', icon='cpu', ctx='NeuroSky EEG headset and an Arduino', v7_order=0 where slug='mind-controlled-arm';
-update projects set headline='Finds every frame a person appears in a video', kind='Computer vision', icon='crosshair', ctx='Full-stack MERN app on AWS Rekognition', v7_order=1 where slug='boilerframe';
-update projects set headline='Classifies left, right and neutral thoughts from EEG', kind='BCI', icon='activity', ctx='16-channel OpenBCI headset', v7_order=2 where slug='eeg-thought-prediction';
-update projects set headline='Modeled how public spending tracks happiness', kind='ML research', icon='trending-up', ctx='Columbia University SHAPE, team of four', v7_order=3 where slug='citizen-happiness';
-update projects set headline='Turns any text into a downloadable QR code', kind='Web app', icon='grip', ctx='Python and Segno on AWS EC2', v7_order=4 where slug='qrify';
-update projects set headline='One-click listings to Marketplace and eBay', kind='Volunteer', icon='users', ctx='Google Apps Script tool for a non-profit', v7_order=5 where slug='habitat-humanity-ecomm';
+update projects set headline='A robotic arm driven by thought alone', kind='BCI / Hardware', icon='cpu', ctx='NeuroSky EEG headset and an Arduino', v7_order=0 where slug='mind-controlled-arm' and headline is null;
+update projects set headline='Finds every frame a person appears in a video', kind='Computer vision', icon='crosshair', ctx='Full-stack MERN app on AWS Rekognition', v7_order=1 where slug='boilerframe' and headline is null;
+update projects set headline='Classifies left, right and neutral thoughts from EEG', kind='BCI', icon='activity', ctx='16-channel OpenBCI headset', v7_order=2 where slug='eeg-thought-prediction' and headline is null;
+update projects set headline='Modeled how public spending tracks happiness', kind='ML research', icon='trending-up', ctx='Columbia University SHAPE, team of four', v7_order=3 where slug='citizen-happiness' and headline is null;
+update projects set headline='Turns any text into a downloadable QR code', kind='Web app', icon='grip', ctx='Python and Segno on AWS EC2', v7_order=4 where slug='qrify' and headline is null;
+update projects set headline='One-click listings to Marketplace and eBay', kind='Volunteer', icon='users', ctx='Google Apps Script tool for a non-profit', v7_order=5 where slug='habitat-humanity-ecomm' and headline is null;
 
-update experience set period='2026 – now' where slug='tinyml-research';
-update experience set period='2025 – 2026' where slug='hack-the-future';
-update experience set period='2025' where slug='code-ninjas-ir';
-update experience set period='2023 – 2025' where slug='code-ninjas-sensei';
+update experience set period='2026 – now' where slug='tinyml-research' and period is null;
+update experience set period='2025 – 2026' where slug='hack-the-future' and period is null;
+update experience set period='2025' where slug='code-ninjas-ir' and period is null;
+update experience set period='2023 – 2025' where slug='code-ninjas-sensei' and period is null;
 
-update education set focus='Software Engineering · AI/ML', grad='Expected {{graduation}}' where school='Purdue University';
+update education set focus='Software Engineering · AI/ML', grad='Expected {{graduation}}' where school='Purdue University' and focus is null;
 
--- ON CONFLICT DO UPDATE: re-running resets to the mockup copy. Strings raw, structures as JSON text.
+-- Seeds only: re-running never overwrites edited values (updates fill NULLs; inserts do nothing on conflict).
+-- Strings raw, structures as JSON text.
 insert into site_content (key, value) values
   ('v7.role', 'Software and AI engineer'),
   ('v7.status', 'CS + Math at Purdue · open to SWE and AI internships'),
@@ -34,4 +35,4 @@ insert into site_content (key, value) values
   ('v7.stack', '{"Languages":["Python","JavaScript","TypeScript","C++","C#","SQL"],"Frameworks":["React","Next.js","Node.js","Express","TensorFlow","Keras","scikit-learn","Pandas"],"Infra and data":["AWS","MongoDB","Supabase","Vercel","Cloudflare","Google Apps Script"],"AI and hardware":["RAG","Ollama","Edge Impulse","TinyML","OpenBCI","NeuroSky","Arduino","EEG"]}'),
   ('v7.faq', '[["When can you start?","I''m open to SWE and AI internships for {{season and dates}}."],["Where are you based?","West Lafayette, Indiana during the school year. I''m in San Francisco right now."],["What kind of role fits best?","Software engineering or ML work, especially close to hardware: brain-computer interfaces, computer vision and TinyML."],["Can I see code?","Most projects link to their repositories; the rest are on GitHub at github.com/rithvikpkx."],["Work authorization?","{{owner to confirm}}"]]'),
   ('v7.numbers', '[["500+","learners on the RAG platform I built"],["40","kids taught to code through games"],["16","EEG channels decoded into left, right and neutral"],["6","projects, from headsets to the cloud"]]')
-on conflict (key) do update set value = excluded.value;
+on conflict (key) do nothing;
