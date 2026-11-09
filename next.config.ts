@@ -38,7 +38,8 @@ function contentSecurityPolicy(): string {
       ...(isProdDeploy ? [] : ["https://vercel.live", "wss://ws-us3.pusher.com"]),
     ],
     "worker-src": ["'self'", "blob:"],
-    "frame-src": isProdDeploy ? ["'none'"] : ["https://vercel.live"],
+    // 'self' lets the resume window frame /resume.pdf.
+    "frame-src": ["'self'", ...vercelLive],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],
@@ -58,6 +59,13 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
 ];
 
+// The PDF response is inert, so its own policy is minimal: Chrome's built-in viewer renders blank under
+// the site-wide `object-src 'none'`. Only same-origin framing is allowed (the resume window).
+const resumePdfHeaders = [
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+];
+
 const nextConfig: NextConfig = {
   images: {
     // Serve modern formats; AVIF first (smaller), WebP fallback. The browser
@@ -75,7 +83,11 @@ const nextConfig: NextConfig = {
     return [{ source: "/preview", destination: "/", permanent: false }];
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // The later entry overrides the earlier one for the same header key on /resume.pdf.
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/resume.pdf", headers: resumePdfHeaders },
+    ];
   },
 };
 
