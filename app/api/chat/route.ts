@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { AUX_MODEL, CHAT_MODEL, complete, streamChat, type ChatMessage } from "@/lib/openai";
 import { adminClient } from "@/lib/supabase-server";
 import { embedTexts, generateHypotheticalAnswer } from "@/lib/embeddings";
@@ -13,6 +14,8 @@ import { DESIGNS } from "@/lib/designs/registry";
 import { GAMES } from "@/lib/play/games";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { contextPrompt, sanitizeContext } from "@/lib/agent/context";
+import { logRequest, logTurn, startSession } from "@/lib/agent/log";
+import type { TurnRow } from "@/lib/agent/obs";
 import { cleanRewrite, rewriteMessages } from "@/lib/agent/rewrite";
 import { anchorFor } from "@/lib/agent/highlight";
 import { MAX_STEPS, SECTION_IDS, screenCalls, toolDefs, type Allowed } from "@/lib/agent/tools";
@@ -124,7 +127,7 @@ ${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}
 }
 
 export async function POST(req: Request) {
-	let body: { message?: unknown; messages?: unknown; offered?: unknown; context?: unknown };
+	let body: { message?: unknown; messages?: unknown; offered?: unknown; context?: unknown; sessionId?: unknown; timeZone?: unknown };
 	try {
 		body = (await req.json()) as typeof body;
 	} catch {
@@ -149,6 +152,7 @@ export async function POST(req: Request) {
 	// atomically before the work, so bursts and failed turns both count.
 	const limited = await rateLimit("chat", clientKey(req), RATE_LIMIT, RATE_LIMIT_GLOBAL);
 	if (!limited.ok) {
+		after(() => logRequest({ status: limited.status, errorKind: "rate_limited" }));
 		const text = limited.status === 429
 			? "You've reached the message limit. Please try again later."
 			: "Chat is temporarily unavailable. Please try again shortly.";
@@ -161,7 +165,12 @@ export async function POST(req: Request) {
 	const model = modelFor(req);
 	const signal = req.signal;
 	const db = adminClient();
-	const [content, palettes] = await Promise.all([getContent(), getPalettes()]);
+	const firstDesign = (body.context as { design?: unknown } | null | undefined)?.design;
+	const [content, palettes, sessionId] = await Promise.all([
+		getContent(),
+		getPalettes(),
+		startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
+	]);
 	const allowed: Allowed = {
 		projects: content.projects.map((p) => ({ slug: p.slug, title: p.title })),
 		roles: content.experience.map((r) => r.slug),
@@ -177,6 +186,25 @@ export async function POST(req: Request) {
 	const profile = renderProfile(content);
 	const t0 = Date.now();
 
+	// Observability: the turn's facts are gathered here and written after the response, never on the stream's path.
+	const log = { answer: "", tools: [] as { name: string; args: unknown; result?: string }[], sources: [] as Source[], tokens: 0, ttfb: 0, status: 200, errorKind: undefined as string | undefined };
+	let turnDone!: () => void;
+	const finished = new Promise<void>((r) => (turnDone = r));
+	after(async () => {
+		await finished;
+		const totalMs = Date.now() - t0;
+		const rows: TurnRow[] = [
+			{ role: "user", content: message },
+			...log.tools.map((t): TurnRow => ({ role: "tool", content: t.name, tools: t })),
+			// shortcut: total tokens (in + out) go in tokens_out; split them if the dashboard needs per-direction cost
+			{ role: "assistant", content: log.answer, sources: log.sources, model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, error: log.errorKind },
+		];
+		await Promise.all([
+			logTurn(sessionId, rows),
+			logRequest({ model, tokensOut: log.tokens, ttfbMs: log.ttfb, totalMs, status: log.status, errorKind: log.errorKind, toolCount: log.tools.length }),
+		]);
+	});
+
 	// Everything after the guard rails streams, so the Rewrite/Search rows render as each stage lands.
 	const readable = new ReadableStream({
 		async start(controller) {
@@ -184,6 +212,8 @@ export async function POST(req: Request) {
 			const send = (s: string) => controller.enqueue(encoder.encode(s));
 			const emit = (e: AgentEvent) => send(frame(e));
 			let answerText = "";
+			let tokens = 0; // answer-model tokens across steps, reported in the trailer for evals
+			let ttft = 0;
 			try {
 				// 1. Follow-ups become standalone questions, so HyDE, retrieval and action gating
 				//    see "what stack did BoilerFrame use?", not "what stack did it use?".
@@ -234,6 +264,7 @@ export async function POST(req: Request) {
 					const anchor = anchorFor(r.source_table, r.metadata, ids);
 					return { n: i + 1, label: labelOf(r), ...(anchor ? { anchor } : {}) };
 				});
+				log.sources = sources;
 				if (sources.length) emit({ t: "sources", items: sources });
 
 				// Empty-context guard: the profile is always present now, so this only fires if content
@@ -257,8 +288,6 @@ export async function POST(req: Request) {
 				//    calls go to the client as tool rows and back to the model as tool results.
 				const defs = toolDefs(allowed);
 				let toolsUsed = 0;
-				let tokens = 0; // answer-model tokens across steps, reported in the trailer for evals
-				let ttft = 0;
 				for (let step = 0; step < MAX_STEPS; step++) {
 					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, signal });
 					let stepText = "";
@@ -274,7 +303,7 @@ export async function POST(req: Request) {
 					answerText += stepText;
 					if (!calls.length) break; // tools stay allowed beside a partial decline ("off-topic… also open his resume")
 					const { kept, replies } = screenCalls(calls, allowed);
-					for (const k of kept) emit({ t: "tool", ...k });
+					for (const k of kept) { emit({ t: "tool", ...k }); log.tools.push({ name: k.name, args: k.args, result: k.result }); }
 					toolsUsed += kept.length;
 					messages.push(
 						{ role: "assistant", content: stepText || null, tool_calls: calls.map((c) => ({ id: c.id, type: "function", function: { name: c.name, arguments: c.arguments } })) },
@@ -295,16 +324,20 @@ export async function POST(req: Request) {
 				const actions = decline || toolsUsed > 0 ? [] : deriveActions(primary, await loadActionLinks(), standalone, gate[0]?.similarity ?? 0);
 				emit({ t: "trailer", suggestions, actions, usage: { total_tokens: tokens } });
 			} catch (e) {
-				if (signal.aborted) return; // visitor interrupted: upstream calls were aborted with it
+				if (signal.aborted) { log.status = 499; log.errorKind = "aborted"; return; } // visitor interrupted: upstream calls were aborted with it
+				log.status = 500;
+				log.errorKind = "turn_failed";
 				// Headers are already sent: append a visible note instead of truncating silently.
 				console.error("[rag] turn failed:", e instanceof Error ? e.message : e);
 				send(answerText ? "\n\n_(response interrupted — please try again)_" : "Chat is temporarily unavailable. Please try again shortly.");
 				emit({ t: "done" });
 			} finally {
+				Object.assign(log, { answer: answerText, tokens, ttfb: ttft });
+				turnDone();
 				try { controller.close(); } catch {}
 			}
 		},
 	});
 
-	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...(sessionId ? { "X-Agent-Session": sessionId } : {}) } });
 }

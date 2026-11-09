@@ -39,6 +39,12 @@ export function sanitizeContext(raw: unknown, ok: { looks: string[]; sections: s
   return out;
 }
 
+/** The visitor's IANA timezone if Intl accepts it, else undefined. Client-supplied, so checked before it reaches a prompt or a tool. */
+export function cleanTimeZone(v: unknown): string | undefined {
+  if (typeof v !== "string" || v.length > 64) return undefined;
+  try { new Intl.DateTimeFormat("en", { timeZone: v }); return v; } catch { return undefined; }
+}
+
 /** The prompt block, or "" when there is nothing. The selection is quoted as data. Pure. */
 export function contextPrompt(c: PageContext): string {
   const lines = [

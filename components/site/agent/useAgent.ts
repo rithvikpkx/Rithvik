@@ -35,6 +35,11 @@ type Cooldown = { until: number; status: 429 | 503 };
 type Run = { ctl: AbortController; answered: boolean };
 type Ask = { question: string; key: string; go: () => void; tool?: { name: string; args: string } };
 
+const SESSION_KEY = "rithvik-agent-session";
+/** The server-issued conversation id for this tab, or null (no storage, or no turn answered yet). */
+const readSession = () => { try { return sessionStorage.getItem(SESSION_KEY); } catch { return null; } };
+const writeSession = (id: string | null) => { try { if (id) sessionStorage.setItem(SESSION_KEY, id); else sessionStorage.removeItem(SESSION_KEY); } catch { /* private mode: the id just isn't remembered */ } };
+
 /** Clips a question for the Search(...) row. */
 const clip = (s: string, n = 48) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 /** open_project → OpenProject, for the tool row. */
@@ -49,6 +54,7 @@ export function useAgent(host: Host) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [cooldown, setCooldown] = useState<Cooldown | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(readSession); // lazy: the dock only mounts client-side
   // Lazy init (not an effect): the dock only mounts client-side, so localStorage is there.
   const [history, setHistory] = useState<string[]>(() => loadHistory(typeof localStorage === "undefined" ? undefined : localStorage));
 
@@ -252,9 +258,13 @@ export function useAgent(host: Host) {
           messages: turns.flatMap((t) => [{ role: "user", content: t.q }, { role: "assistant", content: t.a }]).slice(-5),
           offered: turns.slice(-2).flatMap((t) => t.suggestions),
           context,
+          sessionId: readSession() ?? undefined,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
       if (gone()) return;
+      const sid = res.headers.get("X-Agent-Session");
+      if (sid && sid !== readSession()) { writeSession(sid); setSessionId(sid); }
       if (!res.ok) {
         const text = (await res.text().catch(() => "")).trim();
         if (res.status === 429 || res.status === 503) {
@@ -337,6 +347,8 @@ export function useAgent(host: Host) {
     undos.current.clear();
     setBusySince(null);
     setTurns([]);
+    writeSession(null); // a cleared transcript is a new conversation server-side too
+    setSessionId(null);
     setItems([{ id: ++seq.current, kind: "banner" }]);
   }, []);
 
@@ -383,5 +395,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, sessionId, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
 }
