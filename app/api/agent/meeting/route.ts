@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { sendMeetingRequest } from "@/lib/agent/meeting";
+import { identifyFromRequest } from "@/lib/track/store";
 import { clientKey } from "@/lib/rate-limit";
 
 const str = (v: unknown) => (typeof v === "string" ? v : undefined);
@@ -19,6 +21,10 @@ export async function POST(req: Request) {
     sessionId: str(b.sessionId) ?? "",
     key: clientKey(req),
   });
-  if (r.ok) return Response.json({ ok: true });
+  if (r.ok) {
+    // Attach this visitor's whole browsing history to the person who just asked for a meeting.
+    after(() => identifyFromRequest(req, { email: str(b.email) ?? "", name: str(b.name), company: str(b.company) }));
+    return Response.json({ ok: true });
+  }
   return Response.json({ ok: false, error: r.error }, { status: r.retryAfter ? 429 : 400, ...(r.retryAfter ? { headers: { "Retry-After": String(r.retryAfter) } } : {}) });
 }
