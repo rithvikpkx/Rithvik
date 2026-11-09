@@ -45,8 +45,8 @@ export function freeSlots(busy: Interval[], o: { from: number; now: number; days
   return picked.sort((a, b) => a - b);
 }
 
-/** "Tue Nov 10, 10:00 AM PT" (date omitted when `date` is false). Generic tz names (PT, ET) where Intl has them. */
-export function formatAt(ms: number, tz: string, date = true): string {
+/** "full" = "Tue Nov 10, 10:00 AM PT", "short" = "Tue 10:00 AM PT", "time" = "10:00 AM PT". Generic tz names (PT, ET) where Intl has them. */
+export function formatAt(ms: number, tz: string, mode: "full" | "short" | "time" = "full"): string {
   const parts = (opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat("en-US", { timeZone: tz, ...opts }).formatToParts(ms);
   const get = (ps: Intl.DateTimeFormatPart[], t: string) => ps.find((p) => p.type === t)?.value ?? "";
@@ -55,5 +55,6 @@ export function formatAt(ms: number, tz: string, date = true): string {
   if (/\s/.test(zone) || zone.length > 5) zone = get(parts({ timeZoneName: "short" }), "timeZoneName"); // "Germany Time" -> "GMT+1"
   if (tz === "UTC") zone = "UTC";
   const time = `${get(d, "hour")}:${get(d, "minute")} ${get(d, "dayPeriod")}`;
-  return `${get(d, "weekday")}${date ? ` ${get(d, "month")} ${get(d, "day")},` : ""} ${time} ${zone}`;
+  const day = mode === "full" ? `${get(d, "weekday")} ${get(d, "month")} ${get(d, "day")}, ` : mode === "short" ? `${get(d, "weekday")} ` : "";
+  return `${day}${time} ${zone}`;
 }

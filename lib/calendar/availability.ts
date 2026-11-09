@@ -3,7 +3,7 @@
  *  places or people), and the feed URL is never logged or put in an error message. Imports of next/* are lazy so
  *  scripts/calendar-check.mjs can run the same code outside Next. */
 
-import { isValidTz, parseBusy, fromWall, type Interval } from "./ics.ts";
+import { isValidTz, parseBusy, fromWall, toWall, type Interval } from "./ics.ts";
 import { blockedReason, formatAt, freeSlots, MAX_DAYS, type Reason } from "./slots.ts";
 
 const DAY = 86_400_000;
@@ -110,6 +110,12 @@ function duration(v: unknown): number {
   return n;
 }
 
+/** Visitor-zone rendering; just the time when it falls on the same calendar day as his, so rows stay short. */
+function visitorAt(ms: number, vz: string, tz: string): string {
+  const day = (z: string) => Math.floor(toWall(ms, z) / DAY);
+  return formatAt(ms, vz, day(vz) === day(tz) ? "time" : "full");
+}
+
 // ---- public API ----
 
 /** Is `[startISO, +durationMin)` free? A start without an offset is read in the visitor's zone (else his). */
@@ -121,7 +127,7 @@ export async function checkAvailability(startISO: string, durationMin: number = 
   // Past / too-far / out-of-hours need no feed, so those answers survive a feed outage.
   const reason = blockedReason([], start, dur, now, tz) ?? blockedReason(await loadBusy(now, tz), start, dur, now, tz);
   const local = formatAt(start, tz);
-  return { free: reason === null, ...(reason && { reason }), localStart: local, ...(vz && { visitorStart: formatAt(start, vz, false) }) };
+  return { free: reason === null, ...(reason && { reason }), localStart: local, ...(vz && { visitorStart: visitorAt(start, vz, tz) }) };
 }
 
 /** Up to `count` (default 3, max 10) free slots from `fromISO` (default now) over `days` (default 7, max 21), earliest first, spread across days. */
@@ -136,6 +142,6 @@ export async function suggestTimes(o: { fromISO?: string; days?: number; duratio
   const from = o.fromISO ? parseInstant(o.fromISO, vz ?? tz) : now;
   const slots = freeSlots(await loadBusy(now, tz), { from, now, days, durMin: dur, count, tz });
   return slots.map((ms) => ({
-    startISO: new Date(ms).toISOString(), localStart: formatAt(ms, tz), ...(vz && { visitorStart: formatAt(ms, vz, false) }),
+    startISO: new Date(ms).toISOString(), localStart: formatAt(ms, tz), ...(vz && { visitorStart: visitorAt(ms, vz, tz) }),
   }));
 }

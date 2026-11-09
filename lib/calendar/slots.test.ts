@@ -80,14 +80,14 @@ test("freeSlots: skips busy time, weekends, and times before `from`", () => {
 
 test("freeSlots: a second pass fills in when there are fewer days than count", () => {
   const s = freeSlots(none, { from: NOW, now: NOW, days: 1, durMin: 30, count: 3, tz: PT });
-  assert.deepEqual(s.map((x) => formatAt(x, PT, false)), ["Mon 10:00 AM PT", "Mon 10:30 AM PT", "Mon 11:00 AM PT"]);
+  assert.deepEqual(s.map((x) => formatAt(x, PT, "short")), ["Mon 10:00 AM PT", "Mon 10:30 AM PT", "Mon 11:00 AM PT"]);
 });
 
 test("freeSlots: duration shrinks the last start of the day; busy days contribute nothing", () => {
   const tue = [block("2026-11-10T17:00:00Z", "2026-11-11T02:00:00Z")]; // all of Tue
   const s = freeSlots(tue, { from: NOW, now: NOW, days: 3, durMin: 120, count: 100, tz: PT });
   assert.ok(s.every((x) => formatAt(x, PT).startsWith("Mon") || formatAt(x, PT).startsWith("Wed")));
-  assert.equal(formatAt(s[s.length - 1], PT, false), "Wed 3:00 PM PT"); // 15:00 + 120 = 17:00
+  assert.equal(formatAt(s[s.length - 1], PT, "short"), "Wed 3:00 PM PT"); // 15:00 + 120 = 17:00
 });
 
 test("freeSlots honours the 21-day horizon and empty results", () => {
@@ -96,6 +96,7 @@ test("freeSlots honours the 21-day horizon and empty results", () => {
 
 test("formatAt: generic tz names, date optional", () => {
   assert.equal(formatAt(at("2026-11-10T18:00:00Z"), PT), "Tue Nov 10, 10:00 AM PT");
-  assert.equal(formatAt(at("2026-11-10T18:00:00Z"), "America/New_York", false), "Tue 1:00 PM ET");
-  assert.equal(formatAt(at("2026-11-10T18:00:00Z"), "Asia/Kolkata", false), "Tue 11:30 PM GMT+5:30");
+  assert.equal(formatAt(at("2026-11-10T18:00:00Z"), "America/New_York", "short"), "Tue 1:00 PM ET");
+  assert.equal(formatAt(at("2026-11-10T18:00:00Z"), "Asia/Kolkata", "short"), "Tue 11:30 PM GMT+5:30");
+  assert.equal(formatAt(at("2026-11-10T18:00:00Z"), "America/New_York", "time"), "1:00 PM ET");
 });
