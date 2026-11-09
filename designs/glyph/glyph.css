@@ -271,7 +271,7 @@
 :root[data-design="glyph"] .sw-deck { border-color: var(--gl-rule2); }
 :root[data-design="glyph"] .sw-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--gl-hue); }
 
-:root[data-design="glyph"] .agent-bar { position: relative; height: 50px; padding: 0 6px 0 16px; background: #0A0A0A; border-color: var(--gl-rule2); }
+:root[data-design="glyph"] .agent-bar { position: relative; min-height: 50px; padding: 0 6px 0 16px; background: #0A0A0A; border-color: var(--gl-rule2); }
 :root[data-design="glyph"] .agent-bar::before { content: "─ agent ─ : to focus ─"; position: absolute; top: -9px; left: 12px; padding: 0 4px; background: #050505; font: 500 10.5px/16px var(--gl-d); color: var(--gl-hue); pointer-events: none; }
 :root[data-design="glyph"] .agent-bar:focus-within { border-color: var(--gl-hue); }
 :root[data-design="glyph"] .agent-bar .ab-prompt { color: var(--gl-hue); font-size: 17px; }

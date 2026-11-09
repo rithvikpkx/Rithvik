@@ -436,7 +436,7 @@
 :root[data-design="nimbus"] .case-next b { font: italic 380 2rem/1.1 var(--nb-serif); }
 
 /* agent */
-:root[data-design="nimbus"] .agent-bar { height: 58px; border-radius: 999px; padding: 0 7px 0 22px; border: 0; background: #FFFFFF; box-shadow: 0 0 0 1.5px var(--nb-pale), 0 20px 46px -22px rgba(7, 80, 160, .6); }
+:root[data-design="nimbus"] .agent-bar { min-height: 58px; border-radius: 999px; padding: 0 7px 0 22px; border: 0; background: #FFFFFF; box-shadow: 0 0 0 1.5px var(--nb-pale), 0 20px 46px -22px rgba(7, 80, 160, .6); }
 :root[data-design="nimbus"] .agent-bar:focus-within { box-shadow: 0 0 0 2px var(--nb-skyink), 0 20px 46px -22px rgba(7, 80, 160, .6); }
 :root[data-design="nimbus"] .ab-prompt { color: var(--nb-skyink); }
 :root[data-design="nimbus"] .ab-send { width: 44px; height: 44px; border-radius: 50%; background: var(--nb-ink); color: #FFFFFF; }

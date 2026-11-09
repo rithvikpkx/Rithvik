@@ -2,7 +2,31 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ADMIN_COMMANDS, COMMANDS, formatDocs, formatEmbed, isAdminCommand, matchCommands, parseCommand, parseTemp } from "./commands.ts";
 import { HISTORY_MAX, loadHistory, pushHistory, saveHistory, stepHistory } from "./history.ts";
-import { formatRetry, spinFrame, statusSegments, verbAt, VERBS } from "./status.ts";
+import { formatRetry, formatTokens, spinFrame, statusSegments, usageLines, verbAt, VERBS } from "./status.ts";
+
+test("idle status line shows only what is known, in order", () => {
+  const u = { tokens: 12431, limit: 60, remaining: 41, totalMs: 1900 };
+  assert.deepEqual(statusSegments({ kind: "idle", turns: 3, usage: u }).map((s) => s.text), ["● ready", "3 turns", "41/60 left", "12.4k tok", "1.9s", "? for shortcuts"]);
+  assert.deepEqual(statusSegments({ kind: "idle", turns: 0, usage: { tokens: 0 } }).map((s) => s.text), ["● ready", "0 turns", "? for shortcuts"]);
+  assert.equal(statusSegments({ kind: "idle", turns: 1, usage: { tokens: 0, limit: 60, remaining: 3 } })[2].tone, "warn");
+});
+
+test("formatTokens abbreviates", () => {
+  assert.deepEqual([980, 1000, 1480, 12431, 123456].map(formatTokens), ["980", "1k", "1.5k", "12.4k", "123k"]);
+});
+
+test("usageLines: rate limit, tokens, timings, model; cache only when present", () => {
+  const now = Date.UTC(2026, 10, 9, 12, 0, 0);
+  const rows = Object.fromEntries(usageLines({ tokens: 3690, lastTokens: 2210, limit: 60, remaining: 41, reset: now / 1000 + 2280, ttfbMs: 420, totalMs: 1900 }, "gpt-x", now));
+  assert.match(rows["Rate limit"], /^19\/60 used this hour · 41 left · resets .+ \(in 38m\)$/);
+  assert.equal(rows["Tokens"], "3,690 this session · 2,210 last turn");
+  assert.equal(rows["Last turn"], "first byte 0.4s · total 1.9s");
+  assert.equal(rows["Model"], "gpt-x");
+  assert.equal("Cache" in rows, false);
+  const bare = Object.fromEntries(usageLines({ tokens: 0, cache: "MISS" }, undefined, now));
+  assert.deepEqual(Object.keys(bare), ["Tokens", "Cache"]);
+  assert.equal(bare["Tokens"], "none yet this session");
+});
 import { findEntry, resolveTarget } from "./targets.ts";
 
 test("findEntry prefers id, then name or keyword", () => {
@@ -22,7 +46,7 @@ test("parseCommand splits name and arg, flags unknown", () => {
 });
 
 test("every documented command parses as known", () => {
-  assert.equal(COMMANDS.length, 12);
+  assert.equal(COMMANDS.length, 13);
   for (const [c] of COMMANDS) assert.equal(parseCommand(c)?.known, true);
 });
 

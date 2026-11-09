@@ -1,6 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ipBucket } from "./rate-limit.ts";
+import { ipBucket, rateHeaders, windowInfo } from "./rate-limit.ts";
+
+test("windowInfo: remaining, clamped at zero, and the reset is when the oldest hit ages out", () => {
+  const t0 = Date.UTC(2026, 10, 9, 12, 0, 0);
+  assert.deepEqual(windowInfo(60, 19, t0, 3600), { limit: 60, used: 19, remaining: 41, reset: t0 / 1000 + 3600 });
+  assert.equal(windowInfo(60, 75, t0).remaining, 0);
+  assert.equal(windowInfo(60, 0, null).reset, null);
+});
+
+test("rateHeaders: limit, remaining, reset (epoch seconds); none when unknown; no reset for an empty window", () => {
+  assert.deepEqual(rateHeaders({ limit: 60, used: 19, remaining: 41, reset: 1790000000 }), {
+    "X-RateLimit-Limit": "60", "X-RateLimit-Remaining": "41", "X-RateLimit-Reset": "1790000000",
+  });
+  assert.deepEqual(rateHeaders(null), {});
+  assert.equal("X-RateLimit-Reset" in rateHeaders(windowInfo(60, 0, null)), false);
+});
 
 test("IPv4 passes through", () => {
   assert.equal(ipBucket(" 203.0.113.7 "), "203.0.113.7");

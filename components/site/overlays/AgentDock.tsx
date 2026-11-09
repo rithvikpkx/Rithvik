@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
 import { EditModeContext } from "@/components/EditModeProvider";
 import { DesignContext } from "../DesignProvider";
@@ -18,6 +18,10 @@ function isTyping(t: EventTarget | null): boolean {
   return t instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable);
 }
 
+/** Narrow screens get a shorter placeholder: a wrapped one makes the prompt two lines tall. */
+const NARROW = "(max-width: 560px)";
+const subscribeNarrow = (cb: () => void) => { const m = matchMedia(NARROW); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb); };
+
 /** The bottom-centre agent prompt. Always mounted so the transcript survives while another overlay
  *  is open; the panel expands when overlay.kind === "agent" (the bar itself is always there). */
 export default function AgentDock() {
@@ -27,10 +31,11 @@ export default function AgentDock() {
   const open = overlay?.kind === "agent";
   const admin = useContext(EditModeContext)?.isEditing ?? false; // null in the lab harness
   useEffect(() => { setAdminMode(admin); return () => setAdminMode(false); }, [admin]);
+  const narrow = useSyncExternalStore(subscribeNarrow, () => matchMedia(NARROW).matches, () => false);
   const [full, setFull] = useState(false);
   const [input, setInput] = useState("");
   const [palIdx, setPalIdx] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const recalled = useRef<string | null>(null); // the history entry currently in the input, so repeated up-arrows keep walking
 
@@ -74,6 +79,16 @@ export default function AgentDock() {
     cite: (a) => { scrollAndHighlight(a); },
   }), []);
 
+  // Auto-grow: reset, then fit the content; CSS caps it at six rows and scrolls beyond.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto"; // empty: stay one row (scrollHeight would count a wrapped placeholder)
+    if (input) el.style.height = `${el.scrollHeight}px`;
+    // Pill-shaped bars (999px radius) would clip a tall draft, so CSS squares them once it wraps.
+    if (el.form) el.form.dataset.grown = String(!!input && el.scrollHeight > parseFloat(getComputedStyle(el).lineHeight) * 1.5);
+  }, [input]);
+
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
   useEffect(() => { const el = logRef.current; if (el) el.scrollTop = el.scrollHeight; }, [items, open]);
 
@@ -104,26 +119,31 @@ export default function AgentDock() {
   const matches = open ? matchCommands(input, admin) : [];
   const pal = Math.min(palIdx, Math.max(0, matches.length - 1));
 
-  /** Prompt keys: palette, history, confirmations (Enter/n/a), full screen, Ctrl+L / Ctrl+U, "?" for help. */
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  /** Prompt keys: palette, history, confirmations (Enter/n/a), send (Enter; Shift+Enter is a newline),
+   *  full screen, Ctrl+L / Ctrl+U, "?" for help. */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // History only walks when the caret is on the first/last line, so ↑/↓ still move through a multi-line draft.
+    const { value, selectionStart: at, selectionEnd: to } = e.currentTarget;
+    const firstLine = !value.slice(0, at).includes("\n") && at === to;
+    const lastLine = !value.slice(to).includes("\n") && at === to;
     if (matches.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       setPalIdx(Math.max(0, Math.min(matches.length - 1, pal + (e.key === "ArrowDown" ? 1 : -1))));
       return;
     }
-    if (matches.length && (e.key === "Tab" || e.key === "Enter")) {
+    if (matches.length && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey))) {
       e.preventDefault();
       const [c] = matches[pal];
       if (e.key === "Enter" && NO_ARG.has(c)) go(c);
       else setInput(`${c} `);
       return;
     }
-    if (e.key === "ArrowUp" && (!input || input === recalled.current)) {
+    if (e.key === "ArrowUp" && firstLine && (!input || input === recalled.current)) {
       const v = agent.recall(1);
       if (v !== null) { e.preventDefault(); recalled.current = v; setInput(v); }
       return;
     }
-    if (e.key === "ArrowDown" && recalled.current !== null && input === recalled.current) {
+    if (e.key === "ArrowDown" && lastLine && recalled.current !== null && input === recalled.current) {
       e.preventDefault();
       const v = agent.recall(-1) ?? "";
       recalled.current = v || null;
@@ -138,6 +158,8 @@ export default function AgentDock() {
     const last = items[items.length - 1];
     if (!input && e.key === "u" && last?.kind === "tool" && last.undo) { e.preventDefault(); agent.undo(last.id); return; }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); host.toggleFull(); return; }
+    // IME composition also fires Enter; never send mid-composition.
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); return; }
     if (e.key === "l" && e.ctrlKey) { e.preventDefault(); agent.clear(); return; }
     if (e.key === "u" && e.ctrlKey) { e.preventDefault(); setInput(""); return; }
     if (e.key === "?" && !input) { e.preventDefault(); go("/help"); }
@@ -146,11 +168,13 @@ export default function AgentDock() {
   return (
     <div className="agent" data-open={open} data-full={open && full} data-pending={!open && !!agent.pending}>
       {open && (
-        <section className="agent-panel" aria-label="Rithvik's agent">
+        <section className="agent-panel" aria-label="RAG, Rithvik's agent">
           <header className="agent-head">
-            <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
+            <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
+              <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
+              <button type="button" className="ag-btn" aria-label="Download chat as Markdown" title="Download chat" disabled={!agent.canExport} onClick={agent.downloadChat}><Icon name="download" /></button>
               <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>
               <button type="button" className="ag-btn" aria-label="Full screen (Cmd+Enter)" title="Full screen" onClick={host.toggleFull}><Icon name={full ? "minimize-2" : "maximize-2"} /></button>
               <button type="button" className="ag-btn" aria-label="Close (Esc)" title="Close" onClick={close}><Icon name="chevron-down" /></button>
@@ -169,7 +193,7 @@ export default function AgentDock() {
               ))}
             </div>
           )}
-          <StatusLine turns={agent.turns.length} busySince={busySince} cooldown={agent.cooldown} />
+          <StatusLine turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} />
         </section>
       )}
       {!open && agent.pending && (
@@ -183,8 +207,8 @@ export default function AgentDock() {
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>
         <span className="ab-prompt" aria-hidden="true">❯</span>
         <label htmlFor="agent-input" className="sr-only">Ask about Rithvik</label>
-        <input id="agent-input" ref={inputRef} className="ab-input" type="text" value={input} maxLength={500} enterKeyHint="send"
-          placeholder="Ask about Rithvik, or type / for commands"
+        <textarea id="agent-input" ref={inputRef} className="ab-input" rows={1} value={input} maxLength={500} enterKeyHint="send"
+          placeholder={narrow ? "Ask about Rithvik" : "Ask about Rithvik, or type / for commands"}
           onChange={(e) => { setInput(e.target.value); setPalIdx(0); }}
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />

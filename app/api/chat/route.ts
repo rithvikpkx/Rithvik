@@ -7,7 +7,7 @@ import { frame, type AgentEvent, type SearchHit, type Source } from "@/lib/sugge
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 import { deriveActions, isDeclineAnswer } from "@/lib/chat-actions";
 import { loadActionLinks } from "@/lib/action-links";
-import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { rateLimit, clientKey, rateHeaders, CHAT_RATE_LIMIT } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
 import { DESIGNS } from "@/lib/designs/registry";
@@ -43,7 +43,7 @@ const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the client slice
 const MAX_HISTORY_CHARS = 2000; // per-turn cap; history is client-supplied, so it needs its own bound
 const PRIMARY_MATCHES = 5; // the profile already carries every primary record; these are for citing + actions
 const SECONDARY_MATCHES = 6; // uploaded docs (and the resume) are only reachable through retrieval
-const RATE_LIMIT = 60; // chat turns per key (IP; IPv6 /64) per hour
+const RATE_LIMIT = CHAT_RATE_LIMIT; // chat turns per key (IP; IPv6 /64) per hour
 const RATE_LIMIT_GLOBAL = 1500; // all callers per hour; caps OpenAI spend if many IPs are used
 const CANNED_NO_CONTEXT_REPLY =
 	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
@@ -166,7 +166,7 @@ export async function POST(req: Request) {
 			: "Chat is temporarily unavailable. Please try again shortly.";
 		return new Response(text, {
 			status: limited.status,
-			headers: { "Retry-After": String(limited.retryAfter), "Content-Type": "text/plain; charset=utf-8" },
+			headers: { "Retry-After": String(limited.retryAfter), "Content-Type": "text/plain; charset=utf-8", ...rateHeaders(limited.info) },
 		});
 	}
 
@@ -351,5 +351,5 @@ export async function POST(req: Request) {
 		},
 	});
 
-	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...(sessionId ? { "X-Agent-Session": sessionId } : {}) } });
+	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...rateHeaders(limited.info), ...(sessionId ? { "X-Agent-Session": sessionId } : {}) } });
 }

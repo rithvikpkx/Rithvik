@@ -25,7 +25,7 @@ export default function Voice({ onTranscript }: { onTranscript: (text: string) =
       if (e.key !== " " || e.metaKey || e.ctrlKey || e.altKey) return;
       if (heldKey.current) { e.preventDefault(); return; } // swallow auto-repeat
       const t = e.target;
-      if (t instanceof HTMLInputElement && t.id === "agent-input" && t.value === "" && !e.repeat) {
+      if (t instanceof HTMLTextAreaElement && t.id === "agent-input" && t.value === "" && !e.repeat) {
         e.preventDefault(); heldKey.current = true; stopSpeaking(); void start();
       }
     };

@@ -11,6 +11,9 @@ import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from 
 import { GAMES } from "@/lib/play/games";
 import { createShareLink } from "@/app/agent/share-actions";
 import type { Content } from "@/lib/content/types";
+import type { ComposerMeta } from "../SiteProvider";
+import { usageLines, type Usage } from "@/lib/agent/status";
+import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
 import type { Choice, Design, Item, NewItem, Turn } from "./types";
@@ -21,7 +24,7 @@ export type Host = {
   design: Design;
   openCase: (slug: string) => void;
   openResume: () => void;
-  openComposer: (subject?: string, body?: string) => void;
+  openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void;
   openPlay: (id?: string) => void;
   close: () => void;
   toggleFull: () => void;
@@ -55,6 +58,7 @@ export function useAgent(host: Host) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [cooldown, setCooldown] = useState<Cooldown | null>(null);
+  const [usage, setUsage] = useState<Usage>({ tokens: 0 }); // rate-limit headers, trailer tokens and timings
   const [sessionId, setSessionId] = useState<string | null>(readSession); // lazy: the dock only mounts client-side
   // Lazy init (not an effect): the dock only mounts client-side, so localStorage is there.
   const [history, setHistory] = useState<string[]>(() => loadHistory(typeof localStorage === "undefined" ? undefined : localStorage));
@@ -97,7 +101,7 @@ export function useAgent(host: Host) {
   const add = useCallback((it: NewItem, undo?: () => void): number => {
     const id = ++seq.current;
     if (undo) undos.current.set(id, undo);
-    setItems((p) => [...p, { ...it, ...(undo ? { undo: true } : {}), id } as Item]);
+    setItems((p) => [...p, { ...it, ...(undo ? { undo: true } : {}), at: Date.now(), id } as Item]);
     return id;
   }, []);
   const patch = useCallback((id: number, f: (i: Item) => Item) => setItems((p) => p.map((i) => (i.id === id ? f(i) : i))), []);
@@ -147,10 +151,13 @@ export function useAgent(host: Host) {
     return target === "top" ? "the top" : target;
   }, [host]);
 
+  /** Opens the composer from the agent, tagged with this conversation so the email's owner-only context links to it. */
+  const compose = useCallback((subject?: string, body?: string) => host.openComposer(subject, body, { agentSessionId: readSession() ?? undefined }), [host]);
+
   /** Turns a fallback server action (a record name, never a URL the model wrote) into a confirmation row. */
   const queueAction = useCallback((a: ChatAction) => {
     if (a.type === "open_link") return ask(`Open "${a.label}" in a new tab?`, "link", () => window.open(a.url, "_blank", "noopener,noreferrer"));
-    if (a.type === "open_composer") return ask("Draft an email to Rithvik?", "compose", () => host.openComposer(""));
+    if (a.type === "open_composer") return ask("Draft an email to Rithvik?", "compose", () => compose(""));
     const r = resolveTarget(a.target);
     if (r.kind === "case") {
       const title = host.content.projects.find((p) => p.slug === r.slug)?.title;
@@ -158,7 +165,7 @@ export function useAgent(host: Host) {
     }
     const section = a.target.startsWith("experience") ? "experience" : a.target.startsWith("education") ? "education" : a.target.startsWith("project") ? "work" : "about";
     ask(`Scroll to ${section}?`, "navigate", () => scroll(r.kind === "scroll" ? r.ids : ["work", "top"]));
-  }, [ask, host, scroll]);
+  }, [ask, compose, host, scroll]);
 
   /** Sends a meeting request the visitor just confirmed; the row shows the outcome. Only ever called from the confirmation. */
   const sendMeeting = useCallback(async (m: Record<string, string>) => {
@@ -224,10 +231,10 @@ export function useAgent(host: Host) {
         return;
       }
       case "draft_email":
-        ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => host.openComposer(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
+        ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => compose(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
         return;
     }
-  }, [add, ask, host, scroll, sectionName, sendMeeting]);
+  }, [add, ask, compose, host, scroll, sectionName, sendMeeting]);
 
   const copy = useCallback((text: string, msg: string) => {
     navigator.clipboard?.writeText(text).then(() => host.toast(msg), () => {});
@@ -245,6 +252,42 @@ export function useAgent(host: Host) {
       host.toast("Could not copy the link");
     }
   }, [host, sessionId]);
+
+  // The export reads the latest rows through a ref, so the callbacks below stay stable.
+  const itemsRef = useRef(items);
+  const usageRef = useRef(usage);
+  useEffect(() => { itemsRef.current = items; usageRef.current = usage; });
+
+  /** The whole conversation as Markdown: every row the panel shows, under a session/model header. */
+  const exportMd = useCallback(() => buildTranscriptMarkdown(itemsRef.current, Date.now(), {
+    session: readSession(), model: process.env.NEXT_PUBLIC_CHAT_MODEL, design: host.design?.current, tokens: usageRef.current.tokens,
+  }), [host]);
+
+  const copyChat = useCallback(() => copy(exportMd(), "Chat copied"), [copy, exportMd]);
+
+  /** Saves the Markdown as rag-chat-<date-time>.md through a throwaway link. */
+  const downloadChat = useCallback(() => {
+    const url = URL.createObjectURL(new Blob([exportMd()], { type: "text/markdown;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = transcriptFilename(Date.now());
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000); // after the click has been handled
+  }, [exportMd]);
+
+  /** The /usage row: this visitor's hourly window (a free read, it never counts as a turn), tokens and timings. */
+  const showUsage = useCallback(async () => {
+    const rid = add({ kind: "tool", name: "Usage", args: "", result: "checking…" });
+    let u = usageRef.current;
+    try {
+      const r = await fetch("/api/chat/usage", { cache: "no-store" });
+      if (r.ok) {
+        const j = (await r.json()) as { limit: number; remaining: number; reset: number | null };
+        u = { ...u, limit: j.limit, remaining: j.remaining, reset: j.reset ?? undefined };
+        setUsage(u);
+      }
+    } catch { /* fall back to what the last response said */ }
+    patch(rid, (i) => (i.kind === "tool" ? { ...i, result: "This visitor, this session", lines: usageLines(u, process.env.NEXT_PUBLIC_CHAT_MODEL, Date.now()) } : i));
+  }, [add, patch]);
 
   /** Marks every answer row of the turn as finished. */
   const settle = useCallback((ids: number[]) => ids.forEach((id) => patch(id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i))), [patch]);
@@ -289,6 +332,8 @@ export function useAgent(host: Host) {
       });
       if (target) scrollAndHighlight(target);
       setTurns((p) => [...p, { q, a: answer, suggestions: [], at }]);
+      const totalMs = Date.now() - at;
+      setUsage((p) => ({ ...p, totalMs }));
     };
     try {
       const res = await fetch("/api/chat", {
@@ -306,6 +351,10 @@ export function useAgent(host: Host) {
         }),
       });
       if (gone()) return;
+      const num = (h: string) => { const v = res.headers.get(h); return v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined; };
+      const limit = num("X-RateLimit-Limit"), remaining = num("X-RateLimit-Remaining");
+      if (limit !== undefined && remaining !== undefined) setUsage((p) => ({ ...p, limit, remaining, reset: num("X-RateLimit-Reset") }));
+      const cache = res.headers.get("x-vercel-cache") ?? res.headers.get("x-cache") ?? undefined; // only when the host sends one
       const sid = res.headers.get("X-Agent-Session");
       if (sid && sid !== readSession()) { writeSession(sid); setSessionId(sid); }
       if (!res.ok) {
@@ -321,12 +370,14 @@ export function useAgent(host: Host) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = "";
+      let first = true; // first body chunk = time to first byte
       let seen = 0; // parts already handled; the last one may be a text run that is still growing
       const rows = new Map<number, number>(); // part index → answer item id (events map to -1)
       while (true) {
         const { done, value } = await reader.read();
         if (gone()) return;
         if (done) break;
+        if (first) { first = false; const ttfbMs = Date.now() - at; setUsage((p) => ({ ...p, ttfbMs, cache })); }
         acc += decoder.decode(value, { stream: true });
         const parts = parseFrames(acc);
         answer = parts.map((p) => (p.type === "text" ? p.text : "")).join("").trim();
@@ -354,6 +405,8 @@ export function useAgent(host: Host) {
           else if (e.t === "tool") runTool(e);
           else if (e.t === "done") finish();
           else if (e.t === "trailer") {
+            const used = Number(e.usage?.total_tokens);
+            if (used > 0) setUsage((p) => ({ ...p, tokens: p.tokens + used, lastTokens: used }));
             const chips = normalizeSuggestions(e.suggestions);
             if (chips.length) {
               setTurns((t) => t.map((x) => (x.at === at ? { ...x, suggestions: chips } : x)));
@@ -390,6 +443,7 @@ export function useAgent(host: Host) {
     undos.current.clear();
     setBusySince(null);
     setTurns([]);
+    setUsage({ tokens: 0 });
     writeSession(null); // a cleared transcript is a new conversation server-side too
     setSessionId(null);
     setItems([{ id: ++seq.current, kind: "banner" }]);
@@ -412,15 +466,15 @@ export function useAgent(host: Host) {
     add({ kind: "user", text: q });
     if (isSlash) {
       runSlash(q, {
-        add, ask, clear, scroll, copy, turns, history: next,
+        add, ask, clear, scroll, copy, turns, exportMd, usage: showUsage, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
-        openCase: host.openCase, openResume: host.openResume, openComposer: host.openComposer,
+        openCase: host.openCase, openResume: host.openResume, openComposer: compose,
       });
     }
     // Starter chips answer instantly from content, with no /api/chat call.
     else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
-  }, [add, ask, clear, converse, cooldown, copy, history, host, interrupt, scroll, turns]);
+  }, [add, ask, clear, compose, converse, cooldown, copy, exportMd, history, host, interrupt, scroll, showUsage, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {
@@ -438,5 +492,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
 }

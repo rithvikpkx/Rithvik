@@ -1,7 +1,6 @@
 import { COMMANDS, isAdminCommand, parseCommand } from "@/lib/agent/commands";
 import { findEntry } from "@/lib/agent/targets";
 import type { Content } from "@/lib/content/types";
-import { buildTranscriptMarkdown } from "@/lib/transcript";
 import { adminMode, runAdmin } from "./adminCommands";
 import type { Design, NewItem, Turn } from "./types";
 
@@ -14,6 +13,10 @@ export type SlashCtx = {
   close: () => void;
   history: string[];
   turns: Turn[];
+  /** The whole panel as Markdown (rows, tool calls, sources, header). */
+  exportMd: () => string;
+  /** Adds the /usage row (rate limit, tokens, timings). */
+  usage: () => void;
   content: Content;
   design: Design;
   openCase: (slug: string) => void;
@@ -76,18 +79,11 @@ export function runSlash(raw: string, c: SlashCtx): void {
     case "/clear": c.clear(); break;
     case "/export": {
       if (!c.turns.length) { tool("Export", "markdown", "Nothing to export yet"); break; }
-      const md = buildTranscriptMarkdown(
-        c.turns.flatMap((t) => [
-          { role: "user" as const, content: t.q, at: t.at },
-          { role: "bot" as const, content: t.a, suggestions: t.suggestions, at: t.at },
-        ]),
-        Date.now(),
-        { skipFirst: false },
-      );
-      c.copy(md, "Transcript copied as Markdown");
+      c.copy(c.exportMd(), "Chat copied");
       tool("Export", "markdown", `${c.turns.length} turn${c.turns.length === 1 ? "" : "s"} copied`);
       break;
     }
+    case "/usage": c.usage(); break;
     case "/history": tool("History", "recent", c.history.slice(0, 6).join(" · ") || "No prompts yet"); break;
     case "/fullscreen": c.toggleFull(); break;
     case "/quit": c.close(); break;

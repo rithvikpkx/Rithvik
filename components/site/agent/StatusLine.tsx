@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { SPIN_INTERVAL, statusSegments, type StatusState } from "@/lib/agent/status";
+import { SPIN_INTERVAL, statusSegments, type StatusState, type Usage } from "@/lib/agent/status";
 
 /** The panel's bottom line. Owns its own clock so the 80ms spinner never re-renders the transcript. */
-export default function StatusLine({ turns, busySince, cooldown }: {
+export default function StatusLine({ turns, usage, busySince, cooldown }: {
   turns: number;
+  usage: Usage;
   busySince: number | null;
   cooldown: { until: number; status: 429 | 503 } | null;
 }) {
@@ -19,13 +20,13 @@ export default function StatusLine({ turns, busySince, cooldown }: {
     return () => clearInterval(t);
   }, [ticking]);
 
-  let state: StatusState = { kind: "idle", turns };
+  let state: StatusState = { kind: "idle", turns, usage };
   if (busySince !== null) state = { kind: "busy", elapsedMs: Math.max(0, now - busySince) };
   else if (limited) state = { kind: "limited", status: cooldown.status, retrySecs: (cooldown.until - now) / 1000 };
 
   return (
     <div className="agent-status" role="status">
-      {statusSegments(state).map((s, i) => <span key={i} className={s.tone}>{s.text}</span>)}
+      {statusSegments(state).map((s, i) => <span key={i} className={[s.tone, s.cls].filter(Boolean).join(" ") || undefined}>{s.text}</span>)}
     </div>
   );
 }

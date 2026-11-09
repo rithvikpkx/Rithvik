@@ -383,7 +383,7 @@
 :root[data-design="foil"] .case-next b { font: 400 1.6rem/1.2 var(--fo-d); letter-spacing: -.03em; }
 
 /* agent */
-:root[data-design="foil"] .agent-bar { height: 58px; border-radius: 999px; padding: 0 7px 0 22px; border: 1px solid transparent; background: linear-gradient(#13121B, #13121B) padding-box, var(--fo-foil-soft) border-box; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, .9); }
+:root[data-design="foil"] .agent-bar { min-height: 58px; border-radius: 999px; padding: 0 7px 0 22px; border: 1px solid transparent; background: linear-gradient(#13121B, #13121B) padding-box, var(--fo-foil-soft) border-box; box-shadow: 0 24px 50px -24px rgba(0, 0, 0, .9); }
 :root[data-design="foil"] .agent-bar:focus-within { border-color: transparent; background: linear-gradient(#13121B, #13121B) padding-box, var(--fo-foil) border-box; }
 :root[data-design="foil"] .ab-prompt { color: var(--fo-mint); }
 :root[data-design="foil"] .ab-input:focus-visible { outline: none; }

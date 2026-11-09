@@ -12,6 +12,7 @@ export const COMMANDS: [name: string, help: string][] = [
   ["/clear", "Clear the conversation"],
   ["/export", "Copy the transcript as Markdown"],
   ["/history", "Show recent prompts"],
+  ["/usage", "Rate limit, tokens and timings"],
   ["/fullscreen", "Toggle full screen"],
   ["/quit", "Close the agent"],
 ];
@@ -31,7 +32,7 @@ export function isAdminCommand(cmd: { name: string; arg: string }): boolean {
 }
 
 /** Commands that take no argument, so the palette runs them on Enter instead of completing. */
-export const NO_ARG = new Set(["/help", "/resume", "/experience", "/now", "/clear", "/export", "/history", "/fullscreen", "/quit", "/embed", "/docs", "/resume sync"]);
+export const NO_ARG = new Set(["/help", "/resume", "/experience", "/now", "/clear", "/export", "/history", "/usage", "/fullscreen", "/quit", "/embed", "/docs", "/resume sync"]);
 
 /** Splits "/projects boiler frame" into name and argument; null when the input is not a command. */
 export function parseCommand(raw: string): { name: string; arg: string; known: boolean } | null {

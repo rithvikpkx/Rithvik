@@ -5,6 +5,7 @@ import DesignDial from "@/components/site/DesignDial";
 import LiteToggle from "@/components/site/LiteToggle";
 import AskSelection from "@/components/site/AskSelection";
 import Tracker from "@/components/site/Tracker";
+import Overlays from "@/components/site/overlays/Overlays";
 import { getContent } from "@/lib/content";
 import { designById, loadClassic } from "@/lib/designs/registry";
 import { getLook, getPalettes } from "@/lib/designs/server";
@@ -17,7 +18,7 @@ export default async function SitePage({ theme, children }: { theme?: string | n
   const { default: Design } = await (designById(look)?.load() ?? loadClassic());
 
   return (
-    <SiteProvider content={content}>
+    <SiteProvider content={content} overlays={null}>
       <DesignProvider initial={look} palettes={themes}>
         <ActiveDesign initial={look}>
           <Design content={content} />
@@ -27,6 +28,7 @@ export default async function SitePage({ theme, children }: { theme?: string | n
         <AskSelection />
         <Tracker />
         {children}
+        <Overlays />
       </DesignProvider>
     </SiteProvider>
   );

@@ -17,7 +17,7 @@ export default function Overlays() {
   return (
     <>
       {overlay?.kind === "case" && <CaseSheet slug={overlay.slug} />}
-      {overlay?.kind === "composer" && <ComposerWindow subject={overlay.subject} body={overlay.body} />}
+      {overlay?.kind === "composer" && <ComposerWindow subject={overlay.subject} body={overlay.body} agentSessionId={overlay.meta?.agentSessionId} />}
       {overlay?.kind === "resume" && <ResumeWindow />}
       {overlay?.kind === "play" && <PlayWindow initialId={overlay.id} />}
       <AgentDock />

@@ -4,9 +4,12 @@ import type { Content } from "@/lib/content/types";
 import Overlays from "./overlays/Overlays";
 
 /** Which layer is open over the page. One at a time keeps the page calm. */
+/** Where a composer draft came from. `agentSessionId` links the email to the RAG conversation (owner-only context). */
+export type ComposerMeta = { agentSessionId?: string };
+
 export type Overlay =
   | { kind: "case"; slug: string }
-  | { kind: "composer"; subject: string; body?: string }
+  | { kind: "composer"; subject: string; body?: string; meta?: ComposerMeta }
   | { kind: "resume" }
   | { kind: "agent"; question?: string }
   | { kind: "play"; id?: string }
@@ -18,7 +21,7 @@ type SiteCtx = {
   content: Content;
   overlay: Overlay;
   openCase: (slug: string) => void;
-  openComposer: (subject?: string, body?: string) => void; // body prefills the draft; it never sends
+  openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void; // body prefills the draft; it never sends
   openResume: () => void;
   openAgent: (question?: string) => void;
   openPlay: (id?: string) => void;
@@ -50,8 +53,10 @@ function subscribeLite(cb: () => void) {
 }
 
 /** Provides useSite() and wires the mockup's declarative hooks (data-case, data-compose,
- *  data-resume, data-agent, data-play, data-copy) so designs stay plain markup. */
-export default function SiteProvider({ content, children }: { content: Content; children: React.ReactNode }) {
+ *  data-resume, data-agent, data-play, data-copy) so designs stay plain markup. `overlays` defaults to the
+ *  stock layer stack; SitePage passes null and mounts <Overlays /> itself inside DesignProvider, so the agent
+ *  and composer can read the active design (rendered here they sit outside that context). */
+export default function SiteProvider({ content, children, overlays = <Overlays /> }: { content: Content; children: React.ReactNode; overlays?: React.ReactNode }) {
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   // `html.lite` is the single source of truth (set pre-paint by the design engine), so
@@ -92,7 +97,7 @@ export default function SiteProvider({ content, children }: { content: Content; 
   const value = useMemo<SiteCtx>(() => ({
     content, overlay, toasts, toast, dismissToast, lite, setLite,
     openCase: (slug) => setOverlay({ kind: "case", slug }),
-    openComposer: (subject = "", body?: string) => setOverlay({ kind: "composer", subject, body }),
+    openComposer: (subject = "", body?: string, meta?: ComposerMeta) => setOverlay({ kind: "composer", subject, body, meta }),
     openResume: () => setOverlay({ kind: "resume" }),
     openAgent: (question) => setOverlay({ kind: "agent", question }),
     openPlay: (id) => setOverlay({ kind: "play", id }),
@@ -102,7 +107,7 @@ export default function SiteProvider({ content, children }: { content: Content; 
   return (
     <Ctx.Provider value={value}>
       {children}
-      <Overlays />
+      {overlays}
     </Ctx.Provider>
   );
 }

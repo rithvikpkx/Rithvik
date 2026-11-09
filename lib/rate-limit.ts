@@ -1,4 +1,42 @@
-export type RateLimitResult = { ok: true } | { ok: false; status: 429 | 503; retryAfter: number };
+/** One visitor key's window: `used` of `limit` hits, `reset` = epoch seconds when the oldest hit ages out
+ *  (null while the window is empty). */
+export type RateInfo = { limit: number; used: number; remaining: number; reset: number | null };
+export type RateLimitResult = { ok: true; info: RateInfo | null } | { ok: false; status: 429 | 503; retryAfter: number; info: RateInfo | null };
+
+/** Chat turns allowed per visitor key per hour (shared by /api/chat and /api/chat/usage). */
+export const CHAT_RATE_LIMIT = 60;
+
+/** Builds a RateInfo from a count and the oldest hit in the window. Pure, so the arithmetic is testable. */
+export function windowInfo(limit: number, used: number, oldestMs: number | null, windowSeconds = 3600): RateInfo {
+  return { limit, used, remaining: Math.max(0, limit - used), reset: used > 0 && oldestMs !== null ? Math.ceil(oldestMs / 1000) + windowSeconds : null };
+}
+
+/** The X-RateLimit-* headers for a window (reset is epoch seconds); empty when the window is unknown. */
+export function rateHeaders(info: RateInfo | null): Record<string, string> {
+  if (!info) return {};
+  return {
+    "X-RateLimit-Limit": String(info.limit),
+    "X-RateLimit-Remaining": String(info.remaining),
+    ...(info.reset ? { "X-RateLimit-Reset": String(info.reset) } : {}),
+  };
+}
+
+/** Reads (never records) a key's current window: one count query. Best effort: null when it can't be read. */
+export async function peekRateLimit(bucket: string, key: string, limit: number, windowSeconds = 3600): Promise<RateInfo | null> {
+  try {
+    const { adminClient } = await import("@/lib/supabase-server");
+    const since = new Date(Date.now() - windowSeconds * 1000).toISOString();
+    const { count, data, error } = await adminClient()
+      .from("rate_limit_hits")
+      .select("created_at", { count: "exact" })
+      .eq("bucket", bucket).eq("key", key).gte("created_at", since)
+      .order("created_at", { ascending: true }).limit(1);
+    if (error || count === null) return null;
+    return windowInfo(limit, count, data?.[0]?.created_at ? Date.parse(data[0].created_at) : null, windowSeconds);
+  } catch {
+    return null;
+  }
+}
 
 /** Normalises a client IP into a rate-limit key: IPv4 as is, IPv6 truncated to
  *  its /64 (one subscriber's allocation, which they can rotate through freely),
@@ -55,7 +93,11 @@ export async function rateLimit(
   const row = (data as { allowed: boolean; retry_after: number }[] | null)?.[0];
   if (error || !row) {
     console.error(`[ratelimit] ${bucket} rpc failed, denying:`, error?.message ?? "no row");
-    return { ok: false, status: 503, retryAfter: 60 };
+    return { ok: false, status: 503, retryAfter: 60, info: null };
   }
-  return row.allowed ? { ok: true } : { ok: false, status: 429, retryAfter: row.retry_after };
+  if (!row.allowed) {
+    const reset = Math.ceil(Date.now() / 1000) + row.retry_after;
+    return { ok: false, status: 429, retryAfter: row.retry_after, info: { limit, used: limit, remaining: 0, reset } };
+  }
+  return { ok: true, info: await peekRateLimit(bucket, key, limit, windowSeconds) };
 }
