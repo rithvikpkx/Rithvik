@@ -17,6 +17,9 @@
 .pdf-page .pr, .pdf-page .pi { display: flex; justify-content: space-between; gap: 1em; }
 .pdf-page .pr { font-weight: 700; } .pdf-page .pi { font-style: italic; }
 .pdf-page ul { list-style: disc; padding-left: 1.4em; margin: .2em 0 .6em; }
+.pdf-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #525659; }
+.pdf-open { display: grid; place-items: center; }
+.resume-admin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
 .win-foot { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 8px 14px; font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
 .win-fine { opacity: .6; font-size: 11px; }
 .composer-win { width: min(500px, calc(100vw - 32px)); }
