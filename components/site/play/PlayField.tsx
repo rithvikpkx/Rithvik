@@ -42,7 +42,7 @@ export default function PlayField() {
   const nodes = useRef(new Map<string, HTMLElement>());
   const pan = useRef<Pan>({ x: 0, y: 0, vx: 0, vy: 0, tx: NaN, ty: NaN, w: 1264, h: 720, s: 1, raf: 0, last: 0, n: [2, 2] });
   const [n, setN] = useState<[number, number]>([2, 2]);
-  const paintRef = useRef<() => void>(() => {});
+  const redraw = useRef<() => void>(() => {});
 
   useEffect(() => {
     const f = frame.current!, s = pan.current, root = document.documentElement;
@@ -63,8 +63,6 @@ export default function PlayField() {
       });
       grid.current!.style.transform = `translate3d(${wrap(s.x * s.s, 28) - 28}px,${wrap(s.y * s.s, 28) - 28}px,0)`;
     };
-    paintRef.current = paint;
-
     /** After motion: per toy, the copy nearest the centre is the one in the tab order and the accessibility tree. */
     const settle = () => {
       const [nx, ny] = s.n, cx = s.w / s.s / 2, cy = s.h / s.s / 2, focused = document.activeElement;
@@ -82,6 +80,7 @@ export default function PlayField() {
         }
       });
     };
+    redraw.current = () => { paint(); settle(); };
 
     /** One rAF loop, alive only while gliding to a target or coasting on inertia. */
     const tick = (t: number) => {
@@ -187,6 +186,7 @@ export default function PlayField() {
     };
     // focusing a clipped toy must not scroll the frame itself (overflow: clip stops most of it; this catches the rest)
     const noScroll = () => { f.scrollLeft = 0; f.scrollTop = 0; };
+    const noDrag = (e: Event) => e.preventDefault();
 
     // ---- size: phones see the plane at a smaller scale; the copy count follows the view
     let first = true;
@@ -214,7 +214,7 @@ export default function PlayField() {
     f.addEventListener("keydown", key);
     f.addEventListener("focusin", focus);
     f.addEventListener("scroll", noScroll);
-    f.addEventListener("dragstart", (e) => e.preventDefault());
+    f.addEventListener("dragstart", noDrag);
     return () => {
       cancelAnimationFrame(s.raf); s.raf = 0;
       ro.disconnect(); io.disconnect();
@@ -227,11 +227,12 @@ export default function PlayField() {
       f.removeEventListener("keydown", key);
       f.removeEventListener("focusin", focus);
       f.removeEventListener("scroll", noScroll);
+      f.removeEventListener("dragstart", noDrag);
     };
   }, []);
 
-  // a new copy count mounts new nodes at the origin; place them before paint
-  useLayoutEffect(() => paintRef.current(), [n]);
+  // a new copy count mounts new nodes at the origin: place them (and pick the live copies) before paint
+  useLayoutEffect(() => redraw.current(), [n]);
 
   const copies: ReactNode[] = [];
   SPOTS.forEach((sp, j) => {
