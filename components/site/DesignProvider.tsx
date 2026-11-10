@@ -68,44 +68,58 @@ function persist(look: string) {
 type Opts = { from?: [number, number]; silent?: boolean; instant?: boolean };
 type Live = { current: string; entries: DialEntry[]; setCurrent: (id: string) => void; toast: (m: string, undo?: () => void) => void };
 
+// The newest switch wins: an older one still loading bails, and only the newest clears the sweep class.
+let switchSeq = 0;
+let running: ViewTransition | null = null;
+let wanted: string | null = null; // the look a still-loading switch is heading to, so `T` steps from it
+
 /** Switches to a look: load its module + fonts, then swap inside a view transition (circular reveal
- *  from `from`, a crossfade under reduced motion, instant without the API). Reads `live` fresh so
- *  the toast's Undo still sees the real current look later. */
+ *  from the switcher knob, a crossfade under reduced motion, instant without the API). Never locks:
+ *  a newer switch skips the running sweep and starts its own. Reads `live` fresh so the toast's Undo
+ *  still sees the real current look later. */
 async function switchLook(live: { current: Live }, id: string, opts: Opts = {}) {
+  const seq = ++switchSeq; // bumped first so going back to the current look also cancels a pending load
   const prev = live.current.current;
   const entry = live.current.entries.find((e) => e.id === id);
+  wanted = null;
   if (!entry || id === prev) return;
+  wanted = id;
   const meta = designById(id);
   ensureFonts(meta);
   // Load before swapping so the reveal uncovers the new site, not an empty frame.
-  try { await ensureLoaded(id); } catch (e) { console.error(e); return; }
+  try { await ensureLoaded(id); } catch (e) { console.error(e); if (seq === switchSeq) wanted = null; return; }
+  if (seq !== switchSeq) return; // superseded while loading
 
   const html = document.documentElement;
   const go = () => {
     flushSync(() => live.current.setCurrent(id));
     live.current.current = id;
+    if (seq === switchSeq) wanted = null; // only now: the view transition calls this a frame or two later
     const { design, theme } = htmlAttrsFor(id);
     html.dataset.design = design;
     html.dataset.theme = theme;
     html.style.colorScheme = (entry.kind === "design" ? entry.meta.dark : entry.dark) ? "dark" : "light";
     persist(id);
   };
+  running?.skipTransition(); // the old sweep jumps to its end; the new one starts from that frame
   if (opts.instant || !document.startViewTransition) go();
   else {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const cls = reduce ? "vt-fade" : "vt-reveal";
-    // The sweep always starts at the dial (the switcher lives there), whatever triggered it.
-    const dial = document.querySelector<HTMLElement>(".theme-dial-aside");
-    const r = dial?.getBoundingClientRect();
-    const [x, y] = r ? [r.left + r.width / 2, r.top + r.height / 2] : opts.from ?? [innerWidth / 2, innerHeight / 2];
+    // The sweep always starts at the switcher's knob, whatever triggered it.
+    const knob = document.querySelector<HTMLElement>(".theme-dial-aside .sw-knob");
+    const r = knob?.getBoundingClientRect();
+    const [x, y] = r && r.width ? [r.left + r.width / 2, r.top + r.height / 2] : opts.from ?? [innerWidth / 2, innerHeight / 2];
     html.style.setProperty("--vt-x", `${x}px`);
     html.style.setProperty("--vt-y", `${y}px`);
     html.style.setProperty("--vt-r", `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`);
-    // Pointer hover is lost while a view transition runs, so keep an open fan open until it ends.
-    const hold = !!dial?.matches(":hover, :has(:focus-visible)");
-    if (hold) dial!.classList.add("is-holding");
+    html.classList.remove("vt-reveal", "vt-fade");
     html.classList.add(cls);
-    document.startViewTransition(go).finished.finally(() => { html.classList.remove(cls); dial?.classList.remove("is-holding"); });
+    const t = document.startViewTransition(go);
+    running = t;
+    t.ready.catch(() => {}); // skipped by a newer switch: expected, not an error
+    // A skipped sweep must not strip the class the newer one is animating with.
+    t.finished.finally(() => { if (running === t) { running = null; html.classList.remove(cls); } });
   }
   const name = meta?.name ?? (entry.kind === "palette" ? entry.name : id);
   if (!opts.silent) live.current.toast(`Now viewing ${name}`, () => void switchLook(live, prev, { silent: true }));
@@ -136,7 +150,7 @@ export default function DesignProvider({ initial, palettes, children }: { initia
   useEffect(() => { if (!designById(current)) lastPalette.current = current; }, [current]);
   const cycle = useCallback((dir: 1 | -1 = 1) => {
     const stops = [lastPalette.current, ...DESIGNS.map((d) => d.id)];
-    const cur = live.current.current;
+    const cur = wanted ?? live.current.current;
     const i = Math.max(0, stops.indexOf(designById(cur) ? cur : lastPalette.current));
     void apply(stops[(i + dir + stops.length) % stops.length]);
   }, [apply]);
