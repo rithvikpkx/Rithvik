@@ -23,6 +23,10 @@ function Blob() {
           <stop offset="0" stopColor="#F6F7F9" /><stop offset=".26" stopColor="#C4C7CE" /><stop offset=".46" stopColor="#6E727B" />
           <stop offset=".52" stopColor="#1E1F23" /><stop offset=".62" stopColor="#34363C" /><stop offset=".84" stopColor="#9EA2AA" /><stop offset="1" stopColor="#E3E5E9" />
         </linearGradient>
+        {/* a loose droplet carries its own reflection until it rejoins the pool */}
+        <linearGradient id="mx-bead" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FFFFFF" /><stop offset=".4" stopColor="#B8BBC3" /><stop offset=".52" stopColor="#2A2C31" /><stop offset=".8" stopColor="#9EA2AA" /><stop offset="1" stopColor="#EDEEF1" />
+        </linearGradient>
         <radialGradient id="mx-shadow"><stop offset="0" stopColor="#000" stopOpacity=".75" /><stop offset="1" stopColor="#000" stopOpacity="0" /></radialGradient>
       </defs>
       <ellipse className="mx-shadow" cx="100" cy="178" rx="70" ry="9" fill="url(#mx-shadow)" />
@@ -30,8 +34,8 @@ function Blob() {
         <g className="mx-body">
           <circle className="mx-core" cx="100" cy="100" r="58" />
           <circle className="mx-reach" cx="100" cy="100" r="22" />
-          <circle className="mx-drop" cx="100" cy="100" r="15" />
-          <circle className="mx-drop mx-drop2" cx="100" cy="100" r="9" />
+          <circle className="mx-drop" cx="100" cy="100" r="15" fill="url(#mx-bead)" />
+          <circle className="mx-drop mx-drop2" cx="100" cy="100" r="9" fill="url(#mx-bead)" />
         </g>
       </g>
       <ellipse className="mx-spec" cx="80" cy="66" rx="17" ry="8" />
