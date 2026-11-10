@@ -5,6 +5,7 @@ import type { SectionProps } from "@/lib/designs/skin";
 import EduMeta from "@/components/site/EduMeta";
 import { fillFor, orgMark, springStep } from "./xp";
 import "./experience.css";
+import "./purdue.css"; // the Purdue P masks (--p-sil/-ring/-face) every look's education object paints through
 
 const MAX_POINTS = 2; // low density: the first two bullets; the case for more lives in the resume
 const LINE = 0.62; // the reading line, as a share of the viewport height: a connector fills as it passes it

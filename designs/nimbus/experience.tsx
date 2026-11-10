@@ -1,7 +1,8 @@
 "use client";
 // Nimbus's Experience pieces: a pixel paper plane trailing a contrail between stations, and a pixel cloud (with
-// the sun behind it) for education.
+// the sun behind it) for education, with the Purdue P pixelated from its true silhouette on the cloud.
 import type { Skin } from "@/lib/designs/skin";
+import { PIXEL } from "@/components/site/layout/purdue-grid";
 import "./experience.css";
 
 const W = 30, H = 16;
@@ -22,6 +23,18 @@ const CLOUD = (() => {
 const SUN = (() => {
   const px: [number, number][] = [];
   for (let y = 0; y < 12; y++) for (let x = 0; x < 12; x++) if ((x - 5.5) ** 2 + (y - 5.5) ** 2 <= 30) px.push([x, y]);
+  return px;
+})();
+
+/** The Purdue P as pixels (sampled from the official shape): navy outline, pale ring, a sun-gold face dithered
+ *  darker toward its underside. */
+const LETTER = (() => {
+  const px: [number, number, string][] = [];
+  PIXEL.forEach((row, y) => [...row].forEach((c, x) => {
+    if (c === ".") return;
+    const low = y > PIXEL.length * 0.55 && (x + y) % 2 === 0;
+    px.push([x, y, c === "o" ? "var(--nb-skyink)" : c === "r" ? "#fff" : low ? "#F2B432" : (x + y) % 2 === 0 && y < 8 ? "#FFE48A" : "var(--nb-sun)"]);
+  }));
   return px;
 })();
 
@@ -50,6 +63,9 @@ function Cloud() {
       </svg>
       <svg className="nx-cloud" viewBox={`0 0 ${W} ${H}`} shapeRendering="crispEdges" focusable="false">
         {CLOUD.map(([x, y, f]) => <rect key={`${x}.${y}`} x={x} y={y} width="1.02" height="1.02" fill={f} />)}
+      </svg>
+      <svg className="nx-letter" viewBox={`0 0 ${PIXEL[0].length} ${PIXEL.length}`} shapeRendering="crispEdges" focusable="false">
+        {LETTER.map(([x, y, f]) => <rect key={`${x}.${y}`} x={x} y={y} width="1.02" height="1.02" fill={f} />)}
       </svg>
       <svg className="nx-cloudlet" viewBox="0 0 8 3" shapeRendering="crispEdges" focusable="false">
         <path fill="#fff" d="M2 0h3v1h2v1h1v1H0V2h1V1h1z" /><path fill="var(--nb-pale)" d="M0 2h8v1H0z" />

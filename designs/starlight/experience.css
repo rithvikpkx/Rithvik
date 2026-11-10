@@ -27,9 +27,18 @@
     radial-gradient(circle at 56% 62%, rgb(4 30 4 / .45) 0 10%, transparent 10.5%),
     radial-gradient(circle at 26% 70%, rgb(4 30 4 / .3) 0 5%, transparent 5.5%),
     radial-gradient(circle at 76% 50%, rgb(4 30 4 / .3) 0 3.5%, transparent 4%),
-    radial-gradient(circle at 40% 40%, var(--sl-hot), var(--sl-ph) 45%, #5FA846 80%, #3E7A2E);
+    radial-gradient(circle at 40% 40%, #4F8F3C, #3C7A2C 45%, #2C5E20 80%, #1F4818);
   box-shadow: 0 0 40px rgb(var(--sl-rgb) / .45), 0 0 120px rgb(var(--sl-rgb) / .2); transform: translate(calc(var(--px) * 6px), calc(var(--py) * 4px)); }
 /* scanlines over the face */
 :root[data-design="starlight"] .sx-moon::after { content: ""; position: absolute; inset: 0; z-index: 2; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .22) 0 1px, transparent 1px 3px); }
 /* the night side: a dark disc offset away from the light (the pointer) */
 :root[data-design="starlight"] .sx-shade { position: absolute; inset: -6%; border-radius: 50%; background: radial-gradient(circle, rgba(2, 6, 2, .96) 58%, rgba(2, 6, 2, .6) 66%, transparent 72%); transform: translate(calc(38% - var(--px) * 48%), calc(-6% - var(--py) * 30%)); }
+
+/* the P: phosphor on the dimmed moon, always lit (it sits above the terminator), with bloom and the tube's scanlines */
+:root[data-design="starlight"] .sx-p { position: absolute; left: 50%; top: 50%; width: 72%; aspect-ratio: 65.645 / 35.104; translate: -50% -50%; transform: translate(calc(var(--px) * 6px), calc(var(--py) * 4px)); filter: drop-shadow(0 0 3px var(--sl-ph)) drop-shadow(0 0 14px var(--sl-glow)); animation: sx-hum 3.4s ease-in-out infinite alternate; }
+@keyframes sx-hum { to { filter: drop-shadow(0 0 2px var(--sl-ph)) drop-shadow(0 0 22px var(--sl-glow)); } }
+:root[data-design="starlight"] .sx-p svg { display: block; width: 100%; height: 100%; }
+:root[data-design="starlight"] .sx-p .pp-o, :root[data-design="starlight"] .sx-p .pp-c { fill: #020802; }
+:root[data-design="starlight"] .sx-p .pp-r { fill: var(--sl-hot); }
+:root[data-design="starlight"] .sx-p .pp-f { fill: var(--sl-ph); }
+:root[data-design="starlight"] .sx-p::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .34) 0 1px, transparent 1px 3px); -webkit-mask: var(--p-sil) center / 100% 100% no-repeat; mask: var(--p-sil) center / 100% 100% no-repeat; }

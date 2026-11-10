@@ -23,6 +23,8 @@
 :root[data-design="nimbus"] .nx-sky svg { position: absolute; display: block; overflow: visible; }
 :root[data-design="nimbus"] .nx-sun { right: 12%; top: 10%; width: 30%; transform: translate(calc(var(--px) * -10px), calc(var(--py) * -8px)); }
 :root[data-design="nimbus"] .nx-cloud { left: 6%; top: 30%; width: 88%; filter: drop-shadow(0 10px 0 rgba(7, 80, 160, .22)); transform: translate(calc(var(--px) * 16px), calc(var(--py) * 10px)) scale(calc(1 + var(--pv) * .05)); animation: nx-bob 4s steps(4) infinite alternate; }
+/* the P rides the cloud, a touch further toward the pointer so it floats on it */
+:root[data-design="nimbus"] .nx-letter { left: 16%; top: 35%; width: 68%; filter: drop-shadow(0 8px 0 rgba(7, 80, 160, .3)); transform: translate(calc(var(--px) * 22px), calc(var(--py) * 13px)) scale(calc(1 + var(--pv) * .05)); animation: nx-bob 4s steps(4) infinite alternate; }
 @keyframes nx-bob { to { translate: 0 -8px; } }
 :root[data-design="nimbus"] .nx-cloudlet { left: -6%; top: 74%; width: 22%; animation: nx-pass 18s steps(36) infinite; transform: translateX(calc(var(--px) * 24px)); }
 @keyframes nx-pass { from { translate: 0 0; } to { translate: 460% 0; } }

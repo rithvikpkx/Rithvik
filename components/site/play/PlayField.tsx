@@ -4,28 +4,16 @@ import { PLAY } from "@/lib/play/games";
 import { copiesFor, onScreen, place, velocity, wrap } from "@/lib/play/field";
 import "./playfield.css";
 
-/** One composed tile of the plane (world px). Toys first (their `k` is the PLAY id), then decoration. */
+/** One toy placed on the tile of the plane (world px). `k` is the PLAY id. Two staggered rows of three: row two sits half a column over. */
 type Spot = { k: string; x: number; y: number; w: number; h: number; r?: number };
-const TW = 1240, TH = 900, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
+const TW = 1200, TH = 880, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
 const SPOTS: Spot[] = [
-  { k: "records", x: 70, y: 80, w: 270, h: 270 },
-  { k: "artboard", x: 470, y: 150, w: 250, h: 230, r: -4 },
-  { k: "typeracer", x: 840, y: 70, w: 320, h: 150, r: 5 },
-  { k: "angle", x: 880, y: 430, w: 230, h: 210 },
-  { k: "dots", x: 420, y: 520, w: 150, h: 270, r: 8 },
-  { k: "center", x: 90, y: 530, w: 230, h: 230 },
-  { k: "cube", x: 700, y: 560, w: 96, h: 96 },
-  { k: "ring", x: 1110, y: 720, w: 110, h: 110 },
-  { k: "tri", x: 380, y: 50, w: 70, h: 64, r: 12 },
-  { k: "squig", x: 600, y: 440, w: 180, h: 54, r: -8 },
-  { k: "half", x: 260, y: 420, w: 110, h: 55, r: -14 },
-  { k: "spark", x: 1180, y: 300, w: 56, h: 56 },
-  { k: "ball", x: 760, y: 280, w: 64, h: 64 },
-  { k: "pill", x: 620, y: 770, w: 140, h: 44, r: -18 },
-  { k: "arch", x: 980, y: 760, w: 90, h: 90, r: 90 },
-  { k: "dot", x: 760, y: 70, w: 22, h: 22 },
-  { k: "dotgrid", x: 30, y: 400, w: 72, h: 72 },
-  { k: "dot", x: 340, y: 840, w: 16, h: 16 },
+  { k: "records", x: 50, y: 95, w: 300, h: 225 },
+  { k: "artboard", x: 475, y: 90, w: 250, h: 230, r: -4 },
+  { k: "typeracer", x: 840, y: 115, w: 320, h: 150, r: 4 },
+  { k: "center", x: 285, y: 530, w: 230, h: 230, r: 2 },
+  { k: "angle", x: 685, y: 535, w: 230, h: 210 },
+  { k: "dots", x: 1125, y: 505, w: 150, h: 270, r: 7 },
 ];
 const TOYS = new Map(PLAY.map((p) => [p.id, p]));
 const LABEL_H = 44; // the name tag under a toy counts towards its on-screen box
@@ -33,7 +21,7 @@ const LABEL_H = 44; // the name tag under a toy counts towards its on-screen box
 /** Mutable pan state, kept out of React so moving never re-renders. Positions in world px; velocity in px/ms. */
 type Pan = { x: number; y: number; vx: number; vy: number; tx: number; ty: number; w: number; h: number; s: number; raf: number; last: number; n: [number, number] };
 
-/** The Play section: an infinite plane of odd shapes, each toy a live miniature, panned by drag (with inertia),
+/** The Play section: an infinite plane of the six toys, each a live miniature button, panned by drag (with inertia),
  *  a sideways trackpad swipe, or the arrow keys. A vertical wheel or a vertical touch swipe still scrolls the page. */
 export default function PlayField() {
   const frame = useRef<HTMLDivElement>(null);
@@ -67,7 +55,6 @@ export default function PlayField() {
     const settle = () => {
       const [nx, ny] = s.n, cx = s.w / s.s / 2, cy = s.h / s.s / 2, focused = document.activeElement;
       SPOTS.forEach((sp, j) => {
-        if (!TOYS.has(sp.k)) return;
         const copies: [HTMLElement, number][] = [];
         for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++) {
           const el = nodes.current.get(`${j}:${a}:${b}`);
@@ -236,20 +223,18 @@ export default function PlayField() {
 
   const copies: ReactNode[] = [];
   SPOTS.forEach((sp, j) => {
-    const toy = TOYS.get(sp.k);
+    const toy = TOYS.get(sp.k)!;
     for (let a = 0; a < n[0]; a++) for (let b = 0; b < n[1]; b++) {
       const key = `${j}:${a}:${b}`, first = a === 0 && b === 0;
       const style = { "--w": `${sp.w}px`, "--h": `${sp.h}px`, "--r": `${sp.r ?? 0}deg`, transform: `translate3d(${place(sp.x, 0, a, TW, n[0], PAD)}px,${place(sp.y, 0, b, TH, n[1], PAD)}px,0)` } as CSSProperties;
       const ref = (el: HTMLElement | null) => { if (el) nodes.current.set(key, el); else nodes.current.delete(key); };
-      copies.push(toy ? (
+      copies.push(
         <button key={key} ref={ref} type="button" className={`pf-at pf-toy pf-${sp.k}`} style={style} data-play={toy.id} data-j={j} data-a={a} data-b={b}
           tabIndex={first ? 0 : -1} aria-hidden={first ? undefined : true} aria-label={toy.name}>
           <Preview k={sp.k} />
           <span className="pf-name" aria-hidden="true">{toy.name}</span>
-        </button>
-      ) : (
-        <span key={key} ref={ref} className={`pf-at pf-deco pf-${sp.k}`} style={style} aria-hidden="true"><span className="pf-d"><Deco k={sp.k} /></span></span>
-      ));
+        </button>,
+      );
     }
   });
 
@@ -270,9 +255,11 @@ function Preview({ k }: { k: string }) {
   switch (k) {
     case "records": return (
       <span className="pf-shape">
+        <span className="pf-well" />
         <span className="pf-disc"><span className="pf-lab"><i /></span></span>
         <span className="pf-sheen" />
         <span className="pf-arm" />
+        <span className="pf-btn"><i /></span>
       </span>
     );
     case "artboard": return (
@@ -319,11 +306,3 @@ const DOTS: [number, number, number][] = [
   [28, 14, 1], [56, 20, 1], [70, 38, 1], [36, 36, 1], [58, 54, 1], [30, 64, 1], [64, 78, 1], [44, 86, 1],
   [50, 16, 2], [32, 30, 2], [66, 46, 2], [44, 60, 2], [26, 76, 2], [60, 88, 2],
 ];
-
-/** The purely decorative shapes that make the field feel composed. */
-function Deco({ k }: { k: string }) {
-  if (k === "cube") return <span className="pf-box3">{["f", "b", "l", "r", "t", "u"].map((s) => <i key={s} className={s} />)}</span>;
-  if (k === "squig") return <svg viewBox="0 0 180 54"><path d="M8 40 C26 4 44 4 54 27 S82 50 94 27 S124 4 136 27 S164 50 172 14" /></svg>;
-  if (k === "spark") return <svg viewBox="0 0 56 56"><path d="M28 0 C30 20 36 26 56 28 C36 30 30 36 28 56 C26 36 20 30 0 28 C20 26 26 20 28 0Z" /></svg>;
-  return null;
-}
