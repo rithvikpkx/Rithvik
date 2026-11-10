@@ -126,7 +126,6 @@
 :root[data-design="starlight"] .sl-now-l dd { font-size: 19px; color: var(--sl-fg); }
 :root[data-design="starlight"] .sl-places li { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 18px; row-gap: 4px; align-items: baseline; padding: 16px 0; border-top: 1px solid var(--sl-line); }
 :root[data-design="starlight"] .sl-places b { font: 600 26px/1 var(--sl-d); text-transform: uppercase; letter-spacing: .02em; color: var(--sl-fg); }
-:root[data-design="starlight"] .sl-places .is-now b { color: var(--sl-ph); text-shadow: 0 0 16px var(--sl-glow2); }
 :root[data-design="starlight"] .sl-pc { grid-column: 2; font: 400 11.5px/1.3 var(--sl-m); letter-spacing: .04em; color: var(--sl-dim); }
 :root[data-design="starlight"] .sl-pt-t { grid-column: 3; grid-row: 1; font: 500 14px/1 var(--sl-m); color: var(--sl-ph); font-variant-numeric: tabular-nums; }
 :root[data-design="starlight"] .sl-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; margin-top: clamp(80px, 12vh, 120px); padding-top: 34px; border-top: 1px solid var(--sl-line2); }
@@ -157,13 +156,7 @@
 @media (hover: hover) and (pointer: fine) { :root[data-design="starlight"] .sl-links a:hover { color: var(--sl-ph); border-color: var(--sl-ph); } }
 
 /* ───────── chrome: switcher, agent, windows, sheet, toast ───────── */
-:root[data-design="starlight"] .sw-bar { border-radius: 3px; padding: 4px; background: #050C05; }
-:root[data-design="starlight"] .sw-toggle, :root[data-design="starlight"] .sw-ic { border-radius: 2px; }
-:root[data-design="starlight"] .sw-toggle { font-family: var(--sl-m); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
-:root[data-design="starlight"] .sw-dot { border-radius: 2px; }
-:root[data-design="starlight"] .sw-deck, :root[data-design="starlight"] .sw-card { border-radius: 3px; }
-:root[data-design="starlight"] .sw-deck { border-color: var(--sl-line2); }
-:root[data-design="starlight"] .sw-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--sl-ph); }
+:root[data-design="starlight"] .sw-ic { border-radius: 2px; }
 
 :root[data-design="starlight"] .agent-bar { position: relative; min-height: 52px; padding: 0 6px 0 16px; background: #050C05; border-color: var(--sl-line2); }
 :root[data-design="starlight"] .agent-bar::before { content: "CH 3 · Agent"; position: absolute; left: 12px; top: -7px; padding: 0 6px; background: #050C05; font: 500 9.5px/14px var(--sl-m); letter-spacing: .16em; text-transform: uppercase; color: var(--sl-ph); pointer-events: none; border-radius: 2px; }
@@ -175,12 +168,9 @@
 :root[data-design="starlight"] .ab-send { width: 38px; height: 38px; border-radius: 2px; background: var(--sl-ph); color: var(--sl-ink); }
 :root[data-design="starlight"] .ab-send.busy { background: var(--sl-hot); }
 :root[data-design="starlight"] .agent-panel { background: #040A04; border-color: var(--sl-line2); }
-:root[data-design="starlight"][data-sl-ph="white"] .agent-panel, :root[data-design="starlight"][data-sl-ph="white"] .agent-bar, :root[data-design="starlight"][data-sl-ph="white"] .agent-bar::before, :root[data-design="starlight"][data-sl-ph="white"] .sw-bar { background: #06080D; }
+:root[data-design="starlight"][data-sl-ph="white"] .agent-panel, :root[data-design="starlight"][data-sl-ph="white"] .agent-bar, :root[data-design="starlight"][data-sl-ph="white"] .agent-bar::before { background: #06080D; }
 :root[data-design="starlight"] .agent-head { font: 500 11px/1 var(--sl-m); letter-spacing: .1em; text-transform: uppercase; }
 :root[data-design="starlight"] .at-mark { text-shadow: 0 0 8px var(--sl-glow); }
-:root[data-design="starlight"] .agent-actions .icon-btn { border-radius: 2px; }
-:root[data-design="starlight"] .agent-banner { color: var(--sl-mut); }
-:root[data-design="starlight"] .agent-banner .acc { color: var(--sl-ph); }
 :root[data-design="starlight"] .t-chip, :root[data-design="starlight"] .t-key { border-radius: 2px; font-size: 12px; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="starlight"] .t-chip:hover { color: var(--sl-ph); } }
 :root[data-design="starlight"] .t-user b { color: var(--sl-hot); }
@@ -194,7 +184,7 @@
 :root[data-design="starlight"][data-sl-ph="white"] .win, :root[data-design="starlight"][data-sl-ph="white"] .sheet-body { background: #05070B; }
 :root[data-design="starlight"] .win-bar { background: rgb(var(--sl-rgb) / .04); }
 :root[data-design="starlight"] .win-title { font: 500 11px/1 var(--sl-m); letter-spacing: .12em; text-transform: uppercase; color: var(--sl-ph); }
-:root[data-design="starlight"] .ui-ic, :root[data-design="starlight"] .icon-btn, :root[data-design="starlight"] .ui-btn { border-radius: 2px; }
+:root[data-design="starlight"] .ui-ic, :root[data-design="starlight"] .ui-btn { border-radius: 2px; }
 :root[data-design="starlight"] .ui-btn { font: 500 11.5px/1 var(--sl-m); letter-spacing: .1em; text-transform: uppercase; }
 :root[data-design="starlight"] .cmp-row label { font: 500 10.5px/1 var(--sl-m); letter-spacing: .14em; text-transform: uppercase; }
 :root[data-design="starlight"] input.field, :root[data-design="starlight"] textarea.field { border-radius: 2px; background: rgba(0, 0, 0, .45); }

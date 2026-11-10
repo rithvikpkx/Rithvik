@@ -235,17 +235,10 @@
 }
 
 /* ───────── Chrome: printed slips with stippled shadows ───────── */
-:root[data-design="stipple"] .agent-bar, :root[data-design="stipple"] .agent-panel, :root[data-design="stipple"] .sw-bar { position: relative; }
-:root[data-design="stipple"] .agent-bar::after, :root[data-design="stipple"] .agent-panel::after, :root[data-design="stipple"] .sw-bar::after { content: ""; position: absolute; z-index: -1; inset: -1px; translate: 6px 6px; border-radius: inherit; background: radial-gradient(circle, #17110E .95px, transparent 1.25px) 0 0 / 3px 3px; pointer-events: none; }
-:root[data-design="stipple"] .win, :root[data-design="stipple"] .sw-deck { box-shadow: 7px 7px 0 -1px rgba(23, 17, 14, .82); }
-
-:root[data-design="stipple"] .sw-bar { background: var(--st-paper-hi); border-color: var(--st-ink); border-radius: 3px; }
-:root[data-design="stipple"] .sw-toggle, :root[data-design="stipple"] .sw-ic { border-radius: 2px; }
-:root[data-design="stipple"] .sw-toggle { font: 500 10.5px/1 var(--st-mono); letter-spacing: .12em; text-transform: uppercase; }
-:root[data-design="stipple"] .sw-toggle b { font: italic 400 19px/1 var(--st-serif); letter-spacing: 0; text-transform: none; }
-:root[data-design="stipple"] .sw-dot { border-radius: 2px; }
-:root[data-design="stipple"] .sw-deck { background: var(--st-paper-hi); border-color: var(--st-ink); border-radius: 3px; }
-:root[data-design="stipple"] .sw-card { border-radius: 2px; }
+:root[data-design="stipple"] .agent-bar, :root[data-design="stipple"] .agent-panel { position: relative; }
+:root[data-design="stipple"] .agent-bar::after, :root[data-design="stipple"] .agent-panel::after { content: ""; position: absolute; z-index: -1; inset: -1px; translate: 6px 6px; border-radius: inherit; background: radial-gradient(circle, #17110E .95px, transparent 1.25px) 0 0 / 3px 3px; pointer-events: none; }
+:root[data-design="stipple"] .win { box-shadow: 7px 7px 0 -1px rgba(23, 17, 14, .82); }
+:root[data-design="stipple"] .sw-ic { border-radius: 2px; }
 
 :root[data-design="stipple"] .agent-bar { background: var(--st-paper-hi); border-color: var(--st-ink); border-radius: 3px; }
 :root[data-design="stipple"] .agent-bar:focus-within { border-color: var(--st-verm-ink); }
@@ -260,9 +253,6 @@
 :root[data-design="stipple"] .agent-panel { background: var(--st-paper-hi); border-color: var(--st-ink); border-radius: 3px; }
 :root[data-design="stipple"] .agent-head { font: 500 10.5px/1 var(--st-mono); letter-spacing: .12em; text-transform: uppercase; border-bottom: 3px double var(--st-ink); }
 :root[data-design="stipple"] .agent-model { letter-spacing: .04em; text-transform: none; }
-:root[data-design="stipple"] .agent-actions .icon-btn { border-radius: 2px; border-color: var(--st-ink); }
-:root[data-design="stipple"] .agent-banner { color: var(--st-ink); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
-:root[data-design="stipple"] .agent-banner .acc { color: var(--st-verm-ink); }
 :root[data-design="stipple"] .t-tips { font-size: 11.5px; }
 :root[data-design="stipple"] .t-chip { border-radius: 2px; border: 1px dashed var(--st-ink); font-size: 11.5px; background: var(--st-paper); }
 :root[data-design="stipple"] .t-chip:hover { border-style: solid; border-color: var(--st-ink); background: var(--st-ink); color: var(--st-paper); }
@@ -281,7 +271,7 @@
 :root[data-design="stipple"] .win-bar { border-bottom: 3px double var(--st-ink); }
 :root[data-design="stipple"] .win-title { font: 500 10.5px/1 var(--st-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--st-ink); }
 :root[data-design="stipple"] .win-title .ic { color: var(--st-verm-ink); }
-:root[data-design="stipple"] .ui-ic, :root[data-design="stipple"] .icon-btn { border-radius: 2px; border-color: var(--st-ink); }
+:root[data-design="stipple"] .ui-ic { border-radius: 2px; border-color: var(--st-ink); }
 :root[data-design="stipple"] .ui-btn { border-radius: 2px; border-color: var(--st-ink); font: 600 11px/1 var(--st-mono); letter-spacing: .1em; text-transform: uppercase; }
 :root[data-design="stipple"] .ui-btn.primary { background: var(--st-ink); color: var(--st-paper); box-shadow: 4px 4px 0 var(--st-verm); }
 :root[data-design="stipple"] .cmp-row label { font: 500 10px/1 var(--st-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--st-ink-2); }

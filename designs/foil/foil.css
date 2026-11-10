@@ -110,7 +110,6 @@
 :root[data-design="foil"] .fo-places { margin: 0; padding: 0; list-style: none; }
 :root[data-design="foil"] .fo-places b { font-weight: 500; }
 :root[data-design="foil"] .fo-places time { font: 500 14px/1 var(--fo-m); color: var(--fo-mut); font-variant-numeric: tabular-nums; }
-:root[data-design="foil"] .fo-places .is-now time { color: var(--fo-mint); }
 
 /* work: the set of six holo cards */
 
@@ -184,10 +183,6 @@
 
 /* ═════════ Chrome: ink panels with a foil hairline ═════════ */
 /* switcher */
-:root[data-design="foil"] .sw-bar { background: #13121B; border-color: var(--fo-line); }
-:root[data-design="foil"] .sw-toggle b { font: 500 13px/1 var(--fo-d); letter-spacing: -.01em; }
-:root[data-design="foil"] .sw-deck { background: #13121B; border-radius: 24px; border-color: var(--fo-line); }
-:root[data-design="foil"] .sw-card { border-radius: 16px; }
 :root[data-design="foil"] .sw-ic[aria-pressed="true"] { background: var(--fo-foil); color: #0A0A10; }
 
 /* toast */
@@ -239,8 +234,7 @@
 :root[data-design="foil"] .agent-head { border-bottom-color: var(--fo-line); font-family: var(--fo-m); }
 :root[data-design="foil"] .agent-title { font-family: var(--fo-d); font-weight: 500; font-size: 13px; letter-spacing: -.01em; }
 :root[data-design="foil"] .at-mark { color: var(--fo-mint); }
-:root[data-design="foil"] .agent-actions .icon-btn { border-color: var(--fo-line); background: var(--fo-panel2); }
-:root[data-design="foil"] .agent-banner .acc, :root[data-design="foil"] .t-user::before, :root[data-design="foil"] .t-dot { color: var(--fo-mint); }
+:root[data-design="foil"] .t-user::before, :root[data-design="foil"] .t-dot { color: var(--fo-mint); }
 :root[data-design="foil"] .t-chip { border-radius: 999px; padding: 7px 12px; border-color: var(--fo-line2); }
 :root[data-design="foil"] .t-chip:hover { border-color: var(--fo-mint); }
 :root[data-design="foil"] .t-key { border-radius: 999px; border-color: var(--fo-line2); }

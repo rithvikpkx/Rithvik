@@ -28,19 +28,13 @@
 /* ───────── shared pieces ───────── */
 :root[data-design="glyph"] .gl-dim { color: var(--gl-dim); }
 
-:root[data-design="glyph"] .gl-tags { display: flex; flex-wrap: wrap; gap: 2px 10px; font: 500 12px/var(--gl-lh) var(--gl-d); color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-tags span::before { content: "["; color: var(--gl-dim); }
-:root[data-design="glyph"] .gl-tags span::after { content: "]"; color: var(--gl-dim); }
-
 /* section header: a prompt line, then the window name set huge */
 
 /* ───────── frame: a slim tmux status bar, nothing else on the edges ───────── */
 :root[data-design="glyph"] .gl { --gl-x: clamp(16px, 3.4vw, 48px); position: relative; padding-top: var(--gl-bar); min-height: 100vh; }
-:root[data-design="glyph"] .gl-mk { display: block; width: 16px; height: 16px; flex: none; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-wins a:hover { color: var(--gl-fg); } }
 :root[data-design="glyph"] .gl-msg { padding: 0 16px; color: var(--gl-hue); opacity: 0; transition: opacity 160ms ease; }
 :root[data-design="glyph"] .gl-msg.on { opacity: 1; }
-@media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-help:hover { color: var(--gl-fg); } }
 :root[data-design="glyph"] .gl-keys { position: fixed; z-index: 41; top: calc(var(--gl-bar) + 8px); right: 8px; width: 260px; padding: 12px 14px; border: 1px solid var(--gl-rule2); background: #0A0A0A; box-shadow: var(--ui-shadow); font: 500 11.5px/26px var(--gl-d); }
 :root[data-design="glyph"] .gl-keys dl { margin: 0; }
 :root[data-design="glyph"] .gl-keys div { display: grid; grid-template-columns: 7ch 1fr; }
@@ -56,20 +50,15 @@
 :root[data-design="glyph"] .gl-tbar { display: flex; align-items: stretch; height: 32px; border-bottom: 1px solid var(--gl-rule); font: 500 11px/32px var(--gl-d); white-space: nowrap; overflow: hidden; }
 :root[data-design="glyph"] .gl-tw { padding: 0 12px; background: var(--sh); color: #050505; font-weight: 800; }
 :root[data-design="glyph"] .gl-tc { padding: 0 14px; color: var(--gl-fg); overflow: hidden; text-overflow: ellipsis; }
-:root[data-design="glyph"] .gl-pb { padding: clamp(28px, 5vw, 64px); }
 :root[data-design="glyph"] .gl-h2 { margin: 0 0 clamp(32px, 4.4vw, 56px); font: 800 clamp(44px, 7vw, 104px)/.86 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.04em; color: var(--gl-fg); }
 :root[data-design="glyph"] .gl-sl { margin-right: .1em; color: var(--sh); font-weight: 200; font-stretch: 75%; letter-spacing: -.22em; }
 
 /* ───────── top: the one loud screen ───────── */
-@media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-ask-go:hover { background: var(--gl-hue); color: #050505; } }
 :root[data-design="glyph"] .gl-word { display: flex; align-items: flex-end; gap: .14em; margin: 0; font: 800 clamp(64px, 15.2vw, 250px)/.76 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.055em; color: var(--gl-fg); white-space: nowrap; }
 :root[data-design="glyph"] .gl-w2 { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: .02em; font-size: .072em; font-weight: 700; line-height: 1; letter-spacing: .14em; color: var(--gl-hue); }
 
 /* whoami */
 @keyframes glyph-blink { 50% { opacity: 0; } }
-:root[data-design="glyph"] .gl-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; margin: 0; max-width: 520px; }
-:root[data-design="glyph"] .gl-nums dt { font: 800 30px/1.05 var(--gl-d); font-stretch: 112.5%; color: var(--gl-hue); letter-spacing: -.04em; }
-:root[data-design="glyph"] .gl-nums dd { margin: 4px 0 0; font: 400 12.5px/18px var(--gl-b); color: var(--gl-mut); }
 :root[data-design="glyph"] .pt-node { border-width: 1px; transition: background-color 120ms ease, color 120ms ease, scale 160ms var(--ease-out); }
 :root[data-design="glyph"] .pt-node::after { border-radius: 0; border: 1px solid var(--ui-line); font: 500 11px/1.2 var(--gl-d); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .pt-node:hover { background: var(--gl-hue); color: #050505; } }
@@ -77,69 +66,18 @@
 /* ───────── work: ls + preview ───────── */
 
 /* ───────── man ───────── */
-:root[data-design="glyph"] .gl-man-cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); }
-:root[data-design="glyph"] .gl-mh { margin: 0 0 8px; font: 800 12px/var(--gl-lh) var(--gl-d); letter-spacing: .1em; color: var(--gl-fg); }
-:root[data-design="glyph"] .gl-mh:not(:first-child) { margin-top: 30px; }
-:root[data-design="glyph"] .gl-mh::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 10px; background: var(--sh); vertical-align: 1px; }
-:root[data-design="glyph"] .gl-mb { max-width: 60ch; margin: 0 0 14px; padding-left: 17px; font-size: 15px; line-height: 1.65; color: #D5D5D5; text-wrap: pretty; }
-:root[data-design="glyph"] .gl-mb b { color: var(--gl-fg); }
-:root[data-design="glyph"] .gl-flag { color: var(--sh); }
-:root[data-design="glyph"] .gl-env, :root[data-design="glyph"] .gl-files { margin: 0; padding-left: 17px; display: grid; }
-:root[data-design="glyph"] .gl-env div { display: grid; grid-template-columns: 13ch minmax(0, 1fr); }
-:root[data-design="glyph"] .gl-env dt, :root[data-design="glyph"] .gl-files dt { font: 600 11.5px/var(--gl-lh) var(--gl-d); color: var(--sh); }
-:root[data-design="glyph"] .gl-env dd, :root[data-design="glyph"] .gl-files dd { margin: 0; }
-:root[data-design="glyph"] .gl-files div { display: grid; grid-template-columns: 9ch minmax(0, 1fr) auto; }
-:root[data-design="glyph"] .gl-clk { color: var(--gl-mut); text-align: right; font-family: var(--gl-d); font-size: 12px; }
-:root[data-design="glyph"] .gl-more { margin-top: 18px; padding-left: 17px; }
-:root[data-design="glyph"] .gl-more + .gl-more { margin-top: 8px; }
-:root[data-design="glyph"] .gl-more summary { cursor: pointer; list-style: none; font: 600 12px/var(--gl-lh) var(--gl-d); }
-:root[data-design="glyph"] .gl-more summary::-webkit-details-marker { display: none; }
-:root[data-design="glyph"] .gl-more summary::before { content: "+ "; color: var(--sh); }
-:root[data-design="glyph"] .gl-more[open] summary::before { content: "− "; }
-:root[data-design="glyph"] .gl-tree, :root[data-design="glyph"] .gl-tree ul { margin: 0; padding: 0; list-style: none; }
-:root[data-design="glyph"] .gl-tree { margin-top: 8px; font: 400 13px/22px var(--gl-b); white-space: pre; color: #D5D5D5; }
-:root[data-design="glyph"] .gl-tree b { color: var(--sh); font-weight: 600; }
 
 /* ───────── map: the knowledge graph as a terminal plot ───────── */
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .kg-links button:hover, :root[data-design="glyph"] .kg-key:hover { color: var(--gl-hue); } }
 
 /* ───────── bin ───────── */
-:root[data-design="glyph"] .gl-bin { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-:root[data-design="glyph"] .gl-prog { width: 100%; height: 100%; min-height: 128px; display: grid; align-content: end; gap: 6px; padding: 18px; border: 1px solid var(--gl-rule2); background: #050505; color: var(--gl-fg); text-align: left; cursor: pointer; transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease; }
-:root[data-design="glyph"] .gl-prog-x { font: 700 clamp(19px, 1.8vw, 24px)/1.1 var(--gl-d); letter-spacing: -.03em; }
-:root[data-design="glyph"] .gl-prog-d { font: 400 13px/1.45 var(--gl-b); color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-prog:active { transform: translateY(1px); }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="glyph"] .gl-prog:hover { background: var(--sh); border-color: var(--sh); color: #050505; }
-  :root[data-design="glyph"] .gl-prog:hover :is(.gl-prog-d, .gl-dim) { color: #050505; }
-}
 
 /* ───────── mail ───────── */
-:root[data-design="glyph"] .gl-big { margin: 0 0 40px; font: inherit; }
-:root[data-design="glyph"] .gl-big-b { display: inline; padding: 0; border: 0; background: none; color: var(--gl-fg); font: 800 clamp(32px, 5.6vw, 92px)/.98 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.05em; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
-:root[data-design="glyph"] .gl-at { color: var(--gl-red); }
-@media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-big-b:hover { color: var(--gl-red); } :root[data-design="glyph"] .gl-big-b:hover .gl-at { color: var(--gl-fg); } }
-:root[data-design="glyph"] .gl-cmds { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--gl-rule); }
-:root[data-design="glyph"] .gl-cmd { width: 100%; display: grid; grid-template-columns: 2ch minmax(0, 1fr) auto; gap: 14px; align-items: baseline; padding: 14px 12px; border: 0; border-bottom: 1px solid var(--gl-rule); background: transparent; color: var(--gl-fg); text-align: left; text-decoration: none; font: 400 15px/22px var(--gl-b); cursor: pointer; transition: background-color 100ms ease, color 100ms ease; }
-:root[data-design="glyph"] .gl-cmd code { font: inherit; overflow-wrap: anywhere; }
-:root[data-design="glyph"] .gl-cmd q { color: var(--gl-amber); quotes: none; }
-:root[data-design="glyph"] .gl-ps { color: var(--gl-red); font-weight: 700; }
-:root[data-design="glyph"] .gl-run { font: 600 10.5px/22px var(--gl-d); letter-spacing: .06em; text-transform: uppercase; color: var(--gl-dim); white-space: nowrap; }
-:root[data-design="glyph"] .gl-cmd:focus-visible { outline-offset: -2px; }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="glyph"] .gl-cmd:hover { background: var(--gl-red); color: #050505; }
-  :root[data-design="glyph"] .gl-cmd:hover :is(.gl-ps, .gl-run, q, .gl-dim) { color: #050505; }
-}
 
 /* ───────── chrome reskin: switcher, agent, windows, sheet, toast ───────── */
 :root[data-design="glyph"] .switcher { font: 500 12px/1 var(--gl-d); }
-:root[data-design="glyph"] .sw-bar { border-radius: 0; padding: 3px; background: #0A0A0A; }
-:root[data-design="glyph"] .sw-toggle, :root[data-design="glyph"] .sw-ic { border-radius: 0; height: 32px; }
+:root[data-design="glyph"] .sw-ic { border-radius: 0; height: 32px; }
 :root[data-design="glyph"] .sw-ic { width: 32px; }
-:root[data-design="glyph"] .sw-dot { width: 18px; height: 18px; border-radius: 0; }
-:root[data-design="glyph"] .sw-deck, :root[data-design="glyph"] .sw-card { border-radius: 0; }
-:root[data-design="glyph"] .sw-deck { border-color: var(--gl-rule2); }
-:root[data-design="glyph"] .sw-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--gl-hue); }
 
 :root[data-design="glyph"] .agent-bar { position: relative; min-height: 50px; padding: 0 6px 0 16px; background: #0A0A0A; border-color: var(--gl-rule2); }
 :root[data-design="glyph"] .agent-bar::before { content: "─ agent ─ : to focus ─"; position: absolute; top: -9px; left: 12px; padding: 0 4px; background: #050505; font: 500 10.5px/16px var(--gl-d); color: var(--gl-hue); pointer-events: none; }
@@ -153,9 +91,6 @@
 :root[data-design="glyph"] .agent-title { display: flex; align-items: center; align-self: stretch; flex: none; padding: 0 14px; background: var(--gl-hue); color: #050505; }
 :root[data-design="glyph"] .agent-title .at-mark { color: #050505; vertical-align: 0; }
 :root[data-design="glyph"] .agent-model { flex: 1; padding-left: 14px; }
-:root[data-design="glyph"] .agent-actions .icon-btn { border-radius: 0; border-color: transparent; color: var(--gl-mut); }
-:root[data-design="glyph"] .agent-banner { color: var(--gl-mut); font-family: var(--gl-b); }
-:root[data-design="glyph"] .agent-banner .acc { color: var(--gl-hue); }
 :root[data-design="glyph"] .t-chip, :root[data-design="glyph"] .t-key { border-radius: 0; font-size: 12px; }
 :root[data-design="glyph"] .t-chip::before { content: "[ "; color: var(--gl-dim); } :root[data-design="glyph"] .t-chip::after { content: " ]"; color: var(--gl-dim); }
 :root[data-design="glyph"] .t-chip { border-color: transparent; padding: 4px 4px; }
@@ -177,7 +112,7 @@
 :root[data-design="glyph"] .win-bar { padding: 0 4px 0 0; background: #0E0E0E; }
 :root[data-design="glyph"] .win-title { align-self: stretch; padding: 0 14px; background: var(--gl-hue); color: #050505; font: 700 11.5px/34px var(--gl-d); text-transform: lowercase; }
 :root[data-design="glyph"] .win-title .ic { width: 14px; height: 14px; }
-:root[data-design="glyph"] .ui-ic, :root[data-design="glyph"] .icon-btn, :root[data-design="glyph"] .ui-btn { border-radius: 0; }
+:root[data-design="glyph"] .ui-ic, :root[data-design="glyph"] .ui-btn { border-radius: 0; }
 :root[data-design="glyph"] .win-bar .ui-ic { border-color: transparent; color: var(--gl-mut); width: 30px; height: 30px; }
 :root[data-design="glyph"] .ui-btn { font: 600 11.5px/1 var(--gl-d); text-transform: uppercase; letter-spacing: .03em; }
 :root[data-design="glyph"] .cmp-row label { font: 600 11px/1 var(--gl-d); text-transform: lowercase; }
@@ -237,37 +172,19 @@
 :root[data-design="glyph"] .rc-row { font-family: var(--gl-b); }
 
 /* ───────── responsive ───────── */
-@media (max-width: 1000px) {
-
-  :root[data-design="glyph"] .gl-man-cols { grid-template-columns: minmax(0, 1fr); }
-  :root[data-design="glyph"] .gl-bin { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 @media (max-width: 640px) {
   :root[data-design="glyph"] .gl-msg { position: absolute; top: 100%; right: 0; background: #0A0A0A; border: 1px solid var(--gl-rule); line-height: 26px; }
   :root[data-design="glyph"] .gl-pane { margin-top: 96px; }
-  :root[data-design="glyph"] .gl-pb { padding: 26px 18px 30px; }
   :root[data-design="glyph"] .gl-word { font-size: clamp(48px, 15vw, 96px); }
   :root[data-design="glyph"] .gl-w2 { font-size: .1em; }
   :root[data-design="glyph"] .gl-h2 { font-size: clamp(42px, 15vw, 72px); }
-  :root[data-design="glyph"] .gl-nums dt { font-size: 24px; }
-
-  :root[data-design="glyph"] .gl-mb, :root[data-design="glyph"] .gl-env, :root[data-design="glyph"] .gl-files, :root[data-design="glyph"] .gl-more { padding-left: 0; }
-  :root[data-design="glyph"] .gl-env div { grid-template-columns: 12ch minmax(0, 1fr); }
-  :root[data-design="glyph"] .gl-bin { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  :root[data-design="glyph"] .gl-prog { min-height: 0; }
-  :root[data-design="glyph"] .gl-big-b { font-size: clamp(28px, 9.6vw, 52px); }
-  :root[data-design="glyph"] .gl-cmd { grid-template-columns: 2ch minmax(0, 1fr); font-size: 14px; padding: 12px 6px; }
-  :root[data-design="glyph"] .gl-cmd .gl-run { grid-column: 2; }
   :root[data-design="glyph"] .agent-bar::before { content: "─ agent ─"; }
 }
 
 /* reduced motion and performance mode: the cursor and LED stop blinking, the design holds still */
-@media (prefers-reduced-motion: reduce) { :root[data-design="glyph"] .gl-caret, :root[data-design="glyph"] .gl-led { animation: none; } }
-:root[data-design="glyph"].lite .gl-msg, :root[data-design="glyph"].lite .gl-prog, :root[data-design="glyph"].lite .gl-cmd { transition: none; }
+:root[data-design="glyph"].lite .gl-msg { transition: none; }
 
 /* "I am Rithvik" header button: a status-bar segment, like the keys hint beside it */
-@media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-iam:hover { color: var(--gl-fg); } }
-@media (max-width: 640px) { :root[data-design="glyph"] .gl-iam { padding: 0 12px; } }
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="glyph"] { --gl-bar: 64px; --ly-head-bg: rgba(10, 10, 10, .96); --ly-line: var(--gl-rule); --ly-soft: #0A0A0A; --ly-display: var(--gl-d); --ly-head-font: var(--gl-d); }
@@ -287,7 +204,6 @@
 :root[data-design="glyph"] .gl-sec.gl-hr { --sh: var(--gl-red); }
 :root[data-design="glyph"] .gl-pane > .gl-h2 { padding: clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px) 0; }
 :root[data-design="glyph"] .gl-pane > .ly-body { padding: 0 clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px); }
-:root[data-design="glyph"] .gl-man-a .gl-nums { margin-top: 32px; }
 :root[data-design="glyph"] .gl-msg { position: fixed; z-index: 61; top: 18px; left: 50%; translate: -50% 0; padding: 4px 10px; background: #0A0A0A; border: 1px solid var(--gl-rule); font: 500 11px/1.4 var(--gl-d); pointer-events: none; }
 :root[data-design="glyph"] .ly-foot { position: relative; z-index: 1; }
 @media (max-width: 640px) {

@@ -111,7 +111,6 @@
 :root[data-design="nimbus"] .nb-wx-places { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; background: var(--nb-mist); }
 :root[data-design="nimbus"] .nb-wx-places li { display: grid; gap: 6px; align-content: start; padding: 18px 20px 20px; }
 :root[data-design="nimbus"] .nb-wx-places li + li { box-shadow: inset 2px 0 0 #FFFFFF; }
-:root[data-design="nimbus"] .nb-wx-places li.is-now b { color: var(--nb-skyink); }
 :root[data-design="nimbus"] .nb-wx-k { font: 500 11px/1 var(--nb-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--nb-muted); }
 :root[data-design="nimbus"] .nb-wx-places b { font: 500 15px/1.25 var(--nb-sans); }
 :root[data-design="nimbus"] .nb-wx-c { display: inline-flex; align-items: center; gap: 7px; font: 500 13px/1 var(--nb-mono); font-variant-numeric: tabular-nums; }
@@ -235,10 +234,6 @@
 
 /* ═════════ Chrome: the same airy sky ═════════ */
 /* switcher */
-:root[data-design="nimbus"] .sw-bar { background: #FFFFFF; border-color: rgba(14, 27, 43, .08); }
-:root[data-design="nimbus"] .sw-toggle b { font: italic 420 16px/1 var(--nb-serif); }
-:root[data-design="nimbus"] .sw-deck { background: #FFFFFF; border-radius: 24px; }
-:root[data-design="nimbus"] .sw-card { border-radius: 16px; }
 :root[data-design="nimbus"] .sw-ic[aria-pressed="true"] { background: var(--nb-ink); color: #FFFFFF; }
 
 /* toast */
@@ -292,9 +287,6 @@
 :root[data-design="nimbus"] .agent-head { padding: 36px 12px 10px 18px; border-bottom: 0; background: var(--nb-strip) repeat-x 0 0 / 224px 28px, #FFFFFF; font-family: var(--nb-sans); font-weight: 600; }
 :root[data-design="nimbus"] .at-mark { color: var(--nb-skyink); }
 :root[data-design="nimbus"] .agent-model { font-family: var(--nb-mono); font-weight: 500; font-size: 12px; color: var(--nb-muted); }
-:root[data-design="nimbus"] .agent-actions .icon-btn { border-color: transparent; background: var(--nb-mist); }
-:root[data-design="nimbus"] .agent-banner { color: var(--nb-ink); }
-:root[data-design="nimbus"] .agent-banner .acc { color: var(--nb-skyink); }
 :root[data-design="nimbus"] .t-tips { color: var(--nb-muted); }
 :root[data-design="nimbus"] .t-chip { border: 0; border-radius: 999px; padding: 8px 12px; background: var(--nb-mist); color: var(--nb-ink); font-family: var(--nb-sans); }
 :root[data-design="nimbus"] .t-chip:hover { background: var(--nb-pale); }

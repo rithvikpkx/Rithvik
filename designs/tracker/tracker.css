@@ -30,21 +30,8 @@
 :root[data-design="tracker"] .tk :focus-visible { outline: 2px solid var(--tk-acc); outline-offset: 3px; }
 
 /* ───────── shared bits ───────── */
-:root[data-design="tracker"] .tk-btn { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 18px; border: 1px solid var(--tk-line2); border-radius: 3px; background: var(--tk-panel); color: var(--tk-ink); font: 500 15px/1 var(--tk-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform 160ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
-:root[data-design="tracker"] .tk-btn:active { transform: scale(.97); }
-:root[data-design="tracker"] .tk-btn-ink { background: var(--tk-ink); border-color: var(--tk-ink); color: #fff; }
-:root[data-design="tracker"] .tk-btn-ghost { background: transparent; }
-:root[data-design="tracker"] .tk-prompt { font: 600 15px/1 var(--tk-mono); color: var(--tk-acc); }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="tracker"] .tk-btn:hover { border-color: var(--tk-ink); }
-  :root[data-design="tracker"] .tk-btn-ink:hover { background: var(--tk-acc); border-color: var(--tk-acc); }
-}
-:root[data-design="tracker"] .tk-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-:root[data-design="tracker"] .tk-tags span, :root[data-design="tracker"] .tk-ptags span { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border: 1px solid var(--tk-line2); border-radius: 2px; background: var(--tk-panel); font: 500 11.5px/1 var(--tk-mono); color: var(--tk-mut); white-space: nowrap; }
-:root[data-design="tracker"] .tk-pane { background: var(--tk-panel); border: 1px solid var(--tk-line2); }
 
 /* ───────── nav + HUD ───────── */
-@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-links a:hover { background: var(--tk-panel); } }
 :root[data-design="tracker"] .tk-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; font: 500 11px/1 var(--tk-mono); color: var(--tk-mut); white-space: nowrap; font-variant-numeric: tabular-nums; }
 :root[data-design="tracker"] .tk-hud b { font-weight: 600; color: var(--tk-ink); }
 :root[data-design="tracker"] .tk-hud [data-tk-fps] { display: inline-block; min-width: 4ch; text-align: right; }
@@ -56,7 +43,6 @@
 /* ───────── hero ───────── */
 :root[data-design="tracker"] .tk-name { position: relative; width: fit-content; font: 600 clamp(56px, 7.6vw, 118px)/.9 var(--tk-sans); letter-spacing: -.05em; }
 :root[data-design="tracker"] .tk-name span { color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 
 /* the feed: the one loud place */
 :root[data-design="tracker"] .tk-feed { position: relative; background: var(--tk-panel); border: 1px solid var(--tk-line2); box-shadow: 0 30px 80px -40px rgba(12, 13, 15, .35); }
@@ -76,17 +62,9 @@
 :root[data-design="tracker"] .tk-tick.tr { right: 12px; top: 12px; border-width: 1px 1px 0 0; }
 :root[data-design="tracker"] .tk-tick.bl { left: 12px; bottom: 12px; border-width: 0 0 1px 1px; }
 :root[data-design="tracker"] .tk-tick.br { right: 12px; bottom: 12px; border-width: 0 1px 1px 0; }
-:root[data-design="tracker"] .tk-pt .pt-node { box-shadow: 0 6px 18px -6px rgba(5, 4, 30, .6); }
-:root[data-design="tracker"] .tk-pt .pt-node::after { border-radius: 2px; font: 500 11px/1.2 var(--tk-mono); }
-@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-pt .pt-node:hover { background: var(--tk-acc); color: #fff; } }
 /* the static face box (performance mode only; otherwise the live tracker draws it). Sits outside the photo, never on it. */
 
 /* ───────── readout ───────── */
-:root[data-design="tracker"] .tk-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--tk-line2); border-bottom: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-nums > div { padding: 34px 24px 32px; border-left: 1px solid var(--tk-line); display: grid; gap: 10px; align-content: start; }
-:root[data-design="tracker"] .tk-nums > div:first-child { border-left: 0; padding-left: 0; }
-:root[data-design="tracker"] .tk-nums dt { font: 600 clamp(40px, 4.4vw, 64px)/1 var(--tk-sans); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
-:root[data-design="tracker"] .tk-nums dd { max-width: 22ch; font: 400 14.5px/1.45 var(--tk-sans); color: var(--tk-mut); }
 
 /* ───────── sections ───────── */
 :root[data-design="tracker"] .tk-sec { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; padding: 168px var(--tk-g) 0; scroll-margin-top: 0; }
@@ -97,57 +75,13 @@
 /* scene graph */
 
 /* about */
-:root[data-design="tracker"] .tk-about { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(32px, 6vw, 96px); margin-top: 48px; align-items: start; }
-:root[data-design="tracker"] .tk-about-txt { display: grid; gap: 22px; }
-:root[data-design="tracker"] .tk-about-txt > p { font: 400 clamp(19px, 1.55vw, 22px)/1.55 var(--tk-sans); letter-spacing: -.01em; max-width: 40ch; }
-:root[data-design="tracker"] .tk-thesis { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-thesis li { display: flex; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--tk-line); font: 500 17px/1.3 var(--tk-sans); }
-:root[data-design="tracker"] .tk-thesis span { font: 500 11px/1 var(--tk-mono); color: var(--tk-dim); }
-:root[data-design="tracker"] .tk-now { padding: 4px 20px 12px; }
-:root[data-design="tracker"] .tk-pane-h { display: flex; justify-content: space-between; padding: 14px 0 12px; border-bottom: 1px solid var(--tk-line2); font: 600 11px/1 var(--tk-mono); letter-spacing: .08em; text-transform: uppercase; }
-:root[data-design="tracker"] .tk-pane-h span:last-child { color: var(--tk-mut); font-weight: 500; letter-spacing: .02em; }
-:root[data-design="tracker"] .tk-pane-h2 { margin-top: 22px; }
-:root[data-design="tracker"] .tk-kv > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--tk-line); }
-:root[data-design="tracker"] .tk-kv dt { font: 500 12px/1.5 var(--tk-mono); color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-kv dd { font: 500 15px/1.4 var(--tk-sans); }
-:root[data-design="tracker"] .tk-places { list-style: none; margin: 0; padding: 0; }
-:root[data-design="tracker"] .tk-places li { display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--tk-line); font: 500 12px/1.4 var(--tk-mono); color: var(--tk-mut); font-variant-numeric: tabular-nums; }
-:root[data-design="tracker"] .tk-places li:last-child { border-bottom: 0; }
-:root[data-design="tracker"] .tk-places b { font: 500 15px/1.3 var(--tk-sans); color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-places .is-now .tk-pl-k { color: var(--tk-red); }
-:root[data-design="tracker"] .tk-stack { margin-top: 88px; border-top: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-stack-row { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; padding: 18px 0; border-bottom: 1px solid var(--tk-line); align-items: center; }
-:root[data-design="tracker"] .tk-stack-row > p:first-child { font: 500 12px/1.4 var(--tk-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--tk-mut); }
 
 /* play: the test set */
-:root[data-design="tracker"] .tk-toys { list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-:root[data-design="tracker"] .tk-toy { width: 100%; display: grid; gap: 0; padding: 0; border: 1px solid var(--tk-line2); border-radius: 0; background: var(--tk-panel); color: var(--tk-ink); text-align: left; cursor: pointer; font: inherit; transition: transform 220ms var(--ease-out), border-color 180ms ease; }
-:root[data-design="tracker"] .tk-toy-img { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; background: #ECECE7; background-image: radial-gradient(rgba(12, 13, 15, .14) 1px, transparent 1.3px); background-size: 12px 12px; border-bottom: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-toy-ic { display: grid; place-items: center; width: 64px; height: 64px; background: var(--tk-panel); border: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-toy-ic .ic { width: 26px; height: 26px; }
-:root[data-design="tracker"] .tk-toy-f { position: absolute; left: 10px; bottom: 8px; font: 500 10.5px/1 var(--tk-mono); color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-toy-t { display: grid; gap: 4px; padding: 16px 18px 18px; }
-:root[data-design="tracker"] .tk-toy-t b { font: 600 19px/1.2 var(--tk-sans); letter-spacing: -.02em; }
-:root[data-design="tracker"] .tk-toy-t span { font: 400 14.5px/1.45 var(--tk-sans); color: var(--tk-mut); }
-@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-toy:hover { transform: translateY(-3px); border-color: var(--tk-ink); } }
-:root[data-design="tracker"] .tk-toy:active { transform: scale(.98); }
 
 /* questions (the owner's FAQ, as given): hairline rows that open in place */
-:root[data-design="tracker"] .tk-qs { margin-top: 48px; max-width: 880px; border-top: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-q { border-bottom: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-q summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 4px; font: 500 clamp(17px, 1.5vw, 20px)/1.35 var(--tk-sans); letter-spacing: -.01em; cursor: pointer; list-style: none; }
-:root[data-design="tracker"] .tk-q summary::-webkit-details-marker { display: none; }
-:root[data-design="tracker"] .tk-q summary i { position: relative; flex: none; width: 12px; height: 12px; border: 1px solid var(--tk-ink); }
-:root[data-design="tracker"] .tk-q summary i::after { content: ""; position: absolute; inset: 2px; background: var(--tk-acc); transform: scale(0); transition: transform 180ms var(--ease-out); }
-:root[data-design="tracker"] .tk-q[open] summary i::after { transform: scale(1); }
-:root[data-design="tracker"] .tk-q p { max-width: 64ch; padding: 0 4px 22px; font: 400 16.5px/1.6 var(--tk-sans); color: var(--tk-mut); }
-@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-q summary:hover { color: var(--tk-acc); } }
 
 /* contact + footer */
 :root[data-design="tracker"] .tk-contact { display: grid; gap: 26px; justify-items: start; padding-top: 200px; }
-:root[data-design="tracker"] .tk-big { font: 600 clamp(68px, 12vw, 180px)/.86 var(--tk-sans); letter-spacing: -.06em; }
-:root[data-design="tracker"] .tk-btn-lg { height: 54px; padding: 0 22px; font-size: 16px; }
-@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-links2 a:hover { color: var(--tk-acc); } }
 
 /* ───────── the vision layer: boxes, labels, glitch slices, flow ───────── */
 :root[data-design="tracker"] .tk-ov { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; contain: strict; }
@@ -180,15 +114,8 @@
 
 /* ───────── chrome reskin: switcher, agent, windows, sheet, toast, play ───────── */
 :root[data-design="tracker"] .switcher { font: 500 12px/1 var(--tk-mono); }
-:root[data-design="tracker"] .sw-bar { border-radius: 3px; padding: 4px; border-color: var(--tk-line2); }
-:root[data-design="tracker"] .sw-toggle, :root[data-design="tracker"] .sw-ic { border-radius: 2px; height: 34px; }
+:root[data-design="tracker"] .sw-ic { border-radius: 2px; height: 34px; }
 :root[data-design="tracker"] .sw-ic { width: 34px; }
-:root[data-design="tracker"] .sw-dot { width: 20px; height: 20px; border-radius: 2px; }
-:root[data-design="tracker"] .sw-label { text-transform: uppercase; letter-spacing: .06em; font-size: 10.5px; }
-:root[data-design="tracker"] .sw-toggle b { font: 600 13.5px/1 var(--tk-sans); }
-:root[data-design="tracker"] .sw-deck { border-radius: 4px; border-color: var(--tk-line2); }
-:root[data-design="tracker"] .sw-card { border-radius: 2px; }
-:root[data-design="tracker"] .sw-card[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--tk-red); }
 
 :root[data-design="tracker"] .agent { gap: 22px; } /* room for the "#00 agent" tab that sits above the bar */
 :root[data-design="tracker"] .agent-bar { position: relative; min-height: 52px; padding: 0 6px 0 16px; border-color: var(--tk-line2); }
@@ -203,9 +130,6 @@
 :root[data-design="tracker"] .agent-title { display: flex; align-items: center; align-self: stretch; flex: none; padding: 0 14px; background: var(--tk-ink); color: #fff; font-weight: 600; }
 :root[data-design="tracker"] .agent-title .at-mark { color: #F0F921; vertical-align: 0; }
 :root[data-design="tracker"] .agent-model { flex: 1; padding-left: 14px; text-transform: uppercase; letter-spacing: .06em; font-size: 10.5px; }
-:root[data-design="tracker"] .agent-actions .icon-btn { border-radius: 2px; border-color: transparent; }
-:root[data-design="tracker"] .agent-banner { color: var(--tk-mut); }
-:root[data-design="tracker"] .agent-banner .acc { color: var(--tk-acc); }
 :root[data-design="tracker"] .t-chip { border-radius: 2px; border-color: var(--tk-line2); }
 :root[data-design="tracker"] .t-chip:hover { border-color: var(--tk-acc); color: var(--tk-acc); }
 :root[data-design="tracker"] .t-user b { color: var(--tk-ink); }
@@ -270,43 +194,18 @@
 @media (max-width: 1120px) {
   :root[data-design="tracker"] .agent-bar::before { left: auto; right: -1px; }
 }
-@media (max-width: 960px) {
-
-  :root[data-design="tracker"] .tk-about { grid-template-columns: minmax(0, 1fr); }
-  :root[data-design="tracker"] .tk-toys { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  :root[data-design="tracker"] .tk-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  :root[data-design="tracker"] .tk-nums > div:nth-child(3) { border-left: 0; padding-left: 0; }
-  :root[data-design="tracker"] .tk-nums > div:nth-child(n+3) { border-top: 1px solid var(--tk-line); }
-}
 @media (max-width: 640px) {
   :root[data-design="tracker"] body { font-size: 15.5px; }
   :root[data-design="tracker"] .tk-hud { gap: 10px; }
   :root[data-design="tracker"] .tk-name { font-size: clamp(48px, 14.5vw, 64px); }
-  :root[data-design="tracker"] .tk-acts { width: 100%; }
-  :root[data-design="tracker"] .tk-acts .tk-btn { flex: 1 1 auto; justify-content: center; }
   :root[data-design="tracker"] .tk-view { aspect-ratio: 4 / 4.4; }
   :root[data-design="tracker"] .tk-feed-bar span:nth-child(2) { display: none; }
-  :root[data-design="tracker"] .tk-nums > div { padding: 24px 12px 22px; }
-  :root[data-design="tracker"] .tk-nums > div:nth-child(odd) { padding-left: 0; }
-  :root[data-design="tracker"] .tk-nums dd { font-size: 13.5px; }
   :root[data-design="tracker"] .tk-sec { padding-top: 112px; }
-
-  :root[data-design="tracker"] .tk-stack-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  :root[data-design="tracker"] .tk-stack { margin-top: 64px; }
-  :root[data-design="tracker"] .tk-toys { gap: 12px; margin-top: 36px; }
-  :root[data-design="tracker"] .tk-toy-ic { width: 48px; height: 48px; }
-  :root[data-design="tracker"] .tk-toy-ic .ic { width: 20px; height: 20px; }
-  :root[data-design="tracker"] .tk-toy-t { padding: 12px 12px 14px; }
-  :root[data-design="tracker"] .tk-toy-t b { font-size: 16px; }
-  :root[data-design="tracker"] .tk-toy-t span { font-size: 13px; }
-  :root[data-design="tracker"] .tk-toy-f { display: none; }
   :root[data-design="tracker"] .tk-contact { padding-top: 128px; }
-  :root[data-design="tracker"] .tk-contact .tk-btn { max-width: 100%; }
   :root[data-design="tracker"] .agent-bar::before { content: "#00 agent"; }
 }
 
 /* "I am Rithvik" header button: the outlined twin of Resume */
-@media (max-width: 640px) { :root[data-design="tracker"] .tk-iam { width: 36px; padding: 0; justify-content: center; } }
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="tracker"] { --ly-head-bg: rgba(255, 255, 255, .9); --ly-line: var(--tk-line); --ly-soft: var(--tk-panel); --ly-display: var(--tk-sans); }
@@ -321,7 +220,6 @@
 :root[data-design="tracker"] .ly-hero > .tk-hud { position: absolute; z-index: 2; top: calc(var(--ly-head-h) + 16px); right: var(--ly-gutter); margin: 0; }
 :root[data-design="tracker"] .ly-hero .pt { --pt-node-bg: #FFFFFF; }
 :root[data-design="tracker"] .tk-sec > .tk-h2 { margin: 0 0 clamp(40px, 5vw, 64px) !important; }
-:root[data-design="tracker"] .tk-about + .tk-nums { margin-top: clamp(56px, 7vw, 96px); }
 @media (max-width: 860px) {
   :root[data-design="tracker"] .ly-hero > .tk-feed { position: relative; right: auto; top: auto; width: 100%; order: 2; margin-top: 32px; }
   :root[data-design="tracker"] .ly-hero > .tk-hud { display: none; }
