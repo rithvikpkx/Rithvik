@@ -166,6 +166,11 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 @media (max-width: 370px) { .agent-status .s-tok { display: none; } }
 .agent-status .spin { color: var(--a-accent); }
 .agent-status .warn { color: var(--a-accent); }
+/* the working mark: the 16px ouroboros turns while its band draws on and swallows its own tail (head erased first, tail follows) */
+.agent-status .spin { display: inline-flex; width: 16px; height: 16px; align-items: center; }
+.mark.ag-ouro { width: 16px; height: 16px; }
+.mark.ag-ouro.draw .mk-reveal { animation: ag-swallow 2.6s var(--ease-in-out, cubic-bezier(.77, 0, .175, 1)) infinite both; }
+@keyframes ag-swallow { 0% { stroke-dashoffset: 1; } 45%, 62% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -1; } }
 
 /* the question flying in from where it was asked (components/site/agent/Handoff.tsx); fixed to the viewport, transform + opacity only */
 .agent-ghost { position: fixed; z-index: 97; margin: 0; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 14px/1.4 var(--a-mono); color: var(--a-fg); background: var(--a-bg); border-radius: 3px; will-change: transform;
@@ -190,8 +195,9 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 @media (prefers-reduced-motion: reduce) {
   .agent::before, .agent-panel, .ab-send, .agent-bar, .t-acts, .t-chip, .t-key { transition: none; }
   .t-dot.live, .caret::after, .agent-hl, .agent-log > *, .as-logo rect { animation: none; }
+  .mark.ag-ouro.draw .mk-reveal, .mark.ag-ouro.spinning .mk-spin { animation: none; } /* a still mark; the verb and clock still move */
 }
 /* performance mode: no decorative motion, the window just appears */
 html.lite .agent::before, html.lite .agent-panel { transition: none; }
-html.lite .agent-log > *, html.lite .as-logo rect { animation: none; }
+html.lite .agent-log > *, html.lite .as-logo rect, html.lite .mark.ag-ouro.draw .mk-reveal, html.lite .mark.ag-ouro.spinning .mk-spin { animation: none; }
 html.lite .agent-log { text-shadow: none; }

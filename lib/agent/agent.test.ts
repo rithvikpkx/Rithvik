@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ADMIN_COMMANDS, COMMANDS, NEEDS_ARG, NO_ARG, runsOnClick, formatDocs, formatEmbed, isAdminCommand, matchCommands, parseCommand, parseTemp } from "./commands.ts";
 import { HISTORY_MAX, loadHistory, pushHistory, saveHistory, stepHistory } from "./history.ts";
-import { formatRetry, formatTokens, spinFrame, statusSegments, usageLines, verbAt, VERBS } from "./status.ts";
+import { formatRetry, formatTokens, spinFrame, statusSegments, usageLines } from "./status.ts";
 
 test("idle status line shows only what is known, in order", () => {
   const u = { tokens: 12431, limit: 60, remaining: 41, totalMs: 1900 };
@@ -96,9 +96,6 @@ test("history persists and survives junk or missing storage", () => {
 test("spinner and verbs advance with elapsed time", () => {
   assert.notEqual(spinFrame(0), spinFrame(80));
   assert.equal(spinFrame(0), spinFrame(800));
-  assert.equal(verbAt(0), VERBS[0]);
-  assert.equal(verbAt(1250), VERBS[1]);
-  assert.equal(verbAt(1200 * VERBS.length), VERBS[0]);
 });
 
 test("formatRetry and status segments", () => {
@@ -109,7 +106,8 @@ test("formatRetry and status segments", () => {
   assert.equal(statusSegments({ kind: "idle", turns: 3 })[1].text, "3 turns");
   assert.equal(statusSegments({ kind: "limited", status: 429, retrySecs: 600 })[0].text, "⚠ rate limited · retry in 10m");
   assert.match(statusSegments({ kind: "limited", status: 503, retrySecs: 30 })[0].text, /unavailable · retry in 30s/);
-  const busy = statusSegments({ kind: "busy", elapsedMs: 2500 });
+  const busy = statusSegments({ kind: "busy", elapsedMs: 2500, verb: "Recursing" });
+  assert.equal(busy[1].text, "Recursing…");
   assert.equal(busy[2].text, "2.5s");
   assert.equal(busy[3].text, "esc to interrupt");
 });
