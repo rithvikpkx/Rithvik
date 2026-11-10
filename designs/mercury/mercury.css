@@ -51,7 +51,6 @@
   :root[data-design="mercury"] .mc-ghost:hover { color: var(--mc-fg); }
 }
 
-
 /* ───────── reading sections: solid graphite, generous space ───────── */
 :root[data-design="mercury"] .mc-sec { position: relative; z-index: 1; background: var(--mc-bg); padding: 0 clamp(16px, 6vw, 96px) clamp(72px, 9vw, 128px); scroll-margin-top: 20px; }
 :root[data-design="mercury"] .mc-about { padding-top: 0; }
@@ -95,20 +94,6 @@
 :root[data-design="mercury"] .mc-pt-clock { font: 500 13px/1 var(--mc-m); color: var(--mc-mut); font-variant-numeric: tabular-nums; }
 
 /* ───────── work: a calm index; titles take a chrome sheen on hover ───────── */
-:root[data-design="mercury"] .mc-work { list-style: none; margin: 0 auto; padding: 0; max-width: 1180px; border-top: 1px solid var(--mc-line); }
-:root[data-design="mercury"] .mc-work li { border-bottom: 1px solid var(--mc-line); }
-:root[data-design="mercury"] .mc-row { width: 100%; display: grid; grid-template-columns: 56px minmax(0, 1.4fr) minmax(0, 1fr) 40px; grid-template-areas: "n t hl go" "n k hl go"; column-gap: 24px; row-gap: 8px; align-items: center; padding: 30px 4px; border: 0; background: transparent; color: var(--mc-fg); text-align: left; cursor: pointer; }
-:root[data-design="mercury"] .mc-n { grid-area: n; align-self: start; padding-top: 10px; font: 500 12px/1 var(--mc-m); color: var(--mc-dim); }
-:root[data-design="mercury"] .mc-t { grid-area: t; font: 400 clamp(26px, 2.7vw, 40px)/1.08 var(--mc-d); letter-spacing: -.015em; background: linear-gradient(100deg, var(--mc-fg) 0 40%, #ffffff 46%, #7d818a 50%, #ffffff 54%, var(--mc-fg) 60% 100%) 100% 0 / 260% 100% no-repeat; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; transition: background-position 900ms var(--ease-liquid); }
-:root[data-design="mercury"] .mc-k { grid-area: k; display: inline-flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--mc-m); letter-spacing: .1em; text-transform: uppercase; color: var(--mc-mut); }
-:root[data-design="mercury"] .mc-k .ic { width: 14px; height: 14px; }
-:root[data-design="mercury"] .mc-hl { grid-area: hl; color: var(--mc-mut); font-size: 16px; line-height: 1.5; }
-:root[data-design="mercury"] .mc-go { grid-area: go; justify-self: end; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--mc-line2); transition: background-color 200ms ease, color 200ms ease, transform 300ms var(--ease-out); }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="mercury"] .mc-row:hover .mc-t, :root[data-design="mercury"] .mc-row:focus-visible .mc-t { background-position: 0 0; }
-  :root[data-design="mercury"] .mc-row:hover .mc-go { background: #E9EAEE; color: #0A0A0B; transform: rotate(45deg); }
-  :root[data-design="mercury"] .mc-row:hover .mc-hl { color: #CFCFD5; }
-}
 
 /* ───────── experience ───────── */
 :root[data-design="mercury"] .mc-roles { list-style: none; margin: 0 auto; padding: 0; max-width: 1180px; }
@@ -127,7 +112,6 @@
 :root[data-design="mercury"] .mc-edu h3 { margin: 0; font: 400 28px/1.1 var(--mc-d); }
 :root[data-design="mercury"] .mc-edu p { margin: 6px 0 0; color: #CFCFD5; }
 :root[data-design="mercury"] .mc-edu .mc-edu-m { color: var(--mc-mut); font: 500 12.5px/1.4 var(--mc-m); }
-
 
 /* ───────── play: the ribbon, then six chrome spheres ───────── */
 :root[data-design="mercury"] .mc-play { overflow: hidden; }
@@ -248,8 +232,7 @@
   :root[data-design="mercury"] .mc-nums div:nth-child(n + 3) { padding-top: 36px; }
 }
 @media (max-width: 860px) {
-  :root[data-design="mercury"] .mc-row { grid-template-columns: 34px minmax(0, 1fr) 36px; grid-template-areas: "n t go" "n k go" "n hl go"; padding: 24px 0; column-gap: 14px; }
-  :root[data-design="mercury"] .mc-go { width: 36px; height: 36px; }
+
   :root[data-design="mercury"] .mc-role { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   :root[data-design="mercury"] .mc-when { grid-auto-flow: column; justify-content: start; gap: 14px; }
   :root[data-design="mercury"] .mc-faq { grid-template-columns: minmax(0, 1fr); }
@@ -287,7 +270,6 @@
   :root[data-design="mercury"] .mc-live .mc-mark-art img { animation: none; }
   :root[data-design="mercury"] .mc-toy:hover .mc-sphere { animation: none; }
 }
-:root[data-design="mercury"] a.mc-row { text-decoration: none; }
 
 /* inline-edit wrapper for the "when" text must not take the dim "where" styling */
 :root[data-design="mercury"] .mc-when .mc-when-v { color: inherit; font-size: inherit; }

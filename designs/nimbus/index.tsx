@@ -58,28 +58,6 @@ function WxTop({ city, tz }: { city: string; tz: string }) {
   );
 }
 
-/** Work: sky tiles, one per project. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <div className="nb-cards">
-      {C.projects.map((p, i) => (
-        <a key={p.slug} id={`project-${p.slug}`} className="nb-card" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-          <span className="nb-card-sky">
-            <Px className="nb-drift" html={skyTile(11 + i * 17, 64, 20, 32, -0.34 - (i % 3) * 0.04, 0.55, "nb-tile")} />
-            <Px className="nb-card-ic" html={icon16(p.slug, ON_SKY)} />
-            <span className="nb-card-n">{pad(i)}</span>
-            <span className="nb-card-kind"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-            <span className="nb-card-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
-          </span>
-          <span className="nb-card-tags">{p.tags.slice(0, 3).map((t) => <span key={t}>{t}</span>)}</span>
-          <span className="nb-card-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-          <span className="nb-card-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-        </a>
-      ))}
-    </div>
-  );
-}
-
 /** Experience: roles with a date margin, then the degree on a pixel-sky card. */
 function Experience({ content: C }: SectionProps) {
   return (
@@ -224,13 +202,14 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "nimbus",
   rootClass: "nb",
   labels: { play: "Recess" },
   sectionClass: (id) => (id === "play" ? "nb-band" : `nb-sec nb-${{ work: "work", experience: "exp", about: "about", questions: "faq", contact: "contact" }[id]}`),
   titleClass: "nb-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#F3FAFF", "#0E1B2B", "#0A9BFF", "#FFC93C"], params: { hole: 0.36, rest: 6, lift: 22 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Nimbus site: the shared layout under a pixel sky that follows the visitor's clock. */

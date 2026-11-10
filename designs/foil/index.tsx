@@ -12,14 +12,12 @@ import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
-import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
 import "./foil.css";
 
 const META = designById("foil")!;
-const pad = (n: number) => String(n).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
@@ -30,32 +28,6 @@ const MASK_URL = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http
 /** Foil-stamped mark: the mark silhouette masking the foil layer, whose sheen slides with the pointer. */
 function Fm({ cls = "" }: { cls?: string }) {
   return <span className={`fo-fm${cls ? " " + cls : ""}`} role="img" aria-label="Rithvik Praveen Kumar"><i /></span>;
-}
-
-/** Work: the set, one holo trading card per project. */
-function Work({ content: C }: SectionProps) {
-  const total = pad(C.projects.length);
-  return (
-    <ul className="fo-set" id="fo-set">{C.projects.map((p, i) => (
-      <li key={p.slug} className="fo-pc-li">
-        <a className="fo-pc" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-fo-case={p.slug} style={{ "--h": `${(i * 57) % 360}deg`, "--hp": `${((i * 57) % 360) / 3.6}%` } as CSSProperties} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-          <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-          <span className="fo-pc-art" aria-hidden="true">
-            <span className="fo-pc-holo"><i /></span>
-            <span className="fo-pc-glit"><i /></span>
-            <span className="fo-pc-ic"><span className="fo-pc-ic-hi"><Icon name={p.icon} /></span><span className="fo-pc-ic-ink"><Icon name={p.icon} /></span></span>
-            <span className="fo-pc-wm"><Mark label="" /></span>
-          </span>
-          <span className="fo-pc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-          <span className="fo-pc-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-          <span className="fo-pc-stats">
-            <span><b>Stack</b>{p.tags.join(" · ")}</span>
-            <span><b>Context</b><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
-          </span>
-        </a>
-      </li>
-    ))}</ul>
-  );
 }
 
 /** Path: roles with a date column, then the degree as a badge card. */
@@ -141,13 +113,14 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "foil",
   rootClass: "fo",
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#121220", "#EEEAF6", "#B9A8FF", "#8BF0D3"], params: { hole: 0.36, rest: 4 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

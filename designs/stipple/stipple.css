@@ -45,8 +45,6 @@
 /* ───────── Masthead ───────── */
 :root[data-design="stipple"] .st-mark { display: block; width: 34px; height: 34px; color: var(--st-ink); }
 :root[data-design="stipple"] .st .mark .mk-spin { transform-box: view-box; transform-origin: 50% 50%; transition: transform 900ms var(--ease-in-out); }
-@media (hover: hover) and (pointer: fine) {
-}
 
 /* ───────── Cover ───────── */
 :root[data-design="stipple"] .st-reg { position: absolute; width: 22px; height: 22px; opacity: .75;
@@ -84,15 +82,12 @@
 }
 @keyframes stipple-lens-move { 0% { translate: 18% 34%; } 35% { translate: 48% 44%; } 70% { translate: 74% 26%; } 100% { translate: 58% 80%; } }
 
-
 :root[data-design="stipple"] .st-cover-l { display: grid; justify-items: end; gap: 14px; text-align: right; }
 :root[data-design="stipple"] .st-pulse { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--st-verm); box-shadow: 0 0 0 3px rgba(255, 59, 31, .22); }
 :root[data-design="stipple"] .st-live .st-pulse { animation: stipple-pulse 2.4s var(--ease-in-out) infinite; }
 @keyframes stipple-pulse { 50% { transform: scale(.55); opacity: .55; } }
 
 /* links rest stippled and print solid on hover */
-@media (hover: hover) and (pointer: fine) {
-}
 
 :root[data-design="stipple"] .st .pt-beam { stroke-dasharray: 0 5; stroke-linecap: round; stroke-width: 2.2; }
 :root[data-design="stipple"] .st .pt-node { box-shadow: 3px 3px 0 var(--st-ink); }
@@ -137,37 +132,15 @@
 :root[data-design="stipple"] .st-figs li > span:last-child { font-style: italic; font-size: 20px; line-height: 1.3; color: var(--st-ink-2); max-width: 20ch; margin-top: 8px; }
 
 /* ───────── Dispatches: the issue grid ───────── */
-:root[data-design="stipple"] .st-issue { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; }
+
 :root[data-design="stipple"] .st-dsp { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 30px 26px 30px; text-decoration: none; background: var(--st-paper-hi); color: var(--st-ink);
   -webkit-mask: var(--st-deckle) 0 0 / 100% 100% no-repeat; mask: var(--st-deckle) 0 0 / 100% 100% no-repeat; transition: transform 380ms var(--ease-out); }
 :root[data-design="stipple"] .st-dsp:nth-child(odd) { rotate: -.35deg; } :root[data-design="stipple"] .st-dsp:nth-child(even) { rotate: .3deg; }
 :root[data-design="stipple"] .st-dsp-1 { grid-column: span 2; grid-row: span 2; padding: 40px 48px; justify-content: center; }
-:root[data-design="stipple"] .st-stamp { display: grid; gap: 4px; font: 500 10px/1.2 var(--st-mono); letter-spacing: .14em; text-transform: uppercase; }
-:root[data-design="stipple"] .st-stamp span:first-child { color: var(--st-verm-ink); font-weight: 700; }
-:root[data-design="stipple"] .st-art { position: relative; display: block; width: 100%; aspect-ratio: 320 / 200; margin: 12px 0 10px; --ls: 46px; --lx: -200px; --ly: -200px; }
-:root[data-design="stipple"] .st-art svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-:root[data-design="stipple"] .st-art-base { will-change: transform; }
-:root[data-design="stipple"] .st-art-crisp { clip-path: inset(calc(var(--ly) - var(--ls)) calc(100% - var(--lx) - var(--ls)) calc(100% - var(--ly) - var(--ls)) calc(var(--lx) - var(--ls))); background: var(--st-paper-hi); }
-:root[data-design="stipple"] .st-art .st-lens-frame { opacity: 0; transition: opacity 160ms ease; }
-:root[data-design="stipple"] .st-art.st-on .st-lens-frame { opacity: 1; }
-:root[data-design="stipple"] .st-dsp-1 .st-art { max-width: 520px; --ls: 70px; }
-:root[data-design="stipple"] .st-kind { display: inline-flex; align-items: center; gap: 7px; font: 500 9.5px/1.2 var(--st-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--st-ink-2); }
-:root[data-design="stipple"] .st-kind .ic { width: 13px; height: 13px; color: var(--st-verm-ink); }
-:root[data-design="stipple"] .st-dsp-t { font-size: 30px; line-height: 1.02; letter-spacing: -.01em; text-wrap: balance; margin-top: 2px; }
-:root[data-design="stipple"] .st-dsp-1 .st-dsp-t { font-size: clamp(40px, 4.4vw, 60px); }
-:root[data-design="stipple"] .st-dsp-h { font-style: italic; font-size: 19px; line-height: 1.3; color: var(--st-ink-2); text-wrap: balance; }
-:root[data-design="stipple"] .st-dsp-1 .st-dsp-h { font-size: 24px; }
-:root[data-design="stipple"] .st-dsp-d { max-width: 44ch; margin: 14px 0 4px; font-size: 19px; line-height: 1.45; text-wrap: pretty; }
-:root[data-design="stipple"] .st-dsp-1 .st-more { margin-top: 22px; }
-:root[data-design="stipple"] .st-dsp-1 .st-art { margin: 22px 0 18px; }
-:root[data-design="stipple"] .st-dsp-c { font: 400 10px/1.5 var(--st-mono); letter-spacing: .04em; color: var(--st-ink-2); margin-top: 4px; }
-:root[data-design="stipple"] .st-dsp-tags { font: 400 10px/1.5 var(--st-mono); color: var(--st-ink-2); opacity: .9; }
-:root[data-design="stipple"] .st-more { margin-top: auto; padding-top: 12px; font: 600 10.5px/1 var(--st-mono); letter-spacing: .14em; text-transform: uppercase; }
-:root[data-design="stipple"] .st-more span:first-child { background-size: 2px 2px; color: rgba(23, 17, 14, .5); }
-:root[data-design="stipple"] .st-more span:last-child { color: var(--st-verm-ink); display: inline-block; transition: transform 220ms var(--ease-out); }
+
 @media (hover: hover) and (pointer: fine) {
   :root[data-design="stipple"] .st-dsp:hover { transform: translateY(-4px); }
-  :root[data-design="stipple"] .st-dsp:hover .st-more span:last-child { transform: translateX(4px); }
+
 }
 :root[data-design="stipple"] .st-dsp:focus-visible { outline-offset: -8px; }
 
@@ -271,7 +244,7 @@
   :root[data-design="stipple"] .st-n1 { font-size: 28.5vw; }
   :root[data-design="stipple"] .st-n2 { font-size: 10.4vw; }
   :root[data-design="stipple"] .st-ch { padding-left: 20px; padding-right: 20px; }
-  :root[data-design="stipple"] .st-issue { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+
   :root[data-design="stipple"] .st-coupons { grid-template-columns: minmax(0, 1fr); gap: 36px; }
   :root[data-design="stipple"] .st-figs { grid-template-columns: minmax(0, 1fr); }
   :root[data-design="stipple"] .st-dsp-1 { grid-column: auto; padding: 30px 22px; }
@@ -397,8 +370,6 @@
 
 /* "I am Rithvik" header button: a rubber-stamp in the masthead */
 @media (hover: hover) and (pointer: fine) { :root[data-design="stipple"] .st-iam:hover { background: var(--st-ink); color: var(--st-paper); } }
-@media (max-width: 760px) {
-}
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="stipple"] { --ly-head-bg: rgba(249, 205, 176, .9); --ly-line: rgba(23, 17, 14, .2); --ly-soft: var(--st-paper); --ly-display: var(--st-serif);

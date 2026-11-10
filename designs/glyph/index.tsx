@@ -60,29 +60,6 @@ function Commit({ x, lane, deco, open }: { x: DesignProps["content"]["experience
   );
 }
 
-/** Work: a ranger-style file list with a live preview of the selected project. */
-function Work({ content: C }: SectionProps) {
-  const [sel, setSel] = useState(0);
-  return (
-    <div className="gl-ranger">
-      <ol className="gl-ls">{C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}><button type="button" className="gl-row" data-case={p.slug} aria-current={i === sel ? "true" : undefined} onPointerEnter={() => setSel(i)} onFocus={() => setSel(i)}>
-          <span className="c-name"><span data-scr>{p.slug}</span>/</span><span className="c-kind">{p.kind.toLowerCase()}</span><span className="c-go" aria-hidden="true">⏎</span>
-        </button></li>
-      ))}</ol>
-      <div className="gl-prev">{C.projects.map((p, i) => (
-        <article className="gl-pv" key={p.slug} hidden={i !== sel}>
-          <h3 data-edit={`project:${p.slug}:title`}>{p.title}</h3>
-          <p className="gl-pv-head" data-edit={`project:${p.slug}:headline`}>{p.headline}</p>
-          <p className="gl-pv-d" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</p>
-          <Tags tags={p.tags} />
-          <p className="gl-pv-acts"><button type="button" className="gl-btn gl-btn-hue" data-case={p.slug}><kbd>⏎</kbd>open case</button>{Object.entries(p.links).map(([k, v]) => <a key={k} className="gl-btn" href={v} target="_blank" rel="noopener">{k.toLowerCase()} ↗</a>)}</p>
-        </article>
-      ))}</div>
-    </div>
-  );
-}
-
 /** Experience: the roles as a git graph (a side lane for the earlier job), education as the root tag. */
 function Experience({ content: C }: SectionProps) {
   const X = C.experience, ed = C.education;
@@ -166,14 +143,15 @@ function Contact({ content: C }: SectionProps) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "glyph",
   rootClass: "gl",
   sectionClass: (id) => `gl-sec gl-pane ${HUE[SECTIONS.find(([s]) => s === id)![2]]}`.trim(),
   SectionOrnament: TitleBar,
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#050505", "#EDEDED", "#FFC400", "#3BA4FF"], params: { hole: 0, rest: 0, lift: 14, stroke: 0.9 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */

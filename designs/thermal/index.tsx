@@ -13,7 +13,7 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon, Logo } from "@/components/site/Glyph";
-import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
+import { PALS, T_MAX, T_MIN, bmp, palIndex, stripGrid, type PalId } from "./heat";
 import { readPal, usePal, useThermalMotion } from "./motion";
 import "./thermal.css";
 
@@ -21,8 +21,6 @@ const META = designById("thermal")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const TOOL_LOGO: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama" };
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
-const grids = new Map<string, ReturnType<typeof heatGrid>>(); // frames are deterministic per project: build once
-const gridOf = (slug: string, tools: number) => { let g = grids.get(slug); if (!g) grids.set(slug, (g = heatGrid(slug, tools))); return g; };
 const strip = stripGrid();
 
 /** A tool chip with its logo when we have one. */
@@ -39,38 +37,6 @@ function Heat({ f, cool, warm, w, h }: { f: string; cool: string; warm: string; 
       <img className="th-f th-f-warm" data-f={f} src={warm} alt="" width={w} height={h} decoding="async" />
       {/* eslint-enable @next/next/no-img-element */}
     </span></span>
-  );
-}
-
-/** Hot spots: one sensor frame per project, warmest (most tools) first. */
-function Work({ content: C }: SectionProps) {
-  const pal = usePal();
-  const ranked = useMemo(() => rankByTools(C.projects), [C.projects]);
-  // frames re-colour only when the palette changes (tiny BMPs)
-  const frames = useMemo(() => ranked.map((p) => {
-    const g = gridOf(p.slug, p.tags.length);
-    return { p, g, cool: bmp(g, pal, 0), warm: bmp(g, pal, 0.2) };
-  }), [ranked, pal]);
-  return (
-    <ol className="th-spots">
-      {frames.map(({ p, g, cool, warm }, i) => (
-        <li className="th-spot" key={p.slug} id={`project-${p.slug}`}>
-          <a className="th-spot-b" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="th-frame">
-              <Heat f={p.slug} cool={cool} warm={warm} w={W} h={HH} />
-              <span className="th-f-tl">SP{i + 1}</span>
-              <span className="th-f-tr">{p.tags.length} tools</span>
-              <i className="th-max" style={{ left: `${(g.at[0] * 100).toFixed(1)}%`, top: `${(g.at[1] * 100).toFixed(1)}%` }} />
-            </span>
-            <span className="th-spot-m">
-              <span className="th-spot-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-              <span className="th-spot-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-              <span className="th-spot-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-            </span>
-          </a>
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -157,13 +123,14 @@ function Contact({ content: C }: SectionProps) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "thermal",
   rootClass: "th",
   labels: { experience: "Record", play: "Bench" },
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),
   titleClass: "th-h2",
-  sections: { work: Work, experience: Experience, play: Play, about: About, contact: Contact },
+  projectArt: { palette: ["var(--th-bg3, #0B0F1A)", "var(--rh1, #FC780F)", "var(--rh0, #FFD138)", "var(--rh3, #A0179E)"], params: { hole: 0.3 } },
+  sections: { experience: Experience, play: Play, about: About, contact: Contact },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

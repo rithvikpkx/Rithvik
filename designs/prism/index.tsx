@@ -73,28 +73,6 @@ function DarkArt() {
   );
 }
 
-/** Work: one spectral band per project. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="pr-pjs">
-      {C.projects.map((p, i) => (
-        <li className="pr-pj-li" key={p.slug}>
-          <a className="pr-pj" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-case={p.slug} style={bandVar(i)} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="pr-pj-band" aria-hidden="true" />
-            <span className="pr-pj-n"><b>{pad(i)}</b><span>{band(i)[1]} nm</span></span>
-            <span className="pr-pj-main">
-              <span className="pr-pj-t"><Ca txt={p.title} /></span>
-              <span className="pr-pj-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-            </span>
-            <span className="pr-pj-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-            <span className="pr-pj-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
-          </a>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 /** Experience: roles with a date margin, then the degree. */
 function Experience({ content: C }: SectionProps) {
   return (
@@ -201,13 +179,14 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "prism",
   rootClass: "pr",
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#F4F5F8", "#0B0B0F", "#FF3B5C", "#00B4FF"], params: { hole: 0.34, lift: 26 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */

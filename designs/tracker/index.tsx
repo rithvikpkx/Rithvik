@@ -14,7 +14,7 @@ import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
-import { TOY_LBL, fmap, pad, projLabel } from "./vision";
+import { TOY_LBL, pad } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import "./tracker.css";
 
@@ -30,25 +30,6 @@ function Name({ first, last }: { first: string; last: string }) {
 /** A section heading; also a "text" target. */
 function Title({ label, hid }: { label: string; hid: string }) {
   return <h2 className="tk-h2 ly-title" id={hid} data-tk="text" data-tk-label="heading">{label}</h2>;
-}
-
-/** Work: project rows, each with a little feature map. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="tk-projects">
-      {C.projects.map((p, i) => (
-        <li key={p.slug}>
-          <a className="tk-proj" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-case={p.slug} data-tk="project" data-tk-static={projLabel(p.slug)} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="tk-pn">{pad(i + 1)}</span>
-            <span className="tk-pb"><b className="tk-pt-t" data-edit={`project:${p.slug}:title`}>{p.title}</b><span className="tk-ph" data-edit={`project:${p.slug}:headline`}>{p.headline}</span><span className="tk-ptags">{p.tags.slice(0, 4).map((t) => <span key={t}>{t}</span>)}</span></span>
-            <span className="tk-pk"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-            <svg className="tk-fm" viewBox="0 0 8 5" shapeRendering="crispEdges" aria-hidden="true" focusable="false" dangerouslySetInnerHTML={{ __html: fmap(p.slug) }} />
-            <span className="tk-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
-          </a>
-        </li>
-      ))}
-    </ol>
-  );
 }
 
 /** Experience: roles with a date column, then the degree. */
@@ -132,14 +113,15 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "tracker",
   rootClass: "tk",
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#F2F2EE", "#0C0D0F", "#E0103F", "#7E03A8"], params: { hole: 0.3, rest: 2 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

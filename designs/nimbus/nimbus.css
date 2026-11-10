@@ -44,7 +44,6 @@
     100% calc(100% - var(--st) * 2), calc(100% - var(--st)) calc(100% - var(--st) * 2), calc(100% - var(--st)) calc(100% - var(--st)), calc(100% - var(--st) * 2) calc(100% - var(--st)), calc(100% - var(--st) * 2) 100%,
     calc(var(--st) * 2) 100%, calc(var(--st) * 2) calc(100% - var(--st)), var(--st) calc(100% - var(--st)), var(--st) calc(100% - var(--st) * 2), 0 calc(100% - var(--st) * 2)); }
 :root[data-design="nimbus"] .nb-card-sky, :root[data-design="nimbus"] .nb-edu { --st: 8px; }
-:root[data-design="nimbus"] .nb-card-n, :root[data-design="nimbus"] .nb-card-kind, :root[data-design="nimbus"] .nb-card-go { --st: 3px; }
 
 /* ───────── buttons ───────── */
 :root[data-design="nimbus"] .nb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 46px; padding: 0 20px; border: 0; background: var(--nb-white); color: var(--nb-ink); font: 500 15px/1 var(--nb-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: background-color 180ms ease, color 180ms ease, transform 160ms var(--ease-out); }
@@ -67,8 +66,6 @@
 }
 
 /* ───────── nav ───────── */
-@media (hover: hover) and (pointer: fine) {
-}
 
 /* ───────── hero: the shader sky ───────── */
 :root[data-design="nimbus"] .nb-sky { position: absolute; inset: 0; z-index: 0; }
@@ -127,28 +124,8 @@
 :root[data-design="nimbus"] .nb-nums dd { margin: 10px 0 0; max-width: 15em; font-size: 15px; line-height: 1.45; color: var(--nb-muted); }
 
 /* ───────── work: sky tiles ───────── */
-:root[data-design="nimbus"] .nb-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(48px, 6vw, 80px) clamp(24px, 3vw, 40px); }
-:root[data-design="nimbus"] .nb-card { display: grid; gap: 12px; align-content: start; text-decoration: none; color: var(--nb-ink); outline-offset: 6px; }
-:root[data-design="nimbus"] .nb-card-sky { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--nb-sky); }
-:root[data-design="nimbus"] .nb-drift { position: absolute; inset: 0; }
-:root[data-design="nimbus"] .nb-drift svg { animation: nimbus-drift 22s steps(32) infinite; animation-play-state: paused; }
-:root[data-design="nimbus"] .nb-card-ic { position: absolute; left: 50%; top: 50%; width: 36%; translate: -50% -50%; transition: transform 320ms steps(3); filter: drop-shadow(0 6px 0 rgba(7, 80, 160, .25)); }
-:root[data-design="nimbus"] .nb-card-n { position: absolute; left: 14px; top: 14px; padding: 7px 9px; background: #FFFFFF; font: 500 12px/1 var(--nb-mono); }
-:root[data-design="nimbus"] .nb-card-kind { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; background: #FFFFFF; font: 500 12px/1 var(--nb-mono); }
-:root[data-design="nimbus"] .nb-card-kind .ic { width: 14px; height: 14px; color: var(--nb-skyink); }
-:root[data-design="nimbus"] .nb-card-go { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; width: 38px; height: 38px; background: var(--nb-ink); color: #FFFFFF; transition: background-color 200ms ease, color 200ms ease; }
-:root[data-design="nimbus"] .nb-card-go .ic { width: 18px; height: 18px; transition: transform 260ms var(--ease-out); }
-:root[data-design="nimbus"] .nb-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
 :root[data-design="nimbus"] .nb-card-tags span, :root[data-design="nimbus"] .nb-tags span { padding: 5px 8px; background: var(--nb-mist); font: 500 11.5px/1 var(--nb-mono); color: var(--nb-ink); }
-:root[data-design="nimbus"] .nb-card-t { font: 500 clamp(22px, 2.1vw, 28px)/1.15 var(--nb-sans); letter-spacing: -.015em; }
-:root[data-design="nimbus"] .nb-card-h { font-size: 16px; line-height: 1.45; color: var(--nb-muted); }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="nimbus"] .nb-card:hover .nb-drift svg { animation-play-state: running; }
-  :root[data-design="nimbus"] .nb-card:hover .nb-card-ic { transform: translateY(-8px); }
-  :root[data-design="nimbus"] .nb-card:hover .nb-card-go { background: var(--nb-sun); color: var(--nb-ink); }
-  :root[data-design="nimbus"] .nb-card:hover .nb-card-go .ic { transform: rotate(45deg); }
-  :root[data-design="nimbus"] .nb-card:hover .nb-card-t { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; text-decoration-color: var(--nb-sky); }
-}
 
 /* ───────── experience ───────── */
 :root[data-design="nimbus"] .nb-roles { margin: 0; padding: 0; list-style: none; }
@@ -249,7 +226,7 @@
 
 /* ───────── responsive ───────── */
 @media (max-width: 900px) {
-  :root[data-design="nimbus"] .nb-cards { grid-template-columns: minmax(0, 1fr); }
+
   :root[data-design="nimbus"] .nb-role { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   :root[data-design="nimbus"] .nb-when { grid-auto-flow: column; justify-content: start; gap: 14px; }
   :root[data-design="nimbus"] .nb-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
@@ -276,8 +253,7 @@
   :root[data-design="nimbus"] .nb-wx-places b { font-size: 13.5px; }
   :root[data-design="nimbus"] .nb-wx-c { font-size: 12px; gap: 5px; }
 }
-@media (prefers-reduced-motion: reduce) {
-}
+
 /* ───────── performance mode: a designed still ───────── */
 :root[data-design="nimbus"].lite .nb-trail { display: none; }
 :root[data-design="nimbus"].lite .nb-stamp { filter: none; box-shadow: none; }

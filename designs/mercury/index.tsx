@@ -20,7 +20,6 @@ import { useMercuryMotion } from "./motion";
 import "./mercury.css";
 
 const META = designById("mercury")!;
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const TILT = [-14, 9, -6, 16, -10, 5];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
@@ -44,21 +43,6 @@ function Divider({ id }: { id: SectionId }) {
         <path className="mc-wave" d={WAVE} />
       </svg>
     </div>
-  );
-}
-
-/** Work: a calm index; titles take a chrome sheen on hover. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="mc-work">
-      {C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}>
-          <a className="mc-row" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="mc-n">{pad(i)}</span><span className="mc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span><span className="mc-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span><span className="mc-hl" data-edit={`project:${p.slug}:headline`}>{p.headline}</span><span className="mc-go"><Icon name="arrow-up-right" /></span>
-          </a>
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -171,13 +155,14 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "mercury",
   rootClass: "mc",
   sectionClass: (id) => (id === "contact" ? "mc-contact" : id === "play" ? "mc-sec mc-play" : "mc-sec"),
   titleClass: "mc-h2",
   SectionOrnament: Divider,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#0E0E10", "#C9CCD3", "#FFFFFF", "#7F8BB8"], params: { hole: 0.4, rest: 1, lift: 12, stroke: 0.9 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

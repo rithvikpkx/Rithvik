@@ -33,29 +33,6 @@ function subPh(cb: () => void) {
   return () => mo.disconnect();
 }
 
-/** Sightings: one locked-on target per project; the IR light reveals its context line. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="sl-targets">
-      {C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}>
-          <a className="sl-tg" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="sl-tg-n">T-{pad(i)}</span>
-            <span className="sl-tg-b">
-              <span className="sl-tg-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-              <span className="sl-tg-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-              <span className="sl-tg-ir sl-ir" data-ir=""><Icon name="crosshair" /><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
-            </span>
-            <span className="sl-tg-k" data-edit={`project:${p.slug}:kind`}>{p.kind}</span>
-            <span className="sl-tg-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
-            <i className="sl-lock" aria-hidden="true"><i /><i /><i /><i /></i>
-          </a>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 /** The log: roles with a time column, then the degree. */
 function Experience({ content: C }: SectionProps) {
   return (
@@ -142,13 +119,14 @@ function Contact() {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "starlight",
   rootClass: "sl",
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, contact: Contact },
+  projectArt: { palette: ["#030803", "#A8FF7A", "#EAFFDC", "#5FD43A"], params: { hole: 0.34, stroke: 0.9 } },
+  sections: { experience: Experience, about: About, play: Play, contact: Contact },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

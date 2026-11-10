@@ -15,7 +15,7 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
-import { ART, GOOD, readSecs } from "./art";
+import { GOOD } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import "./stipple.css";
@@ -46,29 +46,6 @@ function Chapter({ id, index, hid }: { id: SectionId; index: number; label: stri
     <header className={`st-chh${plate ? "" : " st-plate-sm"}`}>
       <span className="st-rom" aria-hidden="true">{ROMAN[index]}</span><h2 id={hid}>{CHAPTER[id]}</h2><span className="st-folio">— {index + 2} —</span>
     </header>
-  );
-}
-
-/** Dispatches: one printed plate per project (the lead runs long). */
-function Work({ content: C }: SectionProps) {
-  return (
-    <div className="st-issue">
-      {C.projects.map((p, i) => (
-        <a key={p.slug} id={`project-${p.slug}`} className={`st-dsp st-dsp-${i + 1}`} href={`/work/${p.slug}`} data-case={p.slug} aria-label={`Dispatch No. ${pad(i)}: ${p.title}. Read the dispatch`}>
-          <span className="st-stamp"><span>No. {pad(i)}</span><span>{readSecs(p)} sec read</span></span>
-          <span className="st-art" data-lens aria-hidden="true">
-            <svg className="st-art-base" viewBox="0 0 320 200"><g filter="url(#st-fz-art)" fill="#17110E" stroke="#17110E" dangerouslySetInnerHTML={{ __html: ART[p.slug] ?? "" }} /></svg>
-            <svg className="st-art-crisp" viewBox="0 0 320 200"><g fill="#FF3B1F" stroke="#FF3B1F" dangerouslySetInnerHTML={{ __html: ART[p.slug] ?? "" }} /></svg>
-            <span className="st-lens-frame"><i /></span>
-          </span>
-          <span className="st-kind"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-          <span className="st-dsp-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-          <span className="st-dsp-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-          {i === 0 && <><span className="st-dsp-c" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span><span className="st-dsp-d">{p.desc.map((d, k) => <Fragment key={k}>{k > 0 && " "}<span data-edit={`project:${p.slug}:desc.${k}`}>{d}</span></Fragment>)}</span><span className="st-dsp-tags">{p.tags.join(" · ")}</span></>}
-          <span className="st-more"><span>Read the dispatch</span> <span aria-hidden="true">→</span></span>
-        </a>
-      ))}
-    </div>
   );
 }
 
@@ -174,13 +151,14 @@ function Contact({ content: C }: SectionProps) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "stipple",
   rootClass: "st",
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  projectArt: { palette: ["#F9CDB0", "#17110E", "#FF3B1F", "#2B44B8"], params: { hole: 0.3, rest: 5, stroke: 1.15 } },
+  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */
