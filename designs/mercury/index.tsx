@@ -4,16 +4,13 @@
 // The shader moves only while the hero or Contact is on screen (metaballs, then ferrofluid that reaches for the
 // pointer); between them its host is hidden so the runtime pauses. Reading sections are solid graphite, each opened
 // by a chrome meniscus that rings once. html.lite / reduced motion: still shader frame, flat dividers, no drift.
-import { useRef, type FormEvent, type SyntheticEvent } from "react";
+import { useRef, type ReactNode, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
-import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Mark from "@/components/site/mark/Mark";
-import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
 import { useMercuryMotion } from "./motion";
@@ -21,7 +18,6 @@ import "./mercury.css";
 
 const META = designById("mercury")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const TILT = [-14, 9, -6, 16, -10, 5];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const hideFig = (e: SyntheticEvent<HTMLImageElement>) => { (e.currentTarget.parentNode as HTMLElement).hidden = true; };
@@ -84,31 +80,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** About: the text and thesis, the numbers in chrome, then now + places. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="mc-about-txt">
-        {C.about.map((a, i) => <p className="mc-p" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
-        <ul className="mc-thesis">{C.thesis.map((t, i) => <li key={i}><span className="mc-bul" aria-hidden="true"><Mark label="" /></span><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-      </div>
-      <dl className="mc-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-      <div className="mc-now" id="now">
-        <ul className="mc-now-list">
-          <li><span>Building</span><b data-edit="v7.now.building">{C.now.building}</b></li>
-          <li><span>Researching</span><b data-edit="v7.now.researching">{C.now.researching}</b></li>
-          <li><span>Learning</span><b data-edit="v7.now.learning">{C.now.learning}</b></li>
-        </ul>
-        <ol className="mc-places" aria-label="Places">
-          {C.places.map((pl) => (
-            <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span className="mc-pk">{PLACE_LABEL[pl.key] ?? pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="mc-pt-clock" /></li>
-          ))}
-        </ol>
-      </div>
-    </>
-  );
-}
-
 /** Play: the chrome ribbon, then one sphere per toy. */
 function Play() {
   return (
@@ -127,45 +98,11 @@ function Play() {
   );
 }
 
-/** Questions: the ask box (hands off to the agent) beside short answers, one open at a time. */
-function Questions({ content: C }: SectionProps) {
-  const { openAgent } = useSite();
-  const ask = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const inp = e.currentTarget.elements.namedItem("q") as HTMLInputElement, q = inp.value.trim();
-    openAgent(q || undefined); inp.value = "";
-  };
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  return (
-    <div className="mc-faq">
-      <div className="mc-faq-l">
-        <form className="mc-ask" autoComplete="off" onSubmit={ask}>
-          <label htmlFor="mc-ask-in" className="sr-only">Ask the agent</label>
-          <span className="mc-prompt" aria-hidden="true">❯</span>
-          <input id="mc-ask-in" name="q" type="text" maxLength={500} placeholder="What stack did BoilerFrame use?" />
-          <button type="submit" aria-label="Ask"><Icon name="arrow-up" /></button>
-        </form>
-      </div>
-      <div className="mc-qs">
-        {C.faq.map(([q, a], i) => (
-          <details className="mc-q" key={q} onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="mc-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Contact: over the ferrofluid pool, one line and the composer. */
-function Contact() {
+/** Contact frame: the shared copy beside the chrome mark, over the ferrofluid pool. */
+function ContactFrame({ children }: { children: ReactNode }) {
   return (
     <div className="mc-contact-in">
-      <div className="mc-contact-txt">
-        <p className="mc-big"><span className="mc-chrome-t">Write</span> <em>to me.</em></p>
-        <div className="mc-acts"><button type="button" className="mc-btn mc-solid" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-      </div>
+      <div className="mc-contact-txt">{children}</div>
       <figure className="mc-mark-art" aria-hidden="true"><img src="/v7/mercury/chrome-mark-800.webp" srcSet="/v7/mercury/chrome-mark-800.webp 800w, /v7/mercury/chrome-mark-1600.webp 1600w" sizes="(max-width: 700px) 44vw, 34vw" width={800} height={800} alt="" loading="lazy" decoding="async" onError={hideFig} /></figure>
     </div>
   );
@@ -177,7 +114,8 @@ const SKIN: Skin = {
   sectionClass: (id) => (id === "contact" ? "mc-contact" : id === "play" ? "mc-sec mc-play" : "mc-sec"),
   titleClass: "mc-h2",
   SectionOrnament: Divider,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  ContactFrame,
+  sections: { work: Work, experience: Experience, play: Play },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

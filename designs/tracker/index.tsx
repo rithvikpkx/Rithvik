@@ -11,7 +11,6 @@ import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
 import { TOY_LBL, fmap, pad, projLabel } from "./vision";
@@ -19,7 +18,6 @@ import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import "./tracker.css";
 
 const META = designById("tracker")!;
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 /** The name, a "text" target the tracker boxes. */
@@ -74,33 +72,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** About: the text and thesis beside a "now" pane, then the numbers and the stack. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="tk-about">
-        <div className="tk-about-txt">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
-          <ul className="tk-thesis">{C.thesis.map((t, i) => <li key={i}><span>{pad(i + 1)}</span><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-        </div>
-        <aside className="tk-pane tk-now" id="now" aria-label="Right now">
-          <p className="tk-pane-h"><span>now</span><span><Clock tz={C.now.tz} className="tk-clock" /></span></p>
-          <dl className="tk-kv">
-            <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-            <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-            <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-          </dl>
-          <p className="tk-pane-h tk-pane-h2"><span>places</span></p>
-          <ol className="tk-places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span className="tk-pl-k">{PLACE_LABEL[pl.key] ?? pl.key}</span><b>{pl.city}</b><span><Clock tz={pl.tz} className="tk-clock" /></span></li>)}</ol>
-        </aside>
-      </div>
-      <dl className="tk-nums">{C.numbers.map(([n, l], i) => <div key={l} data-tk="metric"><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-      <div className="tk-stack" aria-label="Stack">
-        {Object.entries(C.stack).map(([k, v]) => <div className="tk-stack-row" key={k}><p>{k}</p><p className="tk-tags">{v.map((t) => <span key={t}>{t}</span>)}</p></div>)}
-      </div>
-    </>
-  );
-}
-
 /** Play: the test set, one labelled sample per toy. */
 function Play() {
   return (
@@ -117,21 +88,6 @@ function Play() {
   );
 }
 
-/** Questions: short answers. */
-function Questions({ content: C }: SectionProps) {
-  return <div className="tk-qs">{C.faq.map(([q, a], i) => <details className="tk-q" key={q}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>;
-}
-
-/** Contact: one line and the composer. */
-function Contact() {
-  return (
-    <>
-      <p className="tk-big" data-tk="text" data-tk-label="greeting">Say hello.</p>
-      <div className="tk-acts"><button type="button" className="tk-btn tk-btn-ink tk-btn-lg" data-compose="Internship opportunity" data-tk="cta"><Icon name="mail" />Write an email</button></div>
-    </>
-  );
-}
-
 const SKIN: Skin = {
   id: "tracker",
   rootClass: "tk",
@@ -139,7 +95,7 @@ const SKIN: Skin = {
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, experience: Experience, play: Play },
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

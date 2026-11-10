@@ -1,0 +1,50 @@
+/* About: a low-density bento. Now tiles, places with live clocks, the stack playground, counters. Tokens only. */
+.ab { display: grid; gap: clamp(14px, 1.6vw, 20px); }
+.ab-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: inherit; }
+.ab-tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: clamp(18px, 2vw, 26px); border-radius: 24px; background: var(--ly-soft); box-shadow: inset 0 0 0 1px var(--ly-line); }
+.ab-now { grid-column: span 3; min-height: 168px; }
+.ab-now.wide { grid-column: span 6; }
+.ab-place { grid-column: span 4; min-height: 128px; }
+.ab-k { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--ui-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ui-muted); }
+.ab-k .ic { width: 15px; height: 15px; color: var(--ui-accent); }
+.ab-v { font: 500 clamp(1.3rem, 2.1vw, 1.9rem)/1.12 var(--ly-display); letter-spacing: -.025em; text-wrap: balance; }
+.wide .ab-v { font-size: clamp(1.9rem, 3.8vw, 3.4rem); letter-spacing: -.035em; }
+.ab-place .ab-v { font-size: clamp(1.2rem, 1.7vw, 1.55rem); }
+.ab-clock { font: 500 clamp(1.5rem, 2.4vw, 2.1rem)/1 var(--ui-mono); font-variant-numeric: tabular-nums; letter-spacing: -.03em; color: var(--ui-fg); min-height: 1em; }
+.ab-place[data-key="now"] .ab-clock { color: var(--ui-accent); }
+.ab-place[data-key="now"] .ab-k::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ui-accent); animation: ab-live 2.4s ease-in-out infinite; }
+@keyframes ab-live { 50% { opacity: .25; } }
+
+/* the playground: logo tiles you can toss */
+.ab-play { position: relative; height: clamp(300px, 34vw, 420px); overflow: hidden; border-radius: 28px; background: var(--ly-soft); box-shadow: inset 0 0 0 1px var(--ly-line); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.ab-chips { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
+.ab-chip { position: absolute; left: 0; top: 0; display: grid; place-items: center; border-radius: 30%; background: var(--ui-bg); color: var(--ui-fg); box-shadow: 0 0 0 1px var(--ly-line), 0 6px 14px -8px color-mix(in srgb, var(--ui-fg) 45%, transparent); cursor: grab; touch-action: none; will-change: transform; }
+.ab-chip[data-held] { cursor: grabbing; z-index: 2; box-shadow: 0 0 0 1px var(--ui-accent), 0 14px 26px -10px color-mix(in srgb, var(--ui-fg) 55%, transparent); }
+.ab-chip .logo { width: 28px; height: 28px; pointer-events: none; }
+.ab-mono { font: 600 15px/1 var(--ui-mono); letter-spacing: -.04em; pointer-events: none; }
+.ab-chip::after { content: attr(data-name); position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 4px; padding: 5px 9px; border-radius: 8px; background: var(--ui-fg); color: var(--ui-bg); font: 500 11px/1 var(--ui-mono); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 150ms ease, translate 200ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .ab-chip:hover::after { opacity: 1; translate: -50% 0; } }
+.ab-chip[data-held]::after { opacity: 0; }
+.ab-play-k { position: absolute; right: 18px; top: 16px; font: 500 12px/1 var(--ui-mono); letter-spacing: .06em; color: var(--ui-muted); pointer-events: none; }
+
+/* counters */
+.ab-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: inherit; margin: 0; padding: 0; list-style: none; }
+.ab-nums .ab-tile { min-height: 168px; }
+.ab-big { font: 500 clamp(3rem, 6vw, 5.4rem)/.9 var(--ly-display); letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+.ab-l { max-width: 16em; color: var(--ui-muted); font-size: 15px; line-height: 1.4; }
+
+@media (max-width: 1000px) {
+  .ab-now, .ab-now.wide { grid-column: span 12; min-height: 0; }
+  .ab-now:nth-child(2), .ab-now:nth-child(3) { grid-column: span 6; }
+  .ab-place { grid-column: span 12; min-height: 0; flex-direction: row; align-items: center; gap: 14px; }
+  .ab-place .ab-k { flex: none; width: 92px; }
+  .ab-place .ab-v { flex: 1; }
+}
+@media (max-width: 600px) {
+  .ab-now:nth-child(2), .ab-now:nth-child(3) { grid-column: span 12; }
+  .ab-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ab-nums .ab-tile:last-child:nth-child(odd) { grid-column: span 2; }
+  .ab-chip .logo { width: 24px; height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .ab-place[data-key="now"] .ab-k::after { animation: none; } }
+html.lite .ab-place[data-key="now"] .ab-k::after { animation: none; }

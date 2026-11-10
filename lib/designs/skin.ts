@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { Content } from "@/lib/content/types";
 
 /** The page's sections after the hero, in render order. Each id is also the anchor the agent scrolls to. */
@@ -43,6 +43,10 @@ export type Skin = {
   ExperienceConnector?: ComponentType<{ index: number; count: number }>;
   /** Replaces the shared education row with a themed object. Keep the `edu:*` data-edit keys. (S8) */
   EducationObject?: ComponentType<{ education: Content["education"] }>;
+  /** S10: the shared Contact copy and buttons render inside this frame (a seal, a dark room, a heat strip). */
+  ContactFrame?: ComponentType<{ children: ReactNode }>;
+  /** S10: one short themed line above the Contact headline ("The warmest lead is email"). */
+  contactLead?: string;
   /** Inputs for procedural project art: four colours plus free numeric knobs. Default: the registry swatch. (S6) */
   projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
 };

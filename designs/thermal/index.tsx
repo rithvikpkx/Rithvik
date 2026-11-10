@@ -4,7 +4,7 @@
 // away; the palette switch (iron / rainbow / white hot) re-maps the shader, scale bar, hot-spot frames and accents
 // together through the shader's own `u_pv` uniform; the spot meter follows a fine pointer; hot-spot frames and the
 // contact strip are tiny BMP heat images that warm on hover. html.lite = one still heat frame, no haze.
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
@@ -18,7 +18,6 @@ import { readPal, usePal, useThermalMotion } from "./motion";
 import "./thermal.css";
 
 const META = designById("thermal")!;
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const TOOL_LOGO: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama" };
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const grids = new Map<string, ReturnType<typeof heatGrid>>(); // frames are deterministic per project: build once
@@ -123,36 +122,14 @@ function Play() {
   );
 }
 
-/** About text beside an instrument panel (now + places with clocks), then the readings. */
-function About({ content: C }: SectionProps) {
-  const nowRows: [string, string, string][] = [["Building", C.now.building, "building"], ["Researching", C.now.researching, "researching"], ["Learning", C.now.learning, "learning"]];
-  return (
-    <>
-      <div className="th-about">
-        <div className="th-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
-        <aside className="th-now" aria-label="Now">
-          <p className="th-panel-k">Now</p>
-          <dl>{nowRows.map(([k, v, f]) => <div key={k}><dt>{k}</dt><dd data-edit={`v7.now.${f}`}>{v}</dd></div>)}</dl>
-          <p className="th-panel-k">Places</p>
-          <ul className="th-places">
-            {C.places.map((pl) => <li key={pl.key}><span className="th-pl-k">{PLACE_LABEL[pl.key] ?? pl.key}</span><span className="th-pl-c">{pl.city}</span><Clock tz={pl.tz} className="th-pl-t" /></li>)}
-          </ul>
-        </aside>
-      </div>
-      <ul className="th-reads" aria-label="In numbers">{C.numbers.map(([n, l], i) => <li key={l} style={{ ["--heat" as string]: `var(--rh${Math.min(i, 3)})` }}><b data-edit={`numbers.${i}.v`}>{n}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}</ul>
-    </>
-  );
-}
-
-/** Contact: the warmest lead is email; the address over a crisp sensor strip opens the composer. */
-function Contact({ content: C }: SectionProps) {
+/** Contact frame: the shared copy over a crisp sensor strip that warms while the pointer is on it. */
+function ContactFrame({ children }: { children: ReactNode }) {
   const pal = usePal();
   const img = useMemo(() => ({ cool: bmp(strip, pal, 0), warm: bmp(strip, pal, 0.2) }), [pal]);
   return (
     <div className="th-mail">
-      <button type="button" className="th-mail-b" data-compose="Internship opportunity"><span className="th-mail-k">The warmest lead is email</span><span className="th-mail-a">{C.links.email}</span>
-        <span className="th-strip" aria-hidden="true"><Heat f="@strip" cool={img.cool} warm={img.warm} w={64} h={6} /></span>
-      </button>
+      {children}
+      <span className="th-strip" aria-hidden="true"><Heat f="@strip" cool={img.cool} warm={img.warm} w={64} h={6} /></span>
     </div>
   );
 }
@@ -163,7 +140,9 @@ const SKIN: Skin = {
   labels: { experience: "Record", play: "Bench" },
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),
   titleClass: "th-h2",
-  sections: { work: Work, experience: Experience, play: Play, about: About, contact: Contact },
+  ContactFrame,
+  contactLead: "The warmest lead is email",
+  sections: { work: Work, experience: Experience, play: Play },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

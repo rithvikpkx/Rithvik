@@ -4,13 +4,12 @@
 // (idle drift; its NameFx) and the dispatch plates (hover); SVG stipple filters touch display type only. Section
 // titles are chapters: a stippled roman numeral, the chapter name, a folio. html.lite and reduced motion switch the
 // lens, drift, seal spin and every filter off, leaving a crisp two-ink letterpress still.
-import { Fragment, useRef, type SyntheticEvent } from "react";
+import { Fragment, useRef, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
@@ -23,7 +22,6 @@ import "./stipple.css";
 const META = designById("stipple")!;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
 const CHAPTER: Record<SectionId, string> = { work: "Dispatches", experience: "Errata", about: "Foreword", play: "Supplement", questions: "Correspondence", contact: "The seal" };
-const PLACE_KEY: Record<string, string> = { home: "home", school: "school", now: "here now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const SCISSORS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.6 7.6 20 18M8.6 16.4 20 6"/></svg>`;
@@ -99,28 +97,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Foreword: the prose with a drop cap, what is on the press, places, then the figures. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="st-prose">
-        {C.about.map((a, i) => <p key={i} className={i === 0 ? "st-drop" : undefined}><span data-edit={`v7.about.${i}`}>{a}</span>{i === C.about.length - 1 && <span className="st-endmark" aria-hidden="true"><Mark label="" /></span>}</p>)}
-      </div>
-      <div className="st-now" id="now">
-        <dl>
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ul className="st-places" aria-label="Places">
-          {C.places.map((p) => <li key={p.key} className={`st-place st-place-${p.key}`}><span className="st-pk">{PLACE_KEY[p.key] ?? p.key}</span><b>{p.city}</b><Clock tz={p.tz} className="st-clk" /></li>)}
-        </ul>
-      </div>
-      <ol className="st-figs">{C.numbers.map(([v, l], i) => <li className="st-plate-sm" key={l}><span className="st-fig-n">Fig. {i + 1}</span><b data-edit={`numbers.${i}.v`}>{v}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}</ol>
-    </>
-  );
-}
-
 /** Supplement: one coupon per toy. */
 function Play() {
   return (
@@ -140,33 +116,18 @@ function Play() {
   );
 }
 
-/** Correspondence: the questions as letters, one open at a time. */
-function Questions({ content: C }: SectionProps) {
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  return (
-    <div className="st-letters">
-      {C.faq.map(([q, a], i) => (
-        <details className="st-letter" key={q} onToggle={oneOpen}><summary><span className="st-q" data-edit={`faq.${i}.q`}>{q}</span><span className="st-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
-      ))}
-    </div>
-  );
-}
-
-/** The seal: press it to write (opens the composer). */
-function Contact({ content: C }: SectionProps) {
+/** Contact frame: the shared copy, then the seal; pressing it opens the message window too. */
+function ContactFrame({ children }: { children: ReactNode }) {
   return (
     <>
-      <p className="st-write st-plate-sm">Write back.</p>
-      <button type="button" className="st-seal" data-compose="Internship opportunity" aria-label={`Write to ${C.first}`}>
+      {children}
+      <button type="button" className="st-seal" data-compose="Internship opportunity" aria-label="Write a message">
         <svg viewBox="0 0 300 300" aria-hidden="true">
           <defs><path id="st-ring" d="M150 150 m-104 0 a104 104 0 1 1 208 0 a104 104 0 1 1 -208 0" /></defs>
           <g filter="url(#st-seal)"><circle cx="150" cy="150" r="138" fill="#FF3B1F" /></g>
           <circle cx="150" cy="150" r="122" fill="none" stroke="#F9CDB0" strokeWidth="1.5" strokeDasharray="1 5" strokeLinecap="round" />
           <circle cx="150" cy="150" r="84" fill="none" stroke="#F9CDB0" strokeWidth="1.2" />
-          <g className="st-seal-spin"><text fontSize="14" fill="#F9CDB0"><textPath href="#st-ring" textLength="646" lengthAdjust="spacing">{`WRITE TO RITHVIK · ${C.links.email.toUpperCase()} · SEALED BY HAND ·`}</textPath></text></g>
+          <g className="st-seal-spin"><text fontSize="14" fill="#F9CDB0"><textPath href="#st-ring" textLength="646" lengthAdjust="spacing">WRITE TO RITHVIK · OPEN TO NEW OPPORTUNITIES · SEALED BY HAND ·</textPath></text></g>
           <foreignObject x="104" y="104" width="92" height="92"><div style={{ width: 92, height: 92, color: "#F9CDB0" }}><Mark label="" /></div></foreignObject>
         </svg>
       </button>
@@ -180,7 +141,8 @@ const SKIN: Skin = {
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  ContactFrame,
+  sections: { work: Work, experience: Experience, play: Play },
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */

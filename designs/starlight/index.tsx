@@ -88,32 +88,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Field notes: the text, now + places with coordinates, then the numbers. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="sl-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
-      <div className="sl-now" id="now">
-        <dl className="sl-now-l">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ol className="sl-places" aria-label="Places">
-          {C.places.map((pl) => (
-            <li className={pl.key === "now" ? "is-now" : ""} key={pl.key}>
-              <span className="sl-pk">{PLACE[pl.key] ?? pl.key}</span><b>{pl.city}</b>
-              <span className="sl-pc">{deg(pl.lat, "N", "S")} · {deg(pl.lng, "E", "W")}</span>
-              <Clock tz={pl.tz} className="sl-pt-t" />
-            </li>
-          ))}
-        </ol>
-      </div>
-      <dl className="sl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-    </>
-  );
-}
-
 /** Night games: one channel per toy. */
 function Play() {
   return (
@@ -132,23 +106,13 @@ function Play() {
   );
 }
 
-/** Signal: one line and the composer. */
-function Contact() {
-  return (
-    <>
-      <p className="sl-h-big">Send a signal.</p>
-      <div className="sl-acts"><button type="button" className="sl-btn sl-hot sl-cta sl-btn-lg" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-    </>
-  );
-}
-
 const SKIN: Skin = {
   id: "starlight",
   rootClass: "sl",
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, contact: Contact },
+  sections: { work: Work, experience: Experience, play: Play },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */
