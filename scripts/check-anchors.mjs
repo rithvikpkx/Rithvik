@@ -8,7 +8,7 @@ const DESIGNS = ["classic", "nimbus", "stipple", "glyph", "prism", "mercury", "t
 const STATIC = ["top", "work", "experience", "about", "play", "questions", "contact"];
 const layout = readFileSync("components/site/layout/SiteLayout.tsx", "utf8");
 const skin = readFileSync("lib/designs/skin.ts", "utf8");
-const defaults = readFileSync("components/site/layout/sections.tsx", "utf8");
+const defaults = ["sections.tsx", "Experience.tsx"].map((f) => readFileSync(`components/site/layout/${f}`, "utf8")).join("\n");
 const sections = (skin.match(/SECTIONS = \[([^\]]*)\]/)?.[1] ?? "").match(/"([a-z]+)"/g)?.map((s) => s.slice(1, -1)) ?? [];
 // a design overrides a body when its skin lists `sections: { work: ..., experience: ... }`
 const overrides = (src) => new Set((src.match(/sections:\s*\{([^}]*)\}/)?.[1] ?? "").match(/[a-z]+(?=:)/g) ?? []);

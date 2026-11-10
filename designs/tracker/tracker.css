@@ -114,23 +114,6 @@
 
 /* scene graph */
 
-/* experience */
-:root[data-design="tracker"] .tk-roles { list-style: none; margin: 56px 0 0; padding: 0; border-top: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-role { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; padding: 40px 0; border-bottom: 1px solid var(--tk-line2); scroll-margin-top: 80px; }
-:root[data-design="tracker"] .tk-when { display: grid; gap: 6px; align-content: start; font: 500 12.5px/1.4 var(--tk-mono); color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-when b { color: var(--tk-ink); font-weight: 600; }
-:root[data-design="tracker"] .tk-rb { display: grid; gap: 6px; max-width: 760px; }
-:root[data-design="tracker"] .tk-rb h3 { font: 600 clamp(22px, 2vw, 28px)/1.15 var(--tk-sans); letter-spacing: -.03em; }
-:root[data-design="tracker"] .tk-org { font: 500 15px/1.4 var(--tk-sans); color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-rb ul { list-style: none; margin: 12px 0 10px; padding: 0; display: grid; gap: 8px; }
-:root[data-design="tracker"] .tk-rb li { position: relative; padding-left: 22px; font: 400 16.5px/1.6 var(--tk-sans); }
-:root[data-design="tracker"] .tk-rb li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px; border: 1px solid var(--tk-ink); }
-:root[data-design="tracker"] .tk-edu { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 24px; align-items: center; margin-top: 48px; padding: 24px; background: var(--tk-panel); border: 1px solid var(--tk-line2); max-width: 760px; }
-:root[data-design="tracker"] .tk-edu img { width: 72px; height: 72px; object-fit: contain; }
-:root[data-design="tracker"] .tk-edu div { display: grid; gap: 4px; }
-:root[data-design="tracker"] .tk-edu h3 { font: 600 22px/1.2 var(--tk-sans); letter-spacing: -.02em; }
-:root[data-design="tracker"] .tk-edu-m { font: 500 12.5px/1.4 var(--tk-mono); color: var(--tk-mut); }
-
 /* about */
 :root[data-design="tracker"] .tk-about { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(32px, 6vw, 96px); margin-top: 48px; align-items: start; }
 :root[data-design="tracker"] .tk-about-txt { display: grid; gap: 22px; }
@@ -303,8 +286,6 @@
 :root[data-design="tracker"] .rc-bar, :root[data-design="tracker"] .rc-bar i { border-radius: 0; }
 
 /* ───────── responsive ───────── */
-@media (max-width: 1180px) {
-}
 @media (max-width: 1120px) {
   :root[data-design="tracker"] .agent-bar::before { left: auto; right: -1px; }
 }
@@ -329,15 +310,11 @@
   :root[data-design="tracker"] .tk-nums > div:nth-child(odd) { padding-left: 0; }
   :root[data-design="tracker"] .tk-nums dd { font-size: 13.5px; }
   :root[data-design="tracker"] .tk-sec { padding-top: 112px; }
-  :root[data-design="tracker"] .tk-projects, :root[data-design="tracker"] .tk-roles { margin-top: 36px; }
+  :root[data-design="tracker"] .tk-projects { margin-top: 36px; }
   :root[data-design="tracker"] .tk-proj { grid-template-columns: 28px minmax(0, 1fr) 32px; gap: 12px; padding: 24px 0; }
   :root[data-design="tracker"] .tk-go { width: 32px; height: 32px; }
   :root[data-design="tracker"] .tk-ph { font-size: 15px; }
-  :root[data-design="tracker"] .tk-role { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 30px 0; }
-  :root[data-design="tracker"] .tk-when { grid-auto-flow: column; justify-content: start; gap: 12px; }
-  :root[data-design="tracker"] .tk-rb li { font-size: 15.5px; }
-  :root[data-design="tracker"] .tk-edu { grid-template-columns: 52px minmax(0, 1fr); gap: 16px; padding: 18px; }
-  :root[data-design="tracker"] .tk-edu img { width: 52px; height: 52px; }
+
   :root[data-design="tracker"] .tk-stack-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   :root[data-design="tracker"] .tk-stack { margin-top: 64px; }
   :root[data-design="tracker"] .tk-toys { gap: 12px; margin-top: 36px; }

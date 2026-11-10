@@ -149,36 +149,7 @@
 @keyframes thermal-rise { to { transform: translateY(-22px); } }
 @keyframes thermal-sink { to { transform: translateY(22px); } }
 
-/* record: four roles, warmest first */
-:root[data-design="thermal"] .th-roles { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--th-line); }
-:root[data-design="thermal"] .th-role-i { border-bottom: 1px solid var(--th-line); }
-:root[data-design="thermal"] .th-role-i summary { display: grid; grid-template-columns: 4px 140px minmax(0, 1fr) 210px 16px; gap: 28px; align-items: center; padding: 24px 4px 24px 0; list-style: none; cursor: pointer; }
-:root[data-design="thermal"] .th-role-i summary::-webkit-details-marker { display: none; }
-:root[data-design="thermal"] .th-heat { align-self: stretch; min-height: 44px; background: var(--heat); }
-:root[data-design="thermal"] .th-when, :root[data-design="thermal"] .th-where { font: 500 12.5px/1.4 var(--th-mono); letter-spacing: .03em; color: var(--th-mut); }
-:root[data-design="thermal"] .th-what { display: grid; gap: 3px; min-width: 0; }
-:root[data-design="thermal"] .th-what b { font: 500 21px/1.25 var(--th-sans); letter-spacing: -.01em; }
-:root[data-design="thermal"] .th-what span { font-size: 15.5px; color: var(--th-mut); }
-:root[data-design="thermal"] .th-plus { position: relative; width: 14px; height: 14px; }
-:root[data-design="thermal"] .th-plus::before, :root[data-design="thermal"] .th-plus::after { content: ""; position: absolute; left: 0; top: 6.5px; width: 14px; height: 1.5px; background: var(--th-fg); transition: transform 240ms var(--ease-out); }
-:root[data-design="thermal"] .th-plus::after { transform: rotate(90deg); }
-:root[data-design="thermal"] .th-role-i details[open] .th-plus::after { transform: rotate(0deg); }
-@media (hover: hover) and (pointer: fine) { :root[data-design="thermal"] .th-role-i summary:hover .th-what b { color: var(--th-hot); } }
-:root[data-design="thermal"] .th-role-b { display: grid; gap: 18px; max-width: 760px; padding: 0 0 30px calc(4px + 140px + 56px); }
-:root[data-design="thermal"] .th-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; color: var(--th-soft); font-size: 16.5px; line-height: 1.6; }
-:root[data-design="thermal"] .th-list li { position: relative; padding-left: 22px; }
-:root[data-design="thermal"] .th-list li::before { content: ""; position: absolute; left: 0; top: .78em; width: 10px; height: 1px; background: var(--th-mut); }
 :root[data-design="thermal"] .th .chip { border-radius: 2px; background: transparent; box-shadow: inset 0 0 0 1px var(--th-line2); color: var(--th-soft); font: 500 11.5px/1.3 var(--th-mono); padding: 5px 8px; }
-:root[data-design="thermal"] .th-edu { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 28px; align-items: center; margin-top: 44px; padding: 26px 28px; border: 1px solid var(--th-line); border-radius: 4px; background: var(--th-bg2); }
-:root[data-design="thermal"] .th-edu-logo { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 4px; background: #F4F5F7; }
-:root[data-design="thermal"] .th-edu-logo img { width: 46px; height: 46px; object-fit: contain; }
-:root[data-design="thermal"] .th-edu-k { margin: 0; font: 500 11px/1 var(--th-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--th-mut); }
-:root[data-design="thermal"] .th-edu-t h3 { margin: 8px 0 0; font: 500 22px/1.2 var(--th-sans); letter-spacing: -.01em; }
-:root[data-design="thermal"] .th-edu-t p:last-child { margin: 4px 0 0; color: var(--th-soft); }
-:root[data-design="thermal"] .th-edu-d { display: grid; grid-template-columns: auto auto; gap: 8px 36px; margin: 0; }
-:root[data-design="thermal"] .th-edu-d dt { font: 500 11px/1 var(--th-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--th-mut); }
-:root[data-design="thermal"] .th-edu-d dd { margin: 6px 0 0; font-size: 15px; }
-
 
 /* bench: the toys */
 :root[data-design="thermal"] .th-toys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
@@ -247,12 +218,7 @@
   :root[data-design="thermal"] .th-vf { inset: 66px 10px 26px; }
   :root[data-design="thermal"] .th-vf-tl, :root[data-design="thermal"] .th-vf-bl { left: 30px; } :root[data-design="thermal"] .th-vf-tr { right: 30px; }
   :root[data-design="thermal"] .th-about { grid-template-columns: minmax(0, 1fr); }
-  :root[data-design="thermal"] .th-role-i summary { grid-template-columns: 4px minmax(0, 1fr) 16px; grid-template-areas: "h when p" "h what p" "h where p"; gap: 6px 18px; }
-  :root[data-design="thermal"] .th-heat { grid-area: h; } :root[data-design="thermal"] .th-when { grid-area: when; } :root[data-design="thermal"] .th-what { grid-area: what; } :root[data-design="thermal"] .th-where { grid-area: where; } :root[data-design="thermal"] .th-plus { grid-area: p; }
-  :root[data-design="thermal"] .th-role-b { padding-left: 22px; }
-  :root[data-design="thermal"] .th-edu { grid-template-columns: 56px minmax(0, 1fr); gap: 18px; padding: 22px; }
-  :root[data-design="thermal"] .th-edu-logo { width: 56px; height: 56px; } :root[data-design="thermal"] .th-edu-logo img { width: 40px; height: 40px; }
-  :root[data-design="thermal"] .th-edu-d { grid-column: 1 / -1; }
+
 }
 @media (max-width: 640px) {
   :root[data-design="thermal"] .th-spots { grid-template-columns: minmax(0, 1fr); gap: 52px; }

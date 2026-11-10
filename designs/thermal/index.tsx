@@ -11,23 +11,17 @@ import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
-import { Icon, Logo } from "@/components/site/Glyph";
+import { Icon } from "@/components/site/Glyph";
 import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
 import { readPal, usePal, useThermalMotion } from "./motion";
+import { XP } from "./experience";
 import "./thermal.css";
 
 const META = designById("thermal")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const TOOL_LOGO: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const grids = new Map<string, ReturnType<typeof heatGrid>>(); // frames are deterministic per project: build once
 const gridOf = (slug: string, tools: number) => { let g = grids.get(slug); if (!g) grids.set(slug, (g = heatGrid(slug, tools))); return g; };
 const strip = stripGrid();
-
-/** A tool chip with its logo when we have one. */
-function Chip({ t }: { t: string }) {
-  return <span className="chip">{TOOL_LOGO[t] && <Logo slug={TOOL_LOGO[t]} />}{t}</span>;
-}
 
 /** A cool and a warm heat image stacked inside the haze wrapper (the warm one fades in on hover). */
 function Heat({ f, cool, warm, w, h }: { f: string; cool: string; warm: string; w: number; h: number }) {
@@ -73,38 +67,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** The record: roles as heat-coded disclosures, warmest (latest) first, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  const ed = C.education;
-  return (
-    <>
-      <ol className="th-roles">
-        {C.experience.map((x, i) => (
-          <li className="th-role-i" id={`experience-${x.slug}`} key={x.slug} style={{ ["--heat" as string]: `var(--rh${Math.min(i, 3)})` }}>
-            <details open={i === 0}>
-              <summary>
-                <span className="th-heat" aria-hidden="true" />
-                <span className="th-when" data-edit={`role:${x.slug}:when`}>{x.when}</span>
-                <span className="th-what"><b data-edit={`role:${x.slug}:role`}>{x.role}</b><span data-edit={`role:${x.slug}:org`}>{x.org}</span></span>
-                <span className="th-where" data-edit={`role:${x.slug}:where`}>{x.where}</span>
-                <span className="th-plus" aria-hidden="true" />
-              </summary>
-              <div className="th-role-b"><ul className="th-list">{x.desc.map((d, j) => <li key={j} data-edit={`role:${x.slug}:desc.${j}`}>{d}</li>)}</ul><div className="chips">{x.tags.map((t) => <Chip t={t} key={t} />)}</div></div>
-            </details>
-          </li>
-        ))}
-      </ol>
-      <div className="th-edu" id="education">
-        <span className="th-edu-logo">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-          <img src={logoSrc(ed.logo)} alt="" width={56} height={56} loading="lazy" decoding="async" />
-        </span>
-        <div className="th-edu-t"><h3 data-edit="edu:school">{ed.school}</h3><p data-edit="edu:degree">{ed.degree}</p></div>
-        <dl className="th-edu-d"><div><dt>Focus</dt><dd data-edit="edu:focus">{ed.focus}</dd></div>{ed.grad && <div><dt>Graduation</dt><dd data-edit="edu:grad">{ed.grad}</dd></div>}</dl>
-      </div>
-    </>
-  );
-}
 
 /** About text beside an instrument panel (now + places with clocks), then the readings. */
 function About({ content: C }: SectionProps) {
@@ -142,11 +104,12 @@ function Contact({ content: C }: SectionProps) {
 
 const SKIN: Skin = {
   id: "thermal",
+  ...XP,
   rootClass: "th",
   labels: { experience: "Record", play: "Bench" },
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),
   titleClass: "th-h2",
-  sections: { work: Work, experience: Experience, about: About, contact: Contact },
+  sections: { work: Work, about: About, contact: Contact },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

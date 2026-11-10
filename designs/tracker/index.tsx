@@ -12,14 +12,13 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
+import { XP } from "./experience";
 import "./tracker.css";
 
 const META = designById("tracker")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 /** The name, a "text" target the tracker boxes. */
 function Name({ first, last }: { first: string; last: string }) {
@@ -50,28 +49,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Experience: roles with a date column, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="tk-roles">
-        {C.experience.map((x) => (
-          <li className="tk-role" id={`experience-${x.slug}`} key={x.slug} data-tk="role">
-            <p className="tk-when"><b data-edit={`role:${x.slug}:when`}>{x.when}</b><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="tk-rb"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p className="tk-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="tk-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-          </li>
-        ))}
-      </ol>
-      <div className="tk-edu" id="education" data-tk="school">
-        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p><p className="tk-edu-m"><EduMeta e={C.education} /></p></div>
-      </div>
-    </>
-  );
-}
 
 /** About: the text and thesis beside a "now" pane, then the numbers and the stack. */
 function About({ content: C }: SectionProps) {
@@ -117,12 +94,13 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "tracker",
+  ...XP,
   rootClass: "tk",
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

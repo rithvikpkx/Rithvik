@@ -116,34 +116,6 @@ html.lite .ly-hero-copy > * { animation: none; }
   .feat .ly-card { min-height: 320px; }
 }
 
-/* experience */
-.ly-ledger { border-top: 1px solid var(--ly-line); }
-.ly-ledger > li { border-bottom: 1px solid var(--ly-line); }
-.ly-row summary { display: grid; grid-template-columns: 140px minmax(0, 1fr) minmax(0, 220px) 20px; gap: 8px 24px; align-items: baseline; padding: 22px 0; }
-.ly-when { font: 500 13px/1.6 var(--ui-mono); color: var(--ui-muted); font-variant-numeric: tabular-nums; }
-.ly-what b { display: block; font-size: 18px; font-weight: 500; letter-spacing: -.01em; line-height: 1.35; }
-.ly-what span { display: block; color: var(--ui-muted); font-size: 15px; }
-.ly-where { grid-column: 3; font-size: 14px; color: var(--ui-muted); text-align: right; }
-.ly-row .ly-plus { grid-column: 4; align-self: center; }
-.ly-row-body { display: grid; gap: 16px; padding: 0 44px 26px 164px; }
-.ly-row-body .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.ly-bullets { display: grid; gap: 6px; max-width: 64ch; color: var(--ui-muted); }
-.ly-bullets li { position: relative; padding-left: 18px; }
-.ly-bullets li::before { content: ""; position: absolute; left: 0; top: .78em; width: 8px; height: 1px; background: currentColor; }
-.ly-edu { display: grid; grid-template-columns: 140px minmax(0, 1fr) minmax(0, 260px); gap: 8px 24px; align-items: center; margin-top: 48px; padding: 22px 0; border-block: 1px solid var(--ly-line); }
-.ly-edu img { width: 36px; height: 36px; object-fit: contain; }
-.ly-edu .ly-where { grid-column: auto; }
-@media (max-width: 760px) {
-  .ly-row summary { grid-template-columns: minmax(0, 1fr) 20px; padding: 18px 0; }
-  .ly-row .ly-when, .ly-row .ly-what { grid-column: 1; }
-  .ly-row .ly-when { grid-row: 1; }
-  .ly-row .ly-where { grid-column: 1; text-align: left; }
-  .ly-row .ly-plus { grid-column: 2; grid-row: 1 / span 3; }
-  .ly-row-body { padding: 0 0 22px; }
-  .ly-edu { grid-template-columns: 36px minmax(0, 1fr); }
-  .ly-edu .ly-where { grid-column: 2; text-align: left; }
-}
-
 /* about */
 .ly-about { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 32px clamp(40px, 7vw, 120px); align-items: end; }
 .ly-about-copy p { max-width: 34em; font-size: clamp(1.05rem, 1.3vw, 1.2rem); line-height: 1.6; text-wrap: pretty; }

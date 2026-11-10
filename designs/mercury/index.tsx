@@ -14,14 +14,13 @@ import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Mark from "@/components/site/mark/Mark";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { useMercuryMotion } from "./motion";
+import { XP } from "./experience";
 import "./mercury.css";
 
 const META = designById("mercury")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const hideFig = (e: SyntheticEvent<HTMLImageElement>) => { (e.currentTarget.parentNode as HTMLElement).hidden = true; };
 
 // a chrome meniscus: convex ends (mercury's meniscus bulges) and a wave that rings once on entry
@@ -60,27 +59,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Experience: roles with their dates in a margin column, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="mc-roles">
-        {C.experience.map((x) => (
-          <li className="mc-role" id={`experience-${x.slug}`} key={x.slug}>
-            <p className="mc-when"><span className="mc-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="mc-role-b"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p className="mc-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="mc-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-          </li>
-        ))}
-      </ol>
-      <div className="mc-edu" id="education">
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p><p className="mc-edu-m"><EduMeta e={C.education} /></p></div>
-      </div>
-    </>
-  );
-}
 
 /** About: the text and thesis, the numbers in chrome, then now + places. */
 function About({ content: C }: SectionProps) {
@@ -153,11 +131,12 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "mercury",
+  ...XP,
   rootClass: "mc",
   sectionClass: (id) => (id === "contact" ? "mc-contact" : id === "play" ? "mc-sec mc-play" : "mc-sec"),
   titleClass: "mc-h2",
   SectionOrnament: Divider,
-  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

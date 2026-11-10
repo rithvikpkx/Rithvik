@@ -13,10 +13,10 @@ import Clock from "@/components/site/Clock";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { ART, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
+import { XP } from "./experience";
 import "./stipple.css";
 
 const META = designById("stipple")!;
@@ -24,7 +24,6 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
 const CHAPTER: Record<SectionId, string> = { work: "Dispatches", experience: "Errata", about: "Foreword", play: "Supplement", questions: "Correspondence", contact: "The seal" };
 const PLACE_KEY: Record<string, string> = { home: "home", school: "school", now: "here now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 /** The hero name under the square lens: a stippled base and a crisp vermilion copy revealed through the lens. */
 function Name({ first, last }: { first: string; last: string }) {
@@ -70,32 +69,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Errata: the roles as a printed insert slip, then schooling. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <div className="st-slip">
-      <ol className="st-errata">
-        {C.experience.map((x) => (
-          <li id={`experience-${x.slug}`} key={x.slug}>
-            <p className="st-er-top"><span data-edit={`role:${x.slug}:when`}>{x.when}</span><span className="st-lead" aria-hidden="true" /><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
-            <p className="st-er-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-            <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-          </li>
-        ))}
-      </ol>
-      <div className="st-edu" id="education">
-        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" />
-        <div>
-          <h3 data-edit="edu:school">{C.education.school}</h3>
-          <p data-edit="edu:degree">{C.education.degree}</p>
-          <p className="st-er-tags"><EduMeta e={C.education} /></p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /** Foreword: the prose with a drop cap, what is on the press, places, then the figures. */
 function About({ content: C }: SectionProps) {
@@ -155,11 +128,12 @@ function Contact({ content: C }: SectionProps) {
 
 const SKIN: Skin = {
   id: "stipple",
+  ...XP,
   rootClass: "st",
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */

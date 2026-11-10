@@ -31,7 +31,6 @@
 :root[data-design="stipple"] .st-label { font: 500 10px/1.4 var(--st-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--st-ink-2); }
 
 /* dotted rule, the pamphlet's hairline */
-:root[data-design="stipple"] .st-lead { flex: 1; min-width: 16px; height: 4px; margin: 0 8px; align-self: baseline; background: var(--st-dots) 0 50% / 5px 4px repeat-x; opacity: .8; }
 
 /* knockout plates: the ink shies away from the words */
 :root[data-design="stipple"] .st-plate, :root[data-design="stipple"] .st-plate-sm, :root[data-design="stipple"] .st-cover-l, :root[data-design="stipple"] .st-toc, :root[data-design="stipple"] .st-name { position: relative; isolation: isolate; }
@@ -45,8 +44,6 @@
 /* ───────── Masthead ───────── */
 :root[data-design="stipple"] .st-mark { display: block; width: 34px; height: 34px; color: var(--st-ink); }
 :root[data-design="stipple"] .st .mark .mk-spin { transform-box: view-box; transform-origin: 50% 50%; transition: transform 900ms var(--ease-in-out); }
-@media (hover: hover) and (pointer: fine) {
-}
 
 /* ───────── Cover ───────── */
 :root[data-design="stipple"] .st-reg { position: absolute; width: 22px; height: 22px; opacity: .75;
@@ -84,15 +81,12 @@
 }
 @keyframes stipple-lens-move { 0% { translate: 18% 34%; } 35% { translate: 48% 44%; } 70% { translate: 74% 26%; } 100% { translate: 58% 80%; } }
 
-
 :root[data-design="stipple"] .st-cover-l { display: grid; justify-items: end; gap: 14px; text-align: right; }
 :root[data-design="stipple"] .st-pulse { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--st-verm); box-shadow: 0 0 0 3px rgba(255, 59, 31, .22); }
 :root[data-design="stipple"] .st-live .st-pulse { animation: stipple-pulse 2.4s var(--ease-in-out) infinite; }
 @keyframes stipple-pulse { 50% { transform: scale(.55); opacity: .55; } }
 
 /* links rest stippled and print solid on hover */
-@media (hover: hover) and (pointer: fine) {
-}
 
 :root[data-design="stipple"] .st .pt-beam { stroke-dasharray: 0 5; stroke-linecap: round; stroke-width: 2.2; }
 :root[data-design="stipple"] .st .pt-node { box-shadow: 3px 3px 0 var(--st-ink); }
@@ -171,26 +165,6 @@
 }
 :root[data-design="stipple"] .st-dsp:focus-visible { outline-offset: -8px; }
 
-/* ───────── Errata slip ───────── */
-:root[data-design="stipple"] .st-slip { position: relative; padding: 34px 40px 36px; background: var(--st-paper-hi); rotate: -.45deg;
-  -webkit-mask: var(--st-deckle) 0 0 / 100% 100% no-repeat; mask: var(--st-deckle) 0 0 / 100% 100% no-repeat; }
-:root[data-design="stipple"] .st-slip-h { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 3px double var(--st-ink); font: 600 10px/1.2 var(--st-mono); letter-spacing: .2em; text-transform: uppercase; }
-:root[data-design="stipple"] .st-slip-h span:last-child { color: var(--st-ink-2); font-weight: 400; }
-:root[data-design="stipple"] .st-slip-h span { white-space: nowrap; }
-:root[data-design="stipple"] .st-errata > li { padding: 24px 0 22px; background: var(--st-dots) 0 100% / 5px 4px repeat-x; }
-:root[data-design="stipple"] .st-er-top { display: flex; align-items: baseline; font: 500 10.5px/1.3 var(--st-mono); letter-spacing: .1em; text-transform: uppercase; }
-:root[data-design="stipple"] .st-er-top span:first-child { color: var(--st-verm-ink); font-weight: 700; }
-:root[data-design="stipple"] .st-er-top span:last-child { color: var(--st-ink-2); }
-:root[data-design="stipple"] .st-errata h3, :root[data-design="stipple"] .st-edu h3 { font-weight: 400; font-size: 29px; line-height: 1.08; margin-top: 10px; letter-spacing: -.005em; }
-:root[data-design="stipple"] .st-er-org { font-style: italic; font-size: 20px; color: var(--st-ink-2); margin-top: 2px; }
-:root[data-design="stipple"] .st-errata ul { display: grid; gap: 6px; margin-top: 12px; font-size: 18.5px; line-height: 1.42; }
-:root[data-design="stipple"] .st-errata ul li { position: relative; padding-left: 22px; }
-:root[data-design="stipple"] .st-errata ul li::before { content: ""; position: absolute; left: 2px; top: .58em; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle, var(--st-verm) .9px, transparent 1.2px) 0 0 / 3px 3px; }
-:root[data-design="stipple"] .st-er-tags { margin-top: 12px; font: 400 10px/1.5 var(--st-mono); letter-spacing: .04em; color: var(--st-ink-2); }
-:root[data-design="stipple"] .st-edu { display: flex; gap: 20px; align-items: flex-start; padding-top: 26px; }
-:root[data-design="stipple"] .st-edu img { flex: none; width: 56px; height: 56px; object-fit: contain; }
-:root[data-design="stipple"] .st-edu h3 { margin-top: 4px; }
-:root[data-design="stipple"] .st-edu h3 + p { font-size: 19px; }
 
 /* ───────── The map: a fold-out sheet holding the knowledge graph, ink on paper ───────── */
 :root[data-design="stipple"] { --kg-edge: rgba(23, 17, 14, .34); --kg-edge-lit: #FF3B1F; --kg-label: #17110E; --kg-font: var(--st-mono);
@@ -277,9 +251,7 @@
   :root[data-design="stipple"] .st-dsp-1 { grid-column: auto; padding: 30px 22px; }
   :root[data-design="stipple"] .st-now dl, :root[data-design="stipple"] .st-places { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   :root[data-design="stipple"] .st-places { gap: 18px; }
-  :root[data-design="stipple"] .st-slip { padding: 26px 20px 28px; rotate: 0deg; }
-  :root[data-design="stipple"] .st-er-top { flex-wrap: wrap; }
-  :root[data-design="stipple"] .st-slip-h span:last-child { display: none; }
+
   :root[data-design="stipple"] .st-figs { gap: 26px 18px; }
   :root[data-design="stipple"] .st-letter summary { font-size: 22px; }
   :root[data-design="stipple"] .st-plate::before { inset: -40px -20px; -webkit-mask: linear-gradient(transparent, #000 40px, #000 calc(100% - 40px), transparent); mask: linear-gradient(transparent, #000 40px, #000 calc(100% - 40px), transparent); }
@@ -397,8 +369,6 @@
 
 /* "I am Rithvik" header button: a rubber-stamp in the masthead */
 @media (hover: hover) and (pointer: fine) { :root[data-design="stipple"] .st-iam:hover { background: var(--st-ink); color: var(--st-paper); } }
-@media (max-width: 760px) {
-}
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="stipple"] { --ly-head-bg: rgba(249, 205, 176, .9); --ly-line: rgba(23, 17, 14, .2); --ly-soft: var(--st-paper); --ly-display: var(--st-serif);

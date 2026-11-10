@@ -12,16 +12,15 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { DEFS, ON_SKY, glyph, hourIn, icon16, isDay, skyShader, skyTile } from "./pixel";
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
+import { XP } from "./experience";
 import "./nimbus.css";
 
 const META = designById("nimbus")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const bullet = <span className="nb-bullet" aria-hidden="true"><Mark label="" /></span>;
 
 /** Raw pixel-art SVG inside a wrapper span (our own generated markup, never user input). */
@@ -76,36 +75,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Experience: roles with a date margin, then the degree on a pixel-sky card. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="nb-roles">
-        {C.experience.map((x) => (
-          <li className="nb-role" id={`experience-${x.slug}`} key={x.slug}>
-            <p className="nb-when"><span className="nb-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="nb-role-b">
-              <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
-              <p className="nb-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i}>{bullet}<span data-edit={`role:${x.slug}:desc.${i}`}>{d}</span></li>)}</ul>
-              <p className="nb-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="nb-edu" id="education">
-        <Px className="nb-edu-sky" html={skyTile(41, 48, 12, 24, 0.15, 0.7)} />
-        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={64} height={64} loading="lazy" />
-        <div>
-          <h3 data-edit="edu:school">{C.education.school}</h3>
-          <p data-edit="edu:degree">{C.education.degree}</p>
-          <p className="nb-edu-m"><EduMeta e={C.education} /></p>
-        </div>
-      </div>
-    </>
-  );
-}
 
 /** About: the text and thesis chips, then today's forecast card and the numbers. */
 function About({ content: C }: SectionProps) {
@@ -183,11 +152,12 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "nimbus",
+  ...XP,
   rootClass: "nb",
   labels: { play: "Recess" },
   sectionClass: (id) => `nb-sec nb-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "nb-h2",
-  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Nimbus site: the shared layout under a pixel sky that follows the visitor's clock. */
