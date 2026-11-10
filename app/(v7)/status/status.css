@@ -1,11 +1,20 @@
-/* /status reuses the admin dashboard's styles (components/admin/admin.css) on a .adm.st wrapper that carries the
-   visitor's look; only the few status-specific bits live here. */
-.st .st-main { max-width: 1080px; }
-.st .adm-hero h1 { font-size: clamp(22px, 3vw, 30px); }
-.st .adm-hero .adm-health::before { width: 12px; height: 12px; }
-.st-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 720px) { .st-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.st-foot { display: grid; gap: 8px; padding-top: 20px; border-top: 1px solid var(--ui-line); }
-.st-foot h2 { margin: 0; font: 600 15px/1.3 var(--ui-font); }
-.st-foot p { margin: 0; max-width: 72ch; color: var(--ui-muted); font-size: 13.5px; line-height: 1.6; }
-.st .adm-top-in { max-width: 1080px; }
+/* /status: the dashboard's instrument language (components/admin/admin.css), condensed. Only the status-specific bits. */
+.d-status .d-main, .d-status .d-top-in { max-width: 1080px; }
+.d-state { display: flex; align-items: center; gap: 16px; font-size: clamp(26px, 3.4vw, 40px) !important; letter-spacing: -.03em !important; }
+.d-state i { width: 14px; height: 14px; flex: none; border-radius: 50%; background: var(--dim); }
+.d-state.good i { color: var(--mint); background: var(--mint); animation: d-pulse-dot 2.4s ease-out infinite; }
+.d-state.bad i { background: var(--red); animation: d-pulse-dot 1.2s ease-out infinite; }
+@keyframes d-pulse-dot { from { box-shadow: 0 0 0 0 currentColor; } to { box-shadow: 0 0 0 16px transparent; } }
+.d-state.bad i { color: var(--red); }
+.d-status .d-big { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.d-mini { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+.d-mini li { display: grid; gap: 4px; color: var(--dim); font: 400 11px/1 var(--mono); }
+.d-mini b { color: var(--fg); font: 300 22px/1 var(--sans); letter-spacing: -.03em; }
+.d-mini li.bad b { color: var(--red); }
+.d-foot summary { cursor: pointer; color: var(--dim); font: 400 12px/1 var(--mono); }
+.d-foot p { margin: 12px 0 0; max-width: 72ch; color: var(--muted); font-size: 13px; line-height: 1.65; }
+@media (max-width: 640px) {
+  .d-status .d-big { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .d-status .d-big li:nth-child(3) { grid-column: 1 / -1; padding-left: 0; border-left: 0; border-top: 1px solid var(--line); margin-top: 18px; }
+  .d-mini { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+}

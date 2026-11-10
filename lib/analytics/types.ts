@@ -23,12 +23,17 @@ export type Rag = {
   ttfbP50: number | null; ttfbP95: number | null; totalP50: number | null; totalP95: number | null;
   tokens: number; costUsd: number; models: { model: string; requests: number; tokens: number }[];
   tools: Ranked[]; series: { t: string; turns: number }[]; questions: Question[];
+  /** One dot per answer in the period (newest 1500, owner excluded): the latency strip plot. */
+  samples: AnswerSample[];
 };
+export type AnswerSample = { t: string; ttfb: number | null; total: number | null; cached: boolean; err: boolean };
 
 export type Dashboard = {
   period: Period; generatedAt: string; bucket: Bucket;
   kpis: Kpis; prev: Kpis | null; headline: string;
   series: { t: string; visits: number; visitors: number }[];
+  /** Visits by UTC hour of day (24 values) over the period: the day ring. */
+  rhythm: number[];
   entries: Ranked[]; sections: (Ranked & { dwell: number | null })[]; scroll: { pct: number; visits: number }[];
   countries: Ranked[]; points: GeoPoint[]; ipTypes: Ranked[]; orgs: Ranked[]; networks: Ranked[];
   devices: Ranked[]; browsers: Ranked[]; os: Ranked[]; referrers: Ranked[]; campaigns: Ranked[];
