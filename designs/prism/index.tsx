@@ -4,13 +4,12 @@
 // with scroll), RGB splits on the hero name (its NameFx), scrolling headings and hovered project titles, one
 // anaglyph heading (Play), and the dark contact room. html.lite and reduced motion drop the splits, blend modes and
 // tracking, leaving a designed still.
-import { useRef, useState, type SyntheticEvent } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { usePrismMotion } from "./motion";
 import { XP } from "./experience";
@@ -22,7 +21,6 @@ const META = designById("prism")!;
 // one band of the visible spectrum per project (red bends least, violet most)
 const BANDS = [["#FF2D3D", "650"], ["#FF7A00", "600"], ["#E8B800", "580"], ["#12B76A", "530"], ["#1E6BFF", "470"], ["#7A3CFF", "420"]];
 const band = (i: number) => BANDS[i % BANDS.length];
-const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const bandVar = (i: number) => ({ ["--band" as string]: band(i)[0] });
 const SEC: Record<SectionId, string> = { work: "pr-work", experience: "pr-exp", about: "pr-about", play: "pr-play", questions: "pr-faq", contact: "pr-contact" };
@@ -87,59 +85,12 @@ function Work({ content: C }: SectionProps) {
 }
 
 
-/** About: the text and thesis, now + places, then the numbers in spectral colours. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="pr-about-txt">
-        {C.about.map((a, i) => <p className="pr-p" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
-        <ul className="pr-thesis">{C.thesis.map((t, i) => <li key={i} style={bandVar(i * 2 + 1)}><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-      </div>
-      <div className="pr-now" id="now">
-        <div className="pr-now-h"><p className="pr-now-city"><Icon name="map-pin" />{C.now.city} · <Clock tz={C.now.tz} className="pr-clock" /></p></div>
-        <dl className="pr-now-list">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ol className="pr-places" aria-label="Places">
-          {C.places.map((pl) => (
-            <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE[pl.key] ?? pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="pr-clock" /></li>
-          ))}
-        </ol>
-      </div>
-      <div className="pr-nums"><dl>{C.numbers.map(([n, l], i) => <div key={l} style={bandVar([0, 2, 4, 5][i % 4])}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl></div>
-    </>
-  );
-}
-
-/** Questions: short answers, one open at a time, and the hand-off to the agent. */
-function Questions({ content: C }: SectionProps) {
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  return (
-    <div className="pr-faq-grid">
-      <div className="pr-faq-l"><div className="pr-acts"><button type="button" className="pr-btn pr-btn-line" data-agent=""><span className="pr-prompt" aria-hidden="true">❯</span>Ask my agent</button></div></div>
-      <div className="pr-qs">
-        {C.faq.map(([q, a], i) => (
-          <details className="pr-q" key={q} onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="pr-plus" aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Contact: the dark room, one line and the composer. */
-function Contact() {
+/** Contact frame: the shared copy inside the dark room, with the prism render behind it. */
+function ContactFrame({ children }: { children: ReactNode }) {
   return (
     <div className="pr-dark">
       <DarkArt />
-      <div className="pr-dk-in">
-        <p className="pr-dk-h">Write to me.</p>
-        <div className="pr-acts"><button type="button" className="pr-btn pr-btn-white" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-      </div>
+      <div className="pr-dk-in">{children}</div>
     </div>
   );
 }
@@ -150,9 +101,10 @@ const SKIN: Skin = {
   rootClass: "pr",
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,
-  sections: { work: Work, about: About, questions: Questions, contact: Contact },
   NameFx: PrismName,
   PortraitFx: PrismPortrait,
+  ContactFrame,
+  sections: { work: Work },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */

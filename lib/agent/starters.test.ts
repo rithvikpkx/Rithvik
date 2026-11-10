@@ -9,7 +9,9 @@ test("every starter answers from content and mentions real facts", () => {
   for (const p of fixture.projects) assert.ok(built.includes(p.title), p.title);
   assert.match(starterAnswer(fixture, "where does he study")!, /Purdue University/);
   assert.match(starterAnswer(fixture, "Is he open to internships?")!, /internships/);
-  assert.ok(starterAnswer(fixture, "How do I reach him?")!.includes(fixture.links.email));
+  const reach = starterAnswer(fixture, "How do I reach him?")!;
+  assert.match(reach, /\/contact/);
+  assert.ok(!reach.includes(fixture.links.email), "the address stays inside the message window");
 });
 
 test("answers track content edits and never invent a graduation date", () => {

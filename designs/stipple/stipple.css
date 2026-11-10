@@ -404,3 +404,6 @@
   --pf-b: #17110E; --pf-c: #E8A98A; --pf-edge: #17110E; --pf-line: rgba(23, 17, 14, .45);
   --pf-r: 6px; --pf-shadow: 5px 5px 0 #17110E; /* a misregistered print, not a soft shadow */
 }
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+:root[data-design="stipple"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }

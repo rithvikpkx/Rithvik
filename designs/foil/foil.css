@@ -173,7 +173,6 @@
 }
 
 /* faq */
-:root[data-design="foil"] .fo-faq { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
 :root[data-design="foil"] .fo-inl { padding: 0; border: 0; background: none; color: var(--fo-fg); font: inherit; text-decoration: underline; text-decoration-color: var(--fo-mint); text-underline-offset: 4px; cursor: pointer; }
 :root[data-design="foil"] .fo-qs { border-top: 1px solid var(--fo-line); }
 :root[data-design="foil"] .fo-q { border-bottom: 1px solid var(--fo-line); }
@@ -203,7 +202,7 @@
 }
 @media (max-width: 860px) {
   :root[data-design="foil"] .fo-tilt { width: min(360px, 88vw); }
-  :root[data-design="foil"] .fo-now, :root[data-design="foil"] .fo-faq { grid-template-columns: minmax(0, 1fr); }
+  :root[data-design="foil"] .fo-now { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   :root[data-design="foil"] .fo-set { grid-template-columns: minmax(0, 1fr); }
@@ -344,3 +343,6 @@
   --pf-face: linear-gradient(140deg, #1F1D2B, #15141E 60%); --pf-edge: #2B2838;
   --pf-a: var(--fo-lav); --pf-b: var(--fo-mint); --pf-c: var(--fo-pink); --pf-label: var(--fo-foil);
 }
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+:root[data-design="foil"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }

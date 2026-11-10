@@ -10,7 +10,6 @@ import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
@@ -23,7 +22,6 @@ const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const ABBR: Record<string, string> = { home: "BOS", school: "LAF", now: "SFO" };
 const WP_LEFT = [13, 33, 52];
 
 /** Notifies useSyncExternalStore when the phosphor attribute on <html> changes. */
@@ -57,42 +55,6 @@ function Work({ content: C }: SectionProps) {
 }
 
 
-/** Field notes: the text, now + places with coordinates, then the numbers. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="sl-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
-      <div className="sl-now" id="now">
-        <dl className="sl-now-l">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ol className="sl-places" aria-label="Places">
-          {C.places.map((pl) => (
-            <li className={pl.key === "now" ? "is-now" : ""} key={pl.key}>
-              <span className="sl-pk">{PLACE[pl.key] ?? pl.key}</span><b>{pl.city}</b>
-              <span className="sl-pc">{deg(pl.lat, "N", "S")} · {deg(pl.lng, "E", "W")}</span>
-              <Clock tz={pl.tz} className="sl-pt-t" />
-            </li>
-          ))}
-        </ol>
-      </div>
-      <dl className="sl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-    </>
-  );
-}
-
-/** Signal: one line and the composer. */
-function Contact() {
-  return (
-    <>
-      <p className="sl-h-big">Send a signal.</p>
-      <div className="sl-acts"><button type="button" className="sl-btn sl-hot sl-cta sl-btn-lg" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-    </>
-  );
-}
-
 const SKIN: Skin = {
   id: "starlight",
   ...XP,
@@ -100,9 +62,9 @@ const SKIN: Skin = {
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
-  sections: { work: Work, about: About, contact: Contact },
   NameFx: StarlightName,
   PortraitFx: StarlightPortrait,
+  sections: { work: Work },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */
@@ -143,11 +105,6 @@ export default function Starlight({ content: C }: DesignProps) {
           </span>
         ))}
       </div>
-      <aside className="sl-coords" aria-hidden="true">
-        {C.places.map((pl) => (
-          <p key={pl.key}><b>{ABBR[pl.key] ?? ""}</b><span>{deg(pl.lat, "N", "S")}</span><span>{deg(pl.lng, "E", "W")}</span><Clock tz={pl.tz} className="" /></p>
-        ))}
-      </aside>
       <aside className="sl-ruler" aria-hidden="true"><i className="sl-ruler-s" /><span className="sl-ruler-m" data-sl-el="">EL +09°</span></aside>
       <div className="sl-ring" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" /><path d="M100 2v12M100 186v12M2 100h12M186 100h12" /><path className="sl-ring-arc" d="M30 54A92 92 0 0 1 54 30" /></svg><span data-sl-ring="">IR · AZ 270° · EL +09°</span></div>
     </SiteLayout>

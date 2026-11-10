@@ -9,7 +9,6 @@ import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import { KEYS, SECTIONS } from "./data";
 import { useGlyphMotion } from "./motion";
 import { XP } from "./experience";
@@ -20,7 +19,7 @@ import "./glyph.css";
 const META = designById("glyph")!;
 const PANE: Record<SectionId, [word: string, cmd: string]> = {
   work: ["WORK", "ls ~/work"], experience: ["LOG", "git log --graph"], about: ["MAN", "man rithvik"],
-  play: ["BIN", "ls ~/bin"], questions: ["FAQ", "rithvik --faq"], contact: ["MAIL", "mail rpk"],
+  play: ["BIN", "ls ~/bin"], questions: ["ASK", "rithvik --ask"], contact: ["MAIL", "mail rpk"],
 };
 const HUE: Record<string, string> = { blue: "gl-hb", red: "gl-hr", amber: "" };
 
@@ -64,52 +63,6 @@ function Work({ content: C }: SectionProps) {
 }
 
 
-/** About: a man page (name, description, environment, files) and the numbers. */
-function About({ content: C }: SectionProps) {
-  const stackKeys = Object.entries(C.stack);
-  return (
-    <div className="gl-man-cols">
-      <div className="gl-man-a">
-        <h3 className="gl-mh">NAME</h3>
-        <p className="gl-mb"><b>rithvik</b> — {C.role.toLowerCase()}</p>
-        <h3 className="gl-mh">DESCRIPTION</h3>
-        {C.about.map((a, i) => <p className="gl-mb" key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
-        <dl className="gl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-      </div>
-      <div className="gl-man-b">
-        <h3 className="gl-mh">ENVIRONMENT</h3>
-        <dl className="gl-env">
-          <div><dt>BUILDING</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>RESEARCHING</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>LEARNING</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <h3 className="gl-mh">FILES</h3>
-        <dl className="gl-files">{C.places.map((pl) => <div key={pl.key}><dt>~/{pl.key}</dt><dd>{pl.city}</dd><dd className="gl-clk"><Clock tz={pl.tz} /></dd></div>)}</dl>
-        <details className="gl-more"><summary><span className="gl-flag">--stack</span></summary><ul className="gl-tree">{stackKeys.map(([k, v], i, a) => (
-          <li key={k}><span className="gl-dim">{i === a.length - 1 ? "└──" : "├──"}</span> <b>{k.toLowerCase()}/</b><ul>{v.map((x, j) => <li key={x}><span className="gl-dim">{i === a.length - 1 ? "    " : "│   "}{j === v.length - 1 ? "└──" : "├──"}</span> {x}</li>)}</ul></li>
-        ))}</ul></details>
-      </div>
-    </div>
-  );
-}
-
-/** Questions: the man page's FAQ section. */
-function Questions({ content: C }: SectionProps) {
-  return <dl className="gl-faq">{C.faq.map(([q, a], i) => <div key={q}><dt data-edit={`faq.${i}.q`}>{q}</dt><dd data-edit={`faq.${i}.a`}>{a}</dd></div>)}</dl>;
-}
-
-/** Contact: the address as one huge decoding line and a single hire command; both open the composer. */
-function Contact({ content: C }: SectionProps) {
-  const [eu, ed2] = C.links.email.split("@");
-  return (
-    <>
-      <p className="gl-big"><button type="button" data-compose="" className="gl-big-b"><span data-scr>{eu}</span><wbr /><span className="gl-at">@</span><span data-scr>{ed2}</span></button></p>
-      <ol className="gl-cmds">
-        <li><button type="button" className="gl-cmd" data-compose="Internship opportunity"><span className="gl-ps" aria-hidden="true">$</span><code>sudo hire rithvik <span className="gl-dim">--role</span> <q>&quot;SWE or AI intern&quot;</q></code><span className="gl-run">compose</span></button></li>
-      </ol>
-    </>
-  );
-}
 
 const SKIN: Skin = {
   id: "glyph",
@@ -118,9 +71,10 @@ const SKIN: Skin = {
   sectionClass: (id) => `gl-sec gl-pane ${HUE[SECTIONS.find(([s]) => s === id)![2]]}`.trim(),
   SectionOrnament: TitleBar,
   Title,
-  sections: { work: Work, about: About, questions: Questions, contact: Contact },
   NameFx: GlyphName,
   PortraitFx: GlyphPortrait,
+  contactLead: "$ sudo hire rithvik",
+  sections: { work: Work },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */

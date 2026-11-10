@@ -354,3 +354,10 @@
 :root[data-design="prism"] .pf-wrap {
   --pf-a: #4B2BFF; --pf-b: #FF2E88; --pf-c: #00C2FF; --pf-label: conic-gradient(#4B2BFF, #00C2FF, #29E07A, #FFD600, #FF2E88, #4B2BFF);
 }
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+.pr-dark .ly-contact-k { color: #FFFFFF; }
+:root[data-design="prism"] .pr-dark .ly-contact-h { margin-top: 22px; max-width: none; font: 600 clamp(2.2rem, 4.4cqw, 3.6rem)/.95 var(--pr-sans); font-stretch: 76%; letter-spacing: -.04em; color: #FFFFFF; }
+:root[data-design="prism"] .pr-dark .ly-contact-s { color: rgba(255, 255, 255, .72); }
+:root[data-design="prism"] .pr-dark .ly-btn { border-color: rgba(255, 255, 255, .45); color: #FFFFFF; background: transparent; }
+:root[data-design="prism"] .pr-dark .ly-btn.solid { background: #FFFFFF; color: var(--pr-ink); }

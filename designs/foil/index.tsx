@@ -3,14 +3,13 @@
 // thin-film shader lives only on the holo card behind the hero portrait (its portrait backdrop), which tilts toward
 // the pointer; everything else is calm CSS that wakes on hover. html.lite and reduced motion leave a still card,
 // static foil gradients, no tilt, no glare and no datamosh.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
@@ -22,7 +21,6 @@ import "./foil.css";
 
 const META = designById("foil")!;
 const pad = (n: number) => String(n).padStart(2, "0");
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 
 // the exact mark silhouette (eye punched out) as a CSS mask over the foil texture
 const G = ouroPath();
@@ -60,49 +58,13 @@ function Work({ content: C }: SectionProps) {
 }
 
 
-/** About: the text and thesis, now + places, then the numbers. */
-function About({ content: C }: SectionProps) {
+/** Contact frame: the foil seal above the shared copy, centred. */
+function ContactFrame({ children }: { children: ReactNode }) {
   return (
-    <>
-      <div className="fo-about-txt">
-        {C.about.map((a, i) => <p key={i} className="fo-p" data-edit={`v7.about.${i}`}>{a}</p>)}
-        <ul className="fo-thesis">{C.thesis.map((t, i) => <li key={t}><i aria-hidden="true" /><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-      </div>
-      <div className="fo-now" id="now" aria-label="Right now">
-        <dl className="fo-now-l">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ul className="fo-places" aria-label="Places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE_LABEL[pl.key] || pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="" /></li>)}</ul>
-      </div>
-      <dl className="fo-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-    </>
-  );
-}
-
-/** Questions: short answers, one open at a time, and the hand-off to the agent. */
-function Questions({ content: C }: SectionProps) {
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  return (
-    <div className="fo-faq-b">
-      <div className="fo-qs">{C.faq.map(([q, a], i) => <details key={q} className="fo-q" onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>
-      <p className="fo-sub"><button type="button" className="fo-inl" data-agent="">Ask my agent</button></p>
-    </div>
-  );
-}
-
-/** Contact: the foil seal, one line and the composer. */
-function Contact() {
-  return (
-    <>
+    <div className="fo-contact">
       <span className="fo-seal" aria-hidden="true"><Fm cls="fo-fm-l" /></span>
-      <p className="fo-big">Write to me.</p>
-      <div className="fo-acts fo-c"><button type="button" className="fo-btn fo-btn-foil fo-btn-l" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-    </>
+      {children}
+    </div>
   );
 }
 
@@ -113,9 +75,10 @@ const SKIN: Skin = {
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
-  sections: { work: Work, about: About, questions: Questions, contact: Contact },
   NameFx: FoilName,
   PortraitFx: FoilPortrait,
+  ContactFrame,
+  sections: { work: Work },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

@@ -3,11 +3,11 @@ import type { ComponentType } from "react";
 import type { SectionId, SectionProps } from "@/lib/designs/skin";
 import { Icon } from "@/components/site/Glyph";
 import Mark from "@/components/site/mark/Mark";
-import Clock from "@/components/site/Clock";
 import Experience from "./Experience";
+import About from "./About";
+import Questions from "./Questions";
+import Contact from "./Contact";
 import PlayField from "@/components/site/play/PlayField";
-
-const PLACE_LABEL = { home: "Home", school: "School", now: "Now" } as const;
 
 /** Projects as type-led cards; each opens the case sheet (the href is the no-JS fallback). */
 function Work({ content: c }: SectionProps) {
@@ -31,49 +31,6 @@ function Work({ content: c }: SectionProps) {
       ))}
     </ul>
   );
-}
-
-/** About text beside where he is now (live clock) and what he is on, then the numbers. */
-function About({ content: c }: SectionProps) {
-  const rows: [string, React.ReactNode][] = [
-    ...c.places.map((p): [string, React.ReactNode] => [PLACE_LABEL[p.key], p.key === "now" ? <>{p.city} · <Clock tz={p.tz} className="clock" /></> : p.city]),
-    ["Building", c.now.building && <span data-edit="v7.now.building">{c.now.building}</span>],
-    ["Researching", c.now.researching && <span data-edit="v7.now.researching">{c.now.researching}</span>],
-    ["Learning", c.now.learning && <span data-edit="v7.now.learning">{c.now.learning}</span>],
-  ];
-  return (
-    <>
-      <div className="ly-about">
-        <div className="ly-about-copy">{c.about.map((p, i) => <p key={p} data-edit={`v7.about.${i}`}>{p}</p>)}</div>
-        <dl className="ly-kv">{rows.filter(([, v]) => v).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-      </div>
-      {c.numbers.length > 0 && (
-        <ul className="ly-numbers">{c.numbers.map(([v, l], i) => <li key={l}><b data-edit={`numbers.${i}.v`}>{v}</b><span data-edit={`numbers.${i}.l`}>{l}</span></li>)}</ul>
-      )}
-    </>
-  );
-}
-
-/** Recruiter questions as native disclosures, plus a hand-off to the agent. */
-function Questions({ content: c }: SectionProps) {
-  return (
-    <div className="ly-faq">
-      <div><button type="button" className="ly-btn" data-agent="">Ask something else<kbd>⌘K</kbd></button></div>
-      <div className="ly-faq-list">
-        {c.faq.map(([q, a], i) => (
-          <details key={q}>
-            <summary><span data-edit={`faq.${i}.q`}>{q}</span><span className="ly-plus" aria-hidden="true" /></summary>
-            <p data-edit={`faq.${i}.a`}>{a}</p>
-          </details>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** The address itself; it opens the composer (mailto is the no-JS fallback). */
-function Contact({ content: c }: SectionProps) {
-  return <p className="ly-email"><a href={`mailto:${c.links.email}`} data-compose="">{c.links.email}</a></p>;
 }
 
 /** The shared default body for every section. */
