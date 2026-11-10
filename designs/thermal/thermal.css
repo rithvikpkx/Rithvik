@@ -113,39 +113,26 @@
 :root[data-design="thermal"] .th-panel-k::before { content: ""; width: 6px; height: 6px; background: var(--th-hot); }
 
 /* hot spots: six sensor frames */
-:root[data-design="thermal"] .th-spots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 48px 28px; margin: 0; padding: 0; list-style: none; }
-:root[data-design="thermal"] .th-spot-b { display: grid; gap: 20px; text-decoration: none; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
-:root[data-design="thermal"] .th-frame { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; background: #04060C; box-shadow: 0 0 0 1px var(--th-line2); }
+
 :root[data-design="thermal"] .th-haze { position: absolute; inset: -24px 0; }
 :root[data-design="thermal"] .th-haze-in { position: absolute; inset: 24px 0; }
 :root[data-design="thermal"] .th-f { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 :root[data-design="thermal"] .th-f-warm { opacity: 0; transition: opacity 600ms ease; }
-:root[data-design="thermal"] .th-f-tl, :root[data-design="thermal"] .th-f-tr { position: absolute; top: 10px; padding: 3px 6px; background: rgba(4, 6, 12, .78); font: 500 10.5px/1 var(--th-mono); letter-spacing: .08em; text-transform: uppercase; color: #F4F7FB; }
-:root[data-design="thermal"] .th-f-tl { left: 10px; } :root[data-design="thermal"] .th-f-tr { right: 10px; }
-:root[data-design="thermal"] .th-max { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 1px solid #F4F7FB; box-shadow: 0 0 0 1px rgba(4, 6, 12, .55); transition: transform 300ms var(--ease-out); }
-:root[data-design="thermal"] .th-max::after { content: ""; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px 0 0 -1px; background: #F4F7FB; }
+
 /* picture-in-picture: the visible-light photo a real camera shows beside its thermal frame */
 :root[data-design="thermal"] .th-pip { position: absolute; right: 10px; bottom: 10px; width: 26%; aspect-ratio: 4 / 3; overflow: hidden; background: #E9E6E1; box-shadow: 0 0 0 1px rgba(244, 247, 251, .7), 0 6px 18px rgba(0, 0, 0, .45); transition: width 420ms var(--ease-out); }
 :root[data-design="thermal"] .th-pip img { width: 100%; height: 100%; object-fit: cover; }
 :root[data-design="thermal"] .th-pip b { position: absolute; left: 0; top: 0; padding: 2px 4px; background: rgba(4, 6, 12, .82); font: 600 9px/1 var(--th-mono); letter-spacing: .08em; color: #F4F7FB; }
 :root[data-design="thermal"] .case-art { border-radius: 4px; box-shadow: 0 0 0 1px var(--th-line2); }
-:root[data-design="thermal"] .th-spot-m { display: grid; gap: 6px; }
-:root[data-design="thermal"] .th-spot-k { display: inline-flex; align-items: center; gap: 8px; font: 500 11px/1.3 var(--th-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--th-mut); }
-:root[data-design="thermal"] .th-spot-k .ic { width: 13px; height: 13px; }
-:root[data-design="thermal"] .th-spot-t { margin-top: 4px; font: 500 23px/1.2 var(--th-sans); letter-spacing: -.015em; }
-:root[data-design="thermal"] .th-spot-h { font-size: 15.5px; line-height: 1.5; color: var(--th-mut); }
+
 :root[data-design="thermal"] .th-spot-go { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font: 500 12px/1 var(--th-mono); letter-spacing: .04em; color: var(--th-soft); transition: color 160ms ease; }
 :root[data-design="thermal"] .th-spot-go .ic { width: 14px; height: 14px; transition: transform 200ms var(--ease-out); }
 @media (hover: hover) and (pointer: fine) {
-  :root[data-design="thermal"] .th-spot-b:hover .th-f-warm { opacity: 1; }
-  :root[data-design="thermal"] .th-spot-b:hover .th-max { transform: scale(1.25); }
-  :root[data-design="thermal"] .th-spot-b:hover .th-spot-go { color: var(--th-hot); }
-  :root[data-design="thermal"] .th-spot-b:hover .th-spot-go .ic { transform: translate(2px, -2px); }
+
   /* heat haze: a still displacement field drifts up while the image counter-drifts down, so only the shimmer moves */
-  :root:not(.lite)[data-design="thermal"] .th-spot-b:hover .th-haze { filter: url(#th-haze-f); animation: thermal-rise 2.8s ease-in-out infinite alternate; }
-  :root:not(.lite)[data-design="thermal"] .th-spot-b:hover .th-haze-in { animation: thermal-sink 2.8s ease-in-out infinite alternate; }
+
 }
-:root[data-design="thermal"] .th-spot-b:focus-visible .th-f-warm { opacity: 1; }
+
 @keyframes thermal-rise { to { transform: translateY(-22px); } }
 @keyframes thermal-sink { to { transform: translateY(22px); } }
 
@@ -203,7 +190,7 @@
 
 /* ───────── responsive ───────── */
 @media (max-width: 1100px) {
-  :root[data-design="thermal"] .th-spots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   :root[data-design="thermal"] .th-toys { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :root[data-design="thermal"] .th-reads { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 44px; }
 }
@@ -217,7 +204,7 @@
 
 }
 @media (max-width: 640px) {
-  :root[data-design="thermal"] .th-spots { grid-template-columns: minmax(0, 1fr); gap: 52px; }
+
   :root[data-design="thermal"] .th-toys { gap: 10px; }
   :root[data-design="thermal"] .th-toy { min-height: 172px; padding: 16px; }
   :root[data-design="thermal"] .th-toy-t { font-size: 18px; } :root[data-design="thermal"] .th-toy-d { font-size: 13.5px; }

@@ -1,5 +1,5 @@
-// Thermal's pure helpers, ported 1:1 from docs/mockups/v7/themes/thermal.js: the palette stops, the per-project
-// 32x24 sensor frames and the BMP encoder that turns a heat grid into a data URI (no canvas, so SSR can render it).
+// Thermal's pure helpers, ported 1:1 from docs/mockups/v7/themes/thermal.js: the palette stops, the contact
+// strip's heat grid and the BMP encoder that turns a heat grid into a data URI (no canvas, so SSR can render it).
 export type PalId = "iron" | "rainbow" | "white";
 export const PALS: [PalId, string][] = [["iron", "Iron"], ["rainbow", "Rainbow"], ["white", "White hot"]];
 // colour stops shared by the shader (registry), the CSS ramps and the sensor frames (keep in sync with thermal.css)
@@ -9,7 +9,6 @@ export const STOPS: Record<PalId, [number, string][]> = {
   white: [[0, "#04060C"], [1, "#F7F9FF"]],
 };
 export const T_MIN = 18, T_MAX = 40; // the visual scale, in °C (decorative)
-export const W = 32, HH = 24;
 
 export type Grid = { g: Float32Array; max: number; w: number; h: number; at?: [number, number]; peak: number };
 
@@ -28,26 +27,7 @@ export function ramp(t: number, name: PalId): number[] {
   return c.map((v) => Math.round(v));
 }
 
-/** Small seeded PRNG (FNV-1a + mixing) so a project always gets the same frame. */
-export const seed = (str: string) => {
-  let h = 2166136261;
-  for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-  return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; };
-};
 
-/** Heat grid for a project: one warm body per tool, peak heat scaled by the toolchain size. */
-export function heatGrid(slug: string, tools: number): Grid & { at: [number, number] } {
-  const r = seed(slug), bodies: { x: number; y: number; s: number; a: number }[] = [];
-  for (let i = 0; i < tools; i++) bodies.push({ x: 4 + r() * 24, y: 3.5 + r() * 17, s: 1.5 + r() * 2.6, a: i === 0 ? 1 : 0.4 + r() * 0.5 });
-  const g = new Float32Array(W * HH); let max = 0, mi = 0;
-  for (let y = 0; y < HH; y++) for (let x = 0; x < W; x++) {
-    // a faint ambient gradient with ripple, so cold areas still read as a surface
-    let v = 0.08 + 0.06 * (y / HH) + 0.025 * Math.sin(x * 0.9 + y * 0.35) * Math.cos(y * 0.7 - x * 0.2);
-    bodies.forEach((b) => { const dx = x - b.x, dy = y - b.y; v += b.a * Math.exp(-(dx * dx + dy * dy) / (2 * b.s * b.s)); });
-    g[y * W + x] = v; if (v > max) { max = v; mi = y * W + x; }
-  }
-  return { g, max, w: W, h: HH, at: [((mi % W) + 0.5) / W, (Math.floor(mi / W) + 0.5) / HH], peak: 0.42 + 0.46 * (tools / 5) };
-}
 
 /** The contact strip: a 64x6 band of heat with its hottest point a little left of centre. */
 export function stripGrid(): Grid {
@@ -72,7 +52,3 @@ export function bmp(grid: Grid, pal: PalId, warm: number): string {
   let s = ""; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
   return "data:image/bmp;base64," + btoa(s);
 }
-
-/** Projects ranked by the size of their toolchain (stable, so equal counts keep the content order). */
-export const rankByTools = <T extends { tags: string[] }>(ps: T[]): T[] =>
-  ps.map((p, i) => ({ p, i })).sort((a, b) => b.p.tags.length - a.p.tags.length || a.i - b.i).map((x) => x.p);

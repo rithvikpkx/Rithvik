@@ -6,11 +6,10 @@
 // by a chrome meniscus that rings once. html.lite / reduced motion: still shader frame, flat dividers, no drift.
 import { useRef, type ReactNode, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
+import type { SectionId, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import { Icon } from "@/components/site/Glyph";
 import { useMercuryMotion } from "./motion";
 import { XP } from "./experience";
 import MercuryName from "./name-fx";
@@ -18,7 +17,6 @@ import MercuryPortrait from "./portrait-fx";
 import "./mercury.css";
 
 const META = designById("mercury")!;
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const hideFig = (e: SyntheticEvent<HTMLImageElement>) => { (e.currentTarget.parentNode as HTMLElement).hidden = true; };
 
 // a chrome meniscus: convex ends (mercury's meniscus bulges) and a wave that rings once on entry
@@ -42,21 +40,6 @@ function Divider({ id }: { id: SectionId }) {
   );
 }
 
-/** Work: a calm index; titles take a chrome sheen on hover. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="mc-work">
-      {C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}>
-          <a className="mc-row" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="mc-n">{pad(i)}</span><span className="mc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span><span className="mc-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span><span className="mc-hl" data-edit={`project:${p.slug}:headline`}>{p.headline}</span><span className="mc-go"><Icon name="arrow-up-right" /></span>
-          </a>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 
 /** Contact frame: the shared copy beside the chrome mark, over the ferrofluid pool. */
 function ContactFrame({ children }: { children: ReactNode }) {
@@ -68,7 +51,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "mercury",
   ...XP,
   rootClass: "mc",
@@ -78,7 +61,7 @@ const SKIN: Skin = {
   NameFx: MercuryName,
   PortraitFx: MercuryPortrait,
   ContactFrame,
-  sections: { work: Work },
+  projectArt: { palette: ["#0E0E10", "#C9CCD3", "#FFFFFF", "#7F8BB8"], params: { hole: 0.4, rest: 1, lift: 12, stroke: 0.9 } },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

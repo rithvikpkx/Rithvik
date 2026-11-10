@@ -113,40 +113,7 @@
 :root[data-design="foil"] .fo-places .is-now time { color: var(--fo-mint); }
 
 /* work: the set of six holo cards */
-:root[data-design="foil"] .fo-set { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); margin: 0; padding: 0; list-style: none; }
-:root[data-design="foil"] .fo-pc-li { perspective: 1000px; }
-:root[data-design="foil"] .fo-pc { --dx: 0; --dy: 0; position: relative; display: flex; flex-direction: column; height: 100%; padding: 14px 14px 20px; border-radius: 20px; background: var(--fo-panel); border: 1px solid var(--fo-line); color: var(--fo-fg); text-decoration: none;
-  transform: rotateX(calc(var(--dy) * -8deg)) rotateY(calc(var(--dx) * 10deg)); transition: transform 600ms var(--ease-out), border-color 240ms ease, box-shadow 300ms ease; }
-:root[data-design="foil"] .fo-pc-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 2px 4px 12px; font: 500 11.5px/1 var(--fo-m); letter-spacing: .08em; text-transform: uppercase; color: var(--fo-mut); }
-:root[data-design="foil"] .fo-pc-n { color: var(--fo-fg); }
-:root[data-design="foil"] .fo-pc-n i { font-style: normal; color: var(--fo-dim); }
-:root[data-design="foil"] .fo-pc-art { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; isolation: isolate;
-  background: radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, .35), transparent 55%), conic-gradient(from var(--h) at 70% 120%, #8BF0D3, #94D4FF, #B9A8FF, #FFB3DA, #FFD79E, #8BF0D3); }
-:root[data-design="foil"] .fo-pc-art::after { content: ""; position: absolute; inset: 0; z-index: 6; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); pointer-events: none; }
-:root[data-design="foil"] .fo-pc-holo, :root[data-design="foil"] .fo-pc-glit { position: absolute; inset: 0; z-index: 3; opacity: 0; transition: opacity 300ms ease; pointer-events: none; }
-:root[data-design="foil"] .fo-pc-holo i { position: absolute; inset: -60%; background: repeating-linear-gradient(115deg, #8BF0D3 0, #94D4FF 6%, #B9A8FF 12%, #FFB3DA 18%, #FFD79E 24%, #8BF0D3 30%); mix-blend-mode: color-burn; opacity: .5;
-  transform: translate(calc(var(--dx) * -36%), calc(var(--dy) * -30%)); transition: transform 600ms var(--ease-out); }
-:root[data-design="foil"] .fo-pc-glit i { position: absolute; inset: -20%; background: radial-gradient(circle, #fff .8px, transparent 1.3px) 0 0 / 17px 19px, radial-gradient(circle, rgba(255, 255, 255, .85) .6px, transparent 1.1px) 7px 9px / 29px 23px;
-  transform: translate(calc(var(--dx) * 22%), calc(var(--dy) * 18%)); transition: transform 600ms var(--ease-out); mix-blend-mode: overlay; opacity: .55; }
-:root[data-design="foil"] .fo-pc-ic { position: relative; z-index: 1; width: 72px; height: 72px; }
-:root[data-design="foil"] .fo.has-foil .fo-pc-art { background: url(/v7/foil/foil-1024.webp) var(--hp) 50% / 260%; }
-:root[data-design="foil"] .fo-pc-ic > span { position: absolute; inset: 0; }
-:root[data-design="foil"] .fo-pc-ic .ic { width: 100%; height: 100%; stroke-width: 1.3; }
-:root[data-design="foil"] .fo-pc-ic-hi { color: rgba(255, 255, 255, .7); transform: translate(1px, 1.5px); }
-:root[data-design="foil"] .fo-pc-ic-ink { color: rgba(10, 10, 16, .82); }
-:root[data-design="foil"] .fo-pc-wm { position: absolute; z-index: 5; right: 10px; bottom: 10px; width: 22px; height: 22px; color: rgba(10, 10, 16, .5); }
-:root[data-design="foil"] .fo-pc-wm .mark { width: 100%; height: 100%; display: block; }
-:root[data-design="foil"] .fo-pc-t { margin: 20px 6px 0; font: 500 20px/1.2 var(--fo-d); letter-spacing: -.03em; text-wrap: balance; }
-:root[data-design="foil"] .fo-pc-h { margin: 8px 6px 0; font-size: 15px; line-height: 1.5; color: var(--fo-mut); }
-:root[data-design="foil"] .fo-pc-stats { display: grid; gap: 6px; margin: 18px 6px 0; padding-top: 14px; border-top: 1px solid var(--fo-line); font: 400 12.5px/1.45 var(--fo-m); color: #CFCBDD; }
-:root[data-design="foil"] .fo-pc-stats > span { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; }
-:root[data-design="foil"] .fo-pc-stats b { display: block; font-weight: 500; color: var(--fo-dim); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="foil"] .fo-pc:hover { border-color: rgba(238, 234, 246, .28); box-shadow: 0 40px 70px -40px rgba(0, 0, 0, .9), 0 20px 80px -40px rgba(185, 168, 255, .35); transition: transform 140ms linear, border-color 240ms ease, box-shadow 300ms ease; }
-  :root[data-design="foil"] .fo-pc:hover .fo-pc-holo, :root[data-design="foil"] .fo-pc:hover .fo-pc-glit { opacity: 1; }
-  :root[data-design="foil"] .fo-pc:hover .fo-pc-holo i, :root[data-design="foil"] .fo-pc:hover .fo-pc-glit i { transition-duration: 140ms; }
-}
-:root[data-design="foil"] .fo-pc.is-mosh { animation: foil-jolt 300ms steps(1) both; }
+
 @keyframes foil-jolt { 0% { transform: translateX(6px); clip-path: inset(0 0 40% 0); } 25% { transform: translateX(-4px); clip-path: inset(30% 0 0 0); } 50% { transform: translateX(9px); clip-path: inset(0 0 0 0); } 75% { transform: translateX(-2px); } 100% { transform: none; } }
 :root[data-design="foil"] .fo-mosh { position: fixed; inset: 0; z-index: 94; pointer-events: none; overflow: hidden; }
 :root[data-design="foil"] .fo-mosh i { position: absolute; display: block; will-change: transform, opacity; }
@@ -196,7 +163,7 @@
 
 /* ───────── responsive ───────── */
 @media (max-width: 1100px) {
-  :root[data-design="foil"] .fo-set { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   :root[data-design="foil"] .fo-stickers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 }
@@ -205,8 +172,6 @@
   :root[data-design="foil"] .fo-now { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
-  :root[data-design="foil"] .fo-set { grid-template-columns: minmax(0, 1fr); }
-  :root[data-design="foil"] .fo-pc-art { aspect-ratio: 2 / 1; }
 
   :root[data-design="foil"] .fo-stickers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   :root[data-design="foil"] .fo-now-l div, :root[data-design="foil"] .fo-places li { grid-template-columns: 110px minmax(0, 1fr) auto; gap: 12px; }
@@ -216,10 +181,6 @@
 /* ───────── performance mode + reduced motion: a designed still ───────── */
 :root[data-design="foil"].lite .fo-tilt { transform: none !important; will-change: auto; }
 :root[data-design="foil"].lite .fo-pc, :root[data-design="foil"].lite .fo-st, :root[data-design="foil"].lite .fo-st-foil { transform: none !important; }
-@media (hover: hover) and (pointer: fine) { :root[data-design="foil"].lite .fo-pc:hover .fo-pc-art { filter: saturate(1.25) brightness(1.06); } }
-@media (prefers-reduced-motion: reduce) {
-  :root[data-design="foil"] .fo-pc { transform: none; }
-}
 
 /* ═════════ Chrome: ink panels with a foil hairline ═════════ */
 /* switcher */
@@ -307,9 +268,9 @@
 :root[data-design="foil"] .rc-bar i { background: var(--fo-foil); }
 :root[data-design="foil"] .rc-verdict { font: 500 1.15rem/1.3 var(--fo-d); letter-spacing: -.02em; }
 
-/* case sheet art: the studio object mounted like a card face */
+/* case sheet art: the project art mounted like a card face */
 :root[data-design="foil"] .case-art { padding: 6px; border-radius: 22px; background: var(--fo-foil); }
-:root[data-design="foil"] .case-art img { border-radius: 16px; background: #E9E6E1; }
+:root[data-design="foil"] .case-art .art { border-radius: 16px; }
 :root[data-design="foil"] .case-art { box-shadow: 0 30px 70px -40px rgba(185, 168, 255, .5); }
 
 /* "I am Rithvik" header button: a glass pill beside Resume */

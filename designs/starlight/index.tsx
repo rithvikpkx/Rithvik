@@ -6,11 +6,10 @@
 // Performance mode (html.lite) and reduced motion stop the flare, ring, gain jitter and IR loop.
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import { Icon } from "@/components/site/Glyph";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
 import { XP } from "./experience";
@@ -20,7 +19,6 @@ import "./starlight.css";
 
 const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const WP_LEFT = [13, 33, 52];
 
@@ -31,31 +29,8 @@ function subPh(cb: () => void) {
   return () => mo.disconnect();
 }
 
-/** Sightings: one locked-on target per project; the IR light reveals its context line. */
-function Work({ content: C }: SectionProps) {
-  return (
-    <ol className="sl-targets">
-      {C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}>
-          <a className="sl-tg" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="sl-tg-n">T-{pad(i)}</span>
-            <span className="sl-tg-b">
-              <span className="sl-tg-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-              <span className="sl-tg-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-              <span className="sl-tg-ir sl-ir" data-ir=""><Icon name="crosshair" /><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
-            </span>
-            <span className="sl-tg-k" data-edit={`project:${p.slug}:kind`}>{p.kind}</span>
-            <span className="sl-tg-go" aria-hidden="true"><Icon name="arrow-up-right" /></span>
-            <i className="sl-lock" aria-hidden="true"><i /><i /><i /><i /></i>
-          </a>
-        </li>
-      ))}
-    </ol>
-  );
-}
 
-
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "starlight",
   ...XP,
   rootClass: "sl",
@@ -64,7 +39,7 @@ const SKIN: Skin = {
   titleClass: "sl-h2",
   NameFx: StarlightName,
   PortraitFx: StarlightPortrait,
-  sections: { work: Work },
+  projectArt: { palette: ["#030803", "#A8FF7A", "#EAFFDC", "#5FD43A"], params: { hole: 0.34, stroke: 0.9 } },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

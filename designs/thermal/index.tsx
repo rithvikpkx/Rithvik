@@ -6,13 +6,12 @@
 // contact strip are tiny BMP heat images that warm on hover. html.lite = one still heat frame, no haze.
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
-import { Icon } from "@/components/site/Glyph";
-import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
+import { PALS, T_MAX, T_MIN, bmp, palIndex, stripGrid, type PalId } from "./heat";
 import { readPal, usePal, useThermalMotion } from "./motion";
 import { XP } from "./experience";
 import ThermalName from "./name-fx";
@@ -20,8 +19,6 @@ import ThermalPortrait from "./portrait-fx";
 import "./thermal.css";
 
 const META = designById("thermal")!;
-const grids = new Map<string, ReturnType<typeof heatGrid>>(); // frames are deterministic per project: build once
-const gridOf = (slug: string, tools: number) => { let g = grids.get(slug); if (!g) grids.set(slug, (g = heatGrid(slug, tools))); return g; };
 const strip = stripGrid();
 
 /** A cool and a warm heat image stacked inside the haze wrapper (the warm one fades in on hover). */
@@ -33,38 +30,6 @@ function Heat({ f, cool, warm, w, h }: { f: string; cool: string; warm: string; 
       <img className="th-f th-f-warm" data-f={f} src={warm} alt="" width={w} height={h} decoding="async" />
       {/* eslint-enable @next/next/no-img-element */}
     </span></span>
-  );
-}
-
-/** Hot spots: one sensor frame per project, warmest (most tools) first. */
-function Work({ content: C }: SectionProps) {
-  const pal = usePal();
-  const ranked = useMemo(() => rankByTools(C.projects), [C.projects]);
-  // frames re-colour only when the palette changes (tiny BMPs)
-  const frames = useMemo(() => ranked.map((p) => {
-    const g = gridOf(p.slug, p.tags.length);
-    return { p, g, cool: bmp(g, pal, 0), warm: bmp(g, pal, 0.2) };
-  }), [ranked, pal]);
-  return (
-    <ol className="th-spots">
-      {frames.map(({ p, g, cool, warm }, i) => (
-        <li className="th-spot" key={p.slug} id={`project-${p.slug}`}>
-          <a className="th-spot-b" href={`/work/${p.slug}`} data-case={p.slug} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-            <span className="th-frame">
-              <Heat f={p.slug} cool={cool} warm={warm} w={W} h={HH} />
-              <span className="th-f-tl">SP{i + 1}</span>
-              <span className="th-f-tr">{p.tags.length} tools</span>
-              <i className="th-max" style={{ left: `${(g.at[0] * 100).toFixed(1)}%`, top: `${(g.at[1] * 100).toFixed(1)}%` }} />
-            </span>
-            <span className="th-spot-m">
-              <span className="th-spot-k"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-              <span className="th-spot-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-              <span className="th-spot-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-            </span>
-          </a>
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -81,7 +46,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "thermal",
   ...XP,
   rootClass: "th",
@@ -92,7 +57,7 @@ const SKIN: Skin = {
   PortraitFx: ThermalPortrait,
   ContactFrame,
   contactLead: "The warmest lead is email",
-  sections: { work: Work },
+  projectArt: { palette: ["var(--th-bg3, #0B0F1A)", "var(--rh1, #FC780F)", "var(--rh0, #FFD138)", "var(--rh3, #A0179E)"], params: { hole: 0.3 } },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

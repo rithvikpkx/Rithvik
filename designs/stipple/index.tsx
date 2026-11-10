@@ -6,13 +6,11 @@
 // lens, drift, seal spin and every filter off, leaving a crisp two-ink letterpress still.
 import { Fragment, useRef, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
+import type { SectionId, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import Mark from "@/components/site/mark/Mark";
-import { Icon } from "@/components/site/Glyph";
-import { ART, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import { XP } from "./experience";
@@ -23,7 +21,6 @@ import "./stipple.css";
 const META = designById("stipple")!;
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
 const CHAPTER: Record<SectionId, string> = { work: "Dispatches", experience: "Errata", about: "Foreword", play: "Supplement", questions: "Correspondence", contact: "The seal" };
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 
 
 /** A chapter heading: stippled roman numeral, chapter name, folio. */
@@ -33,29 +30,6 @@ function Chapter({ id, index, hid }: { id: SectionId; index: number; label: stri
     <header className={`st-chh${plate ? "" : " st-plate-sm"}`}>
       <span className="st-rom" aria-hidden="true">{ROMAN[index]}</span><h2 id={hid}>{CHAPTER[id]}</h2><span className="st-folio">— {index + 2} —</span>
     </header>
-  );
-}
-
-/** Dispatches: one printed plate per project (the lead runs long). */
-function Work({ content: C }: SectionProps) {
-  return (
-    <div className="st-issue">
-      {C.projects.map((p, i) => (
-        <a key={p.slug} id={`project-${p.slug}`} className={`st-dsp st-dsp-${i + 1}`} href={`/work/${p.slug}`} data-case={p.slug} aria-label={`Dispatch No. ${pad(i)}: ${p.title}. Read the dispatch`}>
-          <span className="st-stamp"><span>No. {pad(i)}</span><span>{readSecs(p)} sec read</span></span>
-          <span className="st-art" data-lens aria-hidden="true">
-            <svg className="st-art-base" viewBox="0 0 320 200"><g filter="url(#st-fz-art)" fill="#17110E" stroke="#17110E" dangerouslySetInnerHTML={{ __html: ART[p.slug] ?? "" }} /></svg>
-            <svg className="st-art-crisp" viewBox="0 0 320 200"><g fill="#FF3B1F" stroke="#FF3B1F" dangerouslySetInnerHTML={{ __html: ART[p.slug] ?? "" }} /></svg>
-            <span className="st-lens-frame"><i /></span>
-          </span>
-          <span className="st-kind"><Icon name={p.icon} /><span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-          <span className="st-dsp-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-          <span className="st-dsp-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-          {i === 0 && <><span className="st-dsp-c" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span><span className="st-dsp-d">{p.desc.map((d, k) => <Fragment key={k}>{k > 0 && " "}<span data-edit={`project:${p.slug}:desc.${k}`}>{d}</span></Fragment>)}</span><span className="st-dsp-tags">{p.tags.join(" · ")}</span></>}
-          <span className="st-more"><span>Read the dispatch</span> <span aria-hidden="true">→</span></span>
-        </a>
-      ))}
-    </div>
   );
 }
 
@@ -79,7 +53,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "stipple",
   ...XP,
   rootClass: "st",
@@ -88,7 +62,7 @@ const SKIN: Skin = {
   NameFx: StippleName,
   PortraitFx: StipplePortrait,
   ContactFrame,
-  sections: { work: Work },
+  projectArt: { palette: ["#F9CDB0", "#17110E", "#FF3B1F", "#2B44B8"], params: { hole: 0.3, rest: 5, stroke: 1.15 } },
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */

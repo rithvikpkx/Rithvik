@@ -114,31 +114,6 @@
 :root[data-design="starlight"] .sl-sec { position: relative; z-index: 2; max-width: 1120px; margin: 0 auto; padding: clamp(110px, 17vh, 190px) var(--sl-pad); }
 
 /* 02 sightings: target rows; hover locks a bracket on, the IR light finds the hardware line */
-:root[data-design="starlight"] .sl-targets { border-top: 1px solid var(--sl-line); }
-:root[data-design="starlight"] .sl-targets > li { border-bottom: 1px solid var(--sl-line); }
-:root[data-design="starlight"] .sl-tg { position: relative; width: 100%; display: grid; grid-template-columns: 64px minmax(0, 1fr) 170px 24px; align-items: center; gap: 24px; padding: 26px 10px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; text-decoration: none; }
-:root[data-design="starlight"] .sl-tg-n { font: 500 11.5px/1 var(--sl-m); letter-spacing: .12em; color: var(--sl-dim); }
-:root[data-design="starlight"] .sl-tg-b { display: grid; gap: 6px; min-width: 0; }
-:root[data-design="starlight"] .sl-tg-t { font: 600 clamp(24px, 2.5vw, 34px)/1.02 var(--sl-d); letter-spacing: .01em; text-transform: uppercase; color: var(--sl-fg); transition: color 160ms ease, text-shadow 220ms ease; }
-:root[data-design="starlight"] .sl-tg-h { font-size: 16px; line-height: 1.45; color: var(--sl-mut); }
-:root[data-design="starlight"] .sl-tg-ir { display: inline-flex; align-items: center; gap: 7px; font: 500 11px/1.3 var(--sl-m); letter-spacing: .08em; text-transform: uppercase; color: var(--sl-ph); }
-:root[data-design="starlight"] .sl-tg-ir .ic { width: 12px; height: 12px; }
-:root[data-design="starlight"] .sl-tg-k { font: 500 11px/1.3 var(--sl-m); letter-spacing: .12em; text-transform: uppercase; color: var(--sl-mut); }
-:root[data-design="starlight"] .sl-tg-go { color: var(--sl-dim); transition: color 160ms ease, transform 200ms var(--ease-out); }
-:root[data-design="starlight"] .sl-tg-go .ic { width: 18px; height: 18px; }
-:root[data-design="starlight"] .sl-lock { position: absolute; inset: 8px -6px; pointer-events: none; opacity: 0; transform: scale(1.025); transition: opacity 160ms ease, transform 260ms var(--ease-out); }
-:root[data-design="starlight"] .sl-lock i { position: absolute; width: 14px; height: 14px; border: 1.5px solid var(--sl-ph); }
-:root[data-design="starlight"] .sl-lock i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; }
-:root[data-design="starlight"] .sl-lock i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; }
-:root[data-design="starlight"] .sl-lock i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; }
-:root[data-design="starlight"] .sl-lock i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; }
-:root[data-design="starlight"] .sl-tg:focus-visible { outline: 0; }
-:root[data-design="starlight"] .sl-tg:focus-visible .sl-lock { opacity: 1; transform: none; }
-@media (hover: hover) and (pointer: fine) {
-  :root[data-design="starlight"] .sl-tg:hover .sl-lock { opacity: 1; transform: none; }
-  :root[data-design="starlight"] .sl-tg:hover .sl-tg-t { color: var(--sl-ph); text-shadow: 0 0 18px var(--sl-glow2); }
-  :root[data-design="starlight"] .sl-tg:hover .sl-tg-go { color: var(--sl-ph); transform: translate(2px, -2px); }
-}
 
 /* 03 sky chart: the knowledge graph as a star chart */
 
@@ -291,12 +266,7 @@
   :root[data-design="starlight"] .sl-acts { gap: 8px; }
   :root[data-design="starlight"] .sl-acts .sl-btn { flex: 1 1 auto; padding: 0 16px; }
   :root[data-design="starlight"] .sl-sec { padding-top: 96px; padding-bottom: 96px; }
-  :root[data-design="starlight"] .sl-tg { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px 14px; padding: 22px 4px; }
-  :root[data-design="starlight"] .sl-tg-n { grid-column: 1; }
-  :root[data-design="starlight"] .sl-tg-b { grid-column: 1; }
-  :root[data-design="starlight"] .sl-tg-k { grid-column: 1; }
-  :root[data-design="starlight"] .sl-tg-go { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
-  :root[data-design="starlight"] .sl-lock { inset: 6px -4px; }
+
   :root[data-design="starlight"] .sl-toys { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   :root[data-design="starlight"] .sl-toy { min-height: 0; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 16px; padding: 18px; }
   :root[data-design="starlight"] .sl-toy-ch { grid-column: 1 / -1; }
@@ -321,7 +291,7 @@
 :root[data-design="starlight"].lite .sl-hot, :root[data-design="starlight"].lite .agent-bar:focus-within { box-shadow: none; }
 
 /* the IR light is a pointer effect: keyboard focus, hover and calm modes always show the annotations in full */
-:root[data-design="starlight"] .sl-tg:focus-visible .sl-ir, :root[data-design="starlight"] .sl-tg:hover .sl-ir { opacity: 1; }
+
 @media (prefers-reduced-motion: reduce) {
   :root[data-design="starlight"] .sl-ir { opacity: .85; }
   :root[data-design="starlight"] .sl-ring { display: none; }

@@ -45,9 +45,7 @@ const put = (g: Grid, x: number, y: number, v: string) => { x = Math.round(x); y
 const line = (g: Grid, x0: number, y0: number, x1: number, y1: number, v: string) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= n; i++) put(g, x0 + ((x1 - x0) * i) / n, y0 + ((y1 - y0) * i) / n, v); };
 const poly = (g: Grid, pts: number[][], v: string) => { for (let i = 1; i < pts.length; i++) line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], v); };
 const disc = (g: Grid, cx: number, cy: number, r: number, v: string) => { for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) if (Math.hypot(x - cx, y - cy) <= r + 0.15) put(g, x, y, v); };
-const ring = (g: Grid, cx: number, cy: number, r: number, v: string) => { for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) if (Math.abs(Math.hypot(x - cx, y - cy) - r) < 0.5) put(g, x, y, v); };
 const rectF = (g: Grid, x: number, y: number, w: number, h: number, v: string) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) put(g, x + i, y + j, v); };
-const rectO = (g: Grid, x: number, y: number, w: number, h: number, v: string) => { line(g, x, y, x + w - 1, y, v); line(g, x, y + h - 1, x + w - 1, y + h - 1, v); line(g, x, y, x, y + h - 1, v); line(g, x + w - 1, y, x + w - 1, y + h - 1, v); };
 const rng = (seed: number) => { let s = (seed * 2654435761) >>> 0 || 1; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
 
 /** Merges same-valued horizontal runs into rects; `map` turns semantic values into classes. */
@@ -80,15 +78,7 @@ function fbm1(seed: number, period: number) { const o = [noise(seed, period), no
 const TONE = ["s", "m", "p", "w"];
 /** Quantises a value into one tone or a checker between two. */
 function tone(v: number) { const x = Math.max(0, Math.min(0.999, v)) * 3, lo = Math.floor(x), fr = x - lo; return fr < 0.34 ? TONE[lo] : fr < 0.66 ? "k" + lo + (lo + 1) : TONE[lo + 1]; }
-/** A tile of pixel sky (w×h cells) whose clouds repeat every `period` cells horizontally. */
-function skyTileGrid(seed: number, w: number, h: number, period: number, bias = 0, grad = 0) {
-  const g = grid(w, h), N = fbm1(seed, period / 8);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) put(g, x, y, tone((N(x / 8, y / 8) - 0.42) * 2.1 + bias + grad * (y / h - 0.5)));
-  return g;
-}
 const MAPSKY: Map = { s: "p0", m: "p1", p: "p2", w: "p3", k01: "k01", k12: "k12", k23: "k23" };
-/** A sky tile as SVG. */
-export const skyTile = (seed: number, w: number, h: number, period: number, bias = 0, grad = 0, cls = "") => svg(skyTileGrid(seed, w, h, period, bias, grad), MAPSKY, cls);
 
 /** A stepped pixel-cloud edge: white page on top melting into sky below (flip for the reverse). */
 export function edgeSvg(seed: number, flip: boolean) {
@@ -113,25 +103,6 @@ export function cloud(seed: number, w = 22, h = 9, map: Map = { w: "p3", p: "p2"
   for (let x = 0; x < w; x++) for (let y = h - 1; y >= 0; y--) { if (g.c[y * w + x] === "w") { if (y === h - 1 || (y === h - 2 && (x + y) % 2)) g.c[y * w + x] = "p"; break; } }
   return svg(g, map);
 }
-
-/* ───────── pixel icons: one per project and per toy (16×12) ───────── */
-const ICONS: Record<string, (g: Grid) => void> = {
-  "mind-controlled-arm": (g) => { rectF(g, 1, 10, 8, 2, "a"); rectF(g, 3, 9, 4, 1, "b"); rectF(g, 4, 4, 2, 5, "a"); disc(g, 4.5, 3.5, 1.2, "y"); line(g, 5, 3, 10, 3, "a"); line(g, 5, 4, 10, 4, "a"); disc(g, 10.5, 3.5, 1, "y"); line(g, 11, 2, 13, 0, "a"); line(g, 12, 2, 14, 1, "a"); line(g, 11, 5, 13, 7, "a"); line(g, 12, 5, 14, 6, "a"); },
-  boilerframe: (g) => { rectO(g, 0, 0, 16, 12, "a"); for (let x = 2; x < 15; x += 3) { put(g, x, 1, "b"); put(g, x, 10, "b"); } disc(g, 7.5, 5.5, 2.1, "y"); [[4, 3], [11, 3], [4, 8], [11, 8]].forEach(([x, y]) => { put(g, x, y, "a"); put(g, x + (x < 8 ? 1 : -1), y, "a"); put(g, x, y + (y < 6 ? 1 : -1), "a"); }); },
-  "eeg-thought-prediction": (g) => { let py = 6; for (let x = 0; x < 16; x++) { const y = Math.round(6 - 4 * Math.sin(x * 0.85) * (x % 5 === 2 ? 1.1 : 0.8)); line(g, x - 1 < 0 ? 0 : x - 1, py, x, y, "a"); py = y; } line(g, 0, 11, 15, 11, "b"); put(g, 2, 9, "y"); put(g, 1, 10, "y"); put(g, 3, 10, "y"); put(g, 13, 9, "y"); put(g, 12, 10, "y"); put(g, 14, 10, "y"); },
-  "citizen-happiness": (g) => { rectF(g, 2, 8, 2, 4, "b"); rectF(g, 6, 6, 2, 6, "b"); rectF(g, 10, 4, 2, 8, "b"); line(g, 0, 9, 13, 2, "a"); disc(g, 14, 1.5, 1.2, "y"); },
-  qrify: (g) => { const r = rng(7); for (let y = 0; y < 12; y++) for (let x = 2; x < 14; x++) if (r() > 0.55) put(g, x, y, "b"); [[2, 0], [9, 0], [2, 7]].forEach(([x, y]) => { rectF(g, x, y, 5, 5, ""); rectO(g, x, y, 5, 5, "a"); put(g, x + 2, y + 2, "a"); }); put(g, 11, 9, "y"); put(g, 12, 9, "y"); put(g, 11, 10, "y"); },
-  "habitat-humanity-ecomm": (g) => { line(g, 1, 6, 7, 0, "a"); line(g, 8, 0, 14, 6, "a"); rectO(g, 3, 6, 10, 6, "a"); rectF(g, 7, 8, 2, 4, "y"); put(g, 5, 8, "b"); put(g, 10, 8, "b"); put(g, 13, 1, "a"); put(g, 13, 2, "a"); },
-  records: (g) => { disc(g, 7.5, 5.5, 5.6, "a"); ring(g, 7.5, 5.5, 4, "b"); disc(g, 7.5, 5.5, 1.6, "y"); put(g, 7, 5, "b"); put(g, 8, 6, "b"); put(g, 15, 0, "a"); line(g, 15, 0, 12, 5, "a"); },
-  artboard: (g) => { poly(g, [[1, 9], [3, 4], [5, 8], [7, 3]], "a"); poly(g, [[14, 9], [12, 4], [10, 8], [8, 3]], "a"); for (let y = 0; y < 12; y += 2) { put(g, 7.5, y, "b"); } put(g, 7, 3, "y"); put(g, 8, 3, "y"); },
-  typeracer: (g) => { rectO(g, 0, 2, 16, 9, "a"); for (let y = 4; y <= 6; y += 2) for (let x = 2; x < 14; x += 2) put(g, x + (y === 6 ? 1 : 0), y, "b"); line(g, 4, 8, 11, 8, "a"); put(g, 13, 4, "y"); },
-  angle: (g) => { line(g, 1, 10, 15, 10, "a"); line(g, 1, 10, 10, 1, "a"); for (let a = 0; a <= 45; a += 6) put(g, 1 + 6 * Math.cos((a * Math.PI) / 180), 10 - 6 * Math.sin((a * Math.PI) / 180), "y"); },
-  dots: (g) => { const r = rng(3); for (let i = 0; i < 14; i++) put(g, 1 + r() * 14, 1 + r() * 10, i % 4 ? "a" : "y"); },
-  center: (g) => { for (let x = 0; x < 16; x += 2) { put(g, x, 0, "b"); put(g, x, 11, "b"); } for (let y = 0; y < 12; y += 2) { put(g, 0, y, "b"); put(g, 15, y, "b"); } rectF(g, 5, 3, 6, 6, "a"); put(g, 7, 5, "y"); put(g, 8, 6, "y"); put(g, 8, 5, "y"); put(g, 7, 6, "y"); },
-};
-export const ON_SKY: Map = { a: "p3", b: "p2", y: "ps" }, ON_PALE: Map = { a: "p0", b: "p1", y: "ps" }, ON_SUN: Map = { a: "pi", b: "p3", y: "p3" };
-/** A project's or toy's 16×12 icon (blank for an unknown key, e.g. a newly added project). */
-export const icon16 = (key: string, map: Map, cls = "") => { const g = grid(16, 12); ICONS[key]?.(g); return svg(g, map, cls); };
 
 export type GlyphKind = "sun" | "moon" | "part" | "bolt";
 /** Tiny 9×9 weather glyphs for the forecast card. */

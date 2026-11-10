@@ -25,7 +25,6 @@ export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (sl
     const $$ = <T extends Element>(s: string) => Array.from(el.querySelectorAll<T>(s));
     const offs: (() => void)[] = [];
     const on = (t: EventTarget | null, ev: string, fn: EventListener, o?: AddEventListenerOptions) => { if (!t) return; t.addEventListener(ev, fn, o); offs.push(() => t.removeEventListener(ev, fn, o)); };
-    const fine = () => matchMedia("(hover: hover) and (pointer: fine)").matches;
 
     /* hero card: springs toward the pointer; the same pose drives the glare and the lenticular strip */
     const hero = $<HTMLElement>(".ly-hero"), wrap = $<HTMLElement>(".fo-hero-card"), tilt = $<HTMLElement>("#fo-tilt"), lent = $<HTMLElement>("#fo-lent");
@@ -102,23 +101,7 @@ export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (sl
     }
     const introT = setTimeout(intro, 700);
 
-    /* project cards: a few degrees of tilt and a sliding holo layer while hovered (fine pointers only) */
-    const set = $<HTMLElement>("#fo-set");
-    let cRaf = 0, cEv: PointerEvent | null = null;
-    const cardMove = () => {
-      cRaf = 0; const e = cEv; if (!e) return;
-      const c = (e.target as Element | null)?.closest?.<HTMLElement>(".fo-pc"); if (!c) return;
-      const r = c.parentElement!.getBoundingClientRect();
-      c.style.setProperty("--dx", ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
-      c.style.setProperty("--dy", ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
-    };
-    on(set, "pointermove", (e) => { if (calm() || !fine()) return; cEv = e as PointerEvent; if (!cRaf) cRaf = requestAnimationFrame(cardMove); }, { passive: true });
-    on(set, "pointerout", (ev) => {
-      const e = ev as PointerEvent, c = (e.target as Element).closest<HTMLElement>(".fo-pc");
-      if (c && !c.contains(e.relatedTarget as Node | null)) { c.style.removeProperty("--dx"); c.style.removeProperty("--dy"); }
-    });
-
-    /* datamosh: streaks pixel-sort out of the clicked card, then the case sheet rises over them */
+    /* datamosh: streaks pixel-sort out of the clicked project, then the case sheet rises over them */
     const mosh = $<HTMLElement>(".fo-mosh");
     let moshT: ReturnType<typeof setTimeout>[] = [];
     function openWithMosh(card: HTMLElement, slug: string) {
@@ -144,14 +127,14 @@ export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (sl
       moshT.push(setTimeout(() => { mosh.hidden = true; mosh.innerHTML = ""; card.classList.remove("is-mosh"); }, 980));
     }
     on(el, "click", (ev) => {
-      const e = ev as MouseEvent, c = (e.target as Element).closest<HTMLElement>("[data-fo-case]");
+      const e = ev as MouseEvent, c = (e.target as Element).closest<HTMLElement>(".wk [data-case]");
       if (!c || e.metaKey || e.ctrlKey || e.shiftKey) return;
-      e.preventDefault(); openWithMosh(c, c.dataset.foCase!);
+      e.preventDefault(); e.stopPropagation(); openWithMosh(c, c.dataset.case!); // stop: SiteProvider would open it at once
     });
 
     return () => {
       offs.forEach((f) => f()); io.disconnect(); clearTimeout(introT); stopIntro();
-      cancelAnimationFrame(S.raf); cancelAnimationFrame(gRaf); cancelAnimationFrame(cRaf); moshT.forEach(clearTimeout);
+      cancelAnimationFrame(S.raf); cancelAnimationFrame(gRaf); moshT.forEach(clearTimeout);
     };
   }, [root]);
 }

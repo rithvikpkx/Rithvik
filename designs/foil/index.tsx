@@ -3,15 +3,13 @@
 // thin-film shader lives only on the holo card behind the hero portrait (its portrait backdrop), which tilts toward
 // the pointer; everything else is calm CSS that wakes on hover. html.lite and reduced motion leave a still card,
 // static foil gradients, no tilt, no glare and no datamosh.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Mark from "@/components/site/mark/Mark";
-import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
 import { XP } from "./experience";
@@ -20,7 +18,6 @@ import FoilPortrait from "./portrait-fx";
 import "./foil.css";
 
 const META = designById("foil")!;
-const pad = (n: number) => String(n).padStart(2, "0");
 
 // the exact mark silhouette (eye punched out) as a CSS mask over the foil texture
 const G = ouroPath();
@@ -29,32 +26,6 @@ const MASK_URL = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http
 /** Foil-stamped mark: the mark silhouette masking the foil layer, whose sheen slides with the pointer. */
 function Fm({ cls = "" }: { cls?: string }) {
   return <span className={`fo-fm${cls ? " " + cls : ""}`} role="img" aria-label="Rithvik Praveen Kumar"><i /></span>;
-}
-
-/** Work: the set, one holo trading card per project. */
-function Work({ content: C }: SectionProps) {
-  const total = pad(C.projects.length);
-  return (
-    <ul className="fo-set" id="fo-set">{C.projects.map((p, i) => (
-      <li key={p.slug} className="fo-pc-li">
-        <a className="fo-pc" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-fo-case={p.slug} style={{ "--h": `${(i * 57) % 360}deg`, "--hp": `${((i * 57) % 360) / 3.6}%` } as CSSProperties} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-          <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-          <span className="fo-pc-art" aria-hidden="true">
-            <span className="fo-pc-holo"><i /></span>
-            <span className="fo-pc-glit"><i /></span>
-            <span className="fo-pc-ic"><span className="fo-pc-ic-hi"><Icon name={p.icon} /></span><span className="fo-pc-ic-ink"><Icon name={p.icon} /></span></span>
-            <span className="fo-pc-wm"><Mark label="" /></span>
-          </span>
-          <span className="fo-pc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-          <span className="fo-pc-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-          <span className="fo-pc-stats">
-            <span><b>Stack</b>{p.tags.join(" · ")}</span>
-            <span><b>Context</b><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
-          </span>
-        </a>
-      </li>
-    ))}</ul>
-  );
 }
 
 
@@ -68,7 +39,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
   );
 }
 
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "foil",
   ...XP,
   rootClass: "fo",
@@ -78,7 +49,7 @@ const SKIN: Skin = {
   NameFx: FoilName,
   PortraitFx: FoilPortrait,
   ContactFrame,
-  sections: { work: Work },
+  projectArt: { palette: ["#121220", "#EEEAF6", "#B9A8FF", "#8BF0D3"], params: { hole: 0.36, rest: 4 } },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

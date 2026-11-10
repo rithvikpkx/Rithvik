@@ -2,6 +2,8 @@
 import type { ReactNode, Ref } from "react";
 import type { Content } from "@/lib/content/types";
 import { SECTIONS, SECTION_LABELS, type SectionId, type Skin } from "@/lib/designs/skin";
+import { designById } from "@/lib/designs/registry";
+import type { Palette } from "@/lib/art/art";
 import Mark from "@/components/site/mark/Mark";
 import Tether from "@/components/site/tether/Tether";
 import Header from "./Header";
@@ -27,6 +29,7 @@ export default function SiteLayout({ content: c, skin, rootRef, hero, portraitBa
   return (
     <div className={`ly ${skin.rootClass ?? ""}`.trim()} data-skin={skin.id} ref={rootRef}>
       <a className="skip" href="#work">Skip to content</a>
+      <style dangerouslySetInnerHTML={{ __html: artTokens(skin) }} />
       {children /* first, so fixed layers (the shader) paint beneath the page at equal z-index */}
       <Header name={c.name} skin={skin} />
       <main className="stage" id="stage" tabIndex={-1}>
@@ -37,6 +40,13 @@ export default function SiteLayout({ content: c, skin, rootRef, hero, portraitBa
     </div>
   );
 }
+
+/** A look's project-art palette: the skin's, else the registry swatch, else the page's own tokens (Classic). */
+export const artPalette = (skin: Skin): Palette =>
+  skin.projectArt?.palette ?? designById(skin.id)?.swatch ?? ["var(--ly-soft)", "var(--ui-fg)", "var(--ui-accent)", "var(--ui-muted)"];
+
+/** The palette as root tokens (--art-0..3), so the Work body and the case sheet (rendered outside this tree) agree. */
+const artTokens = (skin: Skin) => `:root[data-design="${skin.id}"]{${artPalette(skin).map((c, i) => `--art-${i}:${c}`).join(";")}}`;
 
 /** First screen: the name, the status and the one line under it, and the tethered portrait. */
 function Hero({ content: c, skin, backdrop, children }: { content: Content; skin: Skin; backdrop?: ReactNode; children?: ReactNode }) {

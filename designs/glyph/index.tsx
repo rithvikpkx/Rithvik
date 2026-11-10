@@ -5,7 +5,7 @@
 // and reduced motion turn the decode off and hold one still shader frame.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
+import type { SectionId, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
@@ -23,10 +23,6 @@ const PANE: Record<SectionId, [word: string, cmd: string]> = {
 };
 const HUE: Record<string, string> = { blue: "gl-hb", red: "gl-hr", amber: "" };
 
-/** A row of tag chips. */
-function Tags({ tags }: { tags: string[] }) {
-  return <span className="gl-tags">{tags.map((t) => <span key={t}>{t}</span>)}</span>;
-}
 
 /** The pane's tmux title bar: window number and name, then the command it runs. */
 function TitleBar({ id, index }: { id: SectionId; index: number }) {
@@ -39,32 +35,9 @@ function Title({ id, hid }: { id: SectionId; hid: string }) {
 }
 
 
-/** Work: a ranger-style file list with a live preview of the selected project. */
-function Work({ content: C }: SectionProps) {
-  const [sel, setSel] = useState(0);
-  return (
-    <div className="gl-ranger">
-      <ol className="gl-ls">{C.projects.map((p, i) => (
-        <li key={p.slug} id={`project-${p.slug}`}><button type="button" className="gl-row" data-case={p.slug} aria-current={i === sel ? "true" : undefined} onPointerEnter={() => setSel(i)} onFocus={() => setSel(i)}>
-          <span className="c-name"><span data-scr>{p.slug}</span>/</span><span className="c-kind">{p.kind.toLowerCase()}</span><span className="c-go" aria-hidden="true">⏎</span>
-        </button></li>
-      ))}</ol>
-      <div className="gl-prev">{C.projects.map((p, i) => (
-        <article className="gl-pv" key={p.slug} hidden={i !== sel}>
-          <h3 data-edit={`project:${p.slug}:title`}>{p.title}</h3>
-          <p className="gl-pv-head" data-edit={`project:${p.slug}:headline`}>{p.headline}</p>
-          <p className="gl-pv-d" data-edit={`project:${p.slug}:ctx`}>{p.ctx}</p>
-          <Tags tags={p.tags} />
-          <p className="gl-pv-acts"><button type="button" className="gl-btn gl-btn-hue" data-case={p.slug}><kbd>⏎</kbd>open case</button>{Object.entries(p.links).map(([k, v]) => <a key={k} className="gl-btn" href={v} target="_blank" rel="noopener">{k.toLowerCase()} ↗</a>)}</p>
-        </article>
-      ))}</div>
-    </div>
-  );
-}
 
 
-
-const SKIN: Skin = {
+export const SKIN: Skin = {
   id: "glyph",
   ...XP,
   rootClass: "gl",
@@ -74,7 +47,7 @@ const SKIN: Skin = {
   NameFx: GlyphName,
   PortraitFx: GlyphPortrait,
   contactLead: "$ sudo hire rithvik",
-  sections: { work: Work },
+  projectArt: { palette: ["#050505", "#EDEDED", "#FFC400", "#3BA4FF"], params: { hole: 0, rest: 0, lift: 14, stroke: 0.9 } },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */

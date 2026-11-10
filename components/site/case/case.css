@@ -19,6 +19,6 @@
 .case-next { display: grid; gap: 4px; width: 100%; margin-top: 56px; padding: 22px 0 0; border: 0; border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); background: none; color: var(--ui-fg, #f4f4f5); text-align: left; cursor: pointer; }
 .case-next span { font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); }
 .case-next b { font: 600 1.6rem/1.2 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); }
-/* case sheet: the project's generated studio object */
-.case-art { margin: 28px 0 0; border-radius: calc(var(--ui-r, 14px) * 1.2); overflow: hidden; background: #e9e6e1; aspect-ratio: 4 / 3; }
-.case-art img { width: 100%; height: 100%; object-fit: cover; }
+/* case sheet: the project's procedural art (lib/art) */
+.case-art { margin: 28px 0 0; border-radius: calc(var(--ui-r, 14px) * 1.2); overflow: hidden; background: var(--art-0, #e9e6e1); aspect-ratio: 4 / 3; }
+.case-art .art { display: block; width: 100%; height: 100%; }
