@@ -20,7 +20,9 @@
   /* portrait: the photo plain and square, heat flowing up the beams into it */
   --pt-ring: transparent; --pt-ring-w: 0px; --pt-photo-bg: #0B0F1A; --pt-photo-r: 2px; --pt-shadow: 0 40px 80px -40px rgba(0, 0, 0, .9);
   --pt-node-bg: #0A0E18; --pt-node-fg: var(--th-fg); --pt-node-line: var(--th-line2); --pt-node-r: 4px; --pt-node-size: 12.5%;
-  --pt-beam: rgba(150, 175, 210, .24); --pt-pulse-a: var(--rh1); --pt-pulse-b: var(--rh0); --pt-beam-w: 1.2; --pt-pulse-w: 2.4;
+  /* cable: near-black sheath with a warm rim (the iron palette's glow), white-hot pulse cooling to red */
+  --pt-sheath: #0A0E18; --pt-sheath-w: 4.5px; --pt-edge: rgba(255, 200, 140, .7); --pt-edge-w: 1.1px; --pt-sheen: rgba(255, 230, 190, .3); --pt-cap: butt;
+  --pt-core: #FFD9A0; --pt-glow: #FF9A2E; --pt-head: #FFFFFF; --pt-halo: .24; --pt-pulse-a: #FFF4D0; --pt-pulse-m: #FFB03B; --pt-pulse-b: #FF3D6E;
   /* knowledge graph */
   --kg-h: min(80vh, 780px); --kg-edge: rgba(150, 175, 210, .17); --kg-edge-lit: var(--th-hot); --kg-label: #D5DCE6; --kg-font: var(--th-mono);
   --kg-me: var(--th-hot); --kg-field: var(--k-field); --kg-project: var(--k-project); --kg-role: var(--k-role); --kg-school: var(--k-school); --kg-place: var(--k-place);
