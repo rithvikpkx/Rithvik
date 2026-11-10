@@ -1,0 +1,151 @@
+/* Look switcher: a small machined instrument on the bottom-left edge. Collapsed it is the bare knob (scaled
+   down); open, a brushed faceplate with the jewel ring, an LCD readout, the performance lever and the status
+   lamp. Only transforms and opacity animate. Tinted live from the look the knob is on (--sw-bg/fg/ac). */
+.sw {
+  --sw-metal: color-mix(in srgb, var(--sw-bg) 38%, #8e939a);
+  --sw-ink: color-mix(in srgb, var(--sw-ac) 72%, #fff);
+  position: fixed; left: 14px; bottom: max(14px, env(safe-area-inset-bottom, 0px)); z-index: 90;
+  width: 268px; height: 152px; pointer-events: none; /* the closed unit is only its knob */
+  font-family: var(--ui-mono); -webkit-tap-highlight-color: transparent;
+}
+/* where the agent bar spans the width (min(720px, 100vw - 32px)), sit just above it */
+@media (max-width: 820px) { .sw { bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 68px); } }
+
+.sw-plate {
+  position: absolute; inset: 0; border-radius: 24px; opacity: 0; transform: scale(.9); transform-origin: 76px 76px;
+  background:
+    radial-gradient(circle at 12px 12px, rgba(0,0,0,.45) 0 1.6px, rgba(255,255,255,.5) 2.2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 12px) 12px, rgba(0,0,0,.45) 0 1.6px, rgba(255,255,255,.5) 2.2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), rgba(0,0,0,.45) 0 1.6px, rgba(255,255,255,.5) 2.2px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px),
+    linear-gradient(165deg, color-mix(in srgb, var(--sw-metal) 62%, #fff) 0%, var(--sw-metal) 42%, color-mix(in srgb, var(--sw-metal) 72%, #000) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), inset 0 -1px 0 rgba(0,0,0,.35), 0 22px 44px -14px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.28);
+  transition: opacity 180ms ease, transform 340ms var(--ease-drawer);
+}
+.sw[data-open] .sw-plate { opacity: 1; transform: none; pointer-events: auto; }
+
+/* --- the dial: well, ticks, jewels, knob ------------------------------------------------------------------ */
+.sw-dial {
+  position: absolute; left: 10px; bottom: 10px; width: 132px; height: 132px; pointer-events: auto;
+  transform: scale(.5); transform-origin: 0 100%; touch-action: none;
+  transition: transform 420ms cubic-bezier(.34, 1.36, .5, 1); /* a little overshoot as it pops out */
+}
+.sw[data-open] .sw-dial { transform: none; }
+.sw-well {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle, transparent 60%, color-mix(in srgb, var(--sw-metal) 70%, #000) 61%, color-mix(in srgb, var(--sw-metal) 85%, #000) 100%);
+  box-shadow: inset 0 3px 8px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.35);
+  opacity: 0; transition: opacity 180ms ease;
+}
+.sw[data-open] .sw-well { opacity: 1; }
+.sw-ticks { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: 0; transition: opacity 180ms ease; }
+.sw-ticks line { stroke: color-mix(in srgb, var(--sw-fg) 55%, transparent); stroke-width: 1.2; stroke-linecap: round; }
+.sw[data-open] .sw-ticks { opacity: 1; }
+
+.sw-jewel {
+  --d: 7px;
+  position: absolute; left: 50%; top: 50%; width: var(--d); height: var(--d); margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+  padding: 0; border: 0; border-radius: 50%; cursor: pointer; pointer-events: none;
+  background: linear-gradient(135deg, var(--j-bg) 50%, var(--j-ac) 50%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.5), 0 1px 1px rgba(0,0,0,.35);
+}
+.sw-jewel.is-design { --d: 11px; }
+.sw-jewel::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; } /* bigger hit target */
+.sw-jewel.is-on { box-shadow: 0 0 0 2px var(--sw-ink), 0 0 10px 1px var(--sw-ac), inset 0 1px 1px rgba(255,255,255,.5); }
+.sw[data-open] .sw-jewel { pointer-events: auto; }
+.sw-jewel:hover { filter: brightness(1.15); }
+
+.sw-knob {
+  position: absolute; left: 24px; top: 24px; width: 84px; height: 84px; border-radius: 50%;
+  cursor: grab; touch-action: none; outline: none;
+}
+.sw-knob:active { cursor: grabbing; }
+.sw-knob:focus-visible { box-shadow: 0 0 0 3px var(--ui-bg, #000), 0 0 0 5px var(--sw-ink); }
+.sw-skirt, .sw-cap, .sw-ptr { position: absolute; border-radius: 50%; pointer-events: none; }
+/* knurled bakelite skirt: turns with the knob */
+.sw-skirt {
+  inset: 0; transform: rotate(var(--a));
+  background:
+    radial-gradient(circle, transparent 58%, rgba(0,0,0,.35) 100%),
+    repeating-conic-gradient(#17181b 0 4deg, #3b3e44 4deg 6deg, #17181b 6deg 10deg);
+  box-shadow: 0 8px 16px -4px rgba(0,0,0,.55), 0 2px 3px rgba(0,0,0,.45);
+}
+/* fixed light: the ridges glint as they pass under it */
+.sw-knob::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(from -60deg, rgba(255,255,255,.34), transparent 14%, transparent 46%, rgba(255,255,255,.16) 54%, transparent 64%);
+  -webkit-mask: radial-gradient(circle, transparent 61%, #000 62%); mask: radial-gradient(circle, transparent 61%, #000 62%);
+}
+/* machined aluminium cap: concentric turning marks, light from the upper left */
+.sw-cap {
+  inset: 11px; z-index: 1;
+  background:
+    repeating-radial-gradient(circle, rgba(255,255,255,.07) 0 1px, rgba(0,0,0,.05) 1px 2px),
+    radial-gradient(circle at 34% 28%, #fff 0, #e4e7eb 16%, #aeb3ba 54%, #80858d 100%);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,.35), inset 0 2px 3px rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.55);
+}
+.sw-ptr { inset: 0; z-index: 2; transform: rotate(var(--a)); }
+.sw-ptr::before {
+  content: ""; position: absolute; left: 50%; top: 14px; width: 3px; height: 20px; margin-left: -1.5px; border-radius: 2px;
+  background: var(--sw-ac); box-shadow: 0 0 0 1px rgba(0,0,0,.25), 0 0 8px var(--sw-ac);
+}
+
+/* --- right column: readout, lever, lamp ------------------------------------------------------------------ */
+.sw-side {
+  position: absolute; left: 152px; right: 14px; top: 16px; bottom: 14px; display: flex; flex-direction: column; gap: 10px;
+  opacity: 0; transform: translateX(-10px); transition: opacity 160ms ease, transform 300ms var(--ease-out);
+}
+.sw[data-open] .sw-side { opacity: 1; transform: none; pointer-events: auto; transition-delay: 60ms; }
+.sw-lcd {
+  display: flex; flex-direction: column; gap: 5px; justify-content: center; height: 52px; padding: 0 10px; border-radius: 9px;
+  background: linear-gradient(180deg, #0b0d0c, #151917); color: var(--sw-ink);
+  box-shadow: inset 0 2px 7px rgba(0,0,0,.85), inset 0 0 0 1px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.4);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--sw-ac) 65%, transparent); overflow: hidden;
+}
+.sw-lcd-k { font: 600 9px/1 var(--ui-mono); letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
+.sw-lcd-v { font-size: 15px; font-weight: 600; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sw-row { display: flex; align-items: center; justify-content: space-between; flex: 1; }
+
+/* performance lever: up = full effects, down = lite. The ball throws with an overshoot. */
+.sw-lever { position: relative; display: grid; place-items: center; width: 64px; height: 58px; padding: 0; border: 0; background: none; cursor: pointer; }
+.sw-lever::before, .sw-lever::after {
+  position: absolute; left: 40px; font: 700 8px/1 var(--ui-mono); letter-spacing: .12em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--sw-metal) 35%, #000); text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+.sw-lever::before { content: "fx"; top: 9px; }
+.sw-lever::after { content: "lite"; bottom: 9px; }
+.sw-lever[aria-checked="true"]::after, .sw-lever[aria-checked="false"]::before { color: var(--sw-ink); text-shadow: 0 0 6px var(--sw-ac); }
+.sw-slot {
+  position: relative; width: 12px; height: 44px; margin-right: 22px; border-radius: 6px;
+  background: linear-gradient(90deg, #0d0e10, #26282c 50%, #0d0e10);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.4);
+}
+.sw-bat {
+  position: absolute; left: -5px; top: -3px; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0, #dfe2e6 20%, #9aa0a8 60%, #6c7179 100%);
+  box-shadow: 0 5px 8px -2px rgba(0,0,0,.6), inset 0 -2px 3px rgba(0,0,0,.3);
+  transition: transform 320ms cubic-bezier(.3, 1.8, .5, 1);
+}
+.sw-lever[aria-checked="true"] .sw-bat { transform: translateY(26px); }
+.sw-lever:active .sw-bat { scale: .94; }
+.sw-lever:focus-visible { outline: 2px solid var(--sw-ink); outline-offset: 2px; border-radius: 10px; }
+
+/* status lamp: a lens in a bezel, links to /status */
+.sw-lamp {
+  display: grid; place-items: center; width: 26px; height: 26px; margin-right: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f4f5f7, #9ba0a7 70%, #6d727a);
+  box-shadow: 0 1px 2px rgba(0,0,0,.5), inset 0 -1px 1px rgba(0,0,0,.3);
+}
+.sw-lamp i {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #c9ccd0, #55595f); box-shadow: inset 0 1px 2px rgba(0,0,0,.6);
+  transition: background 300ms ease, box-shadow 300ms ease;
+}
+.sw-lamp[data-state="ok"] i { background: radial-gradient(circle at 35% 30%, #d8ffd9, #3fb950 55%, #1f6f2b); box-shadow: 0 0 8px 1px #3fb950; }
+.sw-lamp[data-state="down"] i { background: radial-gradient(circle at 35% 30%, #ffd9d9, #ff5a5a 55%, #8f1f1f); box-shadow: 0 0 8px 1px #ff5a5a; }
+.sw-lamp:focus-visible { outline: 2px solid var(--sw-ink); outline-offset: 2px; }
+
+/* reduced motion: the unit appears in place instead of popping or sliding; the lever just changes position */
+@media (prefers-reduced-motion: reduce) {
+  .sw-plate, .sw-dial, .sw-side, .sw-bat { transition-property: opacity; }
+}
