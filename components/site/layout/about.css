@@ -16,7 +16,7 @@
 @keyframes ab-live { 50% { opacity: .25; } }
 
 /* the playground: logo tiles you can toss */
-.ab-play { position: relative; height: clamp(300px, 34vw, 420px); overflow: hidden; border-radius: 28px; background: var(--ly-soft); box-shadow: inset 0 0 0 1px var(--ly-line); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.ab-play { position: relative; height: clamp(260px, 26vw, 340px); overflow: hidden; border-radius: 28px; background: var(--ly-soft); box-shadow: inset 0 0 0 1px var(--ly-line); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .ab-chips { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
 .ab-chip { position: absolute; left: 0; top: 0; display: grid; place-items: center; border-radius: 30%; background: var(--ui-bg); color: var(--ui-fg); box-shadow: 0 0 0 1px var(--ly-line), 0 6px 14px -8px color-mix(in srgb, var(--ui-fg) 45%, transparent); cursor: grab; touch-action: none; will-change: transform; }
 .ab-chip[data-held] { cursor: grabbing; z-index: 2; box-shadow: 0 0 0 1px var(--ui-accent), 0 14px 26px -10px color-mix(in srgb, var(--ui-fg) 55%, transparent); }

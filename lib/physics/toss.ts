@@ -4,14 +4,15 @@
 export type Body = { x: number; y: number; vx: number; vy: number; r: number; held?: boolean };
 export type World = { w: number; h: number; gravity?: number; bounce?: number; drag?: number };
 
-const SLEEP_SPEED = 48; // px/s: resting contacts jitter at about gravity * dt (~30), so go above that
+const SLEEP_SPEED = 48; // px/s: a body on the floor still twitches by about gravity * dt^2 per frame
 
-/** Advances every free body by `dt` seconds (call with dt <= 1/30) and returns the fastest speed afterwards;
+/** Advances every free body by `dt` seconds (call with dt <= 1/30) and returns the fastest displacement speed;
  *  below ~48 px/s the world has settled and the caller can stop its frame loop. A held body is moved by the
  *  pointer, not by the step, but it still pushes the others away. */
 export function step(bodies: Body[], world: World, dt: number): number {
   const { w, h, gravity = 1800, bounce = 0.42, drag = 0.6 } = world;
   const damp = Math.exp(-drag * dt);
+  const from = bodies.map((b) => [b.x, b.y]); // speed is measured by how far a body really moved: a resting stack keeps a gravity-sized velocity that collisions cancel
   for (const b of bodies) {
     if (b.held) continue;
     b.vy += gravity * dt;
@@ -53,17 +54,25 @@ export function step(bodies: Body[], world: World, dt: number): number {
     }
   }
   let fastest = 0;
-  for (const b of bodies) if (!b.held) fastest = Math.max(fastest, Math.hypot(b.vx, b.vy));
+  bodies.forEach((b, i) => { if (!b.held) fastest = Math.max(fastest, Math.hypot(b.x - from[i][0], b.y - from[i][1]) / dt); });
   return fastest;
 }
 
 /** True when nothing is moving fast enough to need another frame. */
 export const asleep = (speed: number) => speed < SLEEP_SPEED;
 
+/** A stateful asleep check: true only after `frames` slow frames in a row, because a pile released at rest
+ *  gains less than the threshold in its first frame or two but is still about to fall. */
+export function sleeper(frames = 12) {
+  let n = 0;
+  return (speed: number) => (asleep(speed) ? ++n >= frames : ((n = 0), false));
+}
+
 /** Runs the world until it settles (or `max` steps) without drawing; used for the static arrangement. */
 export function settle(bodies: Body[], world: World, max = 900): number {
   let n = 0;
-  while (n++ < max && !asleep(step(bodies, world, 1 / 60)));
+  const done = sleeper();
+  while (n++ < max && !done(step(bodies, world, 1 / 60)));
   rest(bodies);
   return n;
 }

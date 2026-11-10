@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { Logo } from "@/components/site/Glyph";
 import { LOGOS } from "@/lib/assets/icons";
-import { asleep, rest, settle, step, type Body } from "@/lib/physics/toss";
+import { rest, settle, sleeper, step, type Body } from "@/lib/physics/toss";
 
 /** Stack name → Simple Icons slug, for the names we have a logo for; anything else gets a monogram tile. */
 const SLUG: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama", PostgreSQL: "postgresql", GitHub: "github" };
@@ -32,6 +32,7 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
     const cols = Math.max(1, Math.floor(world.w / (r * 2 + 6)));
     bodies.forEach((b, i) => { b.x = r + 3 + (i % cols) * (r * 2 + 6) + (Math.floor(i / cols) % 2) * 6; b.y = r + 38 + Math.floor(i / cols) * (r * 2 + 6); });
 
+    const sleepy = sleeper();
     let raf = 0, last = 0, running = false, held: { b: Body; dx: number; dy: number; trail: [number, number, number][] } | null = null;
     const frame = (t: number) => {
       const dt = Math.min(1 / 30, last ? (t - last) / 1000 : 1 / 60);
@@ -39,10 +40,10 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
       for (const b of bodies) { const s = Math.hypot(b.vx, b.vy); if (s > MAX_SPEED) { b.vx *= MAX_SPEED / s; b.vy *= MAX_SPEED / s; } }
       step(bodies, world, dt / 2); const speed = step(bodies, world, dt / 2); // two substeps keep fast tosses from tunnelling
       place();
-      if (held || !asleep(speed)) raf = requestAnimationFrame(frame);
+      if (held || !sleepy(speed)) raf = requestAnimationFrame(frame);
       else { running = false; rest(bodies); }
     };
-    const wake = () => { if (!running) { running = true; last = 0; raf = requestAnimationFrame(frame); } };
+    const wake = () => { if (!running) { running = true; last = 0; sleepy(Infinity); raf = requestAnimationFrame(frame); } };
 
     if (calm) { settle(bodies, world); place(); } else place();
 

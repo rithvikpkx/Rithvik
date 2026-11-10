@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { asleep, settle, step, type Body } from "./toss.ts";
+import { asleep, settle, sleeper, step, type Body } from "./toss.ts";
 
 const world = { w: 400, h: 300 };
 const pile = (n: number, r = 28): Body[] => Array.from({ length: n }, (_, i) => ({ x: 40 + (i % 6) * 62, y: r + Math.floor(i / 6) * 60, vx: 0, vy: 0, r }));
@@ -39,4 +39,14 @@ test("identical centres do not produce NaN", () => {
   const a: Body = { x: 100, y: 100, vx: 0, vy: 0, r: 20 }, b: Body = { ...a };
   step([a, b], world, 1 / 60);
   assert.ok([a.x, a.y, b.x, b.y].every(Number.isFinite));
+});
+
+test("a pile released at rest does not fall asleep before it has had time to fall", () => {
+  const bodies = pile(6);
+  const done = sleeper(12);
+  const speeds: number[] = [];
+  for (let i = 0; i < 30; i++) speeds.push(step(bodies, world, 1 / 60));
+  assert.ok(asleep(speeds[0]), "the first frame alone looks slow");
+  assert.ok(!speeds.slice(0, 12).every((s) => done(s)), "but the sleeper waits for several slow frames in a row");
+  assert.ok(bodies.every((b) => b.y > b.r + 5), "and the bodies are on their way down");
 });

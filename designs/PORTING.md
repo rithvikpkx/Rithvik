@@ -39,6 +39,8 @@ type Skin = {
   PortraitFx?: ComponentType<{ on: boolean }>;          // inside the photo; `on` flips per click
   ExperienceConnector?: ComponentType<{ index; count }>;// between roles in the shared Experience body
   EducationObject?: ComponentType<{ education }>;       // replaces the shared education row; keep edu:* keys
+  ContactFrame?: ComponentType<{ children: ReactNode }>;  // wraps the shared Contact copy + buttons (seal, dark room, heat strip)
+  contactLead?: string;                                 // one themed line above the Contact headline
   projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
 };
 ```
@@ -59,8 +61,10 @@ Every field is optional: a new design can start as `{ id, rootClass }` plus CSS 
 - **S9 Name + portrait**: `NameFx` per design (Stipple, Glyph, Prism, Tracker already use it); `PortraitFx`
   per design (Tether renders it inside `.pt-photo` and toggles `on` per click; the shader goes through the
   one context in `lib/shader/`).
-- **S10 Questions, Contact, About**: shared bodies in `sections.tsx`; remove per-design overrides as the
-  shared ones land. Copy lives in content or the bodies, never in the layout.
+- **S10 Questions, Contact, About** (done): shared bodies `layout/Questions.tsx` (3 flip cards + an ask card that
+  hands off to the agent dock), `layout/About.tsx` (now tiles, places with clocks, stack toss playground, counters),
+  `layout/Contact.tsx` (every button opens the composer; the address only shows inside it). A look themes them with
+  tokens (`--ly-contact-text/-mx/-just` to centre Contact), `ContactFrame` and `contactLead`; no per-look bodies.
 
 ## Theming with CSS only
 - Shared tokens every design sets on `:root[data-design="<id>"]`: `--ui-bg/fg/muted/accent/line/field/font/mono`
