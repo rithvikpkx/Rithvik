@@ -193,3 +193,4 @@ html.lite .ly-hero-copy > * { animation: none; }
 .ly-foot-mini nav { display: inline-flex; gap: 6px; font-size: 11px; }
 .ly-foot-mini nav a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
 .ly-foot-mini nav a:hover { color: var(--ui-fg); }
+@media (max-width: 640px) { .ly-foot { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); } } /* clear the agent bar and the switcher knob */
