@@ -2,7 +2,7 @@
 // Nimbus: a bright, airy sky world. A skin on the shared layout (designs/PORTING.md). The shader clouds live only in
 // the hero (the sun rides the visitor's hour); pixel clouds elsewhere are static and move only on interaction (card
 // hover, band clouds fleeing the pointer, stamp hover) or as slow drifts while their section is on screen.
-// html.lite and reduced motion stop the trail, drifts and drop-shadow filters, leaving a designed still.
+// html.lite and reduced motion stop the drifts and drop-shadow filters, leaving a designed still.
 import { useMemo, useRef } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { Skin } from "@/lib/designs/skin";
@@ -43,7 +43,6 @@ export default function Nimbus({ content }: DesignProps) {
   return (
     <SiteLayout content={content} skin={SKIN} rootRef={root} hero={<div className="nb-sky" id="nb-sky" aria-hidden="true" />}>
       <svg className="nb-defs" width="0" height="0" aria-hidden="true" focusable="false" dangerouslySetInnerHTML={{ __html: DEFS }} />
-      <div className="nb-trail" aria-hidden="true">{Array.from({ length: 14 }, (_, i) => <i key={i} />)}</div>
       <ShaderCanvas spec={spec} dark={false} />
     </SiteLayout>
   );

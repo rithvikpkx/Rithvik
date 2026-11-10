@@ -4,7 +4,7 @@ import { useEffect, type RefObject } from "react";
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
-/** The mockup's mount(): section liveness, pointer-shy band clouds and the cursor trail. Everything it adds is
+/** The mockup's mount(): section liveness, pointer-shy band clouds. Everything it adds is
  *  removed on unmount (design switch). */
 export function useNimbusMotion(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -42,21 +42,6 @@ export function useNimbusMotion(root: RefObject<HTMLElement | null>) {
       on(band, "pointerleave", () => { bp = null; if (!braf) braf = requestAnimationFrame(bstep); });
     }
 
-    // a light trail of pixel puffs behind the pointer (mouse only, never when calm)
-    const pool = $$<HTMLElement>(".nb-trail i");
-    let lastT = 0, lx = -99, ly = -99, pi = 0;
-    if (fine && pool.length) {
-      on(window, "pointermove", (ev) => {
-        const e = ev as PointerEvent;
-        if (calm() || e.pointerType !== "mouse") return;
-        const now = performance.now(); if (now - lastT < 40 || Math.hypot(e.clientX - lx, e.clientY - ly) < 22) return;
-        lastT = now; lx = e.clientX; ly = e.clientY;
-        const p = pool[pi++ % pool.length], x = Math.round(e.clientX / 4) * 4 + 8, y = Math.round(e.clientY / 4) * 4 + 10;
-        p.getAnimations().forEach((a) => a.cancel());
-        p.animate([{ transform: `translate(${x}px, ${y}px) scale(1)`, opacity: 0.95 }, { transform: `translate(${x + 6}px, ${y - 22}px) scale(.4)`, opacity: 0 }], { duration: 720, easing: "steps(6, end)", fill: "forwards" });
-      }, { passive: true });
-    }
-
-    return () => { offs.forEach((f) => f()); io.disconnect(); cancelAnimationFrame(braf); pool.forEach((p) => p.getAnimations().forEach((a) => a.cancel())); };
+    return () => { offs.forEach((f) => f()); io.disconnect(); cancelAnimationFrame(braf); };
   }, [root]);
 }

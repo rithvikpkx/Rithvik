@@ -196,9 +196,6 @@
 /* ───────── footer: the giant hatched mark ───────── */
 @media (hover: hover) and (pointer: fine) { :root[data-design="nimbus"] .nb-foot-nav a:hover { color: var(--nb-skyink); } }
 
-/* cursor trail: three-pixel puffs */
-:root[data-design="nimbus"] .nb-trail { position: fixed; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
-:root[data-design="nimbus"] .nb-trail i { position: absolute; left: 0; top: 0; width: 4px; height: 4px; opacity: 0; background: var(--nb-mid); box-shadow: 4px 0 0 var(--nb-mid), 8px 0 0 var(--nb-pale), 4px -4px 0 var(--nb-pale), 0 -4px 0 var(--nb-pale); }
 
 /* ───────── responsive ───────── */
 @media (max-width: 900px) {
@@ -226,7 +223,6 @@
   :root[data-design="nimbus"] .nb-wx-c { font-size: 12px; gap: 5px; }
 }
 /* ───────── performance mode: a designed still ───────── */
-:root[data-design="nimbus"].lite .nb-trail { display: none; }
 :root[data-design="nimbus"].lite .nb-stamp { filter: none; box-shadow: none; }
 :root[data-design="nimbus"].lite .nb-stamp-in { box-shadow: inset 0 0 0 2px var(--nb-pale); }
 :root[data-design="nimbus"].lite { --ui-blur: none; }

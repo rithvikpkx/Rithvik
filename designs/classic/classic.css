@@ -16,7 +16,7 @@
   /* layout */
   --ly-soft: var(--bg-soft); --ly-line: var(--cl-line);
   --ly-head-bg: color-mix(in srgb, var(--bg) 84%, transparent);
-  --ly-name-style: italic; --ly-name-weight: 400; --ly-name-track: -.03em;
+  --ly-name-weight: 500; --ly-name-track: -.035em; /* upright sans: the owner found the italic serif too ornate */
   /* portrait */
   --pt-photo-bg: var(--bg-soft); --pt-ring: var(--cl-line); --pt-ring-w: 1px; --pt-shadow: 0 24px 60px -28px rgba(0, 0, 0, .4);
   --pt-node-bg: var(--bg); --pt-node-fg: var(--text); --pt-node-line: var(--cl-line-strong); --pt-node-size: 12.5%;
@@ -38,7 +38,6 @@
   & body { background: var(--bg); color: var(--text); font: 400 16px/1.65 var(--ui-font); scrollbar-color: var(--cl-line-strong) transparent; }
   & ::selection { background: color-mix(in srgb, var(--accent) 24%, transparent); }
   & :focus-visible { outline-color: var(--accent); }
-  & .cl { --ly-name-font: var(--cl-serif), "Iowan Old Style", Georgia, serif; } /* next/font defines --cl-serif on .cl */
   & .ly-nav { padding: 4px; border-radius: 999px; border: 1px solid var(--cl-line); background: color-mix(in srgb, var(--bg-soft) 86%, transparent); }
   & .ly-head-r .ly-iam { background: color-mix(in srgb, var(--bg-soft) 86%, transparent); }
 }
