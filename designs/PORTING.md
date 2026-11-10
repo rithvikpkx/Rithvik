@@ -50,8 +50,10 @@ control), `portraitBackdrop` (behind the hero portrait, in its box: Foil's holo 
 Every field is optional: a new design can start as `{ id, rootClass }` plus CSS and get the full page.
 
 ### Where the wave-2 streams plug in
-- **S6 Work**: rewrite the shared `Work` body in `components/site/layout/sections.tsx` and read
-  `skin.projectArt` (default to the registry `swatch`); delete the per-design `sections.work` overrides.
+- **Work** (done): the shared body is `components/site/work/Work.tsx`, a disc of procedural art
+  (`lib/art`), one facet per project. A look sets `projectArt: { palette: [ground, ink, accent, second],
+  params: { hole, rest, lift, density, stroke } }` (palette entries may be `var(--x, #fallback)`); SiteLayout
+  publishes the palette as `--art-0..3` so the case sheet matches. No per-project assets. Review at `/lab/art`.
 - **S7 Play**: same for the shared `Play` body; delete per-design `sections.play`.
 - **S8 Experience + Education**: shared `Experience` body already renders `skin.ExperienceConnector` between
   roles and `skin.EducationObject` for education; add one small connector/object per design, delete the
