@@ -2,7 +2,7 @@
 import { useState } from "react";
 import SiteProvider, { useSite } from "@/components/site/SiteProvider";
 import Mark, { type MarkKind } from "@/components/site/mark/Mark";
-import Portrait from "@/components/site/portrait/Portrait";
+import Portrait from "@/components/site/tether/Tether";
 import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
 import { fixture } from "@/lib/content/fixture";
 

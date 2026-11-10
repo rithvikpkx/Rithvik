@@ -1,0 +1,37 @@
+/* Tether: the portrait plus four contacts on strings (never filtered). Designs restyle via --pt-* tokens and scoped
+   .pt-* rules. Geometry is a 400x500 box; positions are percentages, so it scales with its wrapper's width. */
+/* --pt-x/y/w: the photo box as percentages of the figure, for skins that draw rings or bezels around it */
+.pt { --pt-x: 17.5%; --pt-y: 4%; --pt-w: 65%; position: relative; margin: 0; width: 100%; aspect-ratio: 400 / 500; touch-action: pan-y; }
+.pt-photo { position: absolute; aspect-ratio: 1; padding: 0; border: 0; border-radius: var(--pt-photo-r, 50%); overflow: hidden; background: var(--pt-photo-bg, #ddd); box-shadow: 0 0 0 var(--pt-ring-w, 0px) var(--pt-ring, transparent), var(--pt-shadow, 0 30px 80px -30px rgba(0, 0, 0, .45)); animation: pt-in 700ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
+button.pt-photo { cursor: pointer; }
+.pt-photo img { width: 100%; height: 100%; object-fit: cover; }
+.pt-photo[aria-pressed="false"] img, div.pt-photo img { filter: none !important; mix-blend-mode: normal !important; opacity: 1 !important; }
+@keyframes pt-in { from { opacity: 0; scale: .94; } }
+
+.pt-beams { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pt-beam { fill: none; stroke: var(--pt-beam, rgba(127, 127, 127, .35)); stroke-width: var(--pt-beam-w, 1.4); stroke-linecap: round; }
+/* the flow: a short bright dash running down each string, forever, offset per string */
+.pt-pulse { fill: none; stroke-width: var(--pt-pulse-w, 2.6); stroke-linecap: round; stroke-dasharray: .16 .84; animation: pt-flow 2.6s linear infinite; }
+@keyframes pt-flow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+.pt-node { position: absolute; width: max(var(--pt-node-size, 13%), 34px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; padding: 0; border-radius: var(--pt-node-r, 50%); background: var(--pt-node-bg, #fff); color: var(--pt-node-fg, #111); border: var(--bw, 1px) solid var(--pt-node-line, rgba(0, 0, 0, .14)); text-decoration: none; cursor: pointer; user-select: none; -webkit-user-drag: none; will-change: transform; transition: scale 200ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)), background-color 200ms ease, color 200ms ease; }
+.pt-node .logo, .pt-node .ic { width: 40%; height: 40%; pointer-events: none; }
+.pt-node:active { scale: .94; }
+.pt[data-drag] .pt-node { cursor: grabbing; }
+.pt-node::after { content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; translate: -50% -4px; padding: 4px 8px; border-radius: 6px; background: var(--ui-bg, #0f0f12); color: var(--ui-fg, #f4f4f5); font: 500 12px/1.2 var(--ui-font, system-ui, sans-serif); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 150ms ease, translate 200ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
+@media (hover: hover) and (pointer: fine) { .pt-node:hover { scale: 1.08; } .pt-node:hover::after { opacity: 1; translate: -50% 0; } }
+.pt-node:focus-visible::after { opacity: 1; translate: -50% 0; }
+.pt[data-drag] .pt-node::after { opacity: 0; }
+
+/* before the opening runs the nodes and strings wait, so they can drop in; without JS they are simply there */
+@media (scripting: enabled) {
+  .pt:not([data-live]) .pt-node, .pt:not([data-live]) .pt-beams { opacity: 0; }
+}
+.pt[data-live="drop"] .pt-beams { animation: pt-fade 300ms ease both; }
+@keyframes pt-fade { from { opacity: 0; } }
+
+.pt[data-paused] .pt-pulse { animation-play-state: paused; }
+/* calm: no flow, each dash rests mid-string so the strings still read as live */
+@media (prefers-reduced-motion: reduce) { .pt-pulse { animation: none; stroke-dashoffset: .55; } .pt-node, .pt-photo { transition: none; animation: none; } }
+html.lite .pt-pulse { animation: none; stroke-dashoffset: .55; }
+html.lite .pt-photo { animation: none; }

@@ -1,9 +1,8 @@
 // Glyph's fixed copy and pure helpers (port of the constants at the top of docs/mockups/v7/themes/glyph.js).
 
 /** [anchor id, tmux window name, section hue] */
-export const SECTIONS = [["top", "top", "amber"], ["work", "work", "amber"], ["experience", "log", "blue"], ["about", "man", "blue"], ["graph", "map", "blue"], ["play", "bin", "red"], ["contact", "mail", "red"]] as const;
+export const SECTIONS = [["top", "top", "amber"], ["work", "work", "amber"], ["experience", "log", "blue"], ["about", "man", "blue"], ["play", "bin", "red"], ["questions", "faq", "red"], ["contact", "mail", "red"]] as const;
 export const GLY = "#%@*+=-:/\\|<>[]{}_$&?~^";
-export const ASKS = ["what has he built?", "is he open to internships?", "tell me about the EEG work", "what stack did BoilerFrame use?", "/theme random"];
 export const KEYS = [["j / k", "next / previous pane"], ["g / G", "top / end"], ["1-7", "jump to a window"], [":", "ask the agent"], ["r", "resume"], ["m", "mail"], ["p", "play"], ["t", "another design"]];
 /** Shown when an unmapped key is pressed: a small vim joke in the status bar. */
 export const QUIPS = ["E492: not an editor command", "E37: no write since last hire", "E21: cannot make changes, modifiable is off", "E348: no string under cursor", "E163: there is only one file to edit"];

@@ -91,7 +91,7 @@ export function useStarlightMotion(root: RefObject<HTMLElement | null>, flareRef
     scrollStep();
 
     // IR illuminator in the DOM: reveal annotations and graph edges near the pointer; the ring tracks the cone
-    const hero = $<HTMLElement>(".sl-hero")!, ring = $<HTMLElement>(".sl-ring")!, ringL = $("[data-sl-ring]")!;
+    const hero = $<HTMLElement>(".ly-hero")!, ring = $<HTMLElement>(".sl-ring")!, ringL = $("[data-sl-ring]")!;
     const ptr = { x: innerWidth / 2, y: innerHeight / 2, in: false, ui: false }, fast = { x: ptr.x, y: ptr.y }, cone = { x: ptr.x, y: ptr.y };
     let iraf = 0, edges: SVGPathElement[] = [];
     const ePrev = new WeakMap<Element, number>(), geo = new WeakMap<Element, { d: string; q: number[] }>();
@@ -136,7 +136,7 @@ export function useStarlightMotion(root: RefObject<HTMLElement | null>, flareRef
       on(window, "pointermove", (ev) => {
         const e = ev as PointerEvent; if (e.pointerType !== "mouse") return;
         ptr.x = e.clientX; ptr.y = e.clientY; ptr.in = true;
-        ptr.ui = !!(e.target as Element).closest?.(".sl-top, .sl-disp, .theme-dial-aside, .agent, .win, .sheet-body");
+        ptr.ui = !!(e.target as Element).closest?.(".ly-head, .pt, .agent, .win, .sheet-body");
         if (!iraf && !calm()) iraf = requestAnimationFrame(irStep);
       }, { passive: true });
       on(document, "pointerleave", () => { ptr.in = false; ring.classList.remove("is-on"); });

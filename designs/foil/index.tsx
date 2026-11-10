@@ -1,24 +1,22 @@
 "use client";
-// Foil: a holographic trading card under a desk lamp (port of docs/mockups/v7/themes/foil.js; see
-// designs/PORTING.md). The thin-film shader lives only on the hero card face; everything else is
-// calm CSS that wakes on hover. html.lite and reduced motion leave a still card, static foil gradients,
-// no tilt, no glare and no datamosh.
+// Foil: a holographic trading card under a desk lamp. A skin on the shared layout (designs/PORTING.md). The
+// thin-film shader lives only on the holo card behind the hero portrait (its portrait backdrop), which tilts toward
+// the pointer; everything else is calm CSS that wakes on hover. html.lite and reduced motion leave a still card,
+// static foil gradients, no tilt, no glare and no datamosh.
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
+import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
-import { countWord } from "@/lib/words";
 import { useSite } from "@/components/site/SiteProvider";
+import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
-import Portrait from "@/components/site/portrait/Portrait";
 import Mark from "@/components/site/mark/Mark";
-import KnowledgeGraph from "@/components/site/graph/KnowledgeGraph";
-import { Icon, Logo } from "@/components/site/Glyph";
+import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
 import "./foil.css";
-import IAmRithvik from "@/components/site/IAmRithvik";
 
 const META = designById("foil")!;
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -34,10 +32,125 @@ function Fm({ cls = "" }: { cls?: string }) {
   return <span className={`fo-fm${cls ? " " + cls : ""}`} role="img" aria-label="Rithvik Praveen Kumar"><i /></span>;
 }
 
-/** Numbered section kicker. */
-const Kick = ({ n, label }: { n: string; label: string }) => <p className="fo-kick"><span className="fo-kick-n">{n}</span>{label}</p>;
+/** Work: the set, one holo trading card per project. */
+function Work({ content: C }: SectionProps) {
+  const total = pad(C.projects.length);
+  return (
+    <ul className="fo-set" id="fo-set">{C.projects.map((p, i) => (
+      <li key={p.slug} className="fo-pc-li">
+        <a className="fo-pc" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-fo-case={p.slug} style={{ "--h": `${(i * 57) % 360}deg`, "--hp": `${((i * 57) % 360) / 3.6}%` } as CSSProperties} aria-label={`${p.title}: ${p.headline}. Open the case`}>
+          <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
+          <span className="fo-pc-art" aria-hidden="true">
+            <span className="fo-pc-holo"><i /></span>
+            <span className="fo-pc-glit"><i /></span>
+            <span className="fo-pc-ic"><span className="fo-pc-ic-hi"><Icon name={p.icon} /></span><span className="fo-pc-ic-ink"><Icon name={p.icon} /></span></span>
+            <span className="fo-pc-wm"><Mark label="" /></span>
+          </span>
+          <span className="fo-pc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
+          <span className="fo-pc-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
+          <span className="fo-pc-stats">
+            <span><b>Stack</b>{p.tags.join(" · ")}</span>
+            <span><b>Context</b><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
+          </span>
+        </a>
+      </li>
+    ))}</ul>
+  );
+}
 
-/** The whole Foil site. */
+/** Path: roles with a date column, then the degree as a badge card. */
+function Experience({ content: C }: SectionProps) {
+  return (
+    <>
+      <ol className="fo-roles">
+        {C.experience.map((x) => (
+          <li key={x.slug} className="fo-role" id={`experience-${x.slug}`}>
+            <p className="fo-when"><span className="fo-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
+            <div className="fo-role-h"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p data-edit={`role:${x.slug}:org`}>{x.org}</p></div>
+            <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
+          </li>
+        ))}
+      </ol>
+      <article className="fo-edu" id="education" aria-label="Education">
+        <span className="fo-edu-badge">
+          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
+          <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
+        </span>
+        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p></div>
+        <p className="fo-edu-m"><span data-edit="edu:focus">{C.education.focus}</span>{C.education.grad && <><br /><span data-edit="edu:grad">{C.education.grad}</span></>}</p>
+      </article>
+    </>
+  );
+}
+
+/** About: the text and thesis, now + places, then the numbers. */
+function About({ content: C }: SectionProps) {
+  return (
+    <>
+      <div className="fo-about-txt">
+        {C.about.map((a, i) => <p key={i} className="fo-p" data-edit={`v7.about.${i}`}>{a}</p>)}
+        <ul className="fo-thesis">{C.thesis.map((t, i) => <li key={t}><i aria-hidden="true" /><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
+      </div>
+      <div className="fo-now" id="now" aria-label="Right now">
+        <dl className="fo-now-l">
+          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
+          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
+          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
+        </dl>
+        <ul className="fo-places" aria-label="Places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE_LABEL[pl.key] || pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="" /></li>)}</ul>
+      </div>
+      <dl className="fo-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
+    </>
+  );
+}
+
+/** Play: stickers, one holo disc per toy. */
+function Play() {
+  return (
+    <ul className="fo-stickers">{PLAY.map((t, i) => (
+      <li key={t.id}><button type="button" className="fo-st" data-play={t.id} style={{ "--h": `${(i * 61) % 360}deg` } as CSSProperties} aria-label={`Play ${t.name}: ${t.desc}`}>
+        <span className="fo-st-disc" aria-hidden="true"><i className="fo-st-foil" /><i className="fo-st-glit" /><span className="fo-st-ic"><Icon name={t.icon} /></span></span>
+        <span className="fo-st-t">{t.name}</span><span className="fo-st-d">{t.desc}</span>
+      </button></li>
+    ))}</ul>
+  );
+}
+
+/** Questions: short answers, one open at a time, and the hand-off to the agent. */
+function Questions({ content: C }: SectionProps) {
+  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
+    const d = e.currentTarget;
+    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
+  };
+  return (
+    <div className="fo-faq-b">
+      <div className="fo-qs">{C.faq.map(([q, a], i) => <details key={q} className="fo-q" onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>
+      <p className="fo-sub"><button type="button" className="fo-inl" data-agent="">Ask my agent</button></p>
+    </div>
+  );
+}
+
+/** Contact: the foil seal, one line and the composer. */
+function Contact() {
+  return (
+    <>
+      <span className="fo-seal" aria-hidden="true"><Fm cls="fo-fm-l" /></span>
+      <p className="fo-big">Write to me.</p>
+      <div className="fo-acts fo-c"><button type="button" className="fo-btn fo-btn-foil fo-btn-l" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
+    </>
+  );
+}
+
+const SKIN: Skin = {
+  id: "foil",
+  rootClass: "fo",
+  labels: { work: "The set", experience: "Path", play: "Stickers" },
+  sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
+  titleClass: "fo-h2",
+  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+};
+
+/** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */
 export default function Foil({ content: C }: DesignProps) {
   const { openCase } = useSite();
   const root = useRef<HTMLDivElement>(null);
@@ -54,179 +167,36 @@ export default function Foil({ content: C }: DesignProps) {
     const id = idle(() => { img.src = "/v7/foil/foil-1024.webp"; });
     return () => { img.onload = null; cancel(id as number); };
   }, []);
+  // the shared root takes no per-design props: the mark mask and the texture flag are set on it here
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    el.style.setProperty("--fo-mk", MASK_URL);
+    el.classList.toggle("has-foil", hasFoil);
+  }, [hasFoil]);
 
   // the shader spec is fixed (no per-visitor baking), so it can mount straight away
   const spec = useMemo(() => META.shader, []);
-  // one answer open at a time
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  const hide = (e: SyntheticEvent<HTMLImageElement>) => e.currentTarget.remove();
-  const total = pad(C.projects.length);
-
-  return (
-    <main className="stage" id="stage" tabIndex={-1}>
-      <div className={`fo${hasFoil ? " has-foil" : ""}`} style={{ "--fo-mk": MASK_URL } as CSSProperties} ref={root}>
-        <svg className="fo-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>
-          <linearGradient id="fo-foil" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(0 .5 .5)">
-            {FOIL.concat(FOIL[0]).map((c, i, a) => <stop key={i} offset={(i / (a.length - 1)).toFixed(2)} stopColor={c} />)}
-          </linearGradient>
-        </defs></svg>
-
-        <header className="fo-nav" aria-label="Site">
-          <a className="fo-logo" href="#top" aria-label={`${C.name}, back to top`}><Fm /><span aria-hidden="true">RPK</span></a>
-          <nav className="fo-links" aria-label="Sections"><a href="#work">Work</a><a href="#experience">Path</a><a href="#graph">Map</a><a href="#play">Play</a><a href="#contact">Contact</a></nav>
-          <div className="fo-nav-r">
-            <IAmRithvik className="fo-btn fo-btn-s fo-iam" />
-            <a className="fo-btn fo-btn-s" href="#" data-resume="">Resume</a>
-            <button type="button" className="fo-ic" data-compose="Internship opportunity" aria-label={`Email ${C.first}`}><Icon name="mail" /></button>
-          </div>
-        </header>
-
-        <section className="fo-hero" id="top" aria-labelledby="fo-h1">
-          <div className="fo-hero-in">
-            <div className="fo-hero-txt">
-              <p className="fo-eyebrow"><span className="fo-dot" aria-hidden="true" /><span data-edit="v7.role">{C.role}</span></p>
-              <h1 id="fo-h1" className="fo-h1"><span data-edit="name.first">{C.first}</span><span data-edit="name.last">{C.last}</span></h1>
-              <p className="fo-lede" data-edit="v7.line">{C.line}</p>
-              <p className="fo-status"><span className="fo-pulse" aria-hidden="true" /><span data-edit="v7.status">{C.status}</span></p>
-              <div className="fo-acts">
-                <a className="fo-btn fo-btn-foil" href="#" data-resume="">Resume <Icon name="arrow-up-right" /></a>
-                <button type="button" className="fo-btn" data-compose="Internship opportunity"><Icon name="mail" />Email me</button>
-                <button type="button" className="fo-btn fo-btn-ghost" data-agent=""><span className="fo-prompt" aria-hidden="true">❯</span>Ask my agent</button>
-              </div>
-            </div>
-            <div className="fo-hero-card">
-              <div className="fo-tilt" id="fo-tilt">
-                <article className="fo-card" aria-label={`${C.first}'s card`}>
-                  <div className="fo-card-gl" id="fo-gl" aria-hidden="true" />
-                  <div className="fo-card-top"><span className="fo-card-mk" aria-hidden="true"><Fm /></span><b>{C.initials}</b><span>Holo · 1 of 1</span></div>
-                  <button type="button" className="fo-card-art" aria-label="Spin the mark"><span className="fo-deboss"><span className="fo-deboss-hi"><Mark label="" /></span><span className="fo-deboss-ink"><Mark label="" /></span></span></button>
-                  <div className="fo-card-plate">
-                    <p className="fo-lent" id="fo-lent"><span className="fo-lent-a">{C.name}</span><span className="fo-lent-b" aria-hidden="true">{C.role}</span><i className="fo-lent-r" aria-hidden="true" /></p>
-                    <dl className="fo-stats">{C.numbers.slice(0, 3).map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-                  </div>
-                  <i className="fo-card-glare" aria-hidden="true" />
-                </article>
-              </div>
-              <p className="fo-hint" aria-hidden="true"><span className="fo-hint-f">Move to tilt the card</span><span className="fo-hint-c">Drag across the card to tilt it</span></p>
-            </div>
-          </div>
-        </section>
-
-        <section className="fo-sec fo-about" id="about" aria-labelledby="fo-h-about">
-          <div className="fo-about-grid">
-            <div className="fo-sleeve"><Portrait id="foil" className="fo-pt" /></div>
-            <div className="fo-about-txt">
-              <Kick n="01" label="About" />
-              <h2 id="fo-h-about" className="fo-h2">Hi, I&apos;m <span data-edit="name.first">{C.first}</span>.</h2>
-              {C.about.map((a, i) => <p key={i} className="fo-p" data-edit={`v7.about.${i}`}>{a}</p>)}
-              <ul className="fo-thesis">{C.thesis.map((t, i) => <li key={t}><i aria-hidden="true" /><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-            </div>
-          </div>
-          <div className="fo-now" id="now" aria-label="Right now">
-            <dl className="fo-now-l">
-              <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-              <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-              <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-            </dl>
-            <ul className="fo-places" aria-label="Places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE_LABEL[pl.key] || pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="" /></li>)}</ul>
-          </div>
-        </section>
-
-        <section className="fo-sec fo-work" id="work" aria-labelledby="fo-h-work">
-          <header className="fo-sec-h"><Kick n="02" label="Work" /><h2 id="fo-h-work" className="fo-h2">The set</h2><p className="fo-sub">{countWord(C.projects.length)} projects, from headsets to the cloud. Every card opens.</p></header>
-          <ul className="fo-set" id="fo-set">{C.projects.map((p, i) => (
-            <li key={p.slug} className="fo-pc-li">
-              <a className="fo-pc" id={`project-${p.slug}`} href={`/work/${p.slug}`} data-fo-case={p.slug} style={{ "--h": `${(i * 57) % 360}deg`, "--hp": `${((i * 57) % 360) / 3.6}%` } as CSSProperties} aria-label={`${p.title}: ${p.headline}. Open the case`}>
-                <span className="fo-pc-top"><span className="fo-pc-n">No. {pad(i + 1)}<i>/{total}</i></span><span className="fo-pc-kind" data-edit={`project:${p.slug}:kind`}>{p.kind}</span></span>
-                <span className="fo-pc-art" aria-hidden="true">
-                  <span className="fo-pc-holo"><i /></span>
-                  <span className="fo-pc-glit"><i /></span>
-                  <span className="fo-pc-ic"><span className="fo-pc-ic-hi"><Icon name={p.icon} /></span><span className="fo-pc-ic-ink"><Icon name={p.icon} /></span></span>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="fo-pc-img" src={`/v7/projects/${p.slug}.webp`} alt="" width={1280} height={960} loading="lazy" decoding="async" onError={hide} />
-                  <span className="fo-pc-wm"><Mark label="" /></span>
-                </span>
-                <span className="fo-pc-t" data-edit={`project:${p.slug}:title`}>{p.title}</span>
-                <span className="fo-pc-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</span>
-                <span className="fo-pc-stats">
-                  <span><b>Stack</b>{p.tags.join(" · ")}</span>
-                  <span><b>Context</b><span data-edit={`project:${p.slug}:ctx`}>{p.ctx}</span></span>
-                </span>
-                <span className="fo-pc-go">Open the case <Icon name="arrow-up-right" /></span>
-              </a>
-            </li>
-          ))}</ul>
-        </section>
-
-        <section className="fo-sec fo-exp" id="experience" aria-labelledby="fo-h-exp">
-          <header className="fo-sec-h"><Kick n="03" label="Path" /><h2 id="fo-h-exp" className="fo-h2">Where I&apos;ve worked</h2></header>
-          <ol className="fo-roles">
-            {C.experience.map((x) => (
-              <li key={x.slug} className="fo-role" id={`experience-${x.slug}`}>
-                <p className="fo-when"><span className="fo-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-                <div className="fo-role-h"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p data-edit={`role:${x.slug}:org`}>{x.org}</p></div>
-                <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-              </li>
-            ))}
-          </ol>
-          <article className="fo-edu" id="education" aria-label="Education">
-            <span className="fo-edu-badge">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-            </span>
-            <div><p className="fo-edu-k">Education</p><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p></div>
-            <p className="fo-edu-m"><span data-edit="edu:focus">{C.education.focus}</span>{C.education.grad && <><br /><span data-edit="edu:grad">{C.education.grad}</span></>}</p>
-          </article>
-        </section>
-
-        <section className="fo-sec fo-map" id="graph" aria-labelledby="fo-h-map">
-          <header className="fo-sec-h"><Kick n="04" label="Map" /><h2 id="fo-h-map" className="fo-h2">Everything, connected</h2><p className="fo-sub">Fields, projects, roles and skills on one map. Hover to trace a thread; click to open it.</p></header>
-          <KnowledgeGraph id="foil" />
-        </section>
-
-        <section className="fo-sec fo-play" id="play" aria-labelledby="fo-h-play">
-          <header className="fo-sec-h"><Kick n="05" label="Play" /><h2 id="fo-h-play" className="fo-h2">Stickers</h2><p className="fo-sub">{countWord(PLAY.length)} small toys. The games keep my score next to yours.</p></header>
-          <ul className="fo-stickers">{PLAY.map((t, i) => (
-            <li key={t.id}><button type="button" className="fo-st" data-play={t.id} style={{ "--h": `${(i * 61) % 360}deg` } as CSSProperties} aria-label={`Play ${t.name}: ${t.desc}`}>
-              <span className="fo-st-disc" aria-hidden="true"><i className="fo-st-foil" /><i className="fo-st-glit" /><span className="fo-st-ic"><Icon name={t.icon} /></span></span>
-              <span className="fo-st-t">{t.name}</span><span className="fo-st-d">{t.desc}</span>
-            </button></li>
-          ))}</ul>
-        </section>
-
-        <section className="fo-sec fo-faq" id="questions" aria-labelledby="fo-h-faq">
-          <div className="fo-faq-l"><Kick n="06" label="Questions" /><h2 id="fo-h-faq" className="fo-h2">Short answers</h2><p className="fo-sub">Anything else, <button type="button" className="fo-inl" data-agent="">ask my agent</button>. It only answers from what&apos;s on record.</p></div>
-          <div className="fo-qs">{C.faq.map(([q, a], i) => <details key={q} className="fo-q" onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>
-        </section>
-
-        <section className="fo-sec fo-contact" id="contact" aria-labelledby="fo-h-contact">
-          <Kick n="07" label="Contact" />
-          <span className="fo-seal" aria-hidden="true"><Fm cls="fo-fm-l" /></span>
-          <h2 id="fo-h-contact" className="fo-big">Write to me.</h2>
-          <p className="fo-sub fo-c">Open to SWE and AI internships. The message goes straight to my inbox.</p>
-          <div className="fo-acts fo-c">
-            <button type="button" className="fo-btn fo-btn-foil fo-btn-l" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button>
-            <button type="button" className="fo-btn" data-copy={C.links.email}><Icon name="copy" />{C.links.email}</button>
-          </div>
-          <ul className="fo-out">
-            <li><a href={C.links.github} target="_blank" rel="noopener"><Logo slug="github" />GitHub</a></li>
-            <li><a href={C.links.linkedin} target="_blank" rel="noopener"><Logo slug="linkedin" />LinkedIn</a></li>
-            <li><a href="#" data-resume=""><Icon name="file-text" />Resume</a></li>
-            <li><a href="#" data-agent=""><Icon name="terminal" />Agent</a></li>
-          </ul>
-        </section>
-
-        <footer className="fo-foot" id="colophon">
-          <span className="fo-foot-mk" aria-hidden="true"><Fm /></span>
-          <p>{C.name} · {C.status}</p>
-          <p className="fo-colo">The card is one fragment shader: thin-film interference over a noise height map, lit by your pointer. The photo is never touched. Set in Unbounded and Geist. <a className="foot-status" href="/status">Status</a></p>
-        </footer>
-        <div className="fo-mosh" aria-hidden="true" hidden />
+  const card = (
+    <div className="fo-hero-card" aria-hidden="true">
+      <div className="fo-tilt" id="fo-tilt">
+        <article className="fo-card">
+          <div className="fo-card-gl" id="fo-gl" />
+          <div className="fo-card-top"><span className="fo-card-mk"><Fm /></span><b>{C.initials}</b><span>Holo · 1 of 1</span></div>
+          <i className="fo-card-glare" />
+        </article>
       </div>
+    </div>
+  );
+  return (
+    <SiteLayout content={C} skin={SKIN} rootRef={root} portraitBackdrop={card}>
       <ShaderCanvas spec={spec} dark={META.dark} />
-    </main>
+      <svg className="fo-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+        <linearGradient id="fo-foil" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(0 .5 .5)">
+          {FOIL.concat(FOIL[0]).map((c, i, a) => <stop key={i} offset={(i / (a.length - 1)).toFixed(2)} stopColor={c} />)}
+        </linearGradient>
+      </defs></svg>
+      <div className="fo-mosh" aria-hidden="true" hidden />
+    </SiteLayout>
   );
 }

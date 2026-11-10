@@ -5,8 +5,8 @@ import { kick } from "@/lib/shader/runtime";
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
-/** The mockup's mount(): lit sections switch the shader canvas on, the nav gets its rule, headings split
- *  with scroll speed, the Play heading's anaglyph plates follow the pointer. Undone on unmount. */
+/** The mockup's mount(): the lit hero switches the shader canvas on, headings split with scroll speed, the Play
+ *  heading's anaglyph plates follow the pointer. Undone on unmount. */
 export function usePrismMotion(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = root.current;
@@ -16,7 +16,7 @@ export function usePrismMotion(root: RefObject<HTMLElement | null>) {
     const offs: (() => void)[] = [];
     const on = (t: EventTarget | null, ev: string, fn: EventListener, o?: AddEventListenerOptions) => { if (!t) return; t.addEventListener(ev, fn, o); offs.push(() => t.removeEventListener(ev, fn, o)); };
 
-    // the canvas only renders while a lit section (hero, Map) is on screen: off-screen it is display:none,
+    // the canvas only renders while the lit hero is on screen: off-screen it is display:none,
     // which stops the runtime's loop; in performance mode each entry repaints the one still frame
     const gl = $<HTMLElement>("#pr-gl"), lit = new Set<Element>();
     let kr = 0;
@@ -25,12 +25,7 @@ export function usePrismMotion(root: RefObject<HTMLElement | null>) {
       gl?.classList.toggle("is-off", lit.size === 0);
       if (lit.size) { cancelAnimationFrame(kr); kr = requestAnimationFrame(kick); }
     });
-    $$(".pr-lit").forEach((s) => litIO.observe(s));
-
-    // nav: transparent over the light, a white rule once the page moves
-    const nav = $<HTMLElement>("#pr-nav");
-    const navState = () => nav?.classList.toggle("is-scrolled", scrollY > 12);
-    navState();
+    $$(".ly-hero").forEach((s) => litIO.observe(s));
 
     // chromatic aberration along the scroll: visible headings split vertically with scroll speed, then settle
     const heads = new Set<HTMLElement>();
@@ -51,7 +46,6 @@ export function usePrismMotion(root: RefObject<HTMLElement | null>) {
       else heads.forEach(clear);
     };
     on(window, "scroll", () => {
-      navState();
       const now = performance.now(), dt = Math.max(8, now - lastT), dy = scrollY - lastY;
       lastY = scrollY; lastT = now;
       if (calm()) return;

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, type RefObject } from "react";
 
-/** The mockup's mount(): the square lens on the cover name and dispatch plates (fine pointers), and
+/** The mockup's mount(): the square lens on the hero name and dispatch plates (fine pointers), and
  *  section liveness for ambient loops. Everything added is removed on unmount (design switch). */
 export function useStippleMotion(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
@@ -29,7 +29,7 @@ export function useStippleMotion(root: RefObject<HTMLElement | null>) {
 
     // ambient loops (lens drift, seal rotation, status pulse) only run while their section is on screen
     const io = new IntersectionObserver((en) => en.forEach((e) => e.target.classList.toggle("st-live", e.isIntersecting)), { rootMargin: "80px" });
-    el.querySelectorAll(".st-cover, .st-seal-sec").forEach((s) => io.observe(s));
+    el.querySelectorAll(".ly-hero, .st-seal-sec").forEach((s) => io.observe(s));
 
     return () => { offs.forEach((f) => f()); io.disconnect(); };
   }, [root]);

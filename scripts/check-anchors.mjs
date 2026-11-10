@@ -1,26 +1,29 @@
-// Greps every design for the anchor ids the agent's show_section relies on and prints a matrix.
-// Exits 1 when a required id is missing (designs without an FAQ are exempt from `questions`).
+// Checks the anchor ids the agent's show_section relies on and prints a matrix per design.
+// The static section anchors (top, work, ...) come from the shared layout, which renders every section in
+// lib/designs/skin.ts SECTIONS; the per-item anchors (project-<slug>, experience-<slug>) come from whichever
+// body a design uses: its own override in designs/<id>/index.tsx or the shared default. Exits 1 on a gap.
 import { readFileSync } from "node:fs";
 
 const DESIGNS = ["classic", "nimbus", "stipple", "glyph", "prism", "mercury", "thermal", "starlight", "tracker", "foil"];
 const STATIC = ["top", "work", "experience", "about", "play", "questions", "contact"];
-const DYNAMIC = [["project-<slug>", "project-${"], ["experience-<slug>", "experience-${"]];
-const NO_FAQ = new Set(["starlight", "thermal"]);
+const layout = readFileSync("components/site/layout/SiteLayout.tsx", "utf8");
+const skin = readFileSync("lib/designs/skin.ts", "utf8");
+const defaults = readFileSync("components/site/layout/sections.tsx", "utf8");
+const sections = (skin.match(/SECTIONS = \[([^\]]*)\]/)?.[1] ?? "").match(/"([a-z]+)"/g)?.map((s) => s.slice(1, -1)) ?? [];
+// a design overrides a body when its skin lists `sections: { work: ..., experience: ... }`
+const overrides = (src) => new Set((src.match(/sections:\s*\{([^}]*)\}/)?.[1] ?? "").match(/[a-z]+(?=:)/g) ?? []);
+const BODY = [["project-<slug>", "work", "project-${"], ["experience-<slug>", "experience", "experience-${"]];
 
-const cols = [...STATIC, ...DYNAMIC.map(([n]) => n)];
+const cols = [...STATIC, ...BODY.map(([n]) => n)];
 let bad = 0;
+const staticOk = (id) => (id === "top" ? layout.includes('id="top"') : sections.includes(id) && layout.includes("id={id}"));
 const rows = DESIGNS.map((d) => {
-  const src = readFileSync(`designs/${d}/index.tsx`, "utf8");
+  const src = readFileSync(`designs/${d}/index.tsx`, "utf8"), own = overrides(src);
   const cells = [
-    ...STATIC.map((id) => src.includes(`id="${id}"`)),
-    ...DYNAMIC.map(([, needle]) => src.includes(`id={\`${needle}`)),
+    ...STATIC.map(staticOk),
+    ...BODY.map(([, sec, needle]) => (own.has(sec) ? src : defaults).includes(`id={\`${needle}`)),
   ];
-  return [d, cells.map((ok, i) => {
-    if (ok) return "ok";
-    if (cols[i] === "questions" && NO_FAQ.has(d)) return "n/a";
-    bad++;
-    return "MISSING";
-  })];
+  return [d, cells.map((ok) => (ok ? "ok" : (bad++, "MISSING")))];
 });
 
 const w = Math.max(...cols.map((c) => c.length)) + 1;

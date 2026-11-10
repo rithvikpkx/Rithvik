@@ -2,13 +2,13 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { kick } from "@/lib/shader/runtime";
 import { useSite } from "@/components/site/SiteProvider";
-import { ASKS, GLY, QUIPS, SECTIONS } from "./data";
+import { GLY, QUIPS, SECTIONS } from "./data";
 
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
-/** The mockup's mount(): active tmux window, vim-style keys, the typing prompt, glyph decode on headings,
- *  and the still-shader redraw. `toggleKeys(v?)` flips the shortcuts card. Everything is undone on unmount. */
+/** The mockup's mount(): the section hue, vim-style keys, glyph decode on headings, and the still-shader redraw.
+ *  `toggleKeys(v?)` flips the shortcuts card. Everything is undone on unmount. */
 export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKeys: (v?: boolean) => void) {
   // the site context changes identity with every overlay/toast; a ref keeps the effect (decode, typing) from restarting
   const live = useSite();
@@ -53,7 +53,7 @@ export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKey
     const smooth = (): ScrollBehavior => (calm() ? "auto" : "smooth");
     const go = (i: number) => { i = Math.max(0, Math.min(secs.length - 1, i)); if (i === 0) scrollTo({ top: 0, behavior: smooth() }); else secs[i].scrollIntoView({ behavior: smooth(), block: "start" }); };
     const step = (dir: number) => {
-      const ps = $$(".gl-pane, .gl-hero").map((s) => s.getBoundingClientRect().top + scrollY);
+      const ps = $$(".gl-pane, .ly-hero").map((s) => s.getBoundingClientRect().top + scrollY);
       if (dir > 0) { const n = ps.find((t) => t > scrollY + 60); scrollTo({ top: n !== undefined ? n - 40 : document.documentElement.scrollHeight, behavior: smooth() }); }
       else { const n = ps.filter((t) => t < scrollY - 60).pop(); scrollTo({ top: n !== undefined ? Math.max(0, n - 40) : 0, behavior: smooth() }); }
     };
@@ -81,18 +81,6 @@ export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKey
       else if (/^[a-z]$/i.test(k) && k !== "t" && k !== "T") say(QUIPS[qi++ % QUIPS.length]);
     }, { capture: true }); // capture: runs ahead of the agent's document-level "?" handler
 
-    /* ───── the hero prompt types its own questions while the hero is on screen (never in performance mode) ───── */
-    const askIn = $<HTMLInputElement>("#gl-ask-in");
-    let heroOn = true, qn = 0, ci = ASKS[0].length, dir = -1, hold = 40;
-    const typeT = setInterval(() => {
-      if (calm() || !heroOn || document.activeElement === askIn || askIn.value) { if (calm()) askIn.placeholder = ASKS[0]; return; }
-      if (hold > 0) { hold--; return; }
-      const q = ASKS[qn]; ci += dir;
-      if (ci <= 0) { dir = 1; qn = (qn + 1) % ASKS.length; ci = 0; hold = 4; }
-      else if (ci >= ASKS[qn].length) { dir = -1; hold = 46; }
-      askIn.placeholder = (dir > 0 ? ASKS[qn] : q).slice(0, Math.max(0, ci)) + "▌";
-    }, 55);
-
     /* ───── decode: headings resolve out of scrambled glyphs once, on first view ───── */
     const jobs: { el: HTMLElement; T: string; t0: number; d: number }[] = []; let sRaf = 0;
     const run = (now: number) => {
@@ -114,8 +102,6 @@ export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKey
     };
     const io = new IntersectionObserver((en) => en.forEach((x) => { if (x.isIntersecting) { io.unobserve(x.target); scramble(x.target as HTMLElement); } }), { rootMargin: "0px 0px -8% 0px" });
     $$("[data-scr]").forEach((el) => { if (el.getBoundingClientRect().top < innerHeight) scramble(el); else io.observe(el); });
-    const heroIo = new IntersectionObserver((en) => { heroOn = en[0].isIntersecting; });
-    heroIo.observe(secs[0]);
 
     // a still shader frame is drawn at load in reduced motion / performance mode; redraw once its boot has settled
     if (calm()) later(kick, 2900);
@@ -126,9 +112,8 @@ export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKey
 
     return () => {
       offs.forEach((f) => f()); timers.forEach((id) => clearTimeout(id)); timers.clear();
-      clearInterval(typeT);
       cancelAnimationFrame(raf); cancelAnimationFrame(sRaf);
-      ro.disconnect(); io.disconnect(); heroIo.disconnect();
+      ro.disconnect(); io.disconnect();
       // a decode cut short must not leave scrambled text behind
       jobs.forEach(({ el, T }) => { el.textContent = T; });
       delete html.dataset.glHue;
