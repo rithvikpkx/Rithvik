@@ -44,7 +44,7 @@
 }
 @media (max-width: 480px) {
   .ly-head { gap: 6px; }
-  .ly .ly-nav a { padding: 7px 4px; font-size: 12px; letter-spacing: 0; } /* set on the link so a look's header font cannot widen it */
+  .ly .ly-nav a { padding: 7px 4px; font-size: 11px; letter-spacing: 0; } /* set on the link so a look's header font cannot widen it */
   .ly-iam { width: 36px; padding: 0; justify-content: center; }
 }
 

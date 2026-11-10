@@ -48,28 +48,16 @@
 
 /* ───────── frame: a slim tmux status bar, nothing else on the edges ───────── */
 :root[data-design="glyph"] .gl { --gl-x: clamp(16px, 3.4vw, 48px); position: relative; padding-top: var(--gl-bar); min-height: 100vh; }
-:root[data-design="glyph"] .gl-tmux { position: fixed; z-index: 40; top: 0; left: 0; right: 0; height: var(--gl-bar); display: flex; align-items: stretch; background: #0A0A0A; border-bottom: 1px solid var(--gl-rule); font: 500 11.5px/var(--gl-bar) var(--gl-d); color: var(--gl-mut); white-space: nowrap; }
-:root[data-design="glyph"] .gl-sess { display: grid; place-items: center; width: 52px; background: var(--gl-hue); color: #050505; text-decoration: none; transition: background-color 400ms ease; }
 :root[data-design="glyph"] .gl-mk { display: block; width: 16px; height: 16px; flex: none; }
-:root[data-design="glyph"] .gl-wins { display: flex; margin: 0; padding: 0 0 0 6px; list-style: none; }
-:root[data-design="glyph"] .gl-wins a { display: flex; align-items: center; padding: 0 11px; color: var(--gl-dim); text-decoration: none; }
-:root[data-design="glyph"] .gl-wins a b { font-weight: 700; color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-wins a[aria-current="true"] { color: var(--gl-hue); }
-:root[data-design="glyph"] .gl-wins a[aria-current="true"] b { color: var(--gl-hue); }
-:root[data-design="glyph"] .gl-wins a[aria-current="true"]::after { content: "*"; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-wins a:hover { color: var(--gl-fg); } }
-:root[data-design="glyph"] .gl-tfill { flex: 1; }
 :root[data-design="glyph"] .gl-msg { padding: 0 16px; color: var(--gl-hue); opacity: 0; transition: opacity 160ms ease; }
 :root[data-design="glyph"] .gl-msg.on { opacity: 1; }
-:root[data-design="glyph"] .gl-help { display: flex; align-items: center; gap: 8px; padding: 0 16px; border: 0; border-left: 1px solid var(--gl-rule); background: transparent; color: var(--gl-mut); font: inherit; cursor: pointer; }
-:root[data-design="glyph"] .gl-help kbd { color: var(--gl-hue); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-help:hover { color: var(--gl-fg); } }
 :root[data-design="glyph"] .gl-keys { position: fixed; z-index: 41; top: calc(var(--gl-bar) + 8px); right: 8px; width: 260px; padding: 12px 14px; border: 1px solid var(--gl-rule2); background: #0A0A0A; box-shadow: var(--ui-shadow); font: 500 11.5px/26px var(--gl-d); }
 :root[data-design="glyph"] .gl-keys dl { margin: 0; }
 :root[data-design="glyph"] .gl-keys div { display: grid; grid-template-columns: 7ch 1fr; }
 :root[data-design="glyph"] .gl-keys dt { color: var(--gl-hue); font-weight: 700; }
 :root[data-design="glyph"] .gl-keys dd { margin: 0; color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-led { display: inline-block; width: 7px; height: 7px; margin-right: 10px; background: var(--gl-hue); vertical-align: 1px; animation: glyph-led 2.4s steps(1) infinite; }
 @keyframes glyph-led { 0%, 70% { opacity: 1; } 71%, 100% { opacity: .25; } }
 
 /* ───────── panes: one per screen, opaque, separated by open space where the sculpture shows ───────── */
@@ -80,38 +68,17 @@
 :root[data-design="glyph"] .gl-tbar { display: flex; align-items: stretch; height: 32px; border-bottom: 1px solid var(--gl-rule); font: 500 11px/32px var(--gl-d); white-space: nowrap; overflow: hidden; }
 :root[data-design="glyph"] .gl-tw { padding: 0 12px; background: var(--sh); color: #050505; font-weight: 800; }
 :root[data-design="glyph"] .gl-tc { padding: 0 14px; color: var(--gl-fg); overflow: hidden; text-overflow: ellipsis; }
-:root[data-design="glyph"] .gl-tn { margin-left: auto; padding: 0 14px; color: var(--gl-dim); }
 :root[data-design="glyph"] .gl-pb { padding: clamp(28px, 5vw, 64px); }
 :root[data-design="glyph"] .gl-h2 { margin: 0 0 clamp(32px, 4.4vw, 56px); font: 800 clamp(44px, 7vw, 104px)/.86 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.04em; color: var(--gl-fg); }
 :root[data-design="glyph"] .gl-sl { margin-right: .1em; color: var(--sh); font-weight: 200; font-stretch: 75%; letter-spacing: -.22em; }
 
 /* ───────── top: the one loud screen ───────── */
-:root[data-design="glyph"] .gl-hero { min-height: calc(100svh - var(--gl-bar)); display: flex; flex-direction: column; padding: 0 var(--gl-x) 92px; }
-:root[data-design="glyph"] .gl-meta { display: flex; justify-content: space-between; gap: 16px; margin: 0; padding: 18px 0; font: 500 10.5px/1.4 var(--gl-d); letter-spacing: .08em; text-transform: uppercase; color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-meta time { color: var(--gl-fg); font-variant-numeric: tabular-nums; }
-:root[data-design="glyph"] .gl-stage { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: 32px; padding: 24px 0; }
-:root[data-design="glyph"] .gl-cond { align-self: center; display: flex; flex-direction: column; margin: 0; font: 200 clamp(32px, 3.9vw, 64px)/1 var(--gl-d); font-stretch: 75%; letter-spacing: -.02em; text-transform: uppercase; color: var(--gl-fg); }
-:root[data-design="glyph"] .gl-cond span:nth-child(2) { color: var(--gl-hue); font-weight: 300; }
-:root[data-design="glyph"] .gl-card { justify-self: end; width: min(380px, 100%); border: 1px solid var(--gl-rule2); background: #050505; }
-:root[data-design="glyph"] .gl-card-p { margin: 0; padding: 18px 18px 16px; font: 400 14.5px/1.6 var(--gl-b); color: #DADADA; text-wrap: pretty; }
-:root[data-design="glyph"] .gl-ask { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 8px 0 18px; margin: 0 0 15px; border-block: 1px solid var(--gl-rule); }
-:root[data-design="glyph"] .gl-ask:focus-within { box-shadow: inset 2px 0 0 var(--gl-hue); }
-:root[data-design="glyph"] .gl-ask-p { font: 700 15px/1 var(--gl-d); color: var(--gl-hue); }
-:root[data-design="glyph"] .gl-ask-in { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: var(--gl-fg); font: 400 14.5px/1 var(--gl-b); caret-color: var(--gl-hue); }
-:root[data-design="glyph"] .gl-ask-in::placeholder { color: #9A9A9A; }
-:root[data-design="glyph"] .gl-ask-go { width: 32px; height: 30px; border: 1px solid var(--gl-rule2); background: transparent; color: var(--gl-hue); font: 600 13px/1 var(--gl-d); cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-ask-go:hover { background: var(--gl-hue); color: #050505; } }
-:root[data-design="glyph"] .gl-card .gl-acts { padding: 14px 18px 16px; margin: 0; }
-:root[data-design="glyph"] .gl-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 :root[data-design="glyph"] .gl-word { display: flex; align-items: flex-end; gap: .14em; margin: 0; font: 800 clamp(64px, 15.2vw, 250px)/.76 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.055em; color: var(--gl-fg); white-space: nowrap; }
 :root[data-design="glyph"] .gl-w2 { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: .02em; font-size: .072em; font-weight: 700; line-height: 1; letter-spacing: .14em; color: var(--gl-hue); }
 
 /* whoami */
-:root[data-design="glyph"] .gl-who .gl-pb { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr); gap: clamp(32px, 6vw, 88px); align-items: center; }
-:root[data-design="glyph"] .gl-who-h { display: flex; align-items: flex-end; gap: 8px; margin: 0; font: 200 clamp(60px, 9vw, 140px)/.8 var(--gl-d); font-stretch: 75%; letter-spacing: -.03em; color: var(--gl-fg); }
-:root[data-design="glyph"] .gl-caret { width: .36em; height: .72em; background: var(--gl-hue); animation: glyph-blink 1.06s steps(1) infinite; }
 @keyframes glyph-blink { 50% { opacity: 0; } }
-:root[data-design="glyph"] .gl-who-s { margin: 22px 0 30px; font: 500 11px/1.6 var(--gl-d); letter-spacing: .06em; text-transform: uppercase; color: var(--gl-mut); }
 :root[data-design="glyph"] .gl-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; margin: 0; max-width: 520px; }
 :root[data-design="glyph"] .gl-nums dt { font: 800 30px/1.05 var(--gl-d); font-stretch: 112.5%; color: var(--gl-hue); letter-spacing: -.04em; }
 :root[data-design="glyph"] .gl-nums dd { margin: 4px 0 0; font: 400 12.5px/18px var(--gl-b); color: var(--gl-mut); }
@@ -198,36 +165,7 @@
 :root[data-design="glyph"] .gl-faq dd { margin: 0; color: var(--gl-mut); font-size: 14px; }
 
 /* ───────── map: the knowledge graph as a terminal plot ───────── */
-:root[data-design="glyph"] .gl-map { --kg-h: min(70vh, 660px); --kg-font: var(--gl-d); --kg-edge: rgba(237, 237, 237, .14); --kg-edge-lit: var(--gl-hue); --kg-label: #CFCFCF; --kg-me: var(--gl-fg); --kg-field: #EDEDED; --kg-project: var(--gl-amber); --kg-role: var(--gl-blue); --kg-school: var(--gl-red); --kg-place: #9A9A9A; --kg-skill: #5C5C5C; --kg-card-bg: #0A0A0A; --kg-card-fg: var(--gl-fg); }
-:root[data-design="glyph"] .gl-map .gl-h2 { margin-bottom: 20px; }
-:root[data-design="glyph"] .kg { margin-top: 8px; }
-:root[data-design="glyph"] .kg-edge { pointer-events: none; }
-:root[data-design="glyph"] .gl-map .kg-svg { top: 52px; height: calc(100% - 52px); }
-:root[data-design="glyph"] .kg-label { stroke: #050505; font-size: 10.5px; letter-spacing: .01em; }
-:root[data-design="glyph"] .kg-node[data-type="field"] .kg-label { fill: var(--gl-fg); font-weight: 700; font-size: 11px; }
-:root[data-design="glyph"] .kg-node[data-type="project"] .kg-label { fill: var(--gl-amber); }
-:root[data-design="glyph"] .kg-node[data-type="role"] .kg-label { fill: var(--gl-blue); }
-:root[data-design="glyph"] .kg-node[data-type="me"] .kg-shape { fill: #050505; stroke: var(--gl-hue); stroke-width: 1.5; }
-:root[data-design="glyph"] .kg-node[data-type="me"] .kg-mark { color: var(--gl-hue); }
-:root[data-design="glyph"] .kg-node[data-type="field"] .kg-shape { fill: #050505; stroke: var(--kg-field); stroke-width: 1.5; }
-:root[data-design="glyph"] .kg-node:focus-visible .kg-shape { stroke: var(--gl-hue); stroke-width: 2.5; }
-:root[data-design="glyph"] .kg-legend { gap: 0; border: 1px solid var(--gl-rule2); max-width: none; }
-:root[data-design="glyph"] .kg-key { height: 28px; padding: 0 10px; border: 0; border-right: 1px solid var(--gl-rule); border-radius: 0; background: #050505; color: var(--gl-fg); font: 600 10.5px/1 var(--gl-d); text-transform: lowercase; }
-:root[data-design="glyph"] .kg-key:last-child { border-right: 0; }
-:root[data-design="glyph"] .kg-key[aria-pressed="false"] { opacity: 1; color: var(--gl-dim); text-decoration: line-through; }
-:root[data-design="glyph"] .kg-dot { border-radius: 0; width: 7px; height: 7px; }
-:root[data-design="glyph"] .kg-dot[data-type="place"], :root[data-design="glyph"] .kg-dot[data-type="field"] { border-radius: 50%; }
-:root[data-design="glyph"] .kg-card { border-radius: 0; border: 1px solid var(--gl-rule2); box-shadow: var(--ui-shadow); padding: 18px 18px 16px; }
-:root[data-design="glyph"] .kg-card h3 { font: 800 21px/1.12 var(--gl-d); letter-spacing: -.03em; }
-:root[data-design="glyph"] .kg-type, :root[data-design="glyph"] .kg-links-h { font-family: var(--gl-d); color: var(--gl-dim); }
-:root[data-design="glyph"] .kg-sub { font-family: var(--gl-b); }
-:root[data-design="glyph"] .kg-card ul { list-style: none; padding: 0; color: #D5D5D5; }
-:root[data-design="glyph"] .kg-card li::before { content: "- "; color: var(--gl-hue); }
-:root[data-design="glyph"] .kg-act { border-radius: 0; background: var(--gl-hue); color: #050505; font: 700 11px/1 var(--gl-d); text-transform: uppercase; letter-spacing: .04em; }
-:root[data-design="glyph"] .kg-links button { border-radius: 0; font: 500 11px/1 var(--gl-d); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .kg-links button:hover, :root[data-design="glyph"] .kg-key:hover { color: var(--gl-hue); } }
-:root[data-design="glyph"] .kg-x { border-radius: 0; background: transparent; border: 1px solid var(--gl-rule); }
-:root[data-design="glyph"] .kg-time { font-family: var(--gl-d); color: var(--gl-hue); }
 
 /* ───────── bin ───────── */
 :root[data-design="glyph"] .gl-bin { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -256,10 +194,6 @@
   :root[data-design="glyph"] .gl-cmd:hover { background: var(--gl-red); color: #050505; }
   :root[data-design="glyph"] .gl-cmd:hover :is(.gl-ps, .gl-run, q, .gl-dim) { color: #050505; }
 }
-:root[data-design="glyph"] .gl-foot { display: flex; align-items: center; gap: 14px; padding: clamp(96px, 16vh, 160px) var(--gl-x) 160px; font: 500 11.5px/1.4 var(--gl-d); color: var(--gl-mut); }
-:root[data-design="glyph"] .gl-foot p { margin: 0; }
-:root[data-design="glyph"] .gl-foot-mk { color: var(--gl-red); }
-:root[data-design="glyph"] .gl-foot-mk .gl-mk { width: 28px; height: 28px; }
 
 /* ───────── chrome reskin: switcher, agent, windows, sheet, toast ───────── */
 :root[data-design="glyph"] .switcher { font: 500 12px/1 var(--gl-d); }
@@ -375,24 +309,11 @@
   :root[data-design="glyph"] .gl-bin { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
-  :root[data-design="glyph"] .gl-stage { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 28px; }
-  :root[data-design="glyph"] .gl-card { justify-self: start; }
-  :root[data-design="glyph"] .gl-who .gl-pb { grid-template-columns: minmax(0, 1fr); gap: 28px; }
-  :root[data-design="glyph"] .gl-who-pt { width: min(280px, 86%); }
 }
 @media (max-width: 640px) {
-  :root[data-design="glyph"] .gl-wins a { padding: 0 7px; }
-  :root[data-design="glyph"] .gl-wins a:not([aria-current="true"]) span { display: none; }
-  :root[data-design="glyph"] .gl-help span { display: none; }
   :root[data-design="glyph"] .gl-msg { position: absolute; top: 100%; right: 0; background: #0A0A0A; border: 1px solid var(--gl-rule); line-height: 26px; }
-  :root[data-design="glyph"] .gl-sess { width: 40px; }
   :root[data-design="glyph"] .gl-pane { margin-top: 96px; }
   :root[data-design="glyph"] .gl-pb { padding: 26px 18px 30px; }
-  :root[data-design="glyph"] .gl-tn { display: none; }
-  :root[data-design="glyph"] .gl-hero { padding-bottom: 28px; }
-  :root[data-design="glyph"] .gl-meta { flex-direction: column; gap: 6px; }
-  :root[data-design="glyph"] .gl-stage { padding: 40px 0 30px; }
-  :root[data-design="glyph"] .gl-cond { font-size: clamp(26px, 8.2vw, 40px); }
   :root[data-design="glyph"] .gl-word { font-size: clamp(48px, 15vw, 96px); }
   :root[data-design="glyph"] .gl-w2 { font-size: .1em; }
   :root[data-design="glyph"] .gl-h2 { font-size: clamp(42px, 15vw, 72px); }
@@ -411,20 +332,40 @@
   :root[data-design="glyph"] .gl-big-b { font-size: clamp(28px, 9.6vw, 52px); }
   :root[data-design="glyph"] .gl-cmd { grid-template-columns: 2ch minmax(0, 1fr); font-size: 14px; padding: 12px 6px; }
   :root[data-design="glyph"] .gl-cmd .gl-run { grid-column: 2; }
-  :root[data-design="glyph"] .gl-map { --kg-h: 680px; }
-  :root[data-design="glyph"] .kg-legend { border: 0; gap: 4px; }
-  :root[data-design="glyph"] .kg-key { border: 1px solid var(--gl-rule); }
-  :root[data-design="glyph"] .gl-map .kg-svg { top: 120px; height: calc(100% - 120px); }
   :root[data-design="glyph"] .agent-bar::before { content: "─ agent ─"; }
 }
 
 /* reduced motion and performance mode: the cursor and LED stop blinking, the design holds still */
 @media (prefers-reduced-motion: reduce) { :root[data-design="glyph"] .gl-caret, :root[data-design="glyph"] .gl-led { animation: none; } }
-:root[data-design="glyph"].lite .gl-caret, :root[data-design="glyph"].lite .gl-led { animation: none; }
 :root[data-design="glyph"].lite .gl-msg, :root[data-design="glyph"].lite .gl-prog, :root[data-design="glyph"].lite .gl-cmd { transition: none; }
 
 /* "I am Rithvik" header button: a status-bar segment, like the keys hint beside it */
-:root[data-design="glyph"] .gl-iam { text-transform: lowercase; }
-:root[data-design="glyph"] .gl-iam .iam-ic { color: var(--gl-hue); width: 14px; height: 14px; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .gl-iam:hover { color: var(--gl-fg); } }
 @media (max-width: 640px) { :root[data-design="glyph"] .gl-iam { padding: 0 12px; } }
+
+/* ───────── the shared layout, themed ───────── */
+:root[data-design="glyph"] { --gl-bar: 64px; --ly-head-bg: rgba(10, 10, 10, .96); --ly-line: var(--gl-rule); --ly-soft: #0A0A0A; --ly-display: var(--gl-d); --ly-head-font: var(--gl-d); }
+:root[data-design="glyph"] .gl { padding-top: 0; }
+:root[data-design="glyph"] .ly-head { font-size: 12px; }
+:root[data-design="glyph"] .ly-head[data-past] { border-bottom-color: var(--gl-rule); }
+:root[data-design="glyph"] .ly-brand .ly-mk { width: 20px; height: 20px; color: var(--gl-hue); }
+:root[data-design="glyph"] .ly-nav a { border-radius: 0; color: var(--gl-dim); }
+:root[data-design="glyph"] .ly-nav a[aria-current="true"] { background: none; color: var(--gl-hue); }
+:root[data-design="glyph"] .ly-nav a[aria-current="true"]::after { content: "*"; }
+:root[data-design="glyph"] .ly-iam { border-radius: 0; border-color: var(--gl-rule2); }
+:root[data-design="glyph"] .ly-name .gl-word { flex-wrap: wrap; font-size: clamp(52px, 9.4vw, 152px); text-transform: uppercase; white-space: normal; }
+:root[data-design="glyph"] .ly-name .gl-w2 { font-size: .1em; }
+:root[data-design="glyph"] .ly-status { font: 500 12px/1.6 var(--gl-d); letter-spacing: .08em; text-transform: uppercase; color: var(--gl-hue); }
+:root[data-design="glyph"] .ly-line { font-family: var(--gl-b); color: var(--gl-mut); }
+:root[data-design="glyph"] .gl-sec.gl-hb { --sh: var(--gl-blue); }
+:root[data-design="glyph"] .gl-sec.gl-hr { --sh: var(--gl-red); }
+:root[data-design="glyph"] .gl-pane > .gl-h2 { padding: clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px) 0; }
+:root[data-design="glyph"] .gl-pane > .ly-body { padding: 0 clamp(28px, 5vw, 64px) clamp(28px, 5vw, 64px); }
+:root[data-design="glyph"] .gl-man-a .gl-nums { margin-top: 32px; }
+:root[data-design="glyph"] .gl-msg { position: fixed; z-index: 61; top: 18px; left: 50%; translate: -50% 0; padding: 4px 10px; background: #0A0A0A; border: 1px solid var(--gl-rule); font: 500 11px/1.4 var(--gl-d); pointer-events: none; }
+:root[data-design="glyph"] .ly-foot { position: relative; z-index: 1; }
+@media (max-width: 640px) {
+  :root[data-design="glyph"] .gl-pane > .gl-h2 { padding: 26px 18px 0; }
+  :root[data-design="glyph"] .gl-pane > .ly-body { padding: 0 18px 30px; }
+  :root[data-design="glyph"] .ly-name .gl-word { font-size: clamp(44px, 14vw, 88px); }
+}
