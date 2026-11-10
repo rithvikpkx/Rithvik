@@ -8,7 +8,6 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -114,24 +113,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Night games: one channel per toy. */
-function Play() {
-  return (
-    <ul className="sl-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="sl-toy" data-play={t.id} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="sl-toy-ch">CH {pad(i)}</span>
-            <span className="sl-toy-ic"><Icon name={t.icon} /></span>
-            <span className="sl-toy-t">{t.name}</span>
-            <span className="sl-toy-d">{t.desc}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Signal: one line and the composer. */
 function Contact() {
   return (
@@ -148,7 +129,7 @@ const SKIN: Skin = {
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, contact: Contact },
+  sections: { work: Work, experience: Experience, about: About, contact: Contact },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

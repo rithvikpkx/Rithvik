@@ -427,3 +427,10 @@
 :root[data-design="stipple"] .ly-head { background: var(--st-paper); } /* the cloud would eat the masthead type */
 :root[data-design="stipple"] .ly-hero-copy .ly-status { margin-top: 28px; } :root[data-design="stipple"] .ly-hero-copy .ly-line { margin-top: 10px; }
 @media (max-width: 480px) { :root[data-design="stipple"] .ly .ly-nav a { font-size: 10.5px; } }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="stipple"] .pf-wrap {
+  --pf-bg: #F9D4BC; --pf-fog: #F9D4BC; --pf-grid: rgba(23, 17, 14, .2); --pf-face: #FDEBDD;
+  --pf-b: #17110E; --pf-c: #E8A98A; --pf-edge: #17110E; --pf-line: rgba(23, 17, 14, .45);
+  --pf-r: 6px; --pf-shadow: 5px 5px 0 #17110E; /* a misregistered print, not a soft shadow */
+}

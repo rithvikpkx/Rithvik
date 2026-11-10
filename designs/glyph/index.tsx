@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -136,18 +135,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: ~/bin, one executable per toy. */
-function Play() {
-  return (
-    <ol className="gl-bin">{PLAY.map((p) => (
-      <li key={p.id}><button type="button" className="gl-prog" data-play={p.id}>
-        <span className="gl-prog-x"><span className="gl-dim">./</span>{p.id}</span>
-        <span className="gl-prog-d">{p.desc || p.name}</span>
-      </button></li>
-    ))}</ol>
-  );
-}
-
 /** Questions: the man page's FAQ section. */
 function Questions({ content: C }: SectionProps) {
   return <dl className="gl-faq">{C.faq.map(([q, a], i) => <div key={q}><dt data-edit={`faq.${i}.q`}>{q}</dt><dd data-edit={`faq.${i}.a`}>{a}</dd></div>)}</dl>;
@@ -173,7 +160,7 @@ const SKIN: Skin = {
   SectionOrnament: TitleBar,
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */
