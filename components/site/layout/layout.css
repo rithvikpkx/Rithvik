@@ -43,8 +43,8 @@
   .ly-nav a { padding: 8px 7px; }
 }
 @media (max-width: 480px) {
-  .ly-head { font-size: 12.5px; }
-  .ly-nav a { padding: 7px 5px; }
+  .ly-head { gap: 6px; }
+  .ly .ly-nav a { padding: 7px 4px; font-size: 12px; letter-spacing: 0; } /* set on the link so a look's header font cannot widen it */
   .ly-iam { width: 36px; padding: 0; justify-content: center; }
 }
 

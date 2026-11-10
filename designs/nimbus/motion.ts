@@ -4,8 +4,8 @@ import { useEffect, type RefObject } from "react";
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
-/** The mockup's mount(): section liveness, pointer-shy band clouds, the cursor trail and the turning
- *  footer mark. Everything it adds is removed on unmount (design switch). */
+/** The mockup's mount(): section liveness, pointer-shy band clouds and the cursor trail. Everything it adds is
+ *  removed on unmount (design switch). */
 export function useNimbusMotion(root: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = root.current;
@@ -16,9 +16,9 @@ export function useNimbusMotion(root: RefObject<HTMLElement | null>) {
     const on = (t: EventTarget | null, ev: string, fn: EventListener, o?: AddEventListenerOptions) => { if (!t) return; t.addEventListener(ev, fn, o); offs.push(() => t.removeEventListener(ev, fn, o)); };
     const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-    // ambient loops (tile drift, band clouds, footer turn) only run while their section is on screen
+    // ambient loops (band clouds, card drift) only run while their section is on screen
     const io = new IntersectionObserver((en) => en.forEach((e) => e.target.classList.toggle("nb-live", e.isIntersecting)), { rootMargin: "60px" });
-    $$(".nb-hero, .nb-band, .nb-foot").forEach((s) => io.observe(s));
+    $$(".nb-band").forEach((s) => io.observe(s));
 
     // the band's clouds drift away from the pointer and spring back (snapped to 4px so they stay pixel art)
     const band = $<HTMLElement>(".nb-band"), bcs = $$<HTMLElement>(".nb-bc-in"), st = bcs.map(() => ({ x: 0, y: 0, tx: 0, ty: 0 }));
@@ -57,17 +57,6 @@ export function useNimbusMotion(root: RefObject<HTMLElement | null>) {
       }, { passive: true });
     }
 
-    // the giant mark turns as the footer scrolls into view; a click makes it chase its tail once
-    const giant = $<HTMLElement>(".nb-giant"), foot = $<HTMLElement>(".nb-foot"); let sraf = 0;
-    const turn = () => {
-      sraf = 0;
-      if (!giant || !foot?.classList.contains("nb-live")) return;
-      const p = 1 - Math.min(1, Math.max(0, foot.getBoundingClientRect().top / innerHeight));
-      giant.style.setProperty("--turn", ((p - 1) * 120).toFixed(1) + "deg");
-    };
-    on(window, "scroll", () => { if (!sraf && !calm()) sraf = requestAnimationFrame(turn); }, { passive: true });
-    on(giant, "click", () => { if (calm()) return; giant!.querySelectorAll(".mark").forEach((g) => g.animate([{ rotate: "0deg" }, { rotate: "-360deg" }], { duration: 1100, easing: "cubic-bezier(.77,0,.175,1)" })); });
-
-    return () => { offs.forEach((f) => f()); io.disconnect(); cancelAnimationFrame(braf); cancelAnimationFrame(sraf); pool.forEach((p) => p.getAnimations().forEach((a) => a.cancel())); };
+    return () => { offs.forEach((f) => f()); io.disconnect(); cancelAnimationFrame(braf); pool.forEach((p) => p.getAnimations().forEach((a) => a.cancel())); };
   }, [root]);
 }
