@@ -24,7 +24,9 @@
 .ly-head { position: sticky; top: 0; z-index: 60; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; height: var(--ly-head-h); margin-bottom: calc(-1 * var(--ly-head-h)); padding-inline: var(--ly-gutter); color: var(--ui-fg); font: 500 14px/1 var(--ly-head-font, var(--ui-font)); border-bottom: 1px solid transparent; transition: background-color 240ms ease, border-color 240ms ease; }
 .ly-head[data-past] { background: var(--ly-head-bg); border-bottom-color: var(--ly-line); -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%); }
 .ly-brand { justify-self: start; display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: inherit; text-decoration: none; }
-.ly-brand .mark { width: 26px; flex: none; }
+/* the mark sits in a sized box: some looks set .mark { width: 100% } globally */
+.ly-mk { display: inline-grid; place-items: center; width: 26px; height: 26px; flex: none; }
+.ly-mk .mark { width: 100%; height: auto; }
 .ly-brand-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -.005em; }
 .ly-nav { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .ly-nav a { display: block; padding: 8px 12px; border-radius: 999px; color: var(--ui-muted); text-decoration: none; white-space: nowrap; transition: color 150ms ease, background-color 200ms ease; }
@@ -186,7 +188,7 @@ html.lite .ly-hero-copy > * { animation: none; }
 .ly-foot { position: relative; z-index: 1; display: grid; justify-items: center; gap: 40px; padding: clamp(120px, 14vw, 200px) var(--ly-gutter) calc(96px + env(safe-area-inset-bottom, 0px)); color: var(--ui-fg); }
 .ly-foot-pt { width: 280px; max-width: 72vw; }
 .ly-foot-mini { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; font: 400 12px/1.4 var(--ui-font); color: var(--ui-muted); }
-.ly-foot-mini .mark { width: 16px; color: var(--ui-fg); }
+.ly-foot-mini .ly-mk { width: 16px; height: 16px; color: var(--ui-fg); }
 .ly-foot-who { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-fg); }
 .ly-foot-mini nav { display: inline-flex; gap: 6px; font-size: 11px; }
 .ly-foot-mini nav a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }

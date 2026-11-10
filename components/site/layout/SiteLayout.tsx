@@ -75,7 +75,7 @@ function Footer({ content: c }: { content: Content; skin: Skin }) {
     <footer className="ly-foot">
       <div className="ly-foot-pt"><Tether id="foot" /></div>
       <div className="ly-foot-mini">
-        <span className="ly-foot-who"><Mark label="" />{c.name}</span>
+        <span className="ly-foot-who"><span className="ly-mk"><Mark label="" /></span>{c.name}</span>
         <span>© {new Date().getFullYear()}</span>
         <nav aria-label="Site"><a href="/privacy">Privacy</a>·<a href="/status">Status</a>·<a href="/buffett">For Warren Buffett</a></nav>
       </div>

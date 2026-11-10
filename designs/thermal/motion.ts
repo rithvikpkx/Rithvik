@@ -13,16 +13,18 @@ export function readPal(): PalId {
 }
 const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; };
 
+/** The live palette for any component (server and first client render say iron, so markup hydrates). */
+export const usePal = () => useSyncExternalStore(subscribe, readPal, () => "iron" as PalId);
+
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 /** The mockup's mount(), split by concern: the palette (store, `html[data-th-pal]`, the calibration sweep on the
- *  shader's `u_pv` uniform), the spot meter that follows a fine pointer across the hero, and the nav (smooth jumps,
- *  current section, solid bar once scrolled). Everything it adds is removed on unmount (design switch). */
+ *  shader's `u_pv` uniform) and the spot meter that follows a fine pointer across the hero. Everything it adds is
+ *  removed on unmount (design switch). */
 export function useThermalMotion(root: RefObject<HTMLElement | null>) {
   const setUniform = useShaderUniforms();
-  // server and first client render say iron (so markup hydrates); the stored choice follows
-  const pal = useSyncExternalStore(subscribe, readPal, () => "iron" as PalId);
+  const pal = usePal();
   const [nuc, setNuc] = useState(false);
   const sweepRaf = useRef(0);
 
@@ -68,16 +70,15 @@ export function useThermalMotion(root: RefObject<HTMLElement | null>) {
     return () => { cancelAnimationFrame(r); cancelAnimationFrame(sweepRaf.current); const h = document.documentElement; delete h.dataset.thPal; delete h.dataset.thGl; };
   }, [sweep]);
 
-  // spot meter + nav
+  // spot meter
   useEffect(() => {
     const el = root.current;
     if (!el) return;
     const $ = <T extends Element>(s: string) => el.querySelector<T>(s);
-    const $$ = <T extends Element>(s: string) => Array.from(el.querySelectorAll<T>(s));
     const offs: (() => void)[] = [];
     const on = (t: EventTarget, ev: string, fn: EventListener, o?: AddEventListenerOptions) => { t.addEventListener(ev, fn, o); offs.push(() => t.removeEventListener(ev, fn, o)); };
 
-    const hero = $<HTMLElement>("#top"), meter = $<HTMLElement>("#th-meter"), mv = $<HTMLElement>("#th-mv"), mk = $<HTMLElement>("#th-mk"), bar = $<HTMLElement>(".th-scale-bar"), ptl = $<HTMLElement>(".th-pt-l");
+    const hero = $<HTMLElement>("#top"), meter = $<HTMLElement>("#th-meter"), mv = $<HTMLElement>("#th-mv"), mk = $<HTMLElement>("#th-mk"), bar = $<HTMLElement>(".th-scale-bar");
     let mRaf = 0, heroIo: IntersectionObserver | undefined;
     if (hero && meter && mv && mk && bar) {
       let px = 0, py = 0, sx: number | null = null, sy = 0, lastTxt = 0, vis = false, heroOn = true;
@@ -107,26 +108,16 @@ export function useThermalMotion(root: RefObject<HTMLElement | null>) {
           if (ev.pointerType === "touch") return;
           const r = hero.getBoundingClientRect(); px = ev.clientX - r.left; py = ev.clientY - r.top;
           vis = !!(ev.target as Element).closest?.(".pt-photo");
-          hero.classList.add("is-metering"); meter.classList.toggle("is-vis", vis); ptl?.classList.toggle("on", vis);
+          hero.classList.add("is-metering"); meter.classList.toggle("is-vis", vis);
           if (!mRaf) mRaf = requestAnimationFrame(tick);
         }, { passive: true });
-        on(hero, "pointerleave", () => { hero.classList.remove("is-metering"); ptl?.classList.remove("on"); });
+        on(hero, "pointerleave", () => { hero.classList.remove("is-metering"); });
       }
       heroIo = new IntersectionObserver((en) => { heroOn = en[0].isIntersecting; });
       heroIo.observe(hero);
     }
 
-    // the section you're reading
-    const links = $$<HTMLAnchorElement>(".th-navl a");
-    const secIo = new IntersectionObserver((en) => en.forEach((x) => {
-      if (!x.isIntersecting) return;
-      links.forEach((l) => (l.dataset.thGo === x.target.id ? l.setAttribute("aria-current", "true") : l.removeAttribute("aria-current")));
-    }), { rootMargin: "-45% 0px -50% 0px" });
-    $$(".th-sec, #top").forEach((s) => secIo.observe(s));
-    const nav = $<HTMLElement>(".th-nav");
-    on(window, "scroll", () => nav?.classList.toggle("is-past", scrollY > 40), { passive: true });
-
-    return () => { offs.forEach((f) => f()); cancelAnimationFrame(mRaf); heroIo?.disconnect(); secIo.disconnect(); };
+    return () => { offs.forEach((f) => f()); cancelAnimationFrame(mRaf); heroIo?.disconnect(); };
   }, [root]);
 
   return { pal, nuc, choose };

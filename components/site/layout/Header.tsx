@@ -33,7 +33,7 @@ export default function Header({ name, skin }: { name: string; skin: Skin }) {
 
   return (
     <header ref={ref} className="ly-head">
-      <a className="ly-brand" href="#top" aria-label={`${name}, back to top`}><Mark label="" /><span className="ly-brand-n">{name}</span></a>
+      <a className="ly-brand" href="#top" aria-label={`${name}, back to top`}><span className="ly-mk"><Mark label="" /></span><span className="ly-brand-n">{name}</span></a>
       <nav className="ly-nav" aria-label="Sections">
         {NAV_SECTIONS.map((id) => (
           <a key={id} href={`#${id}`} aria-current={active === id ? "true" : undefined}>{skin.labels?.[id] ?? SECTION_LABELS[id]}</a>
