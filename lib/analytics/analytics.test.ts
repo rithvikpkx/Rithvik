@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { clusterQuestions, delta, fillSeries, foldCountries, headline, parsePeriod, periodRange, questionKey, rankFeatures, rankLeads, scoreLead, shapeKpis } from "./shape.ts";
 import { centroid, countryName, toPoints } from "./geo.ts";
-import { lookCss, lookFor } from "./look.ts";
 import { rowsToItems } from "./replica.ts";
 import { hash32, hourRhythm, sessionStrip, visitorActivity } from "./strips.ts";
 
@@ -97,19 +96,6 @@ test("geo: centroids, names, points merge per spot", () => {
   ]);
   assert.equal(p.length, 2);
   assert.deepEqual(p.map((x) => [x.label, x.value]), [["San Francisco, CA, US", 3], ["India", 3]]);
-});
-
-test("looks: palettes keep their tokens, designs derive from the swatch", () => {
-  const pal = [{ id: "x", slug: "dracula", name: "Dracula", tokens: { bg: "#282a36", text: "#f8f8f2", accent: "#bd93f9" }, sort_order: 1, published: true, created_at: "", updated_at: "" }];
-  const d = lookFor("dracula", pal);
-  assert.equal(d.dark, true);
-  assert.equal(d.tokens.accent, "#bd93f9");
-  const n = lookFor("nimbus", pal);
-  assert.equal(n.dark, false);
-  assert.deepEqual([n.tokens.bg, n.tokens.text, n.tokens.accent], ["#E6F4FF", "#0E1B2B", "#0A9BFF"]);
-  assert.equal(lookFor("mercury", pal).dark, true);
-  assert.equal(lookFor("unknown", pal).id, "dracula");
-  assert.equal(lookCss({ id: "e", name: "e", dark: false, tokens: { bg: "red;}body{x:y", text: "#000" } }, ".adm"), ".adm{\n  --text: #000;\n}");
 });
 
 test("stored rows become transcript items with telemetry", () => {

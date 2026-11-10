@@ -3,7 +3,7 @@ import { requireAuth } from "@/app/admin/auth-helper";
 import AdminFrame from "@/components/admin/AdminFrame";
 import { VisitorInspector } from "@/components/admin/People";
 import type { MessageRow } from "@/lib/agent/chats";
-import { messagesFor } from "@/lib/analytics/server";
+import { messagesFor, serverNow } from "@/lib/analytics/server";
 import { getVisitor } from "@/lib/track/query";
 
 export const metadata = { title: "Visitor" };
@@ -16,7 +16,7 @@ export default async function VisitorPage({ params }: { params: Promise<{ id: st
   const messages = (await messagesFor(found.chats.map((c) => c.id))) as unknown as Map<string, MessageRow[]>;
   return (
     <AdminFrame tab="visitors" live={false}>
-      <VisitorInspector v={found.visitor} visits={found.visits} chats={found.chats} messages={messages} base="/admin" now={Date.now()} />
+      <VisitorInspector v={found.visitor} visits={found.visits} chats={found.chats} messages={messages} base="/admin" now={await serverNow()} />
     </AdminFrame>
   );
 }

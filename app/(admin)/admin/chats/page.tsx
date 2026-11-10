@@ -3,7 +3,7 @@ import AdminFrame from "@/components/admin/AdminFrame";
 import { ChatsView } from "@/components/admin/Chats";
 import { parseFilters } from "@/lib/agent/chats";
 import { listSessions } from "@/lib/agent/chats-query";
-import { sessionStrips } from "@/lib/analytics/server";
+import { serverNow, sessionStrips } from "@/lib/analytics/server";
 
 export const metadata = { title: "Chats" };
 
@@ -15,7 +15,7 @@ export default async function ChatsPage({ searchParams }: { searchParams: Promis
   const strips = await sessionStrips(rows.map((r) => r.id));
   return (
     <AdminFrame tab="chats">
-      <ChatsView rows={rows} f={f} base="/admin" now={Date.now()} strips={strips} />
+      <ChatsView rows={rows} f={f} base="/admin" now={await serverNow()} strips={strips} />
     </AdminFrame>
   );
 }

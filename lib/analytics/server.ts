@@ -239,3 +239,8 @@ export async function messagesFor(sessionIds: string[]) {
   for (const m of data ?? []) by.set(m.session_id as string, [...(by.get(m.session_id as string) ?? []), m]);
   return by;
 }
+
+/** The request's clock for relative times ("3h ago"): read once per page on the server so every row agrees. */
+export async function serverNow(): Promise<number> {
+  return Date.now();
+}

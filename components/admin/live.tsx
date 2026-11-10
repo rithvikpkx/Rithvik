@@ -42,7 +42,11 @@ export function Num({ value, kind = "int" }: { value: number | null; kind?: Kind
   const [shown, setShown] = useState(value);
   const from = useRef<number | null>(null);
   useEffect(() => {
-    if (value === null || still()) { setShown(value); from.current = value; return; }
+    if (value === null || still()) {
+      from.current = value;
+      const r = requestAnimationFrame(() => setShown(value)); // jump straight to the value, outside the effect body
+      return () => cancelAnimationFrame(r);
+    }
     const a = from.current ?? 0, b = value, t0 = performance.now(), D = from.current === null ? 900 : 600;
     let raf = 0;
     const step = (t: number) => {

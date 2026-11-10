@@ -1,7 +1,7 @@
 import { requireAuth } from "@/app/admin/auth-helper";
 import AdminFrame from "@/components/admin/AdminFrame";
 import { VisitorsView } from "@/components/admin/People";
-import { listVisitorsPage, PAGE_SIZE } from "@/lib/analytics/server";
+import { listVisitorsPage, PAGE_SIZE, serverNow } from "@/lib/analytics/server";
 
 export const metadata = { title: "Visitors" };
 
@@ -17,7 +17,7 @@ export default async function VisitorsPage({ searchParams }: { searchParams: Pro
   const { rows, total, activity } = await listVisitorsPage(f);
   return (
     <AdminFrame tab="visitors">
-      <VisitorsView rows={rows} total={total} f={f} base="/admin" now={Date.now()} pageSize={PAGE_SIZE} activity={activity} />
+      <VisitorsView rows={rows} total={total} f={f} base="/admin" now={await serverNow()} pageSize={PAGE_SIZE} activity={activity} />
     </AdminFrame>
   );
 }

@@ -68,7 +68,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
         <button type="submit">filter</button>
       </form>
       <nav className="d-toggles" aria-label="Network type">
-        {TYPES.map(([v, l]) => <a key={v} href={qs({ type: v })} aria-pressed={f.type === v}>{l}</a>)}
+        {TYPES.map(([v, l]) => <a key={v} href={qs({ type: v })} aria-current={f.type === v ? "true" : undefined}>{l}</a>)}
         <span className="d-keys" style={{ marginLeft: "auto", alignSelf: "center" }}><kbd>j</kbd> <kbd>k</kbd> move · <kbd>enter</kbd> open · <kbd>/</kbd> search</span>
       </nav>
       {rows.length ? (
