@@ -1,7 +1,7 @@
 // The official Purdue P (public/images/purdue-p.svg, Wikimedia Commons "Purdue Boilermakers primary mark color
 // on-white"), as the one source every look's education object draws from. Never redraw or distort it: a look
 // may change only colour, material and effects (CSS on the layers below, or the masks in purdue.css).
-import type { ReactNode } from "react";
+import type { ReactNode, SVGProps } from "react";
 import "./purdue.css";
 
 export const P_VB = "0 0 65.645 35.104";
@@ -15,11 +15,11 @@ export const P_RING = "M62.518,5.154c-1.241-1.88-3.95-2.756-8.519-2.756H16.548l-
 export const P_FACE = "M53.999,3.647H17.371l-2.401,5.64h7.067l-7.038,16.526H7.919l-2.404,5.646H32.402l2.403-5.646H27.627l2.031-4.769H46.589c9.705,0,12.145-4.111,14.098-8.698,1.954-4.589,3.017-8.699-6.688-8.699M44.712,15.404H32.059l2.605-6.11694H47.318c2.239,0,3.142,1.151,2.329,3.059a5.17688,5.17688,0,0,1-4.935,3.058";
 
 /** The P as four stacked layers (outline `.pp-o`, counter `.pp-c`, ring `.pp-r`, face `.pp-f`), officially coloured
- *  until a look restyles them. `defs` hold the look's gradients/filters; `children` draw on top, in P units
+ *  until a look restyles them (any svg prop passes through, e.g. className, x/y/width to nest it). `defs` hold the look's gradients/filters; `children` draw on top, in P units
  *  (65.645 x 35.104), so overlays land on the true shape. */
-export function PurdueP({ className, defs, children }: { className?: string; defs?: ReactNode; children?: ReactNode }) {
+export function PurdueP({ defs, children, ...rest }: SVGProps<SVGSVGElement> & { defs?: ReactNode }) {
   return (
-    <svg className={className} viewBox={P_VB} focusable="false" overflow="visible">
+    <svg viewBox={P_VB} focusable="false" overflow="visible" {...rest}>
       {defs && <defs>{defs}</defs>}
       <path className="pp-o" fillRule="evenodd" d={P_SIL} />
       <path className="pp-c" d={P_HOLE} />

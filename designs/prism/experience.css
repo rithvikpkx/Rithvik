@@ -17,11 +17,16 @@
 
 /* the crystal */
 :root[data-design="prism"] .px-cry { overflow: visible; }
-:root[data-design="prism"] .px-gem { transform-origin: 100px 104px; transform: rotate(calc(var(--px) * 6deg)) scale(calc(1 + var(--pv) * .03)); animation: px-float 5s ease-in-out infinite alternate; }
+:root[data-design="prism"] .px-gem { transform-origin: 100px 100px; transform: rotate(calc(var(--px) * 6deg)) scale(calc(1 + var(--pv) * .03)); animation: px-float 5s ease-in-out infinite alternate; }
 @keyframes px-float { to { translate: 0 -4px; } }
-:root[data-design="prism"] .px-edge { fill: none; stroke: var(--pr-ink); stroke-width: 1.1; stroke-linejoin: round; opacity: .8; }
+/* the glass P: ink outline, a bright rim, a pale glass face with cut facets, a chromatic fringe where it bends light */
+:root[data-design="prism"] .px-glass { overflow: visible; filter: drop-shadow(-1.2px 0 0 rgba(255, 45, 61, .55)) drop-shadow(1.2px 0 0 rgba(0, 110, 255, .5)) drop-shadow(0 8px 10px rgba(22, 24, 44, .16)); }
+:root[data-design="prism"] .px-glass .pp-o { fill: var(--pr-ink); }
+:root[data-design="prism"] .px-glass .pp-c { fill: #F3F5FC; }
+:root[data-design="prism"] .px-glass .pp-r { fill: rgba(255, 255, 255, .92); }
+:root[data-design="prism"] .px-glass .pp-f { fill: url(#px-gl); }
 :root[data-design="prism"] .px-glint { fill: #fff; animation: px-glint 3s ease-in-out infinite; }
 @keyframes px-glint { 50% { opacity: .2; } }
 /* the fan swings with the pointer and widens with speed */
-:root[data-design="prism"] .px-fan { transform-origin: 112px 108px; transform: rotate(calc(var(--py) * 10deg + var(--px) * 4deg)) scaleY(calc(1 + var(--pv) * .35)); mix-blend-mode: multiply; }
-:root[data-design="prism"] .px-in { transform-origin: 84px 106px; transform: rotate(calc(var(--py) * -3deg)); }
+:root[data-design="prism"] .px-fan { transform-origin: 158px 100px; transform: rotate(calc(var(--py) * 10deg + var(--px) * 4deg)) scaleY(calc(1 + var(--pv) * .35)); mix-blend-mode: multiply; }
+:root[data-design="prism"] .px-in { transform-origin: 56px 100px; transform: rotate(calc(var(--py) * -3deg)); }
