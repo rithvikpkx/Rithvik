@@ -14,7 +14,9 @@
   /* portrait: white hairline ring, square-ish photo, white tags for contacts */
   --pt-ring: rgba(255, 255, 255, .92); --pt-ring-w: 1px; --pt-photo-bg: #d9d9d4; --pt-photo-r: 3px; --pt-shadow: 0 24px 60px -24px rgba(5, 4, 30, .7);
   --pt-node-bg: #FFFFFF; --pt-node-fg: #0C0D0F; --pt-node-line: transparent; --pt-node-r: 3px; --pt-node-size: 12%;
-  --pt-beam: rgba(255, 255, 255, .42); --pt-pulse-a: #FFFFFF; --pt-pulse-b: #F0F921; --pt-beam-w: 1.2; --pt-pulse-w: 2.4;
+  /* cable: ink sheath outlined in white over the colour map, tracker blue pulse running to red */
+  --pt-sheath: #0B0C18; --pt-sheath-w: 4.5px; --pt-edge: #FFFFFF; --pt-edge-w: 1.3px; --pt-sheen: rgba(255, 255, 255, .3); --pt-cap: butt;
+  --pt-core: #4D7CFF; --pt-glow: #4D7CFF; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #5C86FF; --pt-pulse-m: #FFFFFF; --pt-pulse-b: #FF2D4F;
   /* knowledge graph */
   --kg-h: min(74vh, 720px); --kg-edge: rgba(12, 13, 15, .16); --kg-edge-lit: #1F3BFF; --kg-label: #0C0D0F; --kg-font: var(--tk-mono);
   --kg-me: #0C0D0F; --kg-field: #C24E00; --kg-project: #00875A; --kg-role: #0A6FB0; --kg-school: #8A6A00; --kg-place: #E0103F; --kg-skill: rgba(12, 13, 15, .42);

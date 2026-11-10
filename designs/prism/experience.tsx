@@ -1,20 +1,16 @@
 "use client";
 // Prism's Experience pieces: a light beam that disperses into a spectrum band as it passes, a small glass prism
-// riding its front, and a cut crystal for education that splits a white beam into a fan that tracks the pointer.
+// riding its front, and a glass Purdue P for education that splits a white beam into a fan that tracks the pointer.
 import type { Skin } from "@/lib/designs/skin";
+import { P_FACE, PurdueP } from "@/components/site/layout/purdue";
 import "./experience.css";
 
 const SPEC = ["#FF2D3D", "#FF7A00", "#F5C400", "#12B76A", "#00B4FF", "#1E6BFF", "#7A3CFF"];
-// the crystal's facets (viewBox 0 0 200 200): a brilliant seen from the side, light upper facets, dark lower
+// cut-glass facets laid over the P's face (P units, clipped to the face): light bands and a shadowed one
 const FACETS: [string, string][] = [
-  ["M60 70 100 52 140 70 100 82Z", "rgba(255,255,255,.85)"],
-  ["M60 70 100 82 92 150Z", "rgba(214,220,236,.75)"],
-  ["M140 70 100 82 108 150Z", "rgba(176,184,206,.7)"],
-  ["M100 82 92 150 100 162 108 150Z", "rgba(236,240,250,.8)"],
-  ["M60 70 42 84 92 150Z", "rgba(150,158,184,.55)"],
-  ["M140 70 158 84 108 150Z", "rgba(120,128,156,.6)"],
-  ["M42 84 60 70 100 52 70 56Z", "rgba(255,255,255,.6)"],
-  ["M158 84 140 70 100 52 130 56Z", "rgba(226,230,244,.7)"],
+  ["M6 36 18 -2 25 -2 13 36Z", "rgba(255,255,255,.6)"],
+  ["M32 36 44 -2 49 -2 37 36Z", "rgba(255,255,255,.4)"],
+  ["M52 36 66 -2 70 -2 56 36Z", "rgba(120,130,170,.22)"],
 ];
 
 /** A hairline until the light reaches it; then a spectrum band with a glass prism at its front. */
@@ -28,7 +24,7 @@ function Beam() {
   );
 }
 
-/** The crystal: a white beam enters, the faceted stone refracts it, a seven-colour fan leaves and swings. */
+/** The crystal: a white beam enters, the glass Purdue P refracts it, a seven-colour fan leaves and swings. */
 function Crystal() {
   return (
     <svg className="px-cry" viewBox="0 0 200 200" focusable="false">
@@ -36,15 +32,18 @@ function Crystal() {
         <linearGradient id="px-in" x1="0" x2="1"><stop offset="0" stopColor="#0B0B0F" stopOpacity="0" /><stop offset="1" stopColor="#0B0B0F" stopOpacity=".7" /></linearGradient>
         <filter id="px-soft"><feGaussianBlur stdDeviation="1.4" /></filter>
       </defs>
-      <ellipse cx="100" cy="176" rx="46" ry="5" fill="rgba(22,24,44,.14)" filter="url(#px-soft)" />
-      <path className="px-in" d="M-30 94 84 105 84 107 -30 97Z" fill="url(#px-in)" />
+      <ellipse cx="100" cy="162" rx="58" ry="5" fill="rgba(22,24,44,.14)" filter="url(#px-soft)" />
+      <path className="px-in" d="M-30 94 56 100 56 102 -30 97Z" fill="url(#px-in)" />
       <g className="px-fan" filter="url(#px-soft)">
-        {SPEC.map((c, i) => <path key={c} d={`M112 108 L236 ${70 + i * 13} L236 ${82 + i * 13}Z`} fill={c} opacity=".78" />)}
+        {SPEC.map((c, i) => <path key={c} d={`M158 100 L240 ${68 + i * 13} L240 ${80 + i * 13}Z`} fill={c} opacity=".78" />)}
       </g>
       <g className="px-gem">
-        {FACETS.map(([d, f]) => <path key={d} d={d} fill={f} />)}
-        <path className="px-edge" d="M42 84 70 56 100 52 130 56 158 84 100 162Z M60 70 100 82 140 70 M100 52 100 82 M42 84 60 70 M158 84 140 70 M60 70 92 150 M140 70 108 150 M100 82 92 150 M100 82 108 150" />
-        <path className="px-glint" d="M70 60 92 56 78 66Z" />
+        <PurdueP className="px-glass" x="25" y="60" width="150" height="80.2"
+          defs={<><clipPath id="px-pf"><path d={P_FACE} /></clipPath>
+            <linearGradient id="px-gl" x1="0" y1="0" x2=".7" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".98" /><stop offset=".55" stopColor="#DCE3F5" stopOpacity=".85" /><stop offset="1" stopColor="#AEB9DC" stopOpacity=".8" /></linearGradient></>}>
+          <g clipPath="url(#px-pf)">{FACETS.map(([d, f]) => <path key={d} d={d} fill={f} />)}</g>
+          <path className="px-glint" d="M20.5 4.5H31L28.5 6.9H18Z" />
+        </PurdueP>
       </g>
     </svg>
   );

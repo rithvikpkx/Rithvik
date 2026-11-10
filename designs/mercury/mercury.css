@@ -16,7 +16,9 @@
   --agent-font: var(--mc-m); --agent-text-font: var(--mc-b); --agent-r: 20px;
   --pt-ring: transparent; --pt-ring-w: 0px; --pt-photo-bg: #16161A; --pt-photo-r: 50%; --pt-shadow: 0 40px 80px -30px rgba(0, 0, 0, .9);
   --pt-node-bg: var(--mc-sphere); --pt-node-fg: #0A0A0B; --pt-node-line: rgba(255, 255, 255, .25); --pt-node-r: 50%; --pt-node-size: 13%;
-  --pt-beam: rgba(237, 237, 239, .16); --pt-pulse-a: #9DA1AA; --pt-pulse-b: #FFFFFF; --pt-beam-w: 1; --pt-pulse-w: 2.2;
+  /* cable: graphite sheath with a bright rim (reads on the chrome and on the black), liquid-silver pulse */
+  --pt-sheath: #1B1C21; --pt-sheath-w: 4.5px; --pt-edge: rgba(240, 242, 248, .7); --pt-edge-w: 1.1px; --pt-sheen: rgba(255, 255, 255, .35);
+  --pt-core: #E6E9F0; --pt-glow: #C9D0DE; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #9DA3B0; --pt-pulse-m: #FFFFFF; --pt-pulse-b: #9DA3B0;
   --kg-h: min(80vh, 760px); --kg-edge: rgba(237, 237, 239, .13); --kg-edge-lit: #FFFFFF; --kg-label: #D9D9DE; --kg-font: var(--mc-m);
   --kg-me: #FFFFFF; --kg-field: #EDEDF0; --kg-project: #AFC4FF; --kg-role: #E3A882; --kg-school: #E6CB8A; --kg-place: #9ED8CD; --kg-skill: rgba(237, 237, 239, .42);
   --kg-card-bg: #141417; --kg-card-fg: #EDEDEF;

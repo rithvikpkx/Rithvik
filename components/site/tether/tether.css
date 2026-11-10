@@ -9,12 +9,36 @@ button.pt-photo { cursor: pointer; }
 @keyframes pt-in { from { opacity: 0; scale: .94; } }
 
 .pt-beams { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.pt-beam { fill: none; stroke: var(--pt-beam, rgba(127, 127, 127, .35)); stroke-width: var(--pt-beam-w, 1.4); stroke-linecap: round; }
-/* the flow: a short bright dash running down each string, forever, offset per string */
-.pt-pulse { fill: none; stroke-width: var(--pt-pulse-w, 2.6); stroke-linecap: round; stroke-dasharray: .16 .84; animation: pt-flow 2.6s linear infinite; }
-@keyframes pt-flow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* The cables: a shaded sheath (edge outline, body, sheen, dim core) with pulses of light running portrait -> node.
+   Every layer is a copy of one path (pathLength 1), so the dash maths below is in fractions of the cable.
+   Tokens a look can set: --pt-sheath, --pt-sheath-w, --pt-edge, --pt-edge-w, --pt-sheen, --pt-core, --pt-glow, --pt-head,
+   --pt-halo (ambient glow opacity), --pt-cap, --pt-pulse-a/-m/-b (the tail's colours, top to bottom). */
+.pt-cable path { fill: none; stroke-linecap: var(--pt-cap, round); stroke-linejoin: round; }
+.pt-edge { stroke: var(--pt-edge, transparent); stroke-width: calc(var(--pt-sheath-w, 4.5px) + 2 * var(--pt-edge-w, 0px)); }
+.pt-halo { stroke: var(--pt-glow, var(--pt-pulse-a, #888)); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3.4); opacity: var(--pt-halo, .12); }
+.pt-sheath { stroke: var(--pt-sheath, var(--pt-beam, #777)); stroke-width: var(--pt-sheath-w, 4.5px); }
+.pt-sheen { stroke: var(--pt-sheen, rgba(255, 255, 255, .38)); stroke-width: 1px; transform: translate(-1.05px, -.5px); } /* a thin lit edge on the sheath */
+.pt-core { stroke: var(--pt-core, var(--pt-pulse-a, #fff)); stroke-width: 1.3px; opacity: .55; }
+
+/* the light: a dash per layer (wide soft glow, gradient tail, bloom, white head), all sharing one front so they read as one
+   comet. --l is each layer's dash length; offset = l - front, front runs from just before the photo to past the node. */
+@property --pt-f { syntax: "<number>"; inherits: true; initial-value: -.03; } /* the pulse front: a registered number, because a var() inside keyframes will not interpolate */
+.pt-p { --l: .05; stroke-dasharray: var(--l) 3; stroke-dashoffset: calc(var(--l) - var(--pt-f)); animation: pt-run var(--cd, 3.6s) linear var(--dl, 0s) infinite both; }
+.pt-glow { --l: .34; stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 2.3); opacity: .24; }
+.pt-tail { --l: .22; stroke-width: calc(var(--pt-sheath-w, 4.5px) * .8); opacity: .95; }
+.pt-bloom { --l: .08; stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 2); opacity: .6; }
+.pt-head { --l: .035; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * .6); }
+@keyframes pt-run { 0% { --pt-f: -.03; } 46%, 100% { --pt-f: 1.36; } }
+/* the occasional surge: every third pulse a brighter, wider one rides on top (same start as the regular pulse) */
+.pt-s { animation-name: pt-surge; animation-duration: calc(var(--cd, 3.6s) * 3); }
+.pt-sglow { --l: .3; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3.4); opacity: .3; }
+.pt-shead { --l: .12; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * .95); }
+@keyframes pt-surge { 0%, 66.6% { --pt-f: -.03; } 82%, 100% { --pt-f: 1.36; } }
 
 .pt-node { position: absolute; width: max(var(--pt-node-size, 13%), 34px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; padding: 0; border-radius: var(--pt-node-r, 50%); background: var(--pt-node-bg, #fff); color: var(--pt-node-fg, #111); border: var(--bw, 1px) solid var(--pt-node-line, rgba(0, 0, 0, .14)); text-decoration: none; cursor: pointer; user-select: none; -webkit-user-drag: none; will-change: transform; transition: scale 200ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)), background-color 200ms ease, color 200ms ease; }
+/* the arrival glow: a soft ring around the node that flares when its cable's pulse lands (33% of the cycle) */
+.pt-node::before { content: ""; position: absolute; inset: -38%; z-index: -1; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(closest-side, transparent 52%, var(--pt-glow, #fff) 62%, transparent 100%); animation: pt-arrive var(--cd, 3.6s) linear var(--dl, 0s) infinite; }
+@keyframes pt-arrive { 0%, 31% { opacity: 0; scale: .9; } 35% { opacity: .9; scale: 1.05; } 62%, 100% { opacity: 0; scale: 1.15; } }
 .pt-node .logo, .pt-node .ic { width: 40%; height: 40%; pointer-events: none; }
 .pt-node:active { scale: .94; }
 .pt[data-drag] .pt-node { cursor: grabbing; }
@@ -30,8 +54,11 @@ button.pt-photo { cursor: pointer; }
 .pt[data-live="drop"] .pt-beams { animation: pt-fade 300ms ease both; }
 @keyframes pt-fade { from { opacity: 0; } }
 
-.pt[data-paused] .pt-pulse { animation-play-state: paused; }
-/* calm: no flow, each dash rests mid-string so the strings still read as live */
-@media (prefers-reduced-motion: reduce) { .pt-pulse { animation: none; stroke-dashoffset: .55; } .pt-node, .pt-photo { transition: none; animation: none; } }
-html.lite .pt-pulse { animation: none; stroke-dashoffset: .55; }
+.pt[data-paused] .pt-cable path, .pt[data-paused] .pt-node::before { animation-play-state: paused; }
+/* calm: no pulses; the cables rest as lit cable, a steady core and a soft halo, and the nodes keep a faint glow */
+@media (prefers-reduced-motion: reduce) { .pt-p { display: none; } .pt-core { opacity: 1; } .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); } .pt-node::before { animation: none; opacity: .35; } .pt-node, .pt-photo { transition: none; animation: none; } }
+html.lite .pt-p { display: none; }
+html.lite .pt-core { opacity: 1; }
+html.lite .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); }
+html.lite .pt-node::before { animation: none; opacity: .35; }
 html.lite .pt-photo { animation: none; }

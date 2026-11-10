@@ -19,7 +19,9 @@
   /* portrait */
   --pt-ring: rgba(10, 10, 16, 1); --pt-ring-w: 5px; --pt-photo-bg: #1A1924; --pt-photo-r: 50%; --pt-shadow: 0 30px 80px -30px rgba(0, 0, 0, .8);
   --pt-node-bg: #13121B; --pt-node-fg: #EEEAF6; --pt-node-line: rgba(238, 234, 246, .22); --pt-node-r: 50%; --pt-node-size: 13%;
-  --pt-beam: rgba(238, 234, 246, .16); --pt-pulse-a: #8BF0D3; --pt-pulse-b: #B9A8FF; --pt-beam-w: 1.2; --pt-pulse-w: 2.4;
+  /* cable: dark sheath outlined in white over the holo foil, a holographic pulse */
+  --pt-sheath: #13121C; --pt-sheath-w: 4.5px; --pt-edge: #FFFFFF; --pt-edge-w: 1.3px; --pt-sheen: rgba(255, 255, 255, .3);
+  --pt-core: #B9A8FF; --pt-glow: #B9A8FF; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #8BF0D3; --pt-pulse-m: #B9A8FF; --pt-pulse-b: #FF9AD5;
   /* graph */
   --kg-edge: rgba(238, 234, 246, .13); --kg-edge-lit: #8BF0D3; --kg-label: #EEEAF6; --kg-font: var(--fo-m);
   --kg-me: #EEEAF6; --kg-field: #B9A8FF; --kg-project: #8BF0D3; --kg-role: #FFB89C; --kg-school: #FFD79E; --kg-place: #94D4FF; --kg-skill: rgba(238, 234, 246, .42);

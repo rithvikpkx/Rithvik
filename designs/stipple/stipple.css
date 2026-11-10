@@ -15,7 +15,9 @@
   --pt-ring: #FDE6D5; --pt-ring-w: 8px; --pt-photo-bg: #E9B896; --pt-photo-r: 2px;
   --pt-shadow: 0 0 0 9px #17110E, 13px 13px 0 9px #FF3B1F;
   --pt-node-bg: #FCDDC8; --pt-node-fg: #17110E; --pt-node-line: #17110E; --pt-node-r: 50%; --pt-node-size: 13%;
-  --pt-beam: rgba(23, 17, 14, .7); --pt-pulse-a: #FF3B1F; --pt-pulse-b: #2B44B8; --pt-beam-w: 1.6; --pt-pulse-w: 3;
+  /* cable: ink sheath with a cream outline to cut it out of the halftone, vermilion core */
+  --pt-sheath: #17110E; --pt-sheath-w: 4.5px; --pt-edge: #FDE6D5; --pt-edge-w: 1.6px; --pt-sheen: rgba(253, 230, 213, .4);
+  --pt-core: #FF3B1F; --pt-glow: #FF3B1F; --pt-head: #FFF1E4; --pt-halo: .16; --pt-pulse-a: #FF3B1F; --pt-pulse-m: #FF7A4D; --pt-pulse-b: #FF3B1F;
 }
 :root[data-design="stipple"] body { background: #F9CDB0; color: #17110E; }
 :root[data-design="stipple"] ::selection { background: #FF3B1F; color: #17110E; }

@@ -14,7 +14,9 @@
   --agent-font: var(--gl-d); --agent-text-font: var(--gl-b); --agent-r: 0px;
   --pt-ring: var(--gl-hue); --pt-ring-w: 1px; --pt-photo-bg: #111; --pt-photo-r: 0; --pt-shadow: 6px 6px 0 rgba(237, 237, 237, .06);
   --pt-node-bg: #050505; --pt-node-fg: var(--gl-hue); --pt-node-line: var(--gl-hue); --pt-node-r: 0; --pt-node-size: 12.5%;
-  --pt-beam: rgba(237, 237, 237, .24); --pt-pulse-a: var(--gl-hue); --pt-pulse-b: #FFFFFF; --pt-beam-w: 1; --pt-pulse-w: 2.4;
+  /* cable: black sheath with an amber rim, square-cut amber pulse */
+  --pt-sheath: #140E02; --pt-sheath-w: 4px; --pt-edge: color-mix(in srgb, var(--gl-hue) 65%, transparent); --pt-edge-w: 1px; --pt-sheen: color-mix(in srgb, var(--gl-hue) 30%, transparent); --pt-cap: butt;
+  --pt-core: var(--gl-hue); --pt-glow: var(--gl-hue); --pt-head: #FFF3D2; --pt-halo: .18; --pt-pulse-a: var(--gl-hue); --pt-pulse-m: #FFE08A; --pt-pulse-b: var(--gl-hue);
   --press: translateY(1px);
   scrollbar-color: #2a2a2a #050505;
 }

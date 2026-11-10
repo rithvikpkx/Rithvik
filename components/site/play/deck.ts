@@ -146,7 +146,7 @@ export class Deck {
         if (this.on) this.pos = this.wrapT(this.pos + dt);
       } else {
         const target = this.on ? DEG_PER_SEC : 0;
-        this.vel += (target - this.vel) * Math.min(1, dt * (this.on ? 4.2 : 2.4));
+        this.vel += (target - this.vel) * Math.min(1, dt * (this.on ? 2.2 : 1.3));
         if (!this.on && Math.abs(this.vel) < 2) this.vel = 0;
         this.angle += this.vel * dt;
         this.pos = this.wrapT(this.pos + this.vel * dt * SEC_PER_DEG);

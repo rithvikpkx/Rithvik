@@ -20,7 +20,9 @@
   /* portrait */
   --pt-photo-bg: var(--bg-soft); --pt-ring: var(--cl-line); --pt-ring-w: 1px; --pt-shadow: 0 24px 60px -28px rgba(0, 0, 0, .4);
   --pt-node-bg: var(--bg); --pt-node-fg: var(--text); --pt-node-line: var(--cl-line-strong); --pt-node-size: 12.5%;
-  --pt-beam: var(--cl-line-strong); --pt-pulse-a: var(--accent); --pt-pulse-b: var(--green); --pt-beam-w: 1.2; --pt-pulse-w: 2.2;
+  /* cable: a sheath tinted from the palette's text over its bg (reads on light and dark), an accent core, a lifted-accent head */
+  --pt-sheath: color-mix(in srgb, var(--text) 34%, var(--bg)); --pt-sheath-w: 4.5px; --pt-edge: color-mix(in srgb, var(--text) 55%, var(--bg)); --pt-edge-w: .7px; --pt-sheen: color-mix(in srgb, var(--bg) 60%, transparent);
+  --pt-core: var(--accent); --pt-glow: var(--accent); --pt-head: color-mix(in srgb, var(--accent) 30%, #fff); --pt-halo: .14; --pt-pulse-a: var(--accent); --pt-pulse-m: color-mix(in srgb, var(--accent) 45%, var(--green)); --pt-pulse-b: var(--green);
   --mark-accent: var(--accent);
   scroll-padding-top: 80px;
 }
