@@ -29,10 +29,10 @@ export function Sigil({ id, size = 36, className }: { id: string; size?: number;
     <svg className={`d-sigil${className ? ` ${className}` : ""}`} viewBox="-20 -20 40 40" width={size} height={size} aria-hidden="true" style={{ color: hue }}>
       <circle r="19" className="d-sigil-bg" />
       {Array.from({ length: 12 }, (_, i) => ((h >>> i) & 1 ? (
-        <path key={i} d={arc(12, i * seg + gap, (i + 1) * seg - gap)} stroke="currentColor" fill="none" strokeLinecap="round"
-          strokeWidth={(h >>> (i + 12)) & 1 ? 3.6 : 1.6} opacity={(h >>> (i + 12)) & 1 ? 1 : 0.55} />
+        <path key={i} d={arc(12.5, i * seg + gap, (i + 1) * seg - gap)} stroke="currentColor" fill="none" strokeLinecap="round"
+          strokeWidth={(h >>> (i + 12)) & 1 ? 4.6 : 2.4} opacity={(h >>> (i + 12)) & 1 ? 1 : 0.6} />
       ) : null))}
-      <circle cx={f1(4.5 * Math.sin(eye))} cy={f1(-4.5 * Math.cos(eye))} r="2.6" fill="currentColor" />
+      <circle cx={f1(4.5 * Math.sin(eye))} cy={f1(-4.5 * Math.cos(eye))} r="3" fill="currentColor" />
     </svg>
   );
 }
@@ -203,6 +203,18 @@ export function GlyphStrip({ marks, label }: { marks: StripMark[]; label: string
         return <rect key={i} x={cx - 1.4} y={m - 6} width={2.8} height={12} rx={1.4} className={k.c ? "g-a c" : "g-a"} />;
       })}
     </svg>
+  );
+}
+
+/** Counts of `times` per UTC day over the last `n` days as small bars (today on the right). */
+export function Hist({ times, now, n = 30, tone, label }: { times: string[]; now: number; n?: number; tone?: "amber"; label: string }) {
+  const days = Array<number>(n).fill(0), today = Math.floor(now / 86_400_000);
+  for (const t of times) { const i = n - 1 - (today - Math.floor(Date.parse(t) / 86_400_000)); if (i >= 0 && i < n) days[i] += 1; }
+  const max = Math.max(1, ...days);
+  return (
+    <span className={`d-hist${tone ? ` ${tone}` : ""}`} role="img" aria-label={label}>
+      {days.map((v, i) => <i key={i} className={v ? undefined : "z"} style={{ height: v ? `${Math.max(8, (v / max) * 100)}%` : undefined, ["--i" as string]: i }} />)}
+    </span>
   );
 }
 
