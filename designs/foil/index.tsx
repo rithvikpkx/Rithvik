@@ -16,6 +16,8 @@ import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
+import FoilName from "./name-fx";
+import FoilPortrait from "./portrait-fx";
 import "./foil.css";
 
 const META = designById("foil")!;
@@ -148,6 +150,8 @@ const SKIN: Skin = {
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  NameFx: FoilName,
+  PortraitFx: FoilPortrait,
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

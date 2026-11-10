@@ -15,6 +15,8 @@ import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
 import { usePrismMotion } from "./motion";
+import PrismName from "./name-fx";
+import PrismPortrait from "./portrait-fx";
 import "./prism.css";
 
 const META = designById("prism")!;
@@ -32,15 +34,6 @@ function Ca({ txt, cls = "" }: { txt: string; cls?: string }) {
   return <span className={`pr-ca${cls ? " " + cls : ""}`} data-text={txt}>{txt}</span>;
 }
 
-/** The hero name, split into red and cyan plates that settle on load. */
-function Name({ first, last }: { first: string; last: string }) {
-  return (
-    <span className="pr-name">
-      <span className="pr-ca pr-name-1" data-text={first} data-edit="name.first">{first}</span>
-      <span className="pr-ca pr-name-2" data-text={last} data-edit="name.last">{last}</span>
-    </span>
-  );
-}
 
 /** A section heading with its chromatic plates (Play gets the anaglyph). */
 function Title({ id, label, hid }: { id: SectionId; label: string; hid: string }) {
@@ -206,7 +199,8 @@ const SKIN: Skin = {
   rootClass: "pr",
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,
-  NameFx: Name,
+  NameFx: PrismName,
+  PortraitFx: PrismPortrait,
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
