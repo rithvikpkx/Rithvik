@@ -1,6 +1,8 @@
 # rithvik.ai overhaul: handoff
 
-Status (2026-11-09, end of session): **Steps 0–3 done + review round 1 merged on `dev`** (preview
+Status (2026-11-10): **Owner review round 2 in progress** — requirements + streams in `docs/plans/review-round-2.md`
+(wave 1: S1 shared layout, S2 dashboards, S3 logo, S4 theme knob, S5 agent TUI; wave 2 after S1: S6–S10).
+Earlier status (2026-11-09, end of session): **Steps 0–3 done + review round 1 merged on `dev`** (preview
 https://rithvik-git-dev-rithvikpkx-7614s-projects.vercel.app). NEXT SESSION: (1) collect the owner's results from the
 logged-in checklist (inline editing, admin bar, /admin, Share, meeting email, tracking on phone) and his queued
 "general UI/UX fixups"; (2) fix; (3) Step 4 verification; (4) merge to main only on "merge to main", then run the
