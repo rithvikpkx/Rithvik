@@ -98,3 +98,18 @@ The owner's feedback on the v7 site after review round 1, turned into streams. R
     (Building, Learning, Reading/Listening, Places with live clocks), the stack as physics logo tiles you can toss,
     and a few animated numbers (e.g. projects shipped, commits this year). Low density.
   - Copy pass across all looks: cut slop, keep the good themed lines.
+
+## Round 3 fixes (owner, 2026-11-10)
+
+Done directly: Classic name is an upright sans (owner: the italic serif was too ornate); Nimbus cursor trail removed;
+`r2_sections_copy_migration.sql` applied; the agent may keep stating the email address (owner).
+Streams (all Sonnet/high, branches `fix/r3-*`):
+- **tether** — cables carrying a pulse of light (sheath + bright core + travelling pulses); fix visibility in Tracker,
+  Foil, Mercury, Nimbus, Stipple, Thermal.
+- **switcher** — the knob reads as dated audio hardware; replace with an abstract physical object (not a knob/dial);
+  performance mode stays on the same object.
+- **purdue** — every look's education object shows the official Purdue P shape with a themed treatment (Classic as is).
+- **play** — remove non-clickable decorations from the Play field; rebuild the Records turntable (realistic, physical,
+  play/pause on the deck itself, no separate controls).
+- **agent-stack** — Claude Code-style working line: animated ouroboros + themed verbs; stack starts frozen with a
+  physics button, logos with names on hover, a Logos/Text toggle.
