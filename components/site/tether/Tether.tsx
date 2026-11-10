@@ -1,9 +1,9 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { useSite } from "../SiteProvider";
 import { Icon, Logo } from "../Glyph";
-import { NODE_X, NODE_Y, PHOTO, VIEW, createWorld, drop, hold, pathOf, release, step, tug } from "./sim";
+import { NODE_R, NODE_X, NODE_Y, PHOTO, VIEW, createWorld, drop, hold, pathOf, release, step, tug } from "./sim";
 import "./tether.css";
 
 type NodeKey = "github" | "linkedin" | "email" | "resume";
@@ -11,12 +11,17 @@ const NODES: { k: NodeKey; label: string }[] = [
   { k: "github", label: "GitHub" }, { k: "linkedin", label: "LinkedIn" }, { k: "email", label: "Email" }, { k: "resume", label: "Resume" },
 ];
 const REST = createWorld(); // the settled strings: the server renders these, so no-JS and first paint match
+/** Per-cable pulse clock: each cable runs its own cycle length and phase so the four never beat in unison. */
+const CYCLE = [3.4, 4.1, 3.7, 4.6];
+const cable = (i: number) => ({ "--cd": `${CYCLE[i]}s`, "--dl": `${(-i * 1.15).toFixed(2)}s` }) as CSSProperties;
+const LAYERS = ["pt-edge", "pt-halo", "pt-sheath", "pt-sheen", "pt-core", "pt-p pt-glow", "pt-p pt-tail", "pt-p pt-bloom", "pt-p pt-head", "pt-p pt-s pt-sglow", "pt-p pt-s pt-shead"];
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
 
 /** Calm = reduced motion or performance mode (`html.lite`), read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
-/** The portrait with its four contact nodes (GitHub, LinkedIn, Email, Resume) hanging on physical strings.
+/** The portrait with its four contact nodes (GitHub, LinkedIn, Email, Resume) hanging on physical cables (a shaded
+ *  sheath carrying pulses of light from the photo to each node, which glows when one arrives).
  *  When it first scrolls into view the nodes drop from the photo and bounce; hover tugs a string, a mouse can
  *  drag a node and let it spring home. One rAF loop that stops once everything is still and never runs off-screen.
  *  Under `html.lite` / reduced motion it is a still. Restyle with --pt-* tokens and .pt-* rules; the photo is never
@@ -30,15 +35,14 @@ export default function Tether({ id, className = "", fx: Fx }: { id: string; cla
     const fig = ref.current;
     if (!fig) return;
     const nodes = Array.from(fig.querySelectorAll<HTMLElement>(".pt-node"));
-    const beams = Array.from(fig.querySelectorAll<SVGPathElement>(".pt-beam"));
-    const pulses = Array.from(fig.querySelectorAll<SVGPathElement>(".pt-pulse"));
+    const cables = Array.from(fig.querySelectorAll<SVGGElement>(".pt-cable")).map((g) => Array.from(g.querySelectorAll<SVGPathElement>("path")));
     const w = createWorld();
     let raf = 0, last = 0, visible = false, started = false, scale = fig.clientWidth / VIEW.w || 1;
     let drag: { i: number; x: number; y: number; moved: boolean; id: number } | null = null;
 
     const draw = () => {
       w.nodes.forEach((n, i) => { nodes[i].style.transform = n.ox || n.oy ? `translate(${(n.ox * scale).toFixed(2)}px, ${(n.oy * scale).toFixed(2)}px)` : ""; });
-      w.strings.forEach((s, i) => { const d = pathOf(s); beams[i].setAttribute("d", d); pulses[i].setAttribute("d", d); });
+      w.strings.forEach((s, i) => { const d = pathOf(s); for (const p of cables[i]) p.setAttribute("d", d); });
     };
     const tick = (t: number) => {
       raf = 0;
@@ -112,17 +116,22 @@ export default function Tether({ id, className = "", fx: Fx }: { id: string; cla
     <figure ref={ref} className={`pt${className ? " " + className : ""}`} aria-label={`${content.name} and where to reach him`}>
       <svg className="pt-beams" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} aria-hidden="true">
         <defs>
-          <linearGradient id={grad} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--pt-pulse-b, #ffd166)" />
-            <stop offset="1" stopColor="var(--pt-pulse-a, #ff4d8d)" />
+          {/* userSpaceOnUse: a perfectly vertical cable has a zero-width bounding box, which would draw nothing */}
+          <linearGradient id={grad} gradientUnits="userSpaceOnUse" x1="0" y1={PHOTO.cy + PHOTO.r} x2="0" y2={NODE_Y - NODE_R}>
+            <stop offset="0" stopColor="var(--pt-pulse-a, #ff4d8d)" />
+            <stop offset=".5" stopColor="var(--pt-pulse-m, var(--pt-pulse-a, #ffffff))" />
+            <stop offset="1" stopColor="var(--pt-pulse-b, #ffd166)" />
           </linearGradient>
         </defs>
-        {REST.strings.map((s, i) => (
-          <g key={i}>
-            <path className="pt-beam" d={pathOf(s)} />
-            <path className="pt-pulse" d={pathOf(s)} pathLength={1} stroke={`url(#${grad})`} style={{ animationDelay: `${(-i * 0.37).toFixed(2)}s` }} />
-          </g>
-        ))}
+        {/* a cable = sheath layers + light pulses: stacked copies of one path. pathLength=1 makes every dash a fraction of the cable */}
+        {REST.strings.map((s, i) => {
+          const d = pathOf(s);
+          return (
+            <g key={i} className="pt-cable" style={cable(i)}>
+              {LAYERS.map((c) => <path key={c} className={c} d={d} pathLength={1} stroke={c.endsWith("tail") ? `url(#${grad})` : undefined} />)}
+            </g>
+          );
+        })}
       </svg>
       {Fx ? (
         <button type="button" className="pt-photo" style={photo} aria-pressed={fxOn} aria-label="Photo effect" onClick={() => setFxOn((v) => !v)}>
@@ -132,7 +141,7 @@ export default function Tether({ id, className = "", fx: Fx }: { id: string; cla
         <div className="pt-photo" style={photo}>{img}</div>
       )}
       {NODES.map((n, i) => {
-        const style = { left: pct(NODE_X[i], VIEW.w), top: pct(NODE_Y, VIEW.h) };
+        const style = { left: pct(NODE_X[i], VIEW.w), top: pct(NODE_Y, VIEW.h), ...cable(i) }; // the node shares its cable's clock, so its glow lands with the pulse
         const cls = `pt-node pt-${n.k}`;
         // draggable={false}: a mouse drag is ours (the string), not the browser's link drag-and-drop
         if (n.k === "resume") return <button key={n.k} type="button" className={cls} style={style} data-resume="" aria-label={n.label} data-tip={n.label}><Icon name="file-text" /></button>;
