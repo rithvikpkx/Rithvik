@@ -16,7 +16,9 @@
   --agent-font: var(--sl-m); --agent-text-font: var(--sl-b); --agent-r: 3px;
   --pt-ring: rgba(255, 255, 255, .22); --pt-ring-w: 1px; --pt-photo-bg: #1A1B1A; --pt-photo-r: 50%; --pt-shadow: 0 18px 40px -18px rgba(0, 0, 0, .9);
   --pt-node-bg: #0E0F0E; --pt-node-fg: #E9ECE9; --pt-node-line: rgba(255, 255, 255, .26); --pt-node-r: 50%; --pt-node-size: 13%;
-  --pt-beam: rgba(255, 255, 255, .14); --pt-pulse-a: var(--sl-ph); --pt-pulse-b: #FFFFFF; --pt-beam-w: 1; --pt-pulse-w: 2.2;
+  /* cable: dark sheath rimmed in phosphor, phosphor-green pulse */
+  --pt-sheath: #0C150E; --pt-sheath-w: 4.5px; --pt-edge: rgba(122, 255, 160, .55); --pt-edge-w: 1px; --pt-sheen: rgba(190, 255, 205, .25);
+  --pt-core: var(--sl-ph); --pt-glow: var(--sl-ph); --pt-head: #EAFFF0; --pt-halo: .2; --pt-pulse-a: var(--sl-ph); --pt-pulse-m: #CFFFD9; --pt-pulse-b: var(--sl-ph);
   --kg-h: min(80vh, 760px); --kg-edge: rgb(var(--sl-rgb) / .1); --kg-edge-lit: var(--sl-hot); --kg-label: #B3E69C; --kg-font: var(--sl-m);
   --kg-me: var(--sl-hot); --kg-field: #CBFFA6; --kg-project: var(--sl-ph); --kg-role: #74D850; --kg-school: #E4FFD4; --kg-place: #9BE7B0; --kg-skill: rgb(var(--sl-rgb) / .5);
   --kg-card-bg: #050C05; --kg-card-fg: var(--sl-fg);

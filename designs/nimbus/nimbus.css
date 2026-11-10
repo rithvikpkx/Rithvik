@@ -13,7 +13,9 @@
   /* portrait */
   --pt-ring: #FFFFFF; --pt-ring-w: 8px; --pt-photo-bg: #C4E6FF; --pt-photo-r: 50%; --pt-shadow: 0 0 0 9px #C4E6FF, 0 40px 70px -34px rgba(7, 80, 160, .55);
   --pt-node-bg: #FFFFFF; --pt-node-fg: #0E1B2B; --pt-node-line: rgba(14, 27, 43, .14); --pt-node-r: 14px; --pt-node-size: 14%;
-  --pt-beam: rgba(10, 155, 255, .32); --pt-pulse-a: #0A9BFF; --pt-pulse-b: #FFC93C; --pt-beam-w: 1.8; --pt-pulse-w: 3.2;
+  /* cable: deep sky-blue sheath outlined in white (reads on the pale sky and on the blue), cyan core */
+  --pt-sheath: #0A4C9C; --pt-sheath-w: 5px; --pt-edge: #FFFFFF; --pt-edge-w: 1.4px; --pt-sheen: rgba(255, 255, 255, .45);
+  --pt-core: #7AD4FF; --pt-glow: #0A9BFF; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #7AD4FF; --pt-pulse-m: #FFFFFF; --pt-pulse-b: #0A9BFF;
 }
 :root[data-design="nimbus"] body { background: #FFFFFF; color: var(--nb-ink); }
 :root[data-design="nimbus"] ::selection { background: var(--nb-sun); color: var(--nb-ink); }
