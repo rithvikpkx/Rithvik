@@ -23,13 +23,16 @@
 @keyframes kx-hunt { 50% { scale: 1.18; } }
 
 /* the detection */
-:root[data-design="tracker"] .kx-wire { position: absolute; inset: 8%; overflow: visible; transform: translate(calc(var(--px) * 12px), calc(var(--py) * 9px)); }
-:root[data-design="tracker"] .kx-wire line, :root[data-design="tracker"] .kx-rim { stroke: var(--tk-ink); stroke-width: 1.4; fill: none; }
-:root[data-design="tracker"] .kx-fill { fill: color-mix(in srgb, var(--tk-acc) 8%, transparent); stroke: none; }
-:root[data-design="tracker"] .kx-kp { fill: var(--tk-panel); stroke: var(--tk-acc); stroke-width: 2; animation: kx-jit 1.8s steps(3) infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes kx-jit { 33% { translate: .8px -.6px; } 66% { translate: -.6px .7px; } }
+/* the P as a segmentation mask: tinted silhouette, hairline contours, a keypoint on every corner */
+:root[data-design="tracker"] .kx-wire { position: absolute; inset: 8%; width: 84%; height: 84%; overflow: visible; transform: translate(calc(var(--px) * 12px), calc(var(--py) * 9px)); }
+:root[data-design="tracker"] .kx-wire .pp-o { fill: color-mix(in srgb, var(--tk-acc) 22%, transparent); stroke: var(--tk-ink); stroke-width: .28; stroke-linejoin: round; }
+:root[data-design="tracker"] .kx-wire .pp-c { fill: var(--tk-panel); stroke: var(--tk-ink); stroke-width: .28; stroke-linejoin: round; }
+:root[data-design="tracker"] .kx-wire .pp-r { fill: none; stroke: var(--tk-acc); stroke-width: .16; stroke-dasharray: .7 .5; }
+:root[data-design="tracker"] .kx-wire .pp-f { fill: color-mix(in srgb, var(--tk-acc) 9%, var(--tk-panel)); }
+:root[data-design="tracker"] .kx-kp { fill: var(--tk-panel); stroke: var(--tk-acc); stroke-width: .42; animation: kx-jit 1.8s steps(3) infinite; }
+@keyframes kx-jit { 33% { translate: .16px -.12px; } 66% { translate: -.12px .14px; } }
 /* the box trails the object: it moves less than the wireframe does, and its size breathes with speed */
-:root[data-design="tracker"] .kx-box { position: absolute; inset: calc(14% - var(--pv) * 3%) calc(6% - var(--pv) * 3%); border: 1px solid color-mix(in srgb, var(--tk-acc) 55%, transparent); transform: translate(calc(var(--px) * 6px), calc(var(--py) * 4px)); }
+:root[data-design="tracker"] .kx-box { position: absolute; inset: calc(25% - var(--pv) * 3%) calc(6% - var(--pv) * 3%); border: 1px solid color-mix(in srgb, var(--tk-acc) 55%, transparent); transform: translate(calc(var(--px) * 6px), calc(var(--py) * 4px)); }
 :root[data-design="tracker"] .kx-box i { position: absolute; width: 14px; height: 14px; border: 0 solid var(--tk-acc); }
 :root[data-design="tracker"] .kx-box i:nth-child(1) { left: -2px; top: -2px; border-width: 3px 0 0 3px; }
 :root[data-design="tracker"] .kx-box i:nth-child(2) { right: -2px; top: -2px; border-width: 3px 3px 0 0; }

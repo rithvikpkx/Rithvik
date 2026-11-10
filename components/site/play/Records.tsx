@@ -4,21 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import { useSite } from "../SiteProvider";
 import { Deck } from "./deck";
 import { Icon as Ic } from "../Glyph";
+import "./records.css";
 
 const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
 
-/** The Records toy: a tilted photographic LP you can drag to scratch, and a goo-filter pill player whose play button detaches while playing. */
+/** The Records toy: a physical turntable. Click the record or the lit button to play and pause (the tonearm swings on and lifts off);
+ *  drag the record to scratch. */
 export default function Records() {
   const { toast } = useSite();
   const [on, setOn] = useState(false);
   const [scratching, setScratching] = useState(false);
   const deck = useRef<Deck | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
+  const tt = useRef<HTMLDivElement>(null);
   const disc = useRef<HTMLDivElement>(null);
   const spin = useRef<HTMLDivElement>(null);
+  const gloss = useRef<HTMLElement>(null);
+  const sheen = useRef<HTMLElement>(null);
   const pos = useRef<HTMLSpanElement>(null);
   const dur = useRef<HTMLSpanElement>(null);
   const prog = useRef<HTMLElement>(null);
+  // a press on the record becomes a scratch only after it moves; a still press is a click (play/pause)
+  const press = useRef<{ x: number; y: number; scratch: boolean } | null>(null);
 
   // One deck per mount; destroy() stops the audio and closes the context when the tab closes.
   useEffect(() => {
@@ -30,8 +37,6 @@ export default function Records() {
         if (dur.current) dur.current.textContent = fmt(total);
         if (prog.current) prog.current.style.transform = `scaleX(${pr.toFixed(4)})`;
         wrap.current?.style.setProperty("--prog", pr.toFixed(3));
-        disc.current?.setAttribute("aria-valuenow", p.toFixed(0));
-        disc.current?.setAttribute("aria-valuetext", fmt(p));
       },
       state: (isOn, isScratching) => { setOn(isOn); setScratching(isScratching); },
       fail: () => toast("Audio could not load here. The deck still spins."),
@@ -46,73 +51,95 @@ export default function Records() {
     return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
   };
 
+  /** Slides the studio highlight and the vinyl's fixed sheen with the pointer (transform-only, so it stays on the compositor). */
+  const light = (e: React.PointerEvent) => {
+    const r = tt.current!.getBoundingClientRect(), nx = (e.clientX - r.left) / r.width - 0.5, ny = (e.clientY - r.top) / r.height - 0.5;
+    if (gloss.current) gloss.current.style.transform = `translate3d(${(nx * 12).toFixed(2)}%,${(ny * 12).toFixed(2)}%,0)`;
+    if (sheen.current) sheen.current.style.transform = `rotate(${(nx * 34 + ny * 14).toFixed(1)}deg)`;
+  };
+
   return (
     <div className={`records${on ? " is-on" : ""}${scratching ? " is-scratching" : ""}`} id="records" ref={wrap}>
-      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
-        <filter id="rec-goo"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b" /><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g" /><feComposite in="SourceGraphic" in2="g" operator="atop" /></filter>
-      </svg>
-      <div className="rec-stage">
-        <div className="rec-platter">
-          <div
-            className="rec-disc" id="rec-disc" ref={disc} role="slider" tabIndex={0}
-            aria-label="Record. Drag, or use the arrow keys, to scratch" aria-valuemin={0} aria-valuemax={72} aria-valuenow={0} aria-valuetext="0:00"
-            onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); deck.current?.grab(angleAt(e)); }}
-            onPointerMove={(e) => deck.current?.move(angleAt(e))}
-            onPointerUp={() => deck.current?.release()}
-            onPointerCancel={() => deck.current?.release()}
-            onKeyDown={(e) => {
-              const dir = ({ ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 } as Record<string, 1 | -1>)[e.key];
-              if (!dir) return;
-              e.preventDefault();
-              deck.current?.nudge(dir);
-            }}
-          >
-            <div className="rec-spin" id="rec-spin" ref={spin}>
-              {/* a rotating LP photo: next/image adds nothing here */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="rec-photo" src="/v7/record.jpg" alt="" width={960} height={960} draggable={false} />
+      <div className="tt-box">
+        <div className="tt" ref={tt} onPointerMove={light}>
+          <span className="tt-shine" aria-hidden="true"><i className="tt-gloss" ref={gloss} /></span>
+          <div className="tt-deck">
+            <i className="tt-well" aria-hidden="true" />
+            <i className="tt-rim" aria-hidden="true" />
+            <div className="tt-spin" ref={spin} aria-hidden="true">
+              <i className="tt-strobe" /><i className="tt-mat" /><i className="tt-vinyl" />
               <div className="rec-label"><span className="rl-mark"><Mark label="" /></span><span className="rl-title">Chili Pepper</span><span className="rl-sub">Fred Longshaw · 1927</span><span className="rl-side">Side A · 78</span></div>
             </div>
-            <i className="rec-sheen" aria-hidden="true" />
-            <i className="rec-spindle" aria-hidden="true" />
+            <div
+              className="tt-disc" id="rec-disc" ref={disc} role="button" tabIndex={0} aria-pressed={on}
+              aria-label="Record, Chili Pepper by Fred Longshaw. Click to play or pause, drag to scratch, arrow keys nudge"
+              onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); press.current = { x: e.clientX, y: e.clientY, scratch: false }; }}
+              onPointerMove={(e) => {
+                const p = press.current;
+                if (!p) return;
+                if (!p.scratch) {
+                  if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) return;
+                  p.scratch = true;
+                  deck.current?.grab(angleAt(e));
+                }
+                deck.current?.move(angleAt(e));
+              }}
+              onPointerUp={() => { const p = press.current; press.current = null; if (p?.scratch) deck.current?.release(); else if (p) deck.current?.toggle(); }}
+              onPointerCancel={() => { const p = press.current; press.current = null; if (p?.scratch) deck.current?.release(); }}
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") { e.preventDefault(); deck.current?.toggle(); return; }
+                const dir = ({ ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 } as Record<string, 1 | -1>)[e.key];
+                if (!dir) return;
+                e.preventDefault();
+                deck.current?.nudge(dir);
+              }}
+            >
+              <i className="tt-sheen" ref={sheen} aria-hidden="true" />
+              <i className="tt-spindle" aria-hidden="true" />
+            </div>
+          </div>
+
+          <i className="tt-rest" aria-hidden="true" />
+          <i className="tt-pedestal" aria-hidden="true" />
+          <div className="tt-arm" aria-hidden="true">
+            <svg viewBox="-70 -40 420 80">
+              <defs>
+                <linearGradient id="tt-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset=".3" stopColor="#d7d9de" /><stop offset=".62" stopColor="#8f929a" /><stop offset="1" stopColor="#5b5e66" /></linearGradient>
+                <linearGradient id="tt-cw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4a4b52" /><stop offset=".35" stopColor="#2d2e33" /><stop offset="1" stopColor="#141417" /></linearGradient>
+                <linearGradient id="tt-head" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3d3e44" /><stop offset="1" stopColor="#17171a" /></linearGradient>
+                <radialGradient id="tt-cap" cx=".35" cy=".3" r=".85"><stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#b9bcc3" /><stop offset="1" stopColor="#5d6068" /></radialGradient>
+                <filter id="tt-blur" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3.2" /></filter>
+              </defs>
+              {/* cast shadow: tight while the stylus is down, wide and soft while the arm is lifted and parked */}
+              <g className="tt-arm-shadow" filter="url(#tt-blur)" fill="#000">
+                <rect x="-62" y="-17" width="50" height="34" rx="9" /><rect x="-14" y="-3.5" width="320" height="7" rx="3.5" /><rect x="294" y="-11" width="48" height="22" rx="5" />
+              </g>
+              <rect x="-62" y="-17" width="50" height="34" rx="9" fill="url(#tt-cw)" />
+              <path d="M-48 -17v34M-38 -17v34M-28 -17v34" stroke="#000" strokeOpacity=".35" strokeWidth="1" />
+              <rect x="-62" y="-17" width="50" height="34" rx="9" fill="none" stroke="#fff" strokeOpacity=".14" />
+              <rect x="-14" y="-3.5" width="320" height="7" rx="3.5" fill="url(#tt-tube)" />
+              <rect x="294" y="-11" width="48" height="22" rx="5" fill="url(#tt-head)" stroke="#fff" strokeOpacity=".16" />
+              <rect x="304" y="-8" width="28" height="16" rx="3" fill="#0d0d0f" /><rect x="304" y="5" width="28" height="3" rx="1.5" fill="#c9a25b" />
+              <path d="M326 11c6 4 10 9 8 16" fill="none" stroke="url(#tt-tube)" strokeWidth="3" strokeLinecap="round" />
+              <circle r="15" fill="url(#tt-cap)" /><circle r="5" fill="#46484f" />
+            </svg>
+          </div>
+
+          <div className="tt-panel">
+            <div className="tt-read">
+              <span className="tt-time"><span ref={pos}>0:00</span><span ref={dur}>1:12</span></span>
+              <span className="tt-bar" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); deck.current?.seek((e.clientX - r.left) / r.width); }}><i ref={prog} /></span>
+            </div>
+            <button className="tt-btn" type="button" aria-pressed={on} aria-label={on ? "Pause" : "Play"} onClick={() => deck.current?.toggle()}>
+              <span className="tt-cap">
+                <Ic name="play" className="ic ic-play" /><Ic name="pause" className="ic ic-pause" />
+                <span className="tt-btn-t">{on ? "Stop" : "Start"}</span>
+              </span>
+            </button>
           </div>
         </div>
-        <svg className="rec-arm" viewBox="0 0 100 100" aria-hidden="true">
-          <defs>
-            <linearGradient id="arm-metal" x1="0" x2="1"><stop offset="0" stopColor="#f4f4f6" /><stop offset=".5" stopColor="#c4c4ca" /><stop offset="1" stopColor="#8e8e95" /></linearGradient>
-            <radialGradient id="arm-pivot" cx=".35" cy=".35" r=".8"><stop offset="0" stopColor="#ffffff" /><stop offset=".55" stopColor="#bdbdc3" /><stop offset="1" stopColor="#6d6d74" /></radialGradient>
-          </defs>
-          <g className="arm">
-            <rect x="89.6" y="-1.5" width="7" height="9" rx="2" fill="#5c5c62" />
-            <path d="M90 12 L83 30 L69 64" fill="none" stroke="url(#arm-metal)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M69 64 L63.5 71.5" fill="none" stroke="url(#arm-metal)" strokeWidth="2" strokeLinecap="round" />
-            <g transform="rotate(36 61 74)"><rect x="56" y="71" width="10" height="6" rx="1.4" fill="#1f1f23" /><rect x="57" y="76.4" width="3" height="1.6" rx=".4" fill="#c9a25b" /></g>
-            <circle cx="90" cy="12" r="7" fill="url(#arm-pivot)" />
-            <circle cx="90" cy="12" r="2.6" fill="#55555b" />
-          </g>
-        </svg>
       </div>
-      <div className="rec-side">
-        <div className="rec-pill-wrap">
-          <div className="goo" aria-hidden="true"><i className="goo-pill" /><i className="goo-btn" /></div>
-          <div className="rec-pill">
-            <span className="rp-disc" aria-hidden="true">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/v7/record.jpg" alt="" width={40} height={40} />
-            </span>
-            <span className="rp-meta"><b>Chili Pepper</b><span>Fred Longshaw, 1927</span></span>
-            <span className="rp-time">
-              <span ref={pos}>0:00</span>
-              <span className="rp-bar" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); deck.current?.seek((e.clientX - r.left) / r.width); }}><i ref={prog} /></span>
-              <span ref={dur}>1:12</span>
-            </span>
-          </div>
-          <button className="rec-play" type="button" aria-pressed={on} aria-label={on ? "Pause" : "Play"} onClick={() => deck.current?.toggle()}>
-            <Ic name="play" className="ic ic-play" /><Ic name="pause" className="ic ic-pause" />
-          </button>
-        </div>
-        <p className="rec-hint">Drag the record to scratch. Arrow keys work too.</p>
-      </div>
+      <p className="rec-hint">Click the record or press start. Drag the record to scratch.</p>
     </div>
   );
 }

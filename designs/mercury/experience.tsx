@@ -1,6 +1,7 @@
 "use client";
-// Mercury's Experience pieces: a glass tube that fills with liquid metal, and a chrome blob for education.
+// Mercury's Experience pieces: a glass tube that fills with liquid metal, and a chrome blob for education with the Purdue P cast in chrome rising out of it.
 import type { Skin } from "@/lib/designs/skin";
+import { P_FACE, PurdueP } from "@/components/site/layout/purdue";
 import "./experience.css";
 
 /** A dark glass tube; liquid mercury runs down it as you scroll, a trembling bead leading the flow. */
@@ -9,7 +10,8 @@ function Pipe() {
 }
 
 /** A pool of liquid chrome (metaballs through one goo filter): droplets break off and fall back in, and a
- *  lobe reaches toward the pointer. The highlight slides against the pointer like a reflection. */
+ *  lobe reaches toward the pointer. The highlight slides against the pointer like a reflection.
+ *  The Purdue P is polished chrome sitting in the pool, reflecting the same room, a sheen sliding across its face. */
 function Blob() {
   return (
     <svg className="mx-blob" viewBox="0 0 200 200" focusable="false">
@@ -38,6 +40,15 @@ function Blob() {
           <circle className="mx-drop mx-drop2" cx="100" cy="100" r="9" fill="url(#mx-bead)" />
         </g>
       </g>
+      <PurdueP className="mx-p" x="14.6" y="54.4" width="170.8" height="91.3"
+        defs={<><clipPath id="mx-pf"><path d={P_FACE} /></clipPath>
+          {/* the pool's room, in P units, so the letter and the metal around it reflect alike */}
+          <linearGradient id="mx-penv" gradientUnits="userSpaceOnUse" x1="0" y1="3" x2="0" y2="32">
+            <stop offset="0" stopColor="#FAFBFC" /><stop offset=".26" stopColor="#C4C7CE" /><stop offset=".46" stopColor="#6E727B" />
+            <stop offset=".52" stopColor="#1E1F23" /><stop offset=".62" stopColor="#3A3C42" /><stop offset=".84" stopColor="#A4A8B0" /><stop offset="1" stopColor="#E9EBEF" />
+          </linearGradient></>}>
+        <g clipPath="url(#mx-pf)"><rect className="mx-sheen" x="-14" y="-4" width="9" height="46" /></g>
+      </PurdueP>
       <ellipse className="mx-spec" cx="80" cy="66" rx="17" ry="8" />
     </svg>
   );

@@ -32,3 +32,12 @@
 }
 :root[data-design="mercury"] .mx-spec { fill: #fff; opacity: .85; filter: blur(1.5px); transform: translate(calc(var(--px) * -10px), calc(var(--py) * -8px)) rotate(-24deg); transform-origin: 80px 66px; transform-box: view-box; }
 :root[data-design="mercury"] .mx-shadow { transform: translateX(calc(var(--px) * 6px)); }
+
+/* the chrome P: black bezel, a bright rim, a face that reflects the pool's room, a sheen sweeping across it */
+:root[data-design="mercury"] .mx-p { overflow: visible; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, .7)); transform: translate(calc(var(--px) * 4px), calc(var(--py) * 3px)); }
+:root[data-design="mercury"] .mx-p .pp-o { fill: #131316; }
+:root[data-design="mercury"] .mx-p .pp-c { fill: #08080A; }
+:root[data-design="mercury"] .mx-p .pp-r { fill: #F4F5F8; }
+:root[data-design="mercury"] .mx-p .pp-f { fill: url(#mx-penv); }
+:root[data-design="mercury"] .mx-sheen { fill: #fff; opacity: .6; transform: skewX(-24deg) translateX(calc(24px + var(--px) * 18px)); animation: mx-sweep 7s ease-in-out infinite; }
+@keyframes mx-sweep { 0%, 55% { translate: 0 0; } 100% { translate: 80px 0; } }
