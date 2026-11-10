@@ -8,7 +8,6 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -20,7 +19,6 @@ import "./starlight.css";
 
 const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const ABBR: Record<string, string> = { home: "BOS", school: "LAF", now: "SFO" };
 const WP_LEFT = [13, 33, 52];
@@ -91,24 +89,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Night games: one channel per toy. */
-function Play() {
-  return (
-    <ul className="sl-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="sl-toy" data-play={t.id} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="sl-toy-ch">CH {pad(i)}</span>
-            <span className="sl-toy-ic"><Icon name={t.icon} /></span>
-            <span className="sl-toy-t">{t.name}</span>
-            <span className="sl-toy-d">{t.desc}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Signal: one line and the composer. */
 function Contact() {
   return (
@@ -126,7 +106,7 @@ export const SKIN: Skin = {
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
   projectArt: { palette: ["#030803", "#A8FF7A", "#EAFFDC", "#5FD43A"], params: { hole: 0.34, stroke: 0.9 } },
-  sections: { experience: Experience, about: About, play: Play, contact: Contact },
+  sections: { experience: Experience, about: About, contact: Contact },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

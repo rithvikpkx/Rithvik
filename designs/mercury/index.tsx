@@ -8,7 +8,6 @@ import { useRef, type FormEvent, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
@@ -21,7 +20,6 @@ import "./mercury.css";
 
 const META = designById("mercury")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const TILT = [-14, 9, -6, 16, -10, 5];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const hideFig = (e: SyntheticEvent<HTMLImageElement>) => { (e.currentTarget.parentNode as HTMLElement).hidden = true; };
 
@@ -93,24 +91,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: the chrome ribbon, then one sphere per toy. */
-function Play() {
-  return (
-    <>
-      <figure className="mc-ribbon" aria-hidden="true"><img src="/v7/mercury/chrome-ribbon-1200.webp" srcSet="/v7/mercury/chrome-ribbon-1200.webp 1200w, /v7/mercury/chrome-ribbon-2400.webp 2400w" sizes="(max-width: 700px) 160vw, 100vw" width={2400} height={1340} alt="" loading="lazy" decoding="async" onError={hideFig} /></figure>
-      <ul className="mc-toys">
-        {PLAY.map((t, i) => (
-          <li key={t.id}>
-            <button type="button" className="mc-toy" data-play={t.id} aria-label={`Play ${t.name}: ${t.desc}`} style={{ ["--tilt" as string]: `${TILT[i % 6]}deg` }}>
-              <span className="mc-sphere" aria-hidden="true"><i /></span><span className="mc-toy-n"><Icon name={t.icon} />{t.name}</span><span className="mc-toy-d">{t.desc}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
 /** Questions: the ask box (hands off to the agent) beside short answers, one open at a time. */
 function Questions({ content: C }: SectionProps) {
   const { openAgent } = useSite();
@@ -162,7 +142,7 @@ export const SKIN: Skin = {
   titleClass: "mc-h2",
   SectionOrnament: Divider,
   projectArt: { palette: ["#0E0E10", "#C9CCD3", "#FFFFFF", "#7F8BB8"], params: { hole: 0.4, rest: 1, lift: 12, stroke: 0.9 } },
-  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

@@ -131,16 +131,7 @@ html.lite .ly-hero-copy > * { animation: none; }
   .ly-numbers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; }
 }
 
-/* play */
-.ly-toys { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ly-line); }
-.ly-toys li { border-bottom: 1px solid var(--ly-line); }
-.ly-toy { display: flex; align-items: center; gap: 16px; width: 100%; height: 100%; padding: 22px 16px 22px 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
-.ly-toy b { display: block; font-size: 17px; font-weight: 500; }
-.ly-toy b + span { display: block; color: var(--ui-muted); font-size: 14px; line-height: 1.45; }
-.ly-toy .ly-ic { background: var(--ly-soft); transition: background-color 200ms ease, color 200ms ease; }
-@media (hover: hover) and (pointer: fine) { .ly-toy:hover .ly-ic { background: var(--ui-fg); color: var(--ui-bg); } }
-@media (max-width: 1000px) { .ly-toys { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .ly-toys { grid-template-columns: minmax(0, 1fr); } }
+/* play: components/site/play/playfield.css */
 
 /* questions */
 .ly-faq { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px clamp(32px, 6vw, 96px); align-items: start; }

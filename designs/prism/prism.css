@@ -343,3 +343,8 @@
 :root[data-design="prism"] .pr-about .pr-now, :root[data-design="prism"] .pr-about .pr-nums { margin-top: clamp(64px, 8vw, 110px); }
 :root[data-design="prism"] .pr-contact > .pr-h2 { padding-inline: clamp(36px, 6.5vw, 88px); }
 :root[data-design="prism"] .ly-foot { background: var(--pr-bg); }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="prism"] .pf-wrap {
+  --pf-a: #4B2BFF; --pf-b: #FF2E88; --pf-c: #00C2FF; --pf-label: conic-gradient(#4B2BFF, #00C2FF, #29E07A, #FFD600, #FF2E88, #4B2BFF);
+}

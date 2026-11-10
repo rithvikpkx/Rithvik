@@ -8,7 +8,6 @@ import { useRef, useState, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -22,7 +21,6 @@ const META = designById("prism")!;
 const BANDS = [["#FF2D3D", "650"], ["#FF7A00", "600"], ["#E8B800", "580"], ["#12B76A", "530"], ["#1E6BFF", "470"], ["#7A3CFF", "420"]];
 const band = (i: number) => BANDS[i % BANDS.length];
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const bandVar = (i: number) => ({ ["--band" as string]: band(i)[0] });
 const SEC: Record<SectionId, string> = { work: "pr-work", experience: "pr-exp", about: "pr-about", play: "pr-play", questions: "pr-faq", contact: "pr-contact" };
@@ -129,25 +127,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: one spectral card per toy. */
-function Play() {
-  return (
-    <ul className="pr-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="pr-toy" data-play={t.id} style={bandVar(i)} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="pr-toy-n">{pad(i)}</span>
-            <span className="pr-toy-ic" aria-hidden="true"><Icon name={t.icon} /></span>
-            <span className="pr-toy-t">{t.name}</span>
-            <span className="pr-toy-d">{t.desc}</span>
-            <span className="pr-toy-bar" aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Questions: short answers, one open at a time, and the hand-off to the agent. */
 function Questions({ content: C }: SectionProps) {
   const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
@@ -186,7 +165,7 @@ export const SKIN: Skin = {
   Title,
   NameFx: Name,
   projectArt: { palette: ["#F4F5F8", "#0B0B0F", "#FF3B5C", "#00B4FF"], params: { hole: 0.34, lift: 26 } },
-  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */

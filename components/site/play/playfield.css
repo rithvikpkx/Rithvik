@@ -1,0 +1,158 @@
+/* The Play field: a framed, infinite plane of odd shapes (components/site/play/PlayField.tsx). Every look themes it
+   through the --pf-* tokens below (set them on `:root[data-design="<id>"] .pf-wrap`); the defaults derive from the
+   shared --ui-* tokens, so a new design gets a coherent field for free. */
+
+/* zero specificity, computed on the wrap so they read the look's --ui-* wherever it set them */
+:where(.pf-wrap) {
+  --pf-bg: color-mix(in srgb, var(--ui-fg) 4%, var(--ui-bg));       /* frame fill (may be a gradient) */
+  --pf-fog: color-mix(in srgb, var(--ui-fg) 4%, var(--ui-bg));      /* edge vignette; a plain colour */
+  --pf-grid: color-mix(in srgb, var(--ui-fg) 16%, transparent);     /* the dot grid that moves with the pan */
+  --pf-face: color-mix(in srgb, var(--ui-bg) 88%, #fff);            /* toy surfaces (may be a gradient): white on light looks, lifted on dark */
+  --pf-ink: var(--ui-fg);
+  --pf-a: var(--ui-accent);                                         /* three shape colours */
+  --pf-b: color-mix(in srgb, var(--ui-accent) 50%, var(--ui-fg));
+  --pf-c: color-mix(in srgb, var(--ui-fg) 20%, var(--ui-bg));
+  --pf-line: color-mix(in srgb, var(--ui-fg) 14%, transparent);
+  --pf-edge: color-mix(in srgb, var(--ui-fg) 28%, var(--ui-bg));    /* the thickness of extruded shapes */
+  --pf-vinyl: #141416;
+  --pf-label: var(--pf-a);
+  --pf-tag: var(--ui-bg);                                           /* name tags */
+  /* --pf-pod: the Count the Dots capsule; unset = --pf-ink (its dots are --pf-a) */
+  --pf-r: 28px;                                                    /* frame + tile corners */
+  --pf-shadow: 0 26px 40px -24px rgb(0 0 0 / .5);
+  --pf-font: var(--ui-mono, ui-monospace, monospace);
+}
+
+.pf-wrap { position: relative; }
+.pf {
+  position: relative; isolation: isolate; overflow: clip; height: clamp(460px, 76vh, 780px);
+  border-radius: var(--pf-r); background: var(--pf-bg); box-shadow: inset 0 0 0 1px var(--pf-line);
+  touch-action: pan-y pinch-zoom; /* a vertical swipe stays the page's; a sideways one starts a pan */
+  cursor: grab; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.pf[data-drag] { cursor: grabbing; }
+.pf[data-drag] .pf-toy { pointer-events: none; }
+.pf::after { content: ""; position: absolute; z-index: 2; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px var(--pf-line), inset 0 0 70px var(--pf-fog); }
+.pf-grid { position: absolute; inset: -28px; background: radial-gradient(circle, var(--pf-grid) 1.2px, transparent 1.7px) 0 0 / 28px 28px; will-change: transform; }
+.pf-plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.pf-at { position: absolute; left: 0; top: 0; width: var(--w); height: var(--h); will-change: transform; }
+.pf-at[data-off] > * { visibility: hidden; } /* out of view: skip painting (the button itself stays focusable) */
+.pf-hint { position: absolute; z-index: 3; right: 16px; top: 16px; /* top-right: the bottom corners sit under the fixed dock and switcher */ display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px 7px 9px; border-radius: 999px; background: var(--pf-tag); color: var(--ui-muted); font: 500 11px/1 var(--pf-font); letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 0 0 1px var(--pf-line); pointer-events: none; transition: opacity 400ms ease; }
+.pf-hint svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pf[data-moved] .pf-hint { opacity: 0; }
+
+/* ---------- toys: a button per copy; the shape tilts/lifts on hover like an object ---------- */
+.pf-toy { padding: 0; border: 0; background: none; color: var(--pf-ink); font: inherit; cursor: inherit; text-align: left; }
+.pf-toy:focus-visible { outline: none; }
+.pf-toy:focus-visible .pf-shape { outline: 2px solid var(--ui-accent); outline-offset: 8px; }
+.pf-shape { position: absolute; inset: 0; display: block; transform: var(--tilt,) rotate(var(--r)) scale(var(--k, 1)); transition: transform 420ms cubic-bezier(.34, 1.56, .64, 1); }
+@media (hover: hover) and (pointer: fine) { .pf-toy:hover { --k: 1.05; } .pf-toy:hover .pf-name { color: var(--pf-a); } }
+.pf-toy:active { --k: .97; }
+.pf-name { position: absolute; left: 50%; top: calc(100% + 16px); translate: -50% 0; padding: 6px 11px; border-radius: 999px; background: var(--pf-tag); color: var(--pf-ink); font: 500 11px/1 var(--pf-font); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; box-shadow: 0 0 0 1px var(--pf-line); transition: color 160ms ease; }
+
+/* records: a vinyl that spins under a fixed sheen, tonearm resting on it */
+.pf-records .pf-shape { border-radius: 50%; background: var(--pf-vinyl); box-shadow: var(--pf-shadow); }
+.pf-disc { position: absolute; inset: 0; border-radius: 50%; background: repeating-radial-gradient(circle, rgb(255 255 255 / .07) 0 1px, transparent 1.5px 4.5px); animation: pf-spin 1.8s linear infinite; }
+.pf-lab { position: absolute; inset: 33%; border-radius: 50%; background: var(--pf-label); box-shadow: 0 0 0 5px var(--pf-vinyl), 0 0 0 6px rgb(255 255 255 / .12); }
+.pf-lab i { position: absolute; left: 50%; top: 16%; width: 38%; height: 9%; translate: -50% 0; border-radius: 2px; background: rgb(0 0 0 / .32); }
+.pf-lab::before { content: ""; position: absolute; left: 50%; bottom: 18%; width: 22%; height: 7%; translate: -50% 0; border-radius: 2px; background: rgb(0 0 0 / .24); }
+.pf-lab::after { content: ""; position: absolute; inset: 45%; border-radius: 50%; background: var(--pf-vinyl); }
+.pf-sheen { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 20deg, transparent 0 6%, rgb(255 255 255 / .14) 11%, transparent 17% 50%, rgb(255 255 255 / .1) 61%, transparent 67%); pointer-events: none; }
+.pf-arm { position: absolute; right: -4%; top: -6%; width: 9px; height: 64%; border-radius: 6px; background: linear-gradient(var(--pf-c), var(--pf-edge)); transform-origin: 50% 9px; rotate: 24deg; box-shadow: 0 10px 16px -8px rgb(0 0 0 / .5); }
+.pf-arm::before { content: ""; position: absolute; left: 50%; top: 0; width: 26px; height: 26px; translate: -50% -30%; border-radius: 50%; background: var(--pf-c); box-shadow: inset 0 0 0 5px var(--pf-edge); }
+.pf-arm::after { content: ""; position: absolute; left: 50%; bottom: -10px; width: 18px; height: 26px; translate: -50% 0; border-radius: 4px; background: var(--pf-a); }
+
+/* artboard: a blob with two strokes drawing themselves, mirrored across a dashed axis */
+.pf-artboard .pf-shape { border-radius: 58% 42% 55% 45% / 46% 54% 46% 54%; background: var(--pf-face); box-shadow: var(--pf-shadow), inset 0 0 0 1px var(--pf-line); }
+.pf-artboard .pf-shape::after { content: ""; position: absolute; left: 50%; top: 14%; bottom: 14%; border-left: 1.5px dashed var(--pf-line); }
+.pf-artboard svg { position: absolute; inset: 12%; width: 76%; height: 76%; overflow: visible; }
+.pf-artboard path { fill: none; stroke: var(--pf-a); stroke-width: 3.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; animation: pf-draw 5s ease-in-out infinite; }
+.pf-artboard path.b { stroke: var(--pf-b); animation-delay: .5s; }
+
+/* type racer: a ticket with a code line typing itself and a WPM stub past the perforation */
+.pf-typeracer .pf-shape { display: flex; border-radius: 16px; background: var(--pf-face); box-shadow: inset 0 0 0 1px var(--pf-line);
+  -webkit-mask: radial-gradient(circle at 0 50%, #0000 13px, #000 13.5px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, #0000 13px, #000 13.5px) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle at 0 50%, #0000 13px, #000 13.5px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, #0000 13px, #000 13.5px) right / 51% 100% no-repeat; }
+.pf-line { flex: 1; min-width: 0; display: flex; align-items: center; padding: 0 12px 0 26px; font: 500 12px/1 var(--pf-font); color: var(--pf-ink); }
+.pf-typed { display: inline-block; overflow: hidden; white-space: nowrap; width: 27ch; padding-block: 4px; border-right: 2px solid var(--pf-a); animation: pf-type 5.2s steps(27) infinite, pf-caret .9s step-end infinite; }
+.pf-stub { flex: none; width: 80px; display: grid; place-content: center; text-align: center; border-left: 2px dashed var(--pf-line); font: 500 10px/1.2 var(--pf-font); letter-spacing: .08em; text-transform: uppercase; color: var(--ui-muted); }
+.pf-stub b { display: block; font: 600 30px/1 var(--ly-display, var(--ui-font)); letter-spacing: -.02em; color: var(--pf-a); }
+
+/* angle: an extruded hex tile with a ray sweeping open and its arc following */
+.pf-angle::before { content: ""; position: absolute; inset: 0; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: var(--pf-edge); transform: translateY(12px) rotate(var(--r)) scale(var(--k, 1)); transition: transform 420ms cubic-bezier(.34, 1.56, .64, 1); }
+.pf-angle .pf-shape { clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); background: var(--pf-face); }
+.pf-arcs { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleY(-1); /* angles open counter-clockwise */ }
+.pf-arc0 { fill: none; stroke: var(--pf-line); stroke-width: 1.4; stroke-dasharray: 1 4.3; }
+.pf-arc { fill: none; stroke: var(--pf-a); stroke-width: 5; stroke-dasharray: 64 360; animation: pf-arc 3.6s cubic-bezier(.65, 0, .35, 1) infinite alternate; }
+.pf-ray { position: absolute; left: 50%; top: 50%; width: 37%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: var(--pf-ink); transform-origin: 0 50%; }
+.pf-ray1 { background: var(--pf-a); rotate: -64deg; animation: pf-ray 3.6s cubic-bezier(.65, 0, .35, 1) infinite alternate; }
+.pf-hub { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--pf-ink); }
+
+/* count the dots: a capsule display flashing three groups of dots */
+.pf-dots .pf-shape { border-radius: 999px; background: var(--pf-pod, var(--pf-ink)); box-shadow: var(--pf-shadow); }
+.pf-dots i { position: absolute; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--pf-a); opacity: 0; animation: pf-flash 3.6s infinite; }
+.pf-dots i.g1 { opacity: 1; animation-delay: 1.2s; }
+.pf-dots i.g2 { animation-delay: 2.4s; }
+
+/* center the div: a tilted, extruded slab; a box drifts in and settles on the crosshair */
+.pf-center { --tilt: perspective(900px) rotateX(24deg) rotateY(-24deg); }
+@media (hover: hover) and (pointer: fine) { .pf-center:hover { --tilt: perspective(900px) rotateX(10deg) rotateY(-8deg); } }
+.pf-center .pf-shape { border-radius: 22px; background: var(--pf-face); box-shadow: inset 0 0 0 1px var(--pf-line), 0 1px 0 var(--pf-edge), 0 3px 0 var(--pf-edge), 0 6px 0 var(--pf-edge), 0 9px 0 var(--pf-edge), 0 12px 0 var(--pf-edge), var(--pf-shadow); }
+.pf-cross::before, .pf-cross::after { content: ""; position: absolute; }
+.pf-cross::before { left: 50%; top: 10%; bottom: 10%; border-left: 1.5px dashed var(--pf-line); }
+.pf-cross::after { top: 50%; left: 10%; right: 10%; border-top: 1.5px dashed var(--pf-line); }
+.pf-target, .pf-box { position: absolute; left: 35%; top: 35%; width: 30%; height: 30%; border-radius: 8px; }
+.pf-target { outline: 2px dashed color-mix(in srgb, var(--pf-a) 60%, transparent); outline-offset: 4px; }
+.pf-box { background: var(--pf-a); box-shadow: 0 10px 18px -8px rgb(0 0 0 / .45); animation: pf-drift 6s infinite; }
+
+/* ---------- decoration ---------- */
+.pf-d { position: absolute; inset: 0; display: block; rotate: var(--r); }
+.pf-d svg { width: 100%; height: 100%; overflow: visible; }
+.pf-cube { perspective: 700px; }
+.pf-cube .pf-d { rotate: none; transform-style: preserve-3d; }
+.pf-box3 { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(-26deg) rotateY(38deg); animation: pf-cube 18s linear infinite; }
+.pf-cube i { position: absolute; inset: 0; border-radius: 6px; background: var(--pf-a); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .18); }
+.pf-cube i.f { transform: translateZ(calc(var(--w) / 2)); }
+.pf-cube i.b { transform: rotateY(180deg) translateZ(calc(var(--w) / 2)); }
+.pf-cube i.l { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); background: var(--pf-b); }
+.pf-cube i.r { transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); background: var(--pf-b); }
+.pf-cube i.t { transform: rotateX(90deg) translateZ(calc(var(--w) / 2)); background: var(--pf-c); }
+.pf-cube i.u { transform: rotateX(-90deg) translateZ(calc(var(--w) / 2)); background: var(--pf-c); }
+.pf-ring .pf-d { border-radius: 50%; border: 16px solid var(--pf-b); }
+.pf-tri .pf-d { clip-path: polygon(50% 0, 100% 100%, 0 100%); background: var(--pf-a); }
+.pf-squig path { fill: none; stroke: var(--pf-c); stroke-width: 9; stroke-linecap: round; }
+.pf-half .pf-d { border-radius: 999px 999px 0 0; background: var(--pf-c); }
+.pf-spark path { fill: var(--pf-a); }
+.pf-spark .pf-d { animation: pf-spin 14s linear infinite; }
+.pf-ball .pf-d { border-radius: 50%; background: radial-gradient(circle at 34% 30%, rgb(255 255 255 / .75) 0 7%, var(--pf-b) 38%, color-mix(in srgb, var(--pf-b) 45%, #000) 100%); animation: pf-bob 3.2s ease-in-out infinite alternate; }
+.pf-pill .pf-d { border-radius: 999px; background: var(--pf-a); }
+.pf-arch .pf-d { border-radius: 100% 0 0 0; background: var(--pf-b); }
+.pf-dot .pf-d { border-radius: 50%; background: var(--pf-ink); }
+.pf-dotgrid .pf-d { background: radial-gradient(circle, var(--pf-ink) 3px, transparent 3.5px) 0 0 / 24px 24px; }
+
+@keyframes pf-spin { to { transform: rotate(1turn); } }
+@keyframes pf-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 45%, 82% { stroke-dashoffset: 0; opacity: 1; } 96% { stroke-dashoffset: 0; opacity: 0; } 100% { stroke-dashoffset: 1; opacity: 0; } }
+@keyframes pf-type { 0% { width: 0; } 62%, 100% { width: 27ch; } }
+@keyframes pf-caret { 50% { border-right-color: transparent; } }
+@keyframes pf-ray { from { rotate: -22deg; } to { rotate: -148deg; } }
+@keyframes pf-arc { from { stroke-dasharray: 22 360; } to { stroke-dasharray: 148 360; } }
+@keyframes pf-flash { 0%, 2% { opacity: 0; transform: scale(.3); } 5%, 24% { opacity: 1; transform: none; } 30%, 100% { opacity: 0; transform: scale(.6); } }
+@keyframes pf-drift {
+  0% { transform: translate(-95%, -80%) rotate(-14deg); animation-timing-function: cubic-bezier(.3, 1.5, .5, 1); }
+  30%, 45% { transform: none; animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  55% { transform: translate(90%, 70%) rotate(12deg); animation-timing-function: cubic-bezier(.3, 1.5, .5, 1); }
+  85%, 92% { transform: none; animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  100% { transform: translate(-95%, -80%) rotate(-14deg); }
+}
+@keyframes pf-cube { to { transform: rotateX(-26deg) rotateY(398deg); } }
+@keyframes pf-bob { to { translate: 0 -10px; } }
+
+/* previews idle while the field is off screen; lite and reduced motion get the designed still (each base pose) */
+.pf[data-away] .pf-at *, .pf-at[data-off] * { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .pf * { animation: none !important; } }
+html.lite .pf * { animation: none !important; }
+
+@media (max-width: 640px) {
+  .pf { height: clamp(420px, 68vh, 600px); border-radius: calc(var(--pf-r) * .7); }
+  .pf-name { font-size: 16px; } /* the plane is drawn at 62%; keep tags legible */
+}

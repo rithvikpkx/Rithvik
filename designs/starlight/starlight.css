@@ -342,3 +342,9 @@
   :root[data-design="starlight"] .sl-phos { width: 30px; padding: 0; justify-content: center; }
 }
 @media (min-width: 861px) { :root[data-design="starlight"] { --ly-gutter: max(136px, calc((100vw - 1180px) / 2)); } } /* clear the fixed coordinate strip on the left */
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="starlight"] .pf-wrap {
+  --pf-bg: #071007; --pf-fog: #071007; --pf-face: #0D1A0D; --pf-edge: #1E3A1E; --pf-b: color-mix(in srgb, var(--sl-ph) 55%, #071007);
+  --pf-c: color-mix(in srgb, var(--sl-ph) 22%, #071007); --pf-vinyl: #020602; --pf-shadow: 0 0 34px -10px color-mix(in srgb, var(--sl-ph) 45%, transparent);
+}

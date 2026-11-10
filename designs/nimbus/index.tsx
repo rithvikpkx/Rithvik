@@ -7,24 +7,19 @@ import { useMemo, useRef, type FormEvent, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
-import { DEFS, ON_PALE, ON_SKY, ON_SUN, cloud, edgeSvg, glyph, hourIn, icon16, isDay, skyShader, skyTile } from "./pixel";
+import { DEFS, glyph, hourIn, isDay, skyShader, skyTile } from "./pixel";
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
 import "./nimbus.css";
 
 const META = designById("nimbus")!;
-const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const STAMP_BG = ["sky", "sun", "pale", "sky", "pale", "sun"] as const;
-const TILT = [-2.5, 2, -1.5, 2.5, -2, 1.5];
-const BAND_CLOUDS = [[64, 6, 1], [86, 24, 0.65], [1, 50, 0.8], [46, 46, 0.55], [88, 70, 0.85], [22, 90, 0.6]];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const bullet = <span className="nb-bullet" aria-hidden="true"><Mark label="" /></span>;
 
@@ -120,45 +115,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: the deep-sky band with its stamp shelf. */
-function Play() {
-  return (
-    <>
-      <div className="nb-edge" aria-hidden="true" dangerouslySetInnerHTML={{ __html: edgeSvg(3, false) }} />
-      <div className="nb-band-in">
-        <div className="nb-bcs" aria-hidden="true">
-          {BAND_CLOUDS.map(([x, y, s], i) => (
-            <span key={i} className="nb-bc" style={{ left: `${x}%`, top: `${y}%`, ["--s" as string]: s, ["--d" as string]: `${18 + i * 5}s` }}>
-              <Px className="nb-bc-in" html={cloud(101 + i * 3)} />
-            </span>
-          ))}
-        </div>
-        <ul className="nb-stamps">
-          {PLAY.map((t, i) => {
-            const bg = STAMP_BG[i % STAMP_BG.length], map = bg === "sky" ? ON_SKY : bg === "sun" ? ON_SUN : ON_PALE;
-            return (
-              <li key={t.id} className="nb-stamp-li" style={{ ["--tilt" as string]: `${TILT[i % 6]}deg` }}>
-                <button type="button" className="nb-stamp" data-play={t.id} aria-label={`Play ${t.name}: ${t.desc}`}>
-                  <span className="nb-stamp-in">
-                    <span className={`nb-stamp-art nb-bg-${bg}`}>
-                      <Px className="nb-stamp-cloud" html={cloud(31 + i * 5, 14, 6, { w: "p3", p: bg === "sun" ? "p3" : "p2" })} />
-                      <Px className="nb-stamp-ic" html={icon16(t.id, map)} />
-                      {i % 3 === 1 && <span className="nb-postmark" aria-hidden="true"><Mark label="" /></span>}
-                    </span>
-                    <span className="nb-stamp-meta"><span className="nb-stamp-n">{pad(i)}</span><span className="nb-stamp-v">{t.desc}</span></span>
-                    <span className="nb-stamp-t">{t.name}</span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-      <div className="nb-edge nb-edge-b" aria-hidden="true" dangerouslySetInnerHTML={{ __html: edgeSvg(8, true) }} />
-    </>
-  );
-}
-
 /** Questions: the ask box (hands off to the agent) beside short answers, one open at a time. */
 function Questions({ content: C }: SectionProps) {
   const { openAgent } = useSite();
@@ -206,10 +162,10 @@ export const SKIN: Skin = {
   id: "nimbus",
   rootClass: "nb",
   labels: { play: "Recess" },
-  sectionClass: (id) => (id === "play" ? "nb-band" : `nb-sec nb-${{ work: "work", experience: "exp", about: "about", questions: "faq", contact: "contact" }[id]}`),
+  sectionClass: (id) => `nb-sec nb-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "nb-h2",
   projectArt: { palette: ["#F3FAFF", "#0E1B2B", "#0A9BFF", "#FFC93C"], params: { hole: 0.36, rest: 6, lift: 22 } },
-  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Nimbus site: the shared layout under a pixel sky that follows the visitor's clock. */

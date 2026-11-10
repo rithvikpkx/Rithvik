@@ -3,11 +3,10 @@
 // thin-film shader lives only on the holo card behind the hero portrait (its portrait backdrop), which tilts toward
 // the pointer; everything else is calm CSS that wakes on hover. html.lite and reduced motion leave a still card,
 // static foil gradients, no tilt, no glare and no datamosh.
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
@@ -76,18 +75,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: stickers, one holo disc per toy. */
-function Play() {
-  return (
-    <ul className="fo-stickers">{PLAY.map((t, i) => (
-      <li key={t.id}><button type="button" className="fo-st" data-play={t.id} style={{ "--h": `${(i * 61) % 360}deg` } as CSSProperties} aria-label={`Play ${t.name}: ${t.desc}`}>
-        <span className="fo-st-disc" aria-hidden="true"><i className="fo-st-foil" /><i className="fo-st-glit" /><span className="fo-st-ic"><Icon name={t.icon} /></span></span>
-        <span className="fo-st-t">{t.name}</span><span className="fo-st-d">{t.desc}</span>
-      </button></li>
-    ))}</ul>
-  );
-}
-
 /** Questions: short answers, one open at a time, and the hand-off to the agent. */
 function Questions({ content: C }: SectionProps) {
   const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
@@ -120,7 +107,7 @@ export const SKIN: Skin = {
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
   projectArt: { palette: ["#121220", "#EEEAF6", "#B9A8FF", "#8BF0D3"], params: { hole: 0.36, rest: 4 } },
-  sections: { experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */
