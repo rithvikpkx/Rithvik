@@ -15,6 +15,8 @@ import { Icon } from "@/components/site/Glyph";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
 import { XP } from "./experience";
+import StarlightName from "./name-fx";
+import StarlightPortrait from "./portrait-fx";
 import "./starlight.css";
 
 const META = designById("starlight")!;
@@ -99,6 +101,8 @@ const SKIN: Skin = {
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
   sections: { work: Work, about: About, contact: Contact },
+  NameFx: StarlightName,
+  PortraitFx: StarlightPortrait,
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

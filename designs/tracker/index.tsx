@@ -15,15 +15,13 @@ import { Icon } from "@/components/site/Glyph";
 import { fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import { XP } from "./experience";
+import TrackerName from "./name-fx";
+import TrackerPortrait from "./portrait-fx";
 import "./tracker.css";
 
 const META = designById("tracker")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 
-/** The name, a "text" target the tracker boxes. */
-function Name({ first, last }: { first: string; last: string }) {
-  return <span className="tk-name" data-tk="text" data-tk-label="name" data-tk-static="name 0.99"><span data-edit="name.first">{first}</span> <span data-edit="name.last">{last}</span></span>;
-}
 
 /** A section heading; also a "text" target. */
 function Title({ label, hid }: { label: string; hid: string }) {
@@ -99,8 +97,9 @@ const SKIN: Skin = {
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
-  NameFx: Name,
   sections: { work: Work, about: About, questions: Questions, contact: Contact },
+  NameFx: TrackerName,
+  PortraitFx: TrackerPortrait,
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

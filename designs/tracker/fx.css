@@ -1,0 +1,19 @@
+/* Tracker name + portrait effects (S9). */
+[data-kn="tracker"] .kn-g { transform: translate3d(var(--x), var(--y), 0); }
+/* the detection box rides with the glyph, offset by the detector's jitter */
+[data-kn="tracker"] .kn-g::after { content: ""; position: absolute; inset: .1em -.04em .02em; border: 1.5px solid #C24E00; translate: var(--jx, 0) var(--jy, 0);
+  opacity: clamp(0, calc((var(--k) - .12) * 4), 1); pointer-events: none; }
+[data-kn="tracker"] .kn-g[data-id]::before { content: attr(data-id); position: absolute; left: -.04em; top: calc(.1em - 15px); height: 15px; padding: 0 4px; translate: var(--jx, 0) var(--jy, 0);
+  background: #C24E00; color: #fff; font: 600 9.5px/15px var(--tk-mono); letter-spacing: .01em; white-space: nowrap; opacity: clamp(0, calc((var(--k) - .6) * 10), 1); pointer-events: none; }
+
+[data-pfx="tracker"] { --pfx-scan: #1F3BFF; --pfx-cap-bg: #0C0D0F; --pfx-t: 520ms; }
+.tk-pfx-ov { width: 100%; height: 100%; overflow: visible; }
+.tk-pfx-ov rect { fill: none; stroke-width: 2.5; }
+.tk-pfx-person { stroke: #E0103F; stroke-dasharray: 14 8; }
+.tk-pfx-face { stroke: #1F3BFF; animation: tk-pfx-jit .4s steps(2) infinite; }
+.tk-pfx-mesh { fill: none; stroke: #00C389; stroke-width: 1.4; opacity: .85; }
+.tk-pfx-pt { fill: #fff; stroke: #00875A; stroke-width: 1.5; }
+@keyframes tk-pfx-jit { 50% { translate: 1.5px -1px; } }
+.tk-pfx-l { inset: auto; height: 15px; padding: 0 5px; color: #fff; font: 600 9.5px/15px var(--tk-mono, ui-monospace, monospace); white-space: nowrap; }
+.tk-pfx-l1 { left: 32.6%; top: calc(25.9% - 15px); background: #1F3BFF; }
+.tk-pfx-l2 { left: 4%; top: 4%; background: #E0103F; }

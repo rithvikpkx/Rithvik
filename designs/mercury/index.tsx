@@ -16,6 +16,8 @@ import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { useMercuryMotion } from "./motion";
 import { XP } from "./experience";
+import MercuryName from "./name-fx";
+import MercuryPortrait from "./portrait-fx";
 import "./mercury.css";
 
 const META = designById("mercury")!;
@@ -137,6 +139,8 @@ const SKIN: Skin = {
   titleClass: "mc-h2",
   SectionOrnament: Divider,
   sections: { work: Work, about: About, questions: Questions, contact: Contact },
+  NameFx: MercuryName,
+  PortraitFx: MercuryPortrait,
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

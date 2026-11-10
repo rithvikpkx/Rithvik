@@ -16,6 +16,8 @@ import { DEFS, ON_SKY, glyph, hourIn, icon16, isDay, skyShader, skyTile } from "
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
 import { XP } from "./experience";
+import NimbusName from "./name-fx";
+import NimbusPortrait from "./portrait-fx";
 import "./nimbus.css";
 
 const META = designById("nimbus")!;
@@ -158,6 +160,8 @@ const SKIN: Skin = {
   sectionClass: (id) => `nb-sec nb-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "nb-h2",
   sections: { work: Work, about: About, questions: Questions, contact: Contact },
+  NameFx: NimbusName,
+  PortraitFx: NimbusPortrait,
 };
 
 /** The whole Nimbus site: the shared layout under a pixel sky that follows the visitor's clock. */

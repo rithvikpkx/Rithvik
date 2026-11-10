@@ -59,9 +59,11 @@ Every field is optional: a new design can start as `{ id, rootClass }` plus CSS 
   into its skin, plus `experience.css`. Connectors are built from `.xp-track` / `.xp-fill` / `.xp-head` (they
   follow the scroll-driven `--fill`); stations get `data-lit` once the fill passes them; the object reads
   `--px` / `--py` / `--pv` (a pointer spring). Its base state (animation: none) is the calm still.
-- **S9 Name + portrait**: `NameFx` per design (Stipple, Glyph, Prism, Tracker already use it); `PortraitFx`
-  per design (Tether renders it inside `.pt-photo` and toggles `on` per click; the shader goes through the
-  one context in `lib/shader/`).
+- **S9 Name + portrait** (done): every look has `designs/<id>/name-fx.tsx` (a `KineticName` from
+  `components/site/kinetic/` with a per-look `feel`, optional `paint`/`frame` hooks, and CSS in `fx.css` reading
+  `--k`/`--x`/`--y`/`--px`/`--py` on `.kn-l`) and `portrait-fx.tsx` (a `PhotoFx`: SVG filter primitives + CSS
+  overlays on a copy of the photo, revealed per click with a `--pfx-off`/`--pfx-on` clip-path). No second GL
+  context, no 2D canvas.
 - **S10 Questions, Contact, About**: shared bodies in `sections.tsx`; remove per-design overrides as the
   shared ones land. Copy lives in content or the bodies, never in the layout.
 

@@ -17,6 +17,8 @@ import { ART, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import { XP } from "./experience";
+import StippleName from "./name-fx";
+import StipplePortrait from "./portrait-fx";
 import "./stipple.css";
 
 const META = designById("stipple")!;
@@ -25,16 +27,6 @@ const CHAPTER: Record<SectionId, string> = { work: "Dispatches", experience: "Er
 const PLACE_KEY: Record<string, string> = { home: "home", school: "school", now: "here now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 
-/** The hero name under the square lens: a stippled base and a crisp vermilion copy revealed through the lens. */
-function Name({ first, last }: { first: string; last: string }) {
-  return (
-    <span className="st-name" data-lens data-lens-idle>
-      <span className="st-name-base"><span className="st-n1" data-edit="name.first">{first}</span> <span className="st-n2" data-edit="name.last">{last}</span></span>
-      <span className="st-name-crisp" aria-hidden="true"><span className="st-n1">{first}</span> <span className="st-n2">{last}</span></span>
-      <span className="st-lens-frame" aria-hidden="true"><i /><b className="st-lens-xy">x 000 · y 000</b></span>
-    </span>
-  );
-}
 
 /** A chapter heading: stippled roman numeral, chapter name, folio. */
 function Chapter({ id, index, hid }: { id: SectionId; index: number; label: string; hid: string }) {
@@ -132,8 +124,9 @@ const SKIN: Skin = {
   rootClass: "st",
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
-  NameFx: Name,
   sections: { work: Work, about: About, questions: Questions, contact: Contact },
+  NameFx: StippleName,
+  PortraitFx: StipplePortrait,
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */

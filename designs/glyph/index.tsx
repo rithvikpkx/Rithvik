@@ -13,6 +13,8 @@ import Clock from "@/components/site/Clock";
 import { KEYS, SECTIONS } from "./data";
 import { useGlyphMotion } from "./motion";
 import { XP } from "./experience";
+import GlyphName from "./name-fx";
+import GlyphPortrait from "./portrait-fx";
 import "./glyph.css";
 
 const META = designById("glyph")!;
@@ -37,10 +39,6 @@ function Title({ id, hid }: { id: SectionId; hid: string }) {
   return <h2 className="gl-h2" id={hid}><span className="gl-sl" aria-hidden="true">{"///"}</span><span data-scr>{PANE[id][0]}</span></h2>;
 }
 
-/** The name as one huge decoding word with the surname running up its side. */
-function Name({ first, last }: { first: string; last: string }) {
-  return <span className="gl-word"><span className="gl-w1" data-scr data-edit="name.first">{first}</span> <span className="gl-w2" data-edit="name.last">{last}</span></span>;
-}
 
 /** Work: a ranger-style file list with a live preview of the selected project. */
 function Work({ content: C }: SectionProps) {
@@ -120,8 +118,9 @@ const SKIN: Skin = {
   sectionClass: (id) => `gl-sec gl-pane ${HUE[SECTIONS.find(([s]) => s === id)![2]]}`.trim(),
   SectionOrnament: TitleBar,
   Title,
-  NameFx: Name,
   sections: { work: Work, about: About, questions: Questions, contact: Contact },
+  NameFx: GlyphName,
+  PortraitFx: GlyphPortrait,
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */
