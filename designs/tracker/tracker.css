@@ -30,8 +30,6 @@
 :root[data-design="tracker"] .tk :focus-visible { outline: 2px solid var(--tk-acc); outline-offset: 3px; }
 
 /* ───────── shared bits ───────── */
-:root[data-design="tracker"] .tk-k { display: flex; align-items: center; gap: 10px; font: 500 11.5px/1 var(--tk-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-k span { display: inline-grid; place-items: center; min-width: 26px; height: 18px; padding: 0 4px; border: 1px solid var(--tk-line2); color: var(--tk-ink); font-weight: 600; letter-spacing: .02em; }
 :root[data-design="tracker"] .tk-btn { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 18px; border: 1px solid var(--tk-line2); border-radius: 3px; background: var(--tk-panel); color: var(--tk-ink); font: 500 15px/1 var(--tk-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform 160ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
 :root[data-design="tracker"] .tk-btn:active { transform: scale(.97); }
 :root[data-design="tracker"] .tk-btn-ink { background: var(--tk-ink); border-color: var(--tk-ink); color: #fff; }
@@ -46,12 +44,6 @@
 :root[data-design="tracker"] .tk-pane { background: var(--tk-panel); border: 1px solid var(--tk-line2); }
 
 /* ───────── nav + HUD ───────── */
-:root[data-design="tracker"] .tk-nav { position: fixed; z-index: 40; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 var(--tk-g); background: var(--tk-bg); border-bottom: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 600 13px/1 var(--tk-mono); letter-spacing: -.01em; }
-:root[data-design="tracker"] .tk-logo .mark { width: 24px; height: 24px; color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-links { display: flex; gap: 2px; }
-:root[data-design="tracker"] .tk-links a { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 10px; border-radius: 2px; font: 500 13.5px/1 var(--tk-sans); text-decoration: none; color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-links i { font: 500 10px/1 var(--tk-mono); font-style: normal; color: var(--tk-dim); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-links a:hover { background: var(--tk-panel); } }
 :root[data-design="tracker"] .tk-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; font: 500 11px/1 var(--tk-mono); color: var(--tk-mut); white-space: nowrap; font-variant-numeric: tabular-nums; }
 :root[data-design="tracker"] .tk-hud b { font-weight: 600; color: var(--tk-ink); }
@@ -60,17 +52,10 @@
 :root[data-design="tracker"] .tk-hud-st { display: inline-flex; align-items: center; gap: 7px; }
 :root[data-design="tracker"] .tk-hud-st i { width: 7px; height: 7px; border-radius: 50%; background: var(--tk-dim); }
 :root[data-design="tracker"] .tk.tk-busy .tk-hud-st i { background: var(--tk-red); }
-:root[data-design="tracker"] .tk-hud-m { padding: 4px 7px; border: 1px solid var(--tk-line2); color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-nav-cta { height: 36px; padding: 0 14px; font-size: 14px; }
 
 /* ───────── hero ───────── */
-:root[data-design="tracker"] .tk-hero { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; min-height: 100svh; display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: clamp(32px, 5vw, 80px); align-items: center; padding: 96px var(--tk-g) 112px; }
-:root[data-design="tracker"] .tk-hero-txt { display: grid; gap: 26px; justify-items: start; }
 :root[data-design="tracker"] .tk-name { position: relative; width: fit-content; font: 600 clamp(56px, 7.6vw, 118px)/.9 var(--tk-sans); letter-spacing: -.05em; }
 :root[data-design="tracker"] .tk-name span { color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-lede { max-width: 30ch; font: 400 clamp(19px, 1.6vw, 22px)/1.45 var(--tk-sans); color: var(--tk-ink); letter-spacing: -.01em; }
-:root[data-design="tracker"] .tk-status { display: inline-flex; align-items: center; gap: 10px; font: 500 12.5px/1.4 var(--tk-mono); color: var(--tk-mut); }
-:root[data-design="tracker"] .tk-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #00875A; box-shadow: 0 0 0 3px rgba(0, 135, 90, .16); }
 :root[data-design="tracker"] .tk-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 
 /* the feed: the one loud place */
@@ -91,16 +76,12 @@
 :root[data-design="tracker"] .tk-tick.tr { right: 12px; top: 12px; border-width: 1px 1px 0 0; }
 :root[data-design="tracker"] .tk-tick.bl { left: 12px; bottom: 12px; border-width: 0 0 1px 1px; }
 :root[data-design="tracker"] .tk-tick.br { right: 12px; bottom: 12px; border-width: 0 1px 1px 0; }
-:root[data-design="tracker"] .tk-cross { position: absolute; z-index: 2; left: 50%; top: 12px; width: 1px; height: 9px; background: rgba(255, 255, 255, .6); }
-:root[data-design="tracker"] .tk-subject { position: absolute; z-index: 3; left: 50%; top: 45%; width: min(66cqh, 76cqw); transform: translate(-50%, -42.55%); }
 :root[data-design="tracker"] .tk-pt .pt-node { box-shadow: 0 6px 18px -6px rgba(5, 4, 30, .6); }
 :root[data-design="tracker"] .tk-pt .pt-node::after { border-radius: 2px; font: 500 11px/1.2 var(--tk-mono); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-pt .pt-node:hover { background: var(--tk-acc); color: #fff; } }
 /* the static face box (performance mode only; otherwise the live tracker draws it). Sits outside the photo, never on it. */
-:root[data-design="tracker"] .tk-face { display: none; position: absolute; left: calc(12.5% - 10px); top: calc(10.64% - 10px); width: calc(75% + 20px); height: calc(63.83% + 20px); pointer-events: none; }
 
 /* ───────── readout ───────── */
-:root[data-design="tracker"] .tk-readout { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; padding: 0 var(--tk-g); }
 :root[data-design="tracker"] .tk-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--tk-line2); border-bottom: 1px solid var(--tk-line2); }
 :root[data-design="tracker"] .tk-nums > div { padding: 34px 24px 32px; border-left: 1px solid var(--tk-line); display: grid; gap: 10px; align-content: start; }
 :root[data-design="tracker"] .tk-nums > div:first-child { border-left: 0; padding-left: 0; }
@@ -109,9 +90,7 @@
 
 /* ───────── sections ───────── */
 :root[data-design="tracker"] .tk-sec { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; padding: 168px var(--tk-g) 0; scroll-margin-top: 0; }
-:root[data-design="tracker"] .tk-sh { display: grid; gap: 20px; justify-items: start; }
 :root[data-design="tracker"] .tk-h2 { margin-top: 14px !important; font: 600 clamp(38px, 4.8vw, 70px)/1 var(--tk-sans); letter-spacing: -.045em; text-wrap: balance; }
-:root[data-design="tracker"] .tk-sub { max-width: 52ch; font: 400 17px/1.55 var(--tk-sans); color: var(--tk-mut); }
 
 /* work: an index of six rows */
 :root[data-design="tracker"] .tk-projects { list-style: none; margin: 56px 0 0; padding: 0; border-top: 1px solid var(--tk-line2); }
@@ -134,13 +113,6 @@
 }
 
 /* scene graph */
-:root[data-design="tracker"] .tk-graph { margin-top: 48px; padding: 20px; }
-:root[data-design="tracker"] .tk-graph .kg-key { height: 26px; border-radius: 2px; font-size: 11px; background: var(--tk-panel); }
-:root[data-design="tracker"] .tk-graph .kg-card { border-radius: 3px; border-color: var(--tk-line2); }
-:root[data-design="tracker"] .tk-graph .kg-act { border-radius: 2px; }
-:root[data-design="tracker"] .tk-graph .kg-links button { border-radius: 2px; font-family: var(--tk-mono); font-size: 11px; }
-:root[data-design="tracker"] .tk-graph .kg-node[data-type="me"] .kg-shape { fill: #fff; stroke-width: 1.5; }
-:root[data-design="tracker"] .tk-graph .kg-ring { stroke-dasharray: 2 3; opacity: .8; }
 
 /* experience */
 :root[data-design="tracker"] .tk-roles { list-style: none; margin: 56px 0 0; padding: 0; border-top: 1px solid var(--tk-line2); }
@@ -156,7 +128,6 @@
 :root[data-design="tracker"] .tk-edu { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 24px; align-items: center; margin-top: 48px; padding: 24px; background: var(--tk-panel); border: 1px solid var(--tk-line2); max-width: 760px; }
 :root[data-design="tracker"] .tk-edu img { width: 72px; height: 72px; object-fit: contain; }
 :root[data-design="tracker"] .tk-edu div { display: grid; gap: 4px; }
-:root[data-design="tracker"] .tk-k-s { margin-bottom: 6px; }
 :root[data-design="tracker"] .tk-edu h3 { font: 600 22px/1.2 var(--tk-sans); letter-spacing: -.02em; }
 :root[data-design="tracker"] .tk-edu-m { font: 500 12.5px/1.4 var(--tk-mono); color: var(--tk-mut); }
 
@@ -211,17 +182,7 @@
 :root[data-design="tracker"] .tk-contact { display: grid; gap: 26px; justify-items: start; padding-top: 200px; }
 :root[data-design="tracker"] .tk-big { font: 600 clamp(68px, 12vw, 180px)/.86 var(--tk-sans); letter-spacing: -.06em; }
 :root[data-design="tracker"] .tk-btn-lg { height: 54px; padding: 0 22px; font-size: 16px; }
-:root[data-design="tracker"] .tk-links2 { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; border-top: 1px solid var(--tk-line2); border-bottom: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-links2 li + li { border-left: 1px solid var(--tk-line2); }
-:root[data-design="tracker"] .tk-links2 a { display: inline-flex; align-items: center; gap: 9px; padding: 16px 22px; font: 500 15px/1 var(--tk-sans); text-decoration: none; }
-:root[data-design="tracker"] .tk-links2 li:first-child a { padding-left: 4px; }
-:root[data-design="tracker"] .tk-links2 .logo, :root[data-design="tracker"] .tk-links2 .ic { width: 15px; height: 15px; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .tk-links2 a:hover { color: var(--tk-acc); } }
-:root[data-design="tracker"] .tk-foot { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; padding: 160px var(--tk-g) 140px; display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px; align-items: center; }
-:root[data-design="tracker"] .tk-foot-mark { display: inline-grid; width: 44px; height: 44px; color: var(--tk-ink); }
-:root[data-design="tracker"] .tk-foot-mark .mark { width: 100%; height: 100%; }
-:root[data-design="tracker"] .tk-foot-n { font: 600 15px/1.3 var(--tk-sans); }
-:root[data-design="tracker"] .tk-colo { font: 400 13px/1.6 var(--tk-mono); color: var(--tk-mut); }
 
 /* ───────── the vision layer: boxes, labels, glitch slices, flow ───────── */
 :root[data-design="tracker"] .tk-ov { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; contain: strict; }
@@ -243,18 +204,14 @@
 
 /* ───────── performance mode: the tracker becomes a few static annotations ───────── */
 :root[data-design="tracker"].lite .tk-ov, :root[data-design="tracker"].lite .tk-flow { display: none; }
-:root[data-design="tracker"].lite .tk-face { display: block; }
 :root[data-design="tracker"].lite [data-tk-static] { position: relative; --k: var(--tk-acc); }
 :root[data-design="tracker"].lite .tk-name[data-tk-static] { --k: #C24E00; }
-:root[data-design="tracker"].lite .tk-face[data-tk-static] { position: absolute; --k: var(--tk-red); }
 :root[data-design="tracker"].lite .tk-proj[data-tk-static] { --k: #00875A; }
 :root[data-design="tracker"].lite [data-tk-static]::after { content: ""; position: absolute; inset: -8px; border: 1px solid color-mix(in srgb, var(--k) 60%, transparent); pointer-events: none;
   background: linear-gradient(var(--k), var(--k)) 0 0 / 12px 2px, linear-gradient(var(--k), var(--k)) 0 0 / 2px 12px, linear-gradient(var(--k), var(--k)) 100% 0 / 12px 2px, linear-gradient(var(--k), var(--k)) 100% 0 / 2px 12px,
     linear-gradient(var(--k), var(--k)) 0 100% / 12px 2px, linear-gradient(var(--k), var(--k)) 0 100% / 2px 12px, linear-gradient(var(--k), var(--k)) 100% 100% / 12px 2px, linear-gradient(var(--k), var(--k)) 100% 100% / 2px 12px; background-repeat: no-repeat; }
-:root[data-design="tracker"].lite .tk-face[data-tk-static]::after { inset: 0; }
 :root[data-design="tracker"].lite .tk-proj[data-tk-static]::after { inset: 6px; border-color: transparent; }
 :root[data-design="tracker"].lite [data-tk-static]::before { content: attr(data-tk-static); position: absolute; z-index: 1; left: -8px; top: -26px; height: 17px; padding: 0 6px; background: var(--k); color: #fff; font: 600 10.5px/17px var(--tk-mono); letter-spacing: .01em; white-space: nowrap; pointer-events: none; }
-:root[data-design="tracker"].lite .tk-face[data-tk-static]::before { left: 0; top: -18px; }
 :root[data-design="tracker"].lite .tk-proj[data-tk-static]::before { left: auto; right: 4px; top: 4px; }
 
 /* ───────── chrome reskin: switcher, agent, windows, sheet, toast, play ───────── */
@@ -347,14 +304,11 @@
 
 /* ───────── responsive ───────── */
 @media (max-width: 1180px) {
-  :root[data-design="tracker"] .tk-hud-x, :root[data-design="tracker"] .tk-hud-m { display: none; }
 }
 @media (max-width: 1120px) {
   :root[data-design="tracker"] .agent-bar::before { left: auto; right: -1px; }
 }
 @media (max-width: 960px) {
-  :root[data-design="tracker"] .tk-links { display: none; }
-  :root[data-design="tracker"] .tk-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-top: 104px; gap: 48px; }
   :root[data-design="tracker"] .tk-proj { grid-template-columns: 40px minmax(0, 1fr) 36px; gap: 16px; }
   :root[data-design="tracker"] .tk-pk, :root[data-design="tracker"] .tk-fm { display: none; }
   :root[data-design="tracker"] .tk-about { grid-template-columns: minmax(0, 1fr); }
@@ -365,13 +319,8 @@
 }
 @media (max-width: 640px) {
   :root[data-design="tracker"] body { font-size: 15.5px; }
-  :root[data-design="tracker"] .tk-nav { gap: 12px; height: 52px; }
-  :root[data-design="tracker"] .tk-logo span { display: none; }
   :root[data-design="tracker"] .tk-hud { gap: 10px; }
-  :root[data-design="tracker"] .tk-hero { padding: 88px var(--tk-g) 64px; gap: 40px; }
-  :root[data-design="tracker"] .tk-hero-txt { gap: 20px; }
   :root[data-design="tracker"] .tk-name { font-size: clamp(48px, 14.5vw, 64px); }
-  :root[data-design="tracker"] .tk-lede { font-size: 18px; }
   :root[data-design="tracker"] .tk-acts { width: 100%; }
   :root[data-design="tracker"] .tk-acts .tk-btn { flex: 1 1 auto; justify-content: center; }
   :root[data-design="tracker"] .tk-view { aspect-ratio: 4 / 4.4; }
@@ -384,7 +333,6 @@
   :root[data-design="tracker"] .tk-proj { grid-template-columns: 28px minmax(0, 1fr) 32px; gap: 12px; padding: 24px 0; }
   :root[data-design="tracker"] .tk-go { width: 32px; height: 32px; }
   :root[data-design="tracker"] .tk-ph { font-size: 15px; }
-  :root[data-design="tracker"] .tk-graph { margin-top: 32px; padding: 12px; }
   :root[data-design="tracker"] .tk-role { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 30px 0; }
   :root[data-design="tracker"] .tk-when { grid-auto-flow: column; justify-content: start; gap: 12px; }
   :root[data-design="tracker"] .tk-rb li { font-size: 15.5px; }
@@ -401,16 +349,28 @@
   :root[data-design="tracker"] .tk-toy-f { display: none; }
   :root[data-design="tracker"] .tk-contact { padding-top: 128px; }
   :root[data-design="tracker"] .tk-contact .tk-btn { max-width: 100%; }
-  :root[data-design="tracker"] .tk-links2 { width: 100%; }
-  :root[data-design="tracker"] .tk-links2 li { flex: 1 1 50%; }
-  :root[data-design="tracker"] .tk-links2 li + li { border-left: 0; }
-  :root[data-design="tracker"] .tk-links2 a, :root[data-design="tracker"] .tk-links2 li:first-child a { padding: 14px 4px; }
-  :root[data-design="tracker"] .tk-foot { grid-template-columns: auto minmax(0, 1fr); padding: 112px var(--tk-g) 170px; }
-  :root[data-design="tracker"] .tk-colo { grid-column: 1 / -1; }
   :root[data-design="tracker"] .agent-bar::before { content: "#00 agent"; }
 }
 
 /* "I am Rithvik" header button: the outlined twin of Resume */
-:root[data-design="tracker"] .tk-iam { height: 36px; padding: 0 14px; font-size: 14px; gap: 8px; background: transparent; }
-:root[data-design="tracker"] .tk-iam .iam-ic { width: 15px; height: 15px; }
 @media (max-width: 640px) { :root[data-design="tracker"] .tk-iam { width: 36px; padding: 0; justify-content: center; } }
+
+/* ───────── the shared layout, themed ───────── */
+:root[data-design="tracker"] { --ly-head-bg: rgba(255, 255, 255, .9); --ly-line: var(--tk-line); --ly-soft: var(--tk-panel); --ly-display: var(--tk-sans); }
+:root[data-design="tracker"] .ly-head { font: 500 12.5px/1 var(--tk-mono); }
+:root[data-design="tracker"] .ly-nav a { border-radius: 3px; }
+:root[data-design="tracker"] .ly-iam { border-radius: 3px; }
+:root[data-design="tracker"] .ly-name .tk-name { display: block; width: auto; font: inherit; letter-spacing: -.05em; }
+:root[data-design="tracker"] { --ly-name-weight: 600; --ly-name-track: -.05em; }
+:root[data-design="tracker"] .ly-status { font: 500 12.5px/1.5 var(--tk-mono); color: var(--tk-mut); }
+/* the cam0 feed sits behind the portrait: the depth shader is the backdrop the strings hang in front of */
+:root[data-design="tracker"] .ly-hero > .tk-feed { position: absolute; z-index: 0; right: var(--ly-gutter); top: calc(var(--ly-head-h) + 72px); width: min(40vw, 520px); }
+:root[data-design="tracker"] .ly-hero > .tk-hud { position: absolute; z-index: 2; top: calc(var(--ly-head-h) + 16px); right: var(--ly-gutter); margin: 0; }
+:root[data-design="tracker"] .ly-hero .pt { --pt-node-bg: #FFFFFF; }
+:root[data-design="tracker"] .tk-sec > .tk-h2 { margin: 0 0 clamp(40px, 5vw, 64px) !important; }
+:root[data-design="tracker"] .tk-about + .tk-nums { margin-top: clamp(56px, 7vw, 96px); }
+@media (max-width: 860px) {
+  :root[data-design="tracker"] .ly-hero > .tk-feed { position: relative; right: auto; top: auto; width: 100%; order: 2; margin-top: 32px; }
+  :root[data-design="tracker"] .ly-hero > .tk-hud { display: none; }
+}
+@media (min-width: 861px) { :root[data-design="tracker"] .ly-hero > .tk-feed { top: calc(var(--ly-head-h) + 56px); } :root[data-design="tracker"] .ly-hero > .tk-feed .tk-view { aspect-ratio: 1 / 1.08; } }
