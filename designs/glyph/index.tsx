@@ -13,6 +13,8 @@ import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { KEYS, SECTIONS, hash7 } from "./data";
 import { useGlyphMotion } from "./motion";
+import GlyphName from "./name-fx";
+import GlyphPortrait from "./portrait-fx";
 import "./glyph.css";
 
 const META = designById("glyph")!;
@@ -38,10 +40,6 @@ function Title({ id, hid }: { id: SectionId; hid: string }) {
   return <h2 className="gl-h2" id={hid}><span className="gl-sl" aria-hidden="true">{"///"}</span><span data-scr>{PANE[id][0]}</span></h2>;
 }
 
-/** The name as one huge decoding word with the surname running up its side. */
-function Name({ first, last }: { first: string; last: string }) {
-  return <span className="gl-word"><span className="gl-w1" data-scr data-edit="name.first">{first}</span> <span className="gl-w2" data-edit="name.last">{last}</span></span>;
-}
 
 /** One git commit: hash, decoration, date, and a `git show` body that expands. */
 function Commit({ x, lane, deco, open }: { x: DesignProps["content"]["experience"][number]; lane?: boolean; deco?: ReactNode; open?: boolean }) {
@@ -172,7 +170,8 @@ const SKIN: Skin = {
   sectionClass: (id) => `gl-sec gl-pane ${HUE[SECTIONS.find(([s]) => s === id)![2]]}`.trim(),
   SectionOrnament: TitleBar,
   Title,
-  NameFx: Name,
+  NameFx: GlyphName,
+  PortraitFx: GlyphPortrait,
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
