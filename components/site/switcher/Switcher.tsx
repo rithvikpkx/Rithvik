@@ -4,23 +4,41 @@ import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { useDesign } from "../DesignProvider";
 import { useSite } from "../SiteProvider";
 import StatusDot from "../StatusDot";
-import { detentAngles, nearest, shaped, step, wrap, type Motion } from "./physics";
+import { atRest, collide, magnet, nearestWithin, ringSlots, squash, stepOrb, type Orb, type Target, type Vec } from "./physics";
 import "./switcher.css";
 
-const SETTLE_MS = 190; // a detent must hold this long before it commits, so a fast turn switches once
-const RING = 58; // jewel ring radius, px (dial box is 132)
-const CENTER = 66;
+const SETTLE_MS = 190; // a pick must hold this long before it commits, so a fast run of picks switches once
+const W = 236, H = 268; // the unit's box, px
+const C: Vec = { x: 118, y: 150 }; // the nucleus when open
+const CORNER: Vec = { x: 24, y: H - 26 }; // the nucleus when collapsed (the box's bottom-left)
+const R_IN = 70, R_OUT = 100; // design ring, palette ring
+const BASE = 28; // orb element radius (56px box); every size below is a scale of it
+const S_NUC = 1, S_NUC_CLOSED = 0.8, S_DES = 0.36, S_PAL = 0.25;
+const MAGNET = 58, SNAP = 34; // an orb dragged within MAGNET is pulled in; released within SNAP it takes the nucleus
 
 type Look = { id: string; name: string; design: boolean; bg: string; fg: string; ac: string; font?: string };
-type Drag = { id: number; cx: number; cy: number; phi: number; raw: number; start: number; moved: boolean; trail: [t: number, raw: number][] };
+type Drag = { pid: number; i: number; ox: number; oy: number; x: number; y: number; vx: number; vy: number; t: number; sx: number; sy: number; moved: boolean };
+type St = {
+  orbs: Orb[]; raf: number; last: number; open: boolean; sel: number; held: number; drag: Drag | null;
+  commit: number; closer: number; wheel: number; sent: string; sentAt: number; nD: number; slots: Vec[];
+  looks: Look[]; current: string; setDesign: (id: string) => void;
+};
 
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** The look switcher: a machined instrument on the bottom-left edge. A detented rotary knob (designs, then
- *  palettes) with drag + inertia + spring snap, wheel/arrow steps and clickable jewels; a lever for
- *  performance mode (`html.lite`); a lamp linking to /status. Collapsed to the bare knob until hovered,
- *  focused or tapped. Turning never waits on the page: the readout follows at once and the switch commits
- *  once the knob rests on a detent for SETTLE_MS. */
+/** Where orb `i` wants to be: the selected one is the nucleus, the rest sit in their ring slot (open) or fold
+ *  into the corner (collapsed). The held orb's scale grows; its position is the pointer's. */
+function targetOf(st: St, i: number): Target {
+  if (i === st.sel) return st.open ? { ...C, s: S_NUC } : { ...CORNER, s: S_NUC_CLOSED };
+  if (!st.open) return { ...CORNER, s: 0 };
+  return { ...st.slots[i], s: (i < st.nD ? S_DES : S_PAL) * (i === st.held ? 1.7 : 1) };
+}
+
+/** The look switcher: a cluster of marbles, one per look, around a socket. The current look sits in the socket
+ *  as the nucleus; the rest orbit it (designs inner, palettes outer). Pull an orb in (or tap it, or arrow to it)
+ *  and it swaps with the nucleus, squashing as it lands. A hollow bead holds performance mode (`html.lite`) and
+ *  a small lamp links to /status. Collapsed to the bare nucleus until hovered, focused or tapped. Picking never
+ *  waits on the page: the swap is immediate and the look commits once the pick has rested for SETTLE_MS. */
 export default function Switcher() {
   const { entries, current, setDesign } = useDesign();
   const { lite, setLite, toast } = useSite();
@@ -28,37 +46,91 @@ export default function Switcher() {
   const looks = useMemo<Look[]>(() => entries.map((e) => e.kind === "design"
     ? { id: e.id, name: e.meta.name, design: true, bg: e.meta.swatch[0], fg: e.meta.swatch[1], ac: e.meta.swatch[2], font: e.meta.cardFont }
     : { id: e.id, name: e.name, design: false, bg: e.swatch[0], fg: e.swatch[1], ac: e.swatch[2] }), [entries]);
-  const nDesigns = looks.filter((l) => l.design).length;
-  const angles = useMemo(() => detentAngles(nDesigns, looks.length - nDesigns), [nDesigns, looks.length]);
+  const nD = looks.filter((l) => l.design).length;
+  const slots = useMemo(() => ringSlots(nD, looks.length - nD, C, R_IN, R_OUT), [nD, looks.length]);
   const curIdx = Math.max(0, looks.findIndex((l) => l.id === current));
 
-  const [sel, setSel] = useState(curIdx); // the detent the knob is on: drives readout + tint ahead of the commit
-  const [rest, setRest] = useState(() => angles[curIdx]); // rendered angle; changes only while the knob is still
-  const [open, setOpen] = useState(false);
-  const [peek, setPeek] = useState<number | null>(null); // hovered jewel, shown in the readout
+  const [sel, setSel] = useState(curIdx);
+  const [open, setOpenState] = useState(false);
+  const [peek, setPeek] = useState<number | null>(null); // hovered / held orb, named in the label
+  const [note, setNote] = useState(false); // the label shows the bead's state while it is hovered or focused
+  const [pulse, setPulse] = useState(0); // remounts the snap ring, replaying its animation
 
   const unitRef = useRef<HTMLDivElement>(null);
-  const dialRef = useRef<HTMLDivElement>(null);
-  const knobRef = useRef<HTMLDivElement>(null);
+  const els = useRef<(HTMLButtonElement | null)[]>([]);
   // Mutable state for the rAF loop and the once-bound listeners (never read during render).
-  const s = useRef({
-    m: { a: angles[curIdx], v: 0, phase: "snap", target: curIdx } as Motion,
-    raf: 0, last: 0, sel: curIdx, commit: 0, closer: 0, wheel: 0, drag: null as Drag | null,
-    sent: "", sentAt: 0, angles, looks, current, setDesign,
+  const s = useRef<St>({
+    orbs: [], raf: 0, last: 0, open: false, sel: curIdx, held: -1, drag: null, commit: 0, closer: 0, wheel: 0,
+    sent: "", sentAt: 0, nD, slots, looks, current, setDesign,
   });
-  useEffect(() => { Object.assign(s.current, { angles, looks, current, setDesign }); });
+  useEffect(() => { Object.assign(s.current, { nD, slots, looks, current, setDesign }); });
 
-  /** Writes the knob angle straight to the DOM (no React render per frame). */
-  function paint(a: number) { knobRef.current?.style.setProperty("--a", `${a}deg`); }
+  /** Writes orb `i` to the DOM (position, squash along its velocity, scale): no React render per frame. */
+  function paint(i: number) {
+    const o = s.current.orbs[i], el = els.current[i];
+    if (!o || !el) return;
+    const q = reduced() ? { rot: 0, sx: 1, sy: 1 } : squash(o.vx, o.vy);
+    const k = Math.max(0, o.s);
+    el.style.transform = `translate3d(${o.x.toFixed(2)}px,${o.y.toFixed(2)}px,0) rotate(${q.rot.toFixed(3)}rad) scale(${(k * q.sx).toFixed(3)},${(k * q.sy).toFixed(3)})`;
+  }
 
-  /** The knob reached detent `i`: update the readout now, commit the look after it settles. */
+  /** One animation frame: spring every orb to its target, let them jostle, paint. Stops itself when all rest. */
+  function frame(t: number) {
+    const st = s.current;
+    const dt = st.last ? t - st.last : 16;
+    st.last = t;
+    st.orbs.forEach((o, i) => {
+      const tg = targetOf(st, i);
+      if (i === st.held && st.drag) { // the pointer owns its position; only the scale springs
+        const d = st.drag;
+        stepOrb(o, { x: o.x, y: o.y, s: tg.s }, dt);
+        o.x = d.x; o.y = d.y; o.vx = d.vx; o.vy = d.vy;
+      } else stepOrb(o, tg, dt);
+    });
+    if (st.open) collide(st.orbs, st.orbs.map(() => BASE), (i) => i === st.held || i === st.sel);
+    st.orbs.forEach((_, i) => paint(i));
+    if (st.held < 0 && st.orbs.every((o, i) => atRest(o, targetOf(st, i)))) { st.raf = 0; st.last = 0; return; }
+    st.raf = requestAnimationFrame(frame);
+  }
+  /** Starts the loop (or, under reduced motion, jumps every orb to its target). */
+  function run() {
+    const st = s.current;
+    if (reduced()) {
+      st.orbs.forEach((o, i) => { Object.assign(o, targetOf(st, i), { vx: 0, vy: 0, vs: 0 }); paint(i); });
+      return;
+    }
+    if (!st.raf) { st.last = 0; st.raf = requestAnimationFrame(frame); }
+  }
+
+  // (Re)build the orbs when the set of looks changes; they start folded into the corner and spring out to place.
+  useEffect(() => {
+    const st = s.current;
+    st.orbs = looks.map((_, i) => st.orbs[i] ?? { x: CORNER.x, y: CORNER.y, vx: 0, vy: 0, s: 0, vs: 0 });
+    run();
+    return () => { cancelAnimationFrame(st.raf); st.raf = 0; clearTimeout(st.commit); clearTimeout(st.closer); };
+  }, [looks.length]); // eslint-disable-line react-hooks/exhaustive-deps -- run/paint only touch refs
+
+  /** Opens or folds the unit; the orbs follow by spring. */
+  function setOpen(v: boolean) {
+    const st = s.current;
+    if (st.open === v) return;
+    st.open = v;
+    setOpenState(v);
+    if (!v) { setPeek(null); setNote(false); }
+    run();
+  }
+
+  /** Makes look `i` the nucleus now; the look itself commits after it has rested for SETTLE_MS. */
   function pick(i: number, commit = true) {
     const st = s.current;
+    i = (i + st.looks.length) % st.looks.length;
     if (i === st.sel) return;
     st.sel = i;
     setSel(i);
+    setPulse((p) => p + 1);
     clearTimeout(st.commit);
     st.commit = 0;
+    run();
     if (!commit) return;
     st.commit = window.setTimeout(() => {
       st.commit = 0;
@@ -70,92 +142,115 @@ export default function Switcher() {
     }, SETTLE_MS);
   }
 
-  /** One animation frame of coast/spring; the loop stops itself once the knob rests. */
-  function frame(t: number) {
-    const st = s.current;
-    const done = step(st.m, st.angles, st.last ? t - st.last : 16);
-    st.last = t;
-    paint(st.m.a);
-    pick(st.m.phase === "snap" ? st.m.target : nearest(st.angles, st.m.a));
-    if (done) { st.raf = 0; st.last = 0; setRest(st.m.a); return; }
-    st.raf = requestAnimationFrame(frame);
-  }
-  function run() { const st = s.current; if (!st.raf) { st.last = 0; st.raf = requestAnimationFrame(frame); } }
-  function halt() { const st = s.current; cancelAnimationFrame(st.raf); st.raf = 0; }
-
-  /** Springs to detent `i` (instantly under reduced motion). */
-  function goTo(i: number, commit = true) {
-    const st = s.current;
-    i = Math.max(0, Math.min(st.angles.length - 1, i));
-    st.m.phase = "snap";
-    st.m.target = i;
-    pick(i, commit);
-    if (reduced()) { halt(); st.m.a = st.angles[i]; st.m.v = 0; paint(st.m.a); setRest(st.m.a); return; }
-    run();
-  }
-  /** Where a step should start from: the destination if the knob is already heading somewhere. */
-  const base = () => (s.current.raf && s.current.m.phase === "snap" ? s.current.m.target : s.current.sel);
-
-  // Follow switches made elsewhere (T, Undo, data-theme-go, the agent) unless the visitor is mid-turn.
+  // Follow switches made elsewhere (T, Undo, data-theme-go, the agent) unless the visitor is mid-pick.
   useEffect(() => {
     const st = s.current;
     if (st.drag || st.commit) return;
     if (st.sent && st.sent !== st.looks[curIdx]?.id && performance.now() - st.sentAt < 2000) return; // ours still landing
-    if (st.sel !== curIdx) goTo(curIdx, false);
-  }, [curIdx]); // eslint-disable-line react-hooks/exhaustive-deps -- goTo only touches refs
+    if (st.sel !== curIdx) pick(curIdx, false);
+  }, [curIdx]); // eslint-disable-line react-hooks/exhaustive-deps -- pick only touches refs and setters
 
-  // Wheel steps one detent per notch (trackpads accumulate). React's onWheel is passive, so bind it here.
-  /** Wheel: one detent per notch; trackpads accumulate small deltas. */
-  function wheelStep(e: WheelEvent) {
-    e.preventDefault();
-    const st = s.current;
-    st.wheel += e.deltaMode ? e.deltaY * 40 : e.deltaY;
-    if (Math.abs(st.wheel) < 30) return;
-    const dir = Math.sign(st.wheel);
-    st.wheel = 0;
-    goTo(base() + dir);
+  /** Takes hold of orb `i`: the pointer is captured, so the drag survives a sweep starting underneath it. */
+  function grab(i: number, el: HTMLElement, e: { pointerId: number; clientX: number; clientY: number; timeStamp: number }) {
+    const st = s.current, o = st.orbs[i], r = unitRef.current!.getBoundingClientRect();
+    if (!o) return;
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    st.drag = { pid: e.pointerId, i, ox: o.x - sx, oy: o.y - sy, x: o.x, y: o.y, vx: 0, vy: 0, t: e.timeStamp, sx, sy, moved: false };
+    st.held = i;
+    setPeek(i);
+    try { el.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+    run();
   }
-  // React's onWheel is passive, so bind it here.
-  useEffect(() => {
-    const el = dialRef.current;
-    if (!el) return;
-    el.addEventListener("wheel", wheelStep, { passive: false });
-    return () => el.removeEventListener("wheel", wheelStep);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- wheelStep only touches refs
+  const down = (i: number) => (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (!s.current.open) { setOpen(true); if (e.pointerType !== "mouse") return; } // a first tap only opens
+    grab(i, e.currentTarget, e);
+  };
+  const move = (i: number) => (e: PointerEvent<HTMLButtonElement>) => {
+    const st = s.current, d = st.drag;
+    if (!d || d.pid !== e.pointerId || d.i !== i) return;
+    const r = unitRef.current!.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    if (Math.hypot(px - d.sx, py - d.sy) > 4) d.moved = true;
+    if (!d.moved) return;
+    const p = i === st.sel ? { x: px + d.ox, y: py + d.oy } : magnet({ x: px + d.ox, y: py + d.oy }, C, MAGNET);
+    const dt = Math.max(1, e.timeStamp - d.t);
+    d.vx = 0.5 * d.vx + 0.5 * Math.max(-2.4, Math.min(2.4, (p.x - d.x) / dt));
+    d.vy = 0.5 * d.vy + 0.5 * Math.max(-2.4, Math.min(2.4, (p.y - d.y) / dt));
+    d.t = e.timeStamp; d.x = p.x; d.y = p.y;
+    const o = st.orbs[i];
+    o.x = p.x; o.y = p.y; o.vx = d.vx; o.vy = d.vy;
+    paint(i);
+    unitRef.current!.toggleAttribute("data-hot", i !== st.sel && Math.hypot(p.x - C.x, p.y - C.y) < SNAP);
+  };
+  const up = (i: number) => (e: PointerEvent<HTMLButtonElement>) => {
+    const st = s.current, d = st.drag;
+    if (!d || d.pid !== e.pointerId || d.i !== i) return;
+    st.drag = null;
+    st.held = -1;
+    unitRef.current!.removeAttribute("data-hot");
+    setPeek(null);
+    const took = e.type === "pointerup" && (!d.moved || Math.hypot(d.x - C.x, d.y - C.y) < SNAP);
+    if (!took) { st.orbs[i].vx = d.vx; st.orbs[i].vy = d.vy; } // let go: it carries its speed back to its slot
+    if (took) pick(i);
+    run();
+  };
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const st = s.current, k = e.key, n = st.looks.length;
+    const to = k === "ArrowRight" || k === "ArrowDown" ? st.sel + 1 : k === "ArrowLeft" || k === "ArrowUp" ? st.sel - 1
+      : k === "Home" ? 0 : k === "End" ? n - 1 : null;
+    if (k === "Escape") { setOpen(false); (e.target as HTMLElement).blur(); return; }
+    if (to === null) return;
+    e.preventDefault();
+    const i = (to + n) % n;
+    pick(i);
+    els.current[i]?.focus({ preventScroll: true }); // roving focus follows the nucleus
+  };
 
-  // While open: close on a tap outside or once the mouse wanders off, and keep working during a sweep. While a
-  // view transition runs Chrome hit-tests every event to <html> (that was the old dial's lock), so events that
-  // land there are routed to the control under the pointer by geometry.
+  // While open: close on a tap outside or once the mouse wanders off, step on wheel, and keep working during a sweep.
+  // During a view transition Chrome hit-tests every event to <html> (the old dial's lock), so events that land there
+  // are routed to the control under the pointer by geometry.
   useEffect(() => {
     if (!open) return;
     const html = document.documentElement;
     const unit = unitRef.current!;
-    const plate = unit.querySelector(".sw-plate")!;
-    const inside = (el: Element, x: number, y: number, pad = 0) => {
-      const r = el.getBoundingClientRect();
-      return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    const inside = (r: DOMRect, x: number, y: number, pad = 0) => x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad;
+    const hit = (x: number, y: number): { orb: number } | { el: HTMLElement } | null => {
+      const r = unit.getBoundingClientRect(), st = s.current;
+      const i = nearestWithin(st.orbs.map((o) => ({ x: r.left + o.x, y: r.top + o.y })), { x, y }, (k) => Math.max(BASE * st.orbs[k].s + 4, 13));
+      if (i >= 0) return { orb: i };
+      const el = [...unit.querySelectorAll<HTMLElement>(".sw-calm, .sw-lamp")].find((b) => inside(b.getBoundingClientRect(), x, y, 3));
+      return el ? { el } : null;
     };
-    const under = (x: number, y: number) => [...unit.querySelectorAll<HTMLElement>(".sw-lever, .sw-lamp, .sw-jewel, .sw-knob")]
-      .find((el) => inside(el, x, y, el.classList.contains("sw-jewel") ? 4 : 0));
     const onDown = (e: globalThis.PointerEvent) => {
       const swept = e.target === html;
-      const el = swept ? under(e.clientX, e.clientY) : undefined;
-      if (el) e.preventDefault(); // keep focus where it is: <html> taking it would blur the unit shut
-      if (el?.classList.contains("sw-knob")) { grab(el, e); return; }
-      if (swept ? !inside(plate, e.clientX, e.clientY) : !unit.contains(e.target as Node)) setOpen(false);
+      const h = swept ? hit(e.clientX, e.clientY) : null;
+      if (h) {
+        e.preventDefault(); // keep focus where it is: <html> taking it would blur the unit shut
+        if ("orb" in h) grab(h.orb, els.current[h.orb]!, e);
+        return;
+      }
+      if (swept ? !inside(unit.getBoundingClientRect(), e.clientX, e.clientY) : !unit.contains(e.target as Node)) setOpen(false);
     };
     const onClick = (e: MouseEvent) => {
       if (e.target !== html) return;
-      const el = under(e.clientX, e.clientY);
-      if (!el || el.classList.contains("sw-knob")) return;
-      e.preventDefault();
-      el.click();
+      const h = hit(e.clientX, e.clientY);
+      if (h && "el" in h) { e.preventDefault(); h.el.click(); }
     };
-    const onWheel = (e: WheelEvent) => { if (e.target === html && inside(dialRef.current!, e.clientX, e.clientY)) wheelStep(e); };
+    const onWheel = (e: WheelEvent) => {
+      const r = unit.getBoundingClientRect();
+      if (Math.hypot(e.clientX - r.left - C.x, e.clientY - r.top - C.y) > R_OUT + 12 || !(e.target === html || unit.contains(e.target as Node))) return;
+      e.preventDefault();
+      const st = s.current;
+      st.wheel += e.deltaMode ? e.deltaY * 40 : e.deltaY;
+      if (Math.abs(st.wheel) < 30) return; // trackpads accumulate small deltas
+      pick(st.sel + Math.sign(st.wheel));
+      st.wheel = 0;
+    };
     const onMove = (e: globalThis.PointerEvent) => {
       if (e.pointerType !== "mouse") return;
       const st = s.current;
-      if (inside(plate, e.clientX, e.clientY, 24)) { clearTimeout(st.closer); st.closer = 0; return; }
+      if (inside(unit.getBoundingClientRect(), e.clientX, e.clientY, 24)) { clearTimeout(st.closer); st.closer = 0; return; }
       if (st.closer) return;
       st.closer = window.setTimeout(() => {
         st.closer = 0;
@@ -172,74 +267,13 @@ export default function Switcher() {
       document.removeEventListener("wheel", onWheel, true);
       document.removeEventListener("pointermove", onMove);
     };
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps -- grab/wheelStep only touch refs
-
-  useEffect(() => () => { halt(); clearTimeout(s.current.commit); clearTimeout(s.current.closer); }, []);
-
-  /** Pointer angle around the knob centre, 0° = up, clockwise. */
-  const angleOf = (d: Drag, x: number, y: number) => (Math.atan2(x - d.cx, d.cy - y) * 180) / Math.PI;
-
-  /** Takes hold of the knob: the pointer is captured, so the drag survives a sweep starting underneath it. */
-  function grab(knob: HTMLElement, e: { pointerId: number; clientX: number; clientY: number; timeStamp: number }) {
-    const r = knob.getBoundingClientRect();
-    const st = s.current;
-    halt();
-    const d: Drag = { id: e.pointerId, cx: r.left + r.width / 2, cy: r.top + r.height / 2, phi: 0, raw: st.m.a, start: st.m.a, moved: false, trail: [[e.timeStamp, st.m.a]] };
-    d.phi = angleOf(d, e.clientX, e.clientY);
-    st.drag = d;
-    try { knob.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
-  }
-  const onDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (!open && e.pointerType !== "mouse") { setOpen(true); return; } // first tap only opens
-    grab(e.currentTarget, e);
-  };
-  const onMove = (e: PointerEvent<HTMLDivElement>) => {
-    const st = s.current, d = st.drag;
-    if (!d || d.id !== e.pointerId) return;
-    const phi = angleOf(d, e.clientX, e.clientY);
-    d.raw += wrap(phi - d.phi);
-    d.phi = phi;
-    if (Math.abs(d.raw - d.start) > 2) d.moved = true;
-    d.trail.push([e.timeStamp, d.raw]);
-    while (d.trail.length > 2 && e.timeStamp - d.trail[0][0] > 90) d.trail.shift();
-    st.m.a = shaped(st.angles, d.raw);
-    paint(st.m.a);
-    pick(nearest(st.angles, st.m.a));
-  };
-  const onUp = (e: PointerEvent<HTMLDivElement>) => {
-    const st = s.current, d = st.drag;
-    if (!d || d.id !== e.pointerId) return;
-    st.drag = null;
-    const [t0, r0] = d.trail[0];
-    const dt = e.timeStamp - t0;
-    const v = d.moved && dt > 0 && e.type === "pointerup" ? (d.raw - r0) / dt : 0;
-    if (reduced() || Math.abs(v) < 0.1) { goTo(nearest(st.angles, st.m.a)); return; } // no fling: settle into the notch
-    st.m.v = Math.max(-2.4, Math.min(2.4, v));
-    st.m.phase = "coast";
-    run();
-  };
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    const n = s.current.angles.length;
-    const k = e.key;
-    const to = k === "ArrowRight" || k === "ArrowUp" ? base() + 1
-      : k === "ArrowLeft" || k === "ArrowDown" ? base() - 1
-      : k === "PageUp" ? base() + 5 : k === "PageDown" ? base() - 5
-      : k === "Home" ? 0 : k === "End" ? n - 1 : null;
-    if (k === "Escape") { setOpen(false); (e.target as HTMLElement).blur(); return; }
-    if (to === null) return;
-    e.preventDefault();
-    goTo(to);
-  };
-
-  // Hover opens; the open effect above closes it once the mouse wanders off.
-  const enter = (e: PointerEvent) => { if (e.pointerType === "mouse") setOpen(true); };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps -- grab/pick/setOpen only touch refs and setters
 
   if (looks.length < 2) return null;
   const tint = looks[sel] ?? looks[0];
-  const shown = looks[peek ?? sel] ?? tint;
   const shownIdx = peek ?? sel;
-  const style = { "--sw-bg": tint.bg, "--sw-fg": tint.fg, "--sw-ac": tint.ac } as CSSProperties;
+  const shown = looks[shownIdx] ?? tint;
+  const style = { "--sw-bg": tint.bg, "--sw-fg": tint.fg, "--sw-ac": tint.ac, "--w": `${W}px`, "--h": `${H}px` } as CSSProperties;
 
   return (
     <div
@@ -249,79 +283,61 @@ export default function Switcher() {
       role="group"
       aria-label="Look and performance"
       style={style}
-      onPointerEnter={enter}
+      onPointerEnter={(e) => { if (e.pointerType === "mouse") setOpen(true); }} // hover opens; the effect above closes it again
       onFocus={() => setOpen(true)}
       // Tabbing away closes; focus dropping to nothing (a click elsewhere) is the pointer logic's call.
       onBlur={(e) => { if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false); }}
     >
-      <div className="sw-plate" aria-hidden="true" />
-      <div ref={dialRef} className="sw-dial">
-        <div className="sw-well" aria-hidden="true" />
-        <svg className="sw-ticks" viewBox="0 0 132 132" aria-hidden="true">
-          {angles.map((a, i) => (
-            <line key={i} x1={CENTER} y1={CENTER - 45} x2={CENTER} y2={CENTER - (looks[i].design ? 51 : 49)} transform={`rotate(${a} ${CENTER} ${CENTER})`} />
-          ))}
+      <div className="sw-field" aria-hidden="true">
+        <svg viewBox="0 0 232 232">
+          <circle cx="116" cy="116" r={R_IN} />
+          <circle cx="116" cy="116" r={R_OUT} />
         </svg>
-        {looks.map((l, i) => {
-          const rad = (angles[i] * Math.PI) / 180;
-          return (
-            <button
-              key={l.id}
-              type="button"
-              tabIndex={-1}
-              className={`sw-jewel${l.design ? " is-design" : ""}${i === sel ? " is-on" : ""}`}
-              aria-label={`Switch to ${l.name}`}
-              style={{ transform: `translate(${(RING * Math.sin(rad)).toFixed(2)}px, ${(-RING * Math.cos(rad)).toFixed(2)}px)`, "--j-bg": l.bg, "--j-ac": l.ac } as CSSProperties}
-              onClick={() => goTo(i)}
-              onPointerEnter={() => setPeek(i)}
-              onPointerLeave={() => setPeek(null)}
-            />
-          );
-        })}
-        <div
-          ref={knobRef}
-          className="sw-knob"
-          role="slider"
-          tabIndex={0}
-          aria-label="Look"
-          aria-valuemin={1}
-          aria-valuemax={looks.length}
-          aria-valuenow={sel + 1}
-          aria-valuetext={`${tint.name}, ${tint.design ? "design" : "palette"}`}
-          aria-orientation="horizontal"
-          style={{ "--a": `${rest}deg` } as CSSProperties}
-          onPointerDown={onDown}
-          onPointerMove={onMove}
-          onPointerUp={onUp}
-          onPointerCancel={onUp}
-          onKeyDown={onKey}
-        >
-          <span className="sw-skirt" />
-          <span className="sw-cap" />
-          <span className="sw-ptr" />
-        </div>
+        <span className="sw-socket" />
+        {pulse > 0 && <span key={pulse} className="sw-pulse" />}
       </div>
-      {/* after the dial so Tab runs knob → lever → lamp */}
-      <div className="sw-side">
-        <div className="sw-lcd" aria-hidden="true">
-          <span className="sw-lcd-k">{shown.design ? "design" : "palette"} {String(shownIdx + 1).padStart(2, "0")}/{looks.length}</span>
-          <span className="sw-lcd-v" style={{ fontFamily: shown.font }}>{shown.name}</span>
-        </div>
-        <div className="sw-row">
+      <div className="sw-label" aria-hidden="true">
+        {note ? <b>{`Performance mode ${lite ? "on" : "off"}`}</b> : <><b style={{ fontFamily: shown.font }}>{shown.name}</b><span>{shown.design ? "design" : "palette"} {String(shownIdx + 1).padStart(2, "0")}/{looks.length}</span></>}
+      </div>
+      <div className="sw-orbs" role="radiogroup" aria-label="Look" onKeyDown={onKey}>
+        {looks.map((l, i) => (
           <button
+            key={l.id}
+            ref={(el) => { els.current[i] = el; }}
             type="button"
-            className="sw-lever"
-            role="switch"
-            aria-checked={lite}
-            aria-label="Performance mode"
-            title={lite ? "Performance mode on: effects rest" : "Performance mode: effects rest, the design stays"}
-            onClick={() => { setLite(!lite); toast(lite ? "Full effects back on" : "Performance mode on. Effects rest, the design stays."); }}
+            role="radio"
+            aria-checked={i === sel}
+            aria-label={`${l.name}, ${l.design ? "design" : "palette"}`}
+            tabIndex={i === sel ? 0 : -1}
+            className={`sw-orb${l.design ? " is-design" : ""}${i === sel ? " is-sel" : ""}${i === peek && i !== sel ? " is-held" : ""}`}
+            style={{ "--o-bg": l.bg, "--o-ac": l.ac, "--o-fg": l.fg } as CSSProperties}
+            onPointerDown={down(i)}
+            onPointerMove={move(i)}
+            onPointerUp={up(i)}
+            onPointerCancel={up(i)}
+            onPointerEnter={(e) => { if (e.pointerType === "mouse" && !s.current.drag) setPeek(i); }}
+            onPointerLeave={() => { if (!s.current.drag) setPeek(null); }}
+            onClick={(e) => { if (e.detail === 0) pick(i); }} // Enter/Space; pointer picks are made on pointerup
           >
-            <span className="sw-slot"><span className="sw-bat" /></span>
+            <span className="sw-face" />
           </button>
-          <StatusDot />
-        </div>
+        ))}
       </div>
+      {/* after the orbs so Tab runs nucleus → bead → lamp */}
+      <button
+        type="button"
+        className="sw-calm"
+        role="switch"
+        aria-checked={lite}
+        aria-label="Performance mode"
+        title={lite ? "Performance mode on: effects rest" : "Performance mode: effects rest, the design stays"}
+        onClick={() => { setLite(!lite); toast(lite ? "Full effects back on" : "Performance mode on. Effects rest, the design stays."); }}
+        onPointerEnter={() => setNote(true)}
+        onPointerLeave={() => setNote(false)}
+        onFocus={() => setNote(true)}
+        onBlur={() => setNote(false)}
+      ><i /></button>
+      <StatusDot />
     </div>
   );
 }

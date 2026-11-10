@@ -106,8 +106,8 @@ async function switchLook(live: { current: Live }, id: string, opts: Opts = {}) 
   else {
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const cls = reduce ? "vt-fade" : "vt-reveal";
-    // The sweep always starts at the switcher's knob, whatever triggered it.
-    const knob = document.querySelector<HTMLElement>(".theme-dial-aside .sw-knob");
+    // The sweep always starts at the switcher's nucleus (its selected orb), whatever triggered it.
+    const knob = document.querySelector<HTMLElement>(".theme-dial-aside .sw-orb.is-sel");
     const r = knob?.getBoundingClientRect();
     const [x, y] = r && r.width ? [r.left + r.width / 2, r.top + r.height / 2] : opts.from ?? [innerWidth / 2, innerHeight / 2];
     html.style.setProperty("--vt-x", `${x}px`);
