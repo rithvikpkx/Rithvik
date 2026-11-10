@@ -1,0 +1,101 @@
+/* The Records toy: a physical turntable drawn in CSS + SVG (no bitmaps, so it stays crisp at any DPR). Everything is sized in --u,
+   one eighth of a percent of the plinth width (the design is 800 x 600 units), so the whole object scales as one piece. Only the
+   platter, the tonearm and the pointer light animate, and all of them with transforms. */
+.records { width: 100%; display: grid; justify-items: center; gap: 18px; }
+.rec-hint { font-size: 14px; color: var(--muted); text-align: center; }
+.rl-mark { display: block; width: 26%; color: var(--ui-accent, #ff4d8d); } /* sits above the spindle; the title clears it */
+.rl-title { margin-top: 21%; }
+.rl-mark .mark { width: 100%; height: auto; display: block; }
+
+.tt-box { position: relative; width: min(100%, 760px, calc((min(720px, 100dvh - 100px) - 170px) * 1.3333)); aspect-ratio: 4 / 3; container-type: inline-size; --u: .125cqw; }
+/* the slab under the plinth: its thickness and the soft contact shadow on the table */
+.tt-box::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: calc(26 * var(--u)); background: linear-gradient(#1a1a1d, #0b0b0c); transform: translateY(calc(11 * var(--u)));
+  box-shadow: 0 calc(46 * var(--u)) calc(60 * var(--u)) calc(-26 * var(--u)) rgb(0 0 0 / .6), 0 calc(14 * var(--u)) calc(24 * var(--u)) calc(-8 * var(--u)) rgb(0 0 0 / .4); }
+.tt { position: absolute; inset: 0; isolation: isolate; border-radius: calc(26 * var(--u));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / .07), transparent 24%, transparent 78%, rgb(0 0 0 / .2)),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / .014) 0 1px, transparent 1px 3px),
+    linear-gradient(150deg, #56565d 0%, #36363c 30%, #242428 62%, #2d2d32 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .26), inset 0 0 0 1px rgb(0 0 0 / .55), inset 0 calc(-3 * var(--u)) 0 rgb(0 0 0 / .35), inset 0 0 calc(60 * var(--u)) rgb(0 0 0 / .26); }
+/* studio light: a broad soft highlight that drifts with the pointer */
+.tt-shine { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 5; }
+.tt-gloss { position: absolute; left: -20%; top: -30%; width: 140%; height: 160%; will-change: transform; transition: transform 500ms cubic-bezier(.23, 1, .32, 1);
+  background: radial-gradient(closest-side at 36% 40%, rgb(255 255 255 / .15), rgb(255 255 255 / .05) 55%, transparent); }
+
+/* platter: well, brushed-metal rim, rubber mat, vinyl (spins), fixed sheen on top */
+.tt-deck { position: absolute; left: 7.5%; top: 5%; width: 67.5%; height: 90%; }
+.tt-deck > i, .tt-spin > i, .tt-spin, .tt-sheen { position: absolute; border-radius: 50%; }
+.tt-well { inset: 0; background: radial-gradient(circle, #0b0b0d 0 93%, #19191c); box-shadow: inset 0 calc(7 * var(--u)) calc(16 * var(--u)) rgb(0 0 0 / .85), 0 calc(1.5 * var(--u)) 0 rgb(255 255 255 / .13), 0 0 0 calc(1.5 * var(--u)) rgb(0 0 0 / .6); }
+.tt-rim { inset: 2.22%;
+  background: repeating-radial-gradient(circle, rgb(255 255 255 / .09) 0 calc(.4 * var(--u)), rgb(0 0 0 / .07) calc(.4 * var(--u)) calc(.9 * var(--u))),
+    conic-gradient(#dcdfe5, #8c8f97 8%, #ecedf1 16%, #6a6d75 26%, #d0d3d9 36%, #878a92 46%, #e6e8ec 55%, #686b73 66%, #cfd2d8 76%, #8c8f97 88%, #dcdfe5);
+  box-shadow: 0 calc(3 * var(--u)) calc(10 * var(--u)) rgb(0 0 0 / .6), inset 0 0 0 calc(1 * var(--u)) rgb(0 0 0 / .4); }
+.tt-spin { inset: 0; will-change: transform; }
+.tt-strobe { inset: 2.22%; background: repeating-conic-gradient(rgb(18 18 22 / .7) 0 .45deg, transparent .45deg 2.8deg); -webkit-mask: radial-gradient(circle closest-side, transparent 0 92.5%, #000 93.5%); mask: radial-gradient(circle closest-side, transparent 0 92.5%, #000 93.5%); }
+.tt-mat { inset: 5.56%; background: repeating-radial-gradient(circle, rgb(255 255 255 / .03) 0 calc(1.2 * var(--u)), rgb(0 0 0 / .06) calc(1.2 * var(--u)) calc(2.4 * var(--u))), radial-gradient(circle, #2b2b2e, #1b1b1e 72%, #252528);
+  box-shadow: inset 0 0 calc(9 * var(--u)) rgb(0 0 0 / .55), 0 0 0 calc(1 * var(--u)) rgb(255 255 255 / .07); }
+.tt-vinyl { inset: 7.41%;
+  background:
+    conic-gradient(from 35deg, transparent 0 11.6%, rgb(255 255 255 / .05) 11.8%, transparent 12.1% 40%, rgb(255 255 255 / .04) 40.3%, transparent 40.7% 71%, rgb(255 255 255 / .05) 71.1%, transparent 71.5%),
+    radial-gradient(circle closest-side, transparent 0 36%, rgb(255 255 255 / .06) 36.2% 40%, transparent 40.2% 52%, rgb(255 255 255 / .09) 52.2% 53.4%, transparent 53.6% 66%, rgb(255 255 255 / .09) 66.2% 67.4%, transparent 67.6% 80%, rgb(255 255 255 / .09) 80.2% 81.4%, transparent 81.6% 95.5%, rgb(255 255 255 / .05) 95.7%),
+    repeating-radial-gradient(circle closest-side, rgb(255 255 255 / .055) 0 calc(.5 * var(--u)), rgb(0 0 0 / .3) calc(1.3 * var(--u)) calc(2 * var(--u))),
+    radial-gradient(circle closest-side, #121215, #09090b);
+  box-shadow: inset 0 0 0 calc(1 * var(--u)) rgb(255 255 255 / .11), inset 0 0 calc(5 * var(--u)) rgb(0 0 0 / .7), 0 calc(2 * var(--u)) calc(7 * var(--u)) rgb(0 0 0 / .65); }
+/* the label is printed paper: the look's cream and accent */
+.rec-label { position: absolute; inset: 35.19%; border-radius: 50%; display: grid; justify-items: center; align-content: start; padding-top: 9%; gap: calc(1.5 * var(--u)); text-align: center; color: var(--rec-label-ink);
+  background: radial-gradient(circle at 34% 26%, rgb(255 255 255 / .45), transparent 58%), var(--rec-label);
+  box-shadow: inset 0 0 0 calc(2 * var(--u)) color-mix(in srgb, var(--accent) 75%, transparent), inset 0 0 0 calc(6 * var(--u)) var(--rec-label), inset 0 0 0 calc(6.8 * var(--u)) color-mix(in srgb, var(--rec-label-ink) 30%, transparent), 0 0 0 calc(1 * var(--u)) rgb(0 0 0 / .5); }
+.rec-label .om-head circle { fill: var(--rec-label) !important; }
+.rl-title { font: italic 400 max(8px, calc(15 * var(--u)))/1.1 var(--font-d); }
+.rl-sub, .rl-side { font: 500 max(5px, calc(6.4 * var(--u)))/1.3 var(--font-l); letter-spacing: .06em; text-transform: uppercase; opacity: .78; }
+/* the hit target for click / scratch: exactly the vinyl; the sheen is fixed to the stage and does not turn with the record */
+.tt-disc { position: absolute; inset: 7.41%; border-radius: 50%; cursor: pointer; touch-action: none; outline: none; transition: box-shadow 160ms ease; }
+.tt-disc:hover { box-shadow: 0 0 0 calc(3 * var(--u)) rgb(255 255 255 / .1); }
+.tt-disc:focus-visible { box-shadow: 0 0 0 calc(3 * var(--u)) var(--accent); }
+.records.is-scratching .tt-disc { cursor: grabbing; }
+.tt-sheen { inset: 0; pointer-events: none; will-change: transform; transition: transform 600ms cubic-bezier(.23, 1, .32, 1);
+  background: conic-gradient(from 18deg, transparent 0 4%, rgb(255 255 255 / .07) 7%, rgb(255 255 255 / .34) 10.5%, rgb(255 255 255 / .07) 14%, transparent 18% 50%, transparent 54%, rgb(255 255 255 / .06) 56%, rgb(255 255 255 / .24) 60%, rgb(255 255 255 / .06) 64%, transparent 68%);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 0 35.5%, #000 36.5% 98.5%, transparent 100%); mask: radial-gradient(circle closest-side, transparent 0 35.5%, #000 36.5% 98.5%, transparent 100%); }
+.tt-spindle { position: absolute; left: 50%; top: 50%; width: calc(15 * var(--u)); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 35% 28%, #fff, #c9cbd1 40%, #6d7078 80%, #3e4046); box-shadow: 0 calc(1.5 * var(--u)) calc(3 * var(--u)) rgb(0 0 0 / .6); }
+
+/* tonearm: pivots from the pedestal; parked off the record when stopped, lowered and creeping inward with the playhead when playing */
+.tt-pedestal { position: absolute; left: 86.25%; top: 18.333%; width: calc(96 * var(--u)); aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #6c6d74, #2f3035 58%, #18181b); box-shadow: inset 0 0 0 calc(1.5 * var(--u)) rgb(0 0 0 / .5), inset 0 calc(1.5 * var(--u)) 0 rgb(255 255 255 / .2), 0 calc(8 * var(--u)) calc(14 * var(--u)) rgb(0 0 0 / .55); }
+.tt-rest { position: absolute; left: 80.4%; top: 62.7%; width: calc(22 * var(--u)); height: calc(30 * var(--u)); translate: -50% -50%; rotate: 8deg; border-radius: calc(7 * var(--u)); background: linear-gradient(#3b3c42, #17171a); box-shadow: inset 0 1px 0 rgb(255 255 255 / .22), 0 calc(3 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .5); }
+.tt-arm { position: absolute; left: 86.25%; top: 18.333%; width: 0; height: 0; pointer-events: none; z-index: 6; will-change: transform;
+  --a: calc(100 + var(--on, 0) * (21.4 + var(--prog, 0) * 20.9)); /* degrees: 100 parked, 121 at the lead-in, 142 at the run-out */
+  transform: rotate(calc(var(--a) * 1deg)); transition: transform 1.25s cubic-bezier(.45, .05, .2, 1); }
+.records.is-on { --on: 1; }
+.tt-arm svg { position: absolute; left: calc(-70 * var(--u)); top: calc(-40 * var(--u)); width: calc(420 * var(--u)); height: calc(80 * var(--u)); overflow: visible; }
+.tt-arm-shadow { opacity: .5; transform: translate(11px, -24px); transition: transform 1.25s cubic-bezier(.45, .05, .2, 1); }
+.records.is-on .tt-arm-shadow { transform: translate(4px, -9px); }
+
+/* controls built into the plinth: a recessed time readout and the lit start / stop button */
+.tt-panel { position: absolute; left: 75.9%; top: 78.33%; width: calc(166 * var(--u)); display: grid; gap: calc(12 * var(--u)); z-index: 4; }
+.tt-read { display: grid; gap: calc(6 * var(--u)); padding: calc(8 * var(--u)) calc(10 * var(--u)); border-radius: calc(9 * var(--u)); background: linear-gradient(#08080a, #0e0e11); box-shadow: inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .8), 0 1px 0 rgb(255 255 255 / .13); }
+.tt-time { display: flex; justify-content: space-between; font: 500 max(8px, calc(11 * var(--u)))/1 var(--font-l); color: #c9cbd1; font-variant-numeric: tabular-nums; }
+.tt-time span:last-child { opacity: .5; }
+.tt-bar { position: relative; height: calc(3 * var(--u)); border-radius: 3px; background: rgb(255 255 255 / .16); cursor: pointer; }
+.tt-bar::before { content: ""; position: absolute; inset: -8px 0; } /* a taller hit area than the 3-unit track */
+.tt-bar i { position: absolute; inset: 0; border-radius: inherit; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.tt-btn { display: block; width: 100%; height: calc(52 * var(--u)); min-height: 30px; padding: calc(3.5 * var(--u)); border: 0; border-radius: 999px; background: #09090b; cursor: pointer; outline: none;
+  box-shadow: inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .9), 0 1px 0 rgb(255 255 255 / .16); }
+.tt-cap { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: center; gap: calc(8 * var(--u)); width: 100%; height: 100%; border-radius: 999px; color: var(--accent); font: 600 max(9px, calc(13 * var(--u)))/1 var(--font-l); letter-spacing: .16em; text-transform: uppercase;
+  background: linear-gradient(180deg, #5b5c63, #36373c 55%, #2a2b30);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .36), inset 0 calc(-2 * var(--u)) 0 rgb(0 0 0 / .35), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 calc(2 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .55);
+  transition: transform 140ms cubic-bezier(.23, 1, .32, 1), box-shadow 220ms ease, color 220ms ease; }
+/* the lit state is a second layer faded in (opacity only), so the glow never repaints */
+.tt-cap::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; opacity: 0; transition: opacity 260ms ease;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), color-mix(in srgb, var(--accent) 82%, #000));
+  box-shadow: 0 0 calc(18 * var(--u)) color-mix(in srgb, var(--accent) 70%, transparent); }
+.records.is-on .tt-cap::before { opacity: 1; }
+.records.is-on .tt-cap { color: #101012; }
+.tt-btn:hover .tt-cap { box-shadow: inset 0 1px 0 rgb(255 255 255 / .4), inset 0 calc(-2 * var(--u)) 0 rgb(0 0 0 / .35), 0 0 0 1px var(--accent), 0 0 calc(14 * var(--u)) color-mix(in srgb, var(--accent) 45%, transparent), 0 calc(2 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .55); }
+.tt-btn:active .tt-cap { transform: translateY(calc(1.5 * var(--u))) scale(.985); }
+.tt-btn:focus-visible { box-shadow: inset 0 calc(2 * var(--u)) calc(5 * var(--u)) rgb(0 0 0 / .9), 0 0 0 2px var(--accent); }
+.tt-cap .ic { width: max(12px, calc(17 * var(--u))); height: max(12px, calc(17 * var(--u))); fill: currentColor; }
+.tt-cap .ic-pause, .records.is-on .tt-cap .ic-play { display: none; }
+.records.is-on .tt-cap .ic-pause { display: block; }
+
+@media (prefers-reduced-motion: reduce) { .tt-arm, .tt-arm-shadow, .tt-gloss, .tt-sheen { transition: none !important; } }
