@@ -1,0 +1,114 @@
+/* Look switcher: a cluster of marbles, one per look, around a socket. Collapsed it is one orb (the current look) in
+   the bottom-left corner; open, the other looks spring out onto two orbits (designs inner, palettes outer) and a
+   hollow bead (performance mode) and a lamp (status) appear where the nucleus was. Orb positions and squash are
+   written by JS springs (transform only); everything here animates transform and opacity. Tinted live from the
+   look in the socket (--sw-bg/fg/ac). */
+.sw {
+  --sw-ink: color-mix(in srgb, var(--sw-ac) 78%, var(--sw-fg));
+  position: fixed; left: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 90;
+  width: var(--w); height: var(--h); pointer-events: none; /* the closed unit is only its nucleus */
+  --sw-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace; /* fixed, not the look's mono: the object is one thing */
+  font-family: var(--sw-mono); -webkit-tap-highlight-color: transparent;
+}
+/* where the agent bar spans the width (min(720px, 100vw - 32px)), sit just above it */
+@media (max-width: 820px) { .sw { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + 68px); } }
+
+/* --- field: the soft disc behind the orbits, the orbit lines, the socket ------------------------------------ */
+.sw-field {
+  position: absolute; left: 2px; top: 34px; width: 232px; height: 232px; border-radius: 50%;
+  background: color-mix(in srgb, var(--sw-bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15); backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sw-fg) 12%, transparent), 0 22px 46px -16px rgba(0,0,0,.5);
+  opacity: 0; transform: scale(.1); transform-origin: 22px 208px; /* unfolds from the corner */
+  transition: opacity 200ms ease, transform 420ms var(--ease-drawer);
+}
+.sw[data-open] .sw-field { opacity: 1; transform: none; pointer-events: auto; }
+.sw-field svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: color-mix(in srgb, var(--sw-fg) 16%, transparent); stroke-width: 1; }
+.sw-field circle:last-child { stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: .1 5; } /* palettes ride a dotted orbit */
+.sw-socket, .sw-pulse { position: absolute; left: 78px; top: 78px; width: 76px; height: 76px; border-radius: 50%; }
+.sw-socket {
+  border: 1.5px solid color-mix(in srgb, var(--sw-ac) 38%, transparent);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--sw-ac) 16%, transparent);
+  transition: transform 220ms var(--ease-out), border-color 160ms ease, box-shadow 160ms ease;
+}
+.sw[data-hot] .sw-socket { transform: scale(1.16); border-color: var(--sw-ac); box-shadow: inset 0 0 22px color-mix(in srgb, var(--sw-ac) 35%, transparent), 0 0 22px color-mix(in srgb, var(--sw-ac) 45%, transparent); }
+.sw-pulse { border: 2px solid var(--sw-ac); animation: sw-pulse 680ms var(--ease-out) both; } /* the glow when an orb snaps in */
+@keyframes sw-pulse { from { transform: scale(.95); opacity: .85; } to { transform: scale(2); opacity: 0; } }
+
+/* --- readout ----------------------------------------------------------------------------------------------- */
+.sw-label {
+  position: absolute; left: 50%; top: 2px; display: flex; align-items: baseline; gap: 8px; max-width: 100%; padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--sw-bg) 86%, transparent); color: var(--sw-fg);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sw-fg) 14%, transparent);
+  opacity: 0; transform: translate(-50%, 6px); transition: opacity 160ms ease, transform 300ms var(--ease-out);
+}
+.sw[data-open] .sw-label { opacity: 1; transform: translate(-50%, 0); transition-delay: 70ms; }
+.sw-label b { font-size: 13px; font-weight: 600; line-height: 1; overflow: hidden; text-overflow: ellipsis; }
+.sw-label span { font: 600 9px/1 var(--sw-mono); letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
+
+/* --- orbs -------------------------------------------------------------------------------------------------- */
+.sw-orbs { position: absolute; inset: 0; pointer-events: none; }
+.sw-orb {
+  position: absolute; left: 0; top: 0; width: 56px; height: 56px; margin: -28px 0 0 -28px; padding: 0; border: 0; border-radius: 50%;
+  background: none; cursor: grab; touch-action: none; outline: none; pointer-events: none; z-index: 1;
+  transform: translate3d(24px, 242px, 0) scale(0); /* until JS springs them out: folded into the corner */
+  --ring: 5px; -webkit-tap-highlight-color: transparent;
+}
+.sw-orb::before { content: ""; position: absolute; inset: -32px; border-radius: 50%; } /* a bigger hit target than the marble (it is drawn small) */
+.sw-orb.is-design::before { inset: -18px; }
+.sw-orb.is-sel { z-index: 2; --ring: 2.5px; }
+.sw-orb.is-sel::before { inset: 0; }
+.sw-orb.is-held { z-index: 4; }
+.sw-orb:active { cursor: grabbing; }
+.sw:not([data-open]) .sw-orb.is-sel, .sw[data-open] .sw-orb { pointer-events: auto; }
+.sw-face {
+  position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background:
+    radial-gradient(circle at 34% 27%, rgba(255,255,255,.5), transparent 34%),
+    radial-gradient(circle at 63% 67%, var(--o-ac) 0 33%, transparent 34.5%),
+    var(--o-bg);
+  box-shadow: inset 0 0 0 var(--ring) color-mix(in srgb, var(--o-fg) 32%, transparent), 0 9px 16px -6px rgba(0,0,0,.5);
+}
+.sw-orb.is-sel .sw-face {
+  box-shadow: inset 0 0 0 var(--ring) color-mix(in srgb, var(--o-fg) 32%, transparent), 0 0 0 4px color-mix(in srgb, var(--o-ac) 50%, transparent), 0 0 30px color-mix(in srgb, var(--o-ac) 60%, transparent);
+}
+.sw-orb:focus-visible .sw-face { outline: 2px solid var(--sw-ink); outline-offset: 4px; }
+
+/* --- performance bead + status lamp ------------------------------------------------------------------------ */
+.sw-calm, .sw-lamp {
+  position: absolute; padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; transform: scale(.4); pointer-events: none;
+  transition: opacity 160ms ease, transform 320ms cubic-bezier(.3, 1.6, .5, 1);
+}
+.sw[data-open] .sw-calm, .sw[data-open] .sw-lamp { opacity: 1; transform: none; pointer-events: auto; transition-delay: 90ms; }
+.sw-calm::before, .sw-lamp::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
+.sw-calm { left: 9px; top: 227px; width: 30px; height: 30px; }
+.sw-calm i {
+  position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--sw-ac);
+  background: radial-gradient(circle, color-mix(in srgb, var(--sw-ac) 70%, transparent) 0 26%, transparent 28%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--sw-ac) 55%, transparent);
+  transition: transform 420ms cubic-bezier(.3, 1.7, .5, 1), opacity 240ms ease;
+}
+.sw[data-open] .sw-calm[aria-checked="false"] i { animation: sw-breathe 2.6s ease-in-out infinite; } /* alive: full effects on */
+/* calm: the bead goes still, hollow and dim */
+.sw-calm[aria-checked="true"] i { transform: scale(.72); opacity: .5; border-color: color-mix(in srgb, var(--sw-fg) 55%, transparent); background: none; box-shadow: none; }
+.sw-calm:active i { transform: scale(.8); }
+@keyframes sw-breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.86); opacity: .72; } }
+.sw-calm:focus-visible, .sw-lamp:focus-visible { outline: 2px solid var(--sw-ink); outline-offset: 3px; border-radius: 50%; }
+
+.sw-lamp { left: 55px; top: 245px; width: 14px; height: 14px; display: block; }
+.sw-lamp i {
+  display: block; width: 100%; height: 100%; border-radius: 50%; background: color-mix(in srgb, var(--sw-fg) 40%, transparent);
+  transition: background 300ms ease, box-shadow 300ms ease;
+}
+.sw-lamp[data-state="ok"] i { background: #3fb950; box-shadow: 0 0 9px 1px #3fb950; }
+.sw-lamp[data-state="down"] i { background: #ff5a5a; box-shadow: 0 0 9px 1px #ff5a5a; }
+
+/* reduced motion: things appear in place instead of unfolding; no breathing, no pulse */
+@media (prefers-reduced-motion: reduce) {
+  .sw-field, .sw-label, .sw-calm, .sw-lamp { transition-property: opacity; }
+  .sw-field, .sw-calm, .sw-lamp { transform: none; }
+  .sw-label { transform: translate(-50%, 0); }
+  .sw-calm i, .sw-socket { transition: none; }
+  .sw[data-open] .sw-calm[aria-checked="false"] i, .sw-pulse { animation: none; }
+}
