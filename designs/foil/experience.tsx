@@ -2,7 +2,6 @@
 // Foil's Experience pieces: a holographic ribbon threaded between stations, and a foil rosette medal for education
 // whose colours turn with the pointer while its tails swing.
 import type { CSSProperties } from "react";
-import type { Content } from "@/lib/content/types";
 import type { Skin } from "@/lib/designs/skin";
 import "./experience.css";
 
@@ -25,15 +24,15 @@ function Ribbon() {
   );
 }
 
-/** The medal: two V-cut ribbon tails, a scalloped foil rosette, a dark centre with the initial embossed in foil. */
-function Medal({ education: e }: { education: Content["education"] }) {
+/** The medal: two V-cut ribbon tails, a scalloped foil rosette, a dark centre with the Purdue P stamped in holographic foil. */
+function Medal() {
   const mask = { WebkitMaskImage: ROSETTE, maskImage: ROSETTE } as CSSProperties;
   return (
     <div className="fx-medal">
       <i className="fx-tail fx-tail-l" /><i className="fx-tail fx-tail-r" />
       <i className="fx-rosette" style={mask} />
       <i className="fx-glare" style={mask} />
-      <span className="fx-core"><b>{e.school.trim().charAt(0)}</b></span>
+      <span className="fx-core"><span className="fx-p"><i className="fx-p-o" /><i className="fx-p-r" /><i className="fx-p-f" /><i className="fx-p-g" /></span></span>
     </div>
   );
 }

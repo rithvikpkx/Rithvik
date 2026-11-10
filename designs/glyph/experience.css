@@ -21,10 +21,10 @@
 
 /* the art */
 :root[data-design="glyph"] .gx-art { display: grid; place-content: center; justify-items: center; gap: 18px; }
-:root[data-design="glyph"] .gx-cap { grid-area: 1 / 1; margin: 0; font: 400 clamp(9px, 1.15vw, 15px)/1.25 var(--gl-d); white-space: pre; letter-spacing: 0; }
+:root[data-design="glyph"] .gx-cap { grid-area: 1 / 1; margin: 0; font: 400 min(9.4px, 2.2vw)/1 var(--gl-d); white-space: pre; letter-spacing: 0; }
 :root[data-design="glyph"] .gx-face { color: var(--gl-hue); text-shadow: 0 0 10px color-mix(in srgb, var(--gl-hue) 55%, transparent); animation: gx-flicker 4s steps(1) infinite; }
 @keyframes gx-flicker { 0%, 100% { opacity: 1; } 91% { opacity: .55; } 93% { opacity: 1; } 96% { opacity: .75; } }
 /* depth: the same art, dimmer, pushed away from the pointer, reads as extrusion */
-:root[data-design="glyph"] .gx-depth { color: color-mix(in srgb, var(--gl-hue) 26%, #050505); transform: translate(calc(5px - var(--px) * 9px), calc(5px - var(--py) * 7px)); }
+:root[data-design="glyph"] .gx-depth { color: color-mix(in srgb, var(--gl-hue) 26%, #050505); transform: translate(calc(3px - var(--px) * 7px), calc(3px - var(--py) * 5px)); }
 :root[data-design="glyph"] .gx-tag { grid-area: 2 / 1; font: 500 12px/1 var(--gl-d); color: var(--gl-mut); }
 :root[data-design="glyph"] .gx-tag span { color: var(--gl-hue); }

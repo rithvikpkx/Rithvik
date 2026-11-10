@@ -27,10 +27,10 @@ function Medallion({ education: e }: { education: Content["education"] }) {
         <defs><path id="sx-rim" d="M100 100 m-70 0 a70 70 0 1 1 140 0 a70 70 0 1 1 -140 0" /></defs>
         <circle cx="100" cy="100" r="92" className="sx-r1" />
         <circle cx="100" cy="100" r="86" className="sx-r2" />
-        <circle cx="100" cy="100" r="54" className="sx-r2" />
+        <circle cx="100" cy="100" r="62" className="sx-r2" />
         <text className="sx-rimt"><textPath href="#sx-rim" startOffset="0" textLength="434" lengthAdjust="spacingAndGlyphs">{`${e.school} · ${e.school} · `.toUpperCase()}</textPath></text>
-        <text className="sx-init" x="100" y="100" textAnchor="middle" dominantBaseline="central">{e.school.trim().charAt(0)}</text>
       </svg>
+      <span className="sx-p"><i className="sx-p-v" /><i className="sx-p-o" /><i className="sx-p-r" /><i className="sx-p-f" /><i className="sx-p-d" /></span>
     </div>
   );
 }
