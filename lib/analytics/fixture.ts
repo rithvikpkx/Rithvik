@@ -44,6 +44,8 @@ export function dashboardFixture(period: Period = "7d", now = Date.UTC(2026, 10,
   return {
     period, generatedAt: new Date(now).toISOString(), bucket, kpis: k, prev, headline: headline(k, prev, period),
     series,
+    // afternoons in the Americas, a smaller bump for India's evening (UTC hours)
+    rhythm: Array.from({ length: 24 }, (_, h) => Math.round((visits / 24) * (0.25 + 1.4 * Math.exp(-(((h - 17) / 3.6) ** 2)) + 0.55 * Math.exp(-(((h - 6) / 2.2) ** 2))) * (0.8 + r() * 0.4))),
     entries: [["/", 0.71], ["/?theme=nimbus", 0.09], ["/work/boiler-frame", 0.07], ["/status", 0.04], ["/c/…", 0.03], ["/privacy", 0.02]].map(([l, s]) => ({ label: l as string, value: Math.round(visits * (s as number)) })),
     sections: [["top", 1, 14], ["work", 0.78, 52], ["experience", 0.61, 33], ["about", 0.48, 21], ["play", 0.36, 46], ["questions", 0.29, 18], ["contact", 0.24, 12]].map(([l, s, dw]) => ({ label: l as string, value: Math.round(visits * 0.92 * (s as number)), dwell: dw as number })),
     scroll: [[25, 0.82], [50, 0.61], [75, 0.42], [100, 0.27]].map(([pct, s]) => ({ pct, visits: Math.round(visits * s) })),
@@ -74,6 +76,12 @@ export function dashboardFixture(period: Period = "7d", now = Date.UTC(2026, 10,
         ...Array(7).fill({ q: "What's his strongest project?" }), ...Array(6).fill({ q: "Can I book a call with him?" }), ...Array(4).fill({ q: "What is his GPA?", declined: true }),
         ...Array(3).fill({ q: "Tell me about the brain-computer interface work" }), ...Array(2).fill({ q: "Who won the world cup?", declined: true }),
       ]),
+      // log-normal-ish timings: a fast cache cluster, the main body, a slow tail, a few failures
+      samples: Array.from({ length: Math.min(1500, Math.round(k.chats * 3.1)) }, (_, i) => {
+        const cached = r() < 0.18, err = r() < 0.02;
+        const total = Math.round(cached ? 180 + r() * 260 : Math.exp(7.6 + (r() + r() + r() - 1.5) * 0.7) + (r() < 0.04 ? 4000 + r() * 6000 : 0));
+        return { t: new Date(now - i * 600_000).toISOString(), ttfb: Math.round(cached ? total * 0.6 : 420 + r() * 520), total, cached, err };
+      }),
     },
     leads: rankLeads([
       lead({ id: "123e4567-e89b-12d3-a456-426614174000", name: "Ada Recruiter", email: "ada@acme.example", company: "Acme Robotics", ip_type: "business", city: "San Francisco", region: "CA", country: "US", meetings: 1, emails: 1, resume_downloads: 1, visits: 3, active_ms: 512_000, cases: 3, turns: 6, sections: 7, last_chat: "123e4567-e89b-12d3-a456-426614174999" }),

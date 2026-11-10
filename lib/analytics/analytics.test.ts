@@ -4,6 +4,7 @@ import { clusterQuestions, delta, fillSeries, foldCountries, headline, parsePeri
 import { centroid, countryName, toPoints } from "./geo.ts";
 import { lookCss, lookFor } from "./look.ts";
 import { rowsToItems } from "./replica.ts";
+import { hash32, hourRhythm, sessionStrip, visitorActivity } from "./strips.ts";
 
 const NOW = Date.UTC(2026, 10, 9, 14, 30);
 
@@ -123,4 +124,29 @@ test("stored rows become transcript items with telemetry", () => {
   assert.equal((items[3] as { items: unknown[] }).items.length, 1);
   assert.equal((items[4] as { text: string }).text, "gpt-6-luna · 2,300 tokens · first byte 610 ms · total 2.4 s");
   assert.equal(new Set(items.map((i) => i.id)).size, items.length);
+});
+
+test("strips: hour rhythm, conversation glyphs, visitor activity", () => {
+  const r = hourRhythm(["2026-11-09T14:05:00Z", "2026-11-08T14:59:00Z", "2026-11-09T03:00:00Z", "nope"]);
+  assert.equal(r.length, 24);
+  assert.equal(r[14], 2);
+  assert.equal(r[3], 1);
+  const row = (at: string, role: string, extra: Record<string, unknown> = {}) => ({ created_at: at, role, status: null, error: null, cached: false, tokens_in: null, tokens_out: null, ...extra });
+  const s = sessionStrip([row("2026-11-09T14:00:00Z", "user"), row("2026-11-09T14:00:30Z", "tool"), row("2026-11-09T14:01:00Z", "assistant", { tokens_out: 40, cached: true }), row("2026-11-09T14:02:00Z", "assistant", { status: 502 })]);
+  assert.equal(s.marks.map((m) => m.k).join(""), "utae");
+  assert.equal(s.marks[1].o, 0.25);
+  assert.equal(s.marks[2].c, true);
+  assert.equal(s.ms, 120_000);
+  assert.equal(s.tokens, 40);
+  const now = Date.UTC(2026, 10, 9, 18);
+  const a = visitorActivity([
+    { id: "v1", visitor_id: "a", started_at: "2026-11-09T10:00:00Z" }, { id: "v2", visitor_id: "a", started_at: "2026-11-07T10:00:00Z" },
+    { id: "v3", visitor_id: "a", started_at: "2025-01-01T00:00:00Z" },
+  ], [{ visit_id: "v1", type: "agent_turn" }, { visit_id: "v1", type: "agent_turn" }, { visit_id: "zz", type: "resume" }], now);
+  assert.equal(a.a.days[29], 1);
+  assert.equal(a.a.days[27], 1);
+  assert.equal(a.a.days.reduce((x, y) => x + y, 0), 2);
+  assert.deepEqual(a.a.keys, { agent_turn: 2 });
+  assert.equal(hash32("x"), hash32("x"));
+  assert.notEqual(hash32("x"), hash32("y"));
 });

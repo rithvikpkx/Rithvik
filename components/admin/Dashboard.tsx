@@ -1,226 +1,229 @@
-/** The /admin overview: summary, traffic, audience, engagement, agent, outreach and system, for one period.
- *  Server-rendered from one Dashboard object (lib/analytics/server.ts or the lab fixture); only the charts, the globe
- *  and the AI button are client islands. `base` prefixes every link so the lab harness stays self-contained. */
-import CartesianChart from "@/components/site/charts/CartesianChart";
-import { Sparkline, UptimeStrip } from "@/components/site/charts/Figures";
+/** The /admin overview for one period: a hero (headline, four numbers, the day ring), then Traffic, Audience, Agent,
+ *  Engagement, Outreach and System, one idea per panel. Server-rendered from one Dashboard object (lib/analytics/server.ts
+ *  or the lab fixture); the pulse chart, globe, counting numbers and AI read are the only client islands. `base`
+ *  prefixes every link so the lab harness stays self-contained. */
+import type { CSSProperties } from "react";
+import { UptimeStrip } from "@/components/site/charts/Figures";
 import { delta, PERIOD_LABEL } from "@/lib/analytics/shape";
 import type { Dashboard as D } from "@/lib/analytics/types";
 import { fmtInt, fmtMs, fmtRate, fmtUptime, fmtUsd, healthState } from "@/lib/status/format";
-import { duration } from "@/lib/track/views";
 import AiSummary from "./AiSummary";
 import Globe from "./Globe";
-import { ago, Card, Delta, Empty, initials, RankBars, Section, Split } from "./ui";
+import { Num } from "./live";
+import Pulse from "./Pulse";
+import { ago, Delta, Empty, Panel, Ranks, Section, Split } from "./ui";
+import { Anatomy, DayRing, Ico, Journey, Sigil, Swarm, Threshold } from "./viz";
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 /** Axis label for a bucket start: "14:00" for hours, "Nov 3" for days (UTC). */
 const tick = (iso: string, hour: boolean) => { const d = new Date(iso); return hour ? `${String(d.getUTCHours()).padStart(2, "0")}:00` : `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
-const NET: Record<string, string> = { isp: "ISP / home", business: "Business", edu: "University", hosting: "Hosting / VPN", unknown: "Unknown" };
+const NET: Record<string, string> = { isp: "home / isp", business: "business", edu: "university", hosting: "hosting / vpn", unknown: "unknown" };
 const rate = (n: number, d: number) => (d > 0 ? n / d : null);
+const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 export default function Dashboard({ d, base = "/admin", write, sample }: { d: D; base?: string; write?: () => Promise<{ text?: string; error?: string }>; sample?: string }) {
-  const k = d.kpis, p = d.prev;
+  const k = d.kpis, p = d.prev, r = d.rag;
   const hour = d.bucket === "hour";
   const now = Date.parse(d.generatedAt);
   const span = PERIOD_LABEL[d.period].toLowerCase();
   const labels = d.series.map((s) => tick(s.t, hour));
   const bounce = rate(k.bounces, k.visits), prevBounce = p ? rate(p.bounces, p.visits) : null;
-  const tiles: { l: string; v: string; d: number | null; up?: boolean; note?: string; spark?: number[] }[] = [
-    { l: "Visits", v: fmtInt(k.visits), d: delta(k.visits, p?.visits), spark: d.series.map((s) => s.visits) },
-    { l: "People", v: fmtInt(k.visitors), d: delta(k.visitors, p?.visitors), spark: d.series.map((s) => s.visitors) },
-    { l: "Returning", v: fmtRate(rate(k.returning, k.visitors)), d: null, note: `${fmtInt(k.returning)} came back` },
-    { l: "Avg. active time", v: k.avgActiveMs === null ? "–" : duration(k.avgActiveMs), d: delta(k.avgActiveMs ?? 0, p?.avgActiveMs), note: "per visit, tab in focus" },
-    { l: "Bounce rate", v: fmtRate(bounce), d: bounce !== null && prevBounce ? (bounce - prevBounce) / prevBounce : null, up: false, note: "left without doing anything" },
-    { l: "Identified", v: fmtInt(k.identified), d: delta(k.identified, p?.identified), note: "gave an email" },
-    { l: "Meeting requests", v: fmtInt(k.meetings), d: delta(k.meetings, p?.meetings), note: "through the agent" },
-    { l: "Emails sent", v: fmtInt(k.emails), d: delta(k.emails, p?.emails), note: `${fmtInt(k.chats)} agent conversations` },
-  ];
-  const r = d.rag;
-  const most = d.features.filter((f) => f.visitors > 0).slice(0, 12);
-  const least = [...d.features].reverse().slice(0, 10);
+  const peak = d.rhythm.indexOf(Math.max(...d.rhythm));
+  const totalVisitors = d.countries.reduce((s, c) => s + c.value, 0);
+  const used = d.features.filter((f) => f.visitors > 0).slice(0, 10);
+  const untouched = d.features.filter((f) => f.visitors === 0);
   const health = healthState(d.system.uptime.recent);
   const pctUp = (f: number | null) => fmtUptime(f === null ? null : f * 100);
-  const totalVisitors = d.countries.reduce((s, c) => s + c.value, 0);
+  const big: { l: string; v: number | null; kind: "int" | "dur"; d: number | null }[] = [
+    { l: "visits", v: k.visits, kind: "int", d: delta(k.visits, p?.visits) },
+    { l: "people", v: k.visitors, kind: "int", d: delta(k.visitors, p?.visitors) },
+    { l: "active / visit", v: k.avgActiveMs, kind: "dur", d: delta(k.avgActiveMs ?? 0, p?.avgActiveMs) },
+    { l: "identified", v: k.identified, kind: "int", d: delta(k.identified, p?.identified) },
+  ];
+  const small: [string, string, number | null, boolean?][] = [
+    ["returning", fmtRate(rate(k.returning, k.visitors)), null],
+    ["bounce", fmtRate(bounce), bounce !== null && prevBounce ? (bounce - prevBounce) / prevBounce : null, false],
+    ["meetings", fmtInt(k.meetings), delta(k.meetings, p?.meetings)],
+    ["emails", fmtInt(k.emails), delta(k.emails, p?.emails)],
+  ];
 
   return (
-    <main className="adm-main">
-      <Section id="summary" eyebrow={`How it's going · ${PERIOD_LABEL[d.period]}`} title="Summary">
-        <div className="adm-hero">
+    <main className="d-main">
+      <section className="d-hero" aria-label={`Summary, ${span}`}>
+        <div className="d-hero-l">
+          <p className="d-kicker">{span}</p>
           <h1>{d.headline}</h1>
-          <ul className="adm-kpis">
-            {tiles.map((t) => (
-              <li key={t.l} className="adm-kpi">
-                <span className="l">{t.l}</span>
-                <span className="v">{t.v}</span>
-                <span className="n"><Delta d={t.d} goodUp={t.up !== false} />{t.note}{!t.note && p && <span>vs previous {span}</span>}</span>
-                {t.spark && t.spark.length > 1 && <div className="sp"><Sparkline values={t.spark} label={`${t.l} over the ${span}`} height={30} /></div>}
+          <ul className="d-big">
+            {big.map((t, i) => (
+              <li key={t.l} style={{ ["--i" as string]: i } as CSSProperties}>
+                <span className="v"><Num value={t.v} kind={t.kind} /></span>
+                <span className="l">{t.l}<Delta d={t.d} /></span>
               </li>
             ))}
           </ul>
-          <AiSummary write={write} sample={sample} />
+          <ul className="d-small">
+            {small.map(([l, v, dd, up]) => <li key={l}><span>{l}</span><b>{v}</b><Delta d={dd} goodUp={up !== false} /></li>)}
+          </ul>
+        </div>
+        <DayRing values={d.rhythm} labels={["00", "06", "12", "18"]} now={d.period === "24h" ? new Date(now).getUTCHours() : undefined}
+          label={`Visits by hour of day (UTC), ${span}. Busiest hour ${hh(peak)}.`}>
+          {d.rhythm.some(Boolean) ? <>busiest <b>{hh(peak)}</b> utc</> : "no visits yet"}
+        </DayRing>
+      </section>
+
+      <AiSummary write={write} sample={sample} />
+
+      <Section id="traffic" n="01" title="Traffic" meta={`${hour ? "hourly" : "daily"} · utc · bots excluded`}>
+        <div className="d-grid">
+          <Panel label="visits and people" aside={<span className="d-legend"><i className="s0" />visits<i className="s1" />people</span>} i={0}>
+            {k.visits ? <Pulse title={`Visits and people per ${hour ? "hour" : "day"}, ${span}`} labels={labels}
+              series={[{ name: "visits", values: d.series.map((s) => s.visits) }, { name: "people", values: d.series.map((s) => s.visitors) }]} height={230} />
+              : <Empty>Each page session appears here as it starts.</Empty>}
+          </Panel>
+          <Panel label="how far they read" span={8} i={1} aside={<span className="d-scroll">{d.scroll.map((s) => <span key={s.pct}>{s.pct}%<b>{fmtRate(s.visits / Math.max(1, k.visits))}</b></span>)}</span>}>
+            {d.sections.length ? <Journey sections={d.sections} total={k.visits} /> : <Empty>Sections are logged as they scroll into view.</Empty>}
+          </Panel>
+          <Panel label="sources" span={4} i={2}>
+            <Ranks rows={d.referrers} max={6} total={k.visits} logos empty="Referrers appear once someone arrives from a link." />
+            <h4 className="d-sub">landed on</h4>
+            <Ranks rows={d.entries} max={4} total={k.visits} tone="sky" empty="Entry pages appear once someone visits." />
+          </Panel>
         </div>
       </Section>
 
-      <Section id="traffic" eyebrow="Traffic" title="Visits over time" note={`Bots excluded. ${hour ? "Hourly" : "Daily"} buckets, UTC.`}>
-        <div className="adm-grid">
-          <Card span={8} title="Visits and people" note={`${fmtInt(k.visits)} visits · ${fmtInt(k.visitors)} people`}>
-            {k.visits ? (
-              <CartesianChart kind="area" upright title={`Visits and people per ${hour ? "hour" : "day"}, ${span}`} labels={labels}
-                series={[{ name: "Visits", values: d.series.map((s) => s.visits) }, { name: "People", values: d.series.map((s) => s.visitors) }]} height={240} />
-            ) : <Empty title="No visits yet">Each page session appears here as it starts.</Empty>}
-          </Card>
-          <Card span={4} title="Entry pages" note="where visits start">
-            <RankBars rows={d.entries} max={8} empty="Entry pages appear once someone visits." total={k.visits} />
-          </Card>
-          <Card span={4} title="Sections seen" note="visits that reached each, with typical dwell">
-            <RankBars rows={d.sections.map((s) => ({ label: s.label, value: s.value, sub: s.dwell ? `~${duration(s.dwell * 1000)}` : undefined }))} max={9} empty="Sections are logged as they scroll into view." />
-          </Card>
-          <Card span={4} title="Scroll depth" note="visits reaching each mark">
-            {d.scroll.some((s) => s.visits) ? (
-              <div className="adm-funnel" role="img" aria-label={d.scroll.map((s) => `${s.pct}%: ${s.visits} visits`).join(", ")}>
-                {d.scroll.map((s) => {
-                  const top = Math.max(1, d.scroll[0].visits, k.visits);
-                  return <div key={s.pct}><b>{fmtRate(s.visits / top)}</b><i style={{ height: `${Math.max(2, (s.visits / top) * 100)}%` }} /><span>{s.pct}%</span></div>;
-                })}
-              </div>
-            ) : <Empty>Scroll marks (25/50/75/100%) appear as people read down the page.</Empty>}
-          </Card>
-          <Card span={4} title="Referrers" note="external sources; direct = no referrer">
-            <RankBars rows={d.referrers} max={8} total={k.visits} empty="Referrers appear once someone arrives from a link." />
-          </Card>
-        </div>
-      </Section>
-
-      <Section id="audience" eyebrow="Audience" title="Where people come from" note="Locations from the visitor's IP; companies from the network owner or what they told the agent.">
-        <div className="adm-grid">
-          <Card span={12} title="Visitor map" note={`${fmtInt(totalVisitors)} people in ${fmtInt(d.countries.length)} countries`}>
-            {d.points.length ? (
-              <div className="adm-geo">
-                <Globe points={d.points} label={`Globe of visitor locations: ${d.points.slice(0, 5).map((x) => `${x.label} ${x.value}`).join(", ")}`} />
-                <div style={{ display: "grid", gap: 18 }}>
-                  <div><h3 className="adm-eyebrow" style={{ margin: "0 0 12px" }}>Countries</h3><RankBars rows={d.countries} max={8} total={totalVisitors} /></div>
-                  <div><h3 className="adm-eyebrow" style={{ margin: "0 0 12px" }}>Top places</h3><RankBars rows={d.points.map((x) => ({ label: x.label, value: x.value }))} max={6} /></div>
-                </div>
-              </div>
-            ) : <Empty title="No locations yet">The globe fills in as visitors arrive; each dot is a city, sized by how many people came from it.</Empty>}
-          </Card>
-          <Card span={4} title="Organisations" note="companies and universities">
+      <Section id="audience" n="02" title="Audience" meta={`${fmtInt(totalVisitors)} people · ${fmtInt(d.countries.length)} countries`}>
+        <div className="d-grid">
+          <Panel label="where" span={7} className="d-geo" i={0}>
+            {d.points.length
+              ? <Globe points={d.points} label={`Globe of visitor locations: ${d.points.slice(0, 5).map((x) => `${x.label} ${x.value}`).join(", ")}`} />
+              : <Empty>The globe fills in as visitors arrive; each dot is a city, sized by how many came from it.</Empty>}
+          </Panel>
+          <Panel label="countries" span={5} i={1}>
+            <Ranks rows={d.countries} max={7} total={totalVisitors} />
+            <h4 className="d-sub">cities</h4>
+            <Ranks rows={d.points.map((x) => ({ label: x.label, value: x.value }))} max={4} tone="sky" />
+          </Panel>
+          <Panel label="organisations" span={4} i={2}>
             <Split rows={d.ipTypes.map((t) => ({ ...t, label: NET[t.label] ?? t.label }))} empty="Network types appear once IPs are looked up." />
-            <div style={{ height: 16 }} />
-            <RankBars rows={d.orgs} max={8} empty="No company or university networks yet. ISP and hosting networks say nothing about an employer, so they are left out." />
-          </Card>
-          <Card span={4} title="Devices">
-            <div style={{ display: "grid", gap: 18 }}>
-              <div><h3 className="adm-eyebrow" style={{ margin: "0 0 10px" }}>Device</h3><Split rows={d.devices} /></div>
-              <div><h3 className="adm-eyebrow" style={{ margin: "0 0 10px" }}>Browser</h3><Split rows={d.browsers} /></div>
-              <div><h3 className="adm-eyebrow" style={{ margin: "0 0 10px" }}>OS</h3><Split rows={d.os} /></div>
-            </div>
-          </Card>
-          <Card span={4} title="Campaigns and networks" note="UTM tags; network owners">
-            <RankBars rows={d.campaigns} max={5} empty="No UTM-tagged links used yet. Add ?utm_source=… to links you share to see them here." />
-            <div style={{ height: 16 }} />
-            <RankBars rows={d.networks} max={6} empty="Networks appear once IPs are looked up." />
-          </Card>
-        </div>
-      </Section>
-
-      <Section id="engagement" eyebrow="Engagement" title="What people do" note="Ranked by how many people used each feature (uses in the bar label).">
-        <div className="adm-grid">
-          <Card span={7} title="Most used">
-            <RankBars rows={most.map((f) => ({ label: f.label, value: f.visitors, sub: `${f.group} · ${fmtInt(f.uses)} uses` }))} max={12} unit=" people" empty="Feature use appears here: agent questions, design switches, resume opens, games, emails." />
-          </Card>
-          <Card span={5} title="Least used" note="including features nobody touched">
-            <RankBars rows={least.map((f) => ({ label: f.label, value: f.visitors, sub: f.group }))} max={10} unit=" people" />
-          </Card>
-        </div>
-      </Section>
-
-      <Section id="agent" eyebrow="Agent" title="RAG conversations" note="Owner chats excluded.">
-        <div className="adm-grid">
-          <Card span={12}>
-            <ul className="adm-stats">
-              {[
-                ["Conversations", fmtInt(r.conversations), `${fmtInt(r.chatters)} people`],
-                ["Questions", fmtInt(r.turns), r.conversations ? `${(r.turns / r.conversations).toFixed(1)} per conversation` : "–"],
-                ["Cache hit rate", fmtRate(rate(r.cached, r.answers)), `${fmtInt(r.cached)} from cache`],
-                ["First byte", fmtMs(r.ttfbP50), `p50 · p95 ${fmtMs(r.ttfbP95)}`],
-                ["Full answer", fmtMs(r.totalP50), `p50 · p95 ${fmtMs(r.totalP95)}`],
-                ["Tokens", fmtInt(r.tokens), `est. ${fmtUsd(r.costUsd)}`],
-                ["Declined", fmtInt(r.declines), fmtRate(rate(r.declines, r.answers))],
-                ["Errors", fmtInt(r.errors), fmtRate(rate(r.errors, r.answers))],
-              ].map(([l, v, n]) => <li key={l} className="adm-stat"><span className="l">{l}</span><span className="v">{v}</span><span className="n">{n}</span></li>)}
+            <div className="d-gap" />
+            <Ranks rows={d.orgs} max={6} tone="sky" empty="No company or university networks yet." />
+          </Panel>
+          <Panel label="devices" span={4} i={3}>
+            <ul className="d-devices">
+              {d.devices.slice(0, 3).map((x) => (
+                <li key={x.label}><Ico name={x.label} /><b>{fmtRate(rate(x.value, d.devices.reduce((s, y) => s + y.value, 0)))}</b><span>{x.label}</span></li>
+              ))}
             </ul>
-            {r.turns ? (
-              <CartesianChart kind="bar" upright title={`Questions per ${hour ? "hour" : "day"}, ${span}`} labels={r.series.map((s) => tick(s.t, hour))} series={[{ name: "Questions", values: r.series.map((s) => s.turns) }]} height={170} />
-            ) : <Empty title="No conversations yet">Questions, answers, tools and timings appear as soon as someone talks to the agent.</Empty>}
-          </Card>
-          <Card span={8} title="Top questions" note="grouped across rewordings">
-            {r.questions.length ? (
-              <div className="adm-scroll"><table className="adm-table">
-                <thead><tr><th>Question</th><th className="num">Asked</th><th className="num">Declined</th><th><span className="sr-only">Open</span></th></tr></thead>
-                <tbody>{r.questions.map((q) => (
-                  <tr key={q.text}><td>{q.text}</td><td className="num">{q.count}</td><td className="num">{q.declined || "–"}</td>
-                    <td>{q.sid && <a className="adm-btn sm" href={`${base}/chats/${q.sid}`}>Open</a>}</td></tr>
-                ))}</tbody>
-              </table></div>
-            ) : <Empty>The most-asked questions appear here, clustered so rewordings count together.</Empty>}
-          </Card>
-          <Card span={4} title="Tools and models">
-            <RankBars rows={r.tools} max={8} empty="Tool calls (search, calendar, meeting, resume…) appear here." />
-            <div style={{ height: 16 }} />
-            <RankBars rows={r.models.map((m) => ({ label: m.model, value: m.requests, sub: `${fmtInt(m.tokens)} tok` }))} max={4} empty="No answers yet." />
-          </Card>
+            <Split rows={d.browsers} />
+            <div className="d-gap" />
+            <Split rows={d.os} />
+          </Panel>
+          <Panel label="campaigns" span={4} i={4}>
+            <Ranks rows={d.campaigns} max={5} empty="No UTM-tagged links yet. Add ?utm_source=… to links you share." />
+            <h4 className="d-sub">networks</h4>
+            <Ranks rows={d.networks} max={4} tone="sky" empty="Networks appear once IPs are looked up." />
+          </Panel>
         </div>
       </Section>
 
-      <Section id="outreach" eyebrow="Outreach" title="Worth following up" note="Scored from what each visitor did; every point is listed. Nothing is ever sent automatically.">
+      <Section id="agent" n="03" title="Agent" meta="owner chats excluded">
+        <ul className="d-stats">
+          <li><b><Num value={r.conversations} /></b><span>conversations</span><small>{fmtInt(r.chatters)} people</small></li>
+          <li><b><Num value={r.turns} /></b><span>questions</span><small>{r.conversations ? `${(r.turns / r.conversations).toFixed(1)} each` : "–"}</small></li>
+          <li><b><Num value={rate(r.cached, r.answers)} kind="pct" /></b><span>from cache</span><small>{fmtInt(r.cached)} answers</small></li>
+          <li><b><Num value={r.tokens} /></b><span>tokens</span><small>{fmtUsd(r.costUsd)}</small></li>
+        </ul>
+        <div className="d-grid">
+          <Panel label="every answer, by time to finish" span={8} i={0} aside={<span className="d-legend"><i className="dot" />answer<i className="dot cache" />cache<i className="dot err" />failed</span>}>
+            {r.samples.length ? <Swarm samples={r.samples} p50={r.totalP50} p95={r.totalP95} /> : <Empty>Each answer becomes a dot here, placed by how long it took.</Empty>}
+          </Panel>
+          <Panel label="a typical answer" span={4} i={1}>
+            <Anatomy ttfb={[r.ttfbP50, r.ttfbP95]} total={[r.totalP50, r.totalP95]} />
+            <ul className="d-pair">
+              <li><b>{fmtInt(r.declines)}</b>declined<small>{fmtRate(rate(r.declines, r.answers))}</small></li>
+              <li className={r.errors ? "bad" : undefined}><b>{fmtInt(r.errors)}</b>failed<small>{fmtRate(rate(r.errors, r.answers))}</small></li>
+            </ul>
+          </Panel>
+          <Panel label="questions" span={7} i={2} aside={`per ${hour ? "hour" : "day"}`}>
+            {r.turns ? <Pulse tone="amber" title={`Questions per ${hour ? "hour" : "day"}, ${span}`} labels={r.series.map((s) => tick(s.t, hour))} series={[{ name: "questions", values: r.series.map((s) => s.turns) }]} height={120} /> : null}
+            {r.questions.length ? (
+              <ol className="d-prompts">
+                {r.questions.slice(0, 7).map((q) => {
+                  const body = <><span className="c" aria-hidden="true">❯</span><span className="q">{q.text}</span><span className="n">×{q.count}{q.declined ? <em>{q.declined} declined</em> : null}</span></>;
+                  return <li key={q.text}>{q.sid ? <a href={`${base}/chats/${q.sid}`}>{body}</a> : <div>{body}</div>}</li>;
+                })}
+              </ol>
+            ) : <Empty>The most-asked questions appear here, rewordings counted together.</Empty>}
+          </Panel>
+          <Panel label="tools" span={5} i={3}>
+            {r.tools.length ? (
+              <ol className="d-tools">
+                {r.tools.slice(0, 7).map((t, i) => (
+                  <li key={t.label} style={{ ["--w" as string]: `${(t.value / Math.max(1, r.tools[0].value)) * 100}%`, ["--i" as string]: i } as CSSProperties}>
+                    <span aria-hidden="true">⏺</span><code>{t.label}</code><b>{fmtInt(t.value)}</b>
+                  </li>
+                ))}
+              </ol>
+            ) : <Empty>Tool calls appear here.</Empty>}
+            <h4 className="d-sub">models</h4>
+            <Ranks rows={r.models.map((m) => ({ label: m.model, value: m.requests, sub: `${fmtInt(m.tokens)} tok` }))} max={3} tone="amber" empty="No answers yet." />
+          </Panel>
+        </div>
+      </Section>
+
+      <Section id="engagement" n="04" title="Engagement" meta="people who used each feature">
+        <div className="d-grid">
+          <Panel label="most used" span={8} i={0}>
+            <Ranks rows={used.map((f) => ({ label: f.label, value: f.visitors, sub: f.group.toLowerCase() }))} max={10} empty="Feature use appears here." />
+          </Panel>
+          <Panel label="untouched" span={4} i={1} aside={fmtInt(untouched.length)}>
+            {untouched.length ? <ul className="d-ghosts">{untouched.map((f) => <li key={f.key}>{f.label}</li>)}</ul> : <Empty>Every feature was used at least once.</Empty>}
+          </Panel>
+        </div>
+      </Section>
+
+      <Section id="outreach" n="05" title="Outreach" meta="scored from what each visitor did · nothing is sent automatically">
         {d.leads.length ? (
-          <ul className="adm-leads">
-            {d.leads.slice(0, 12).map((l) => (
-              <li key={l.id} className="adm-lead">
-                <div className="adm-lead-h">
-                  <span className="adm-avatar" aria-hidden="true">{initials(l.who)}</span>
+          <ul className="d-leads">
+            {d.leads.slice(0, 9).map((l, i) => (
+              <li key={l.id} className={`d-lead ${l.tier}`} style={{ ["--i" as string]: i } as CSSProperties}>
+                <a className="d-lead-h" href={`${base}/visitors/${l.id}`}>
+                  <Sigil id={l.id} size={40} />
                   <span className="who"><b>{l.who}</b><span>{[l.company && l.company !== l.who ? l.company : null, l.place].filter(Boolean).join(" · ")}</span></span>
-                  <span className={`adm-tier ${l.tier}`}>{l.tier}</span>
-                </div>
-                <div className="adm-score" aria-label={`Score ${l.score} of 100`}><b>{l.score}</b><span><i style={{ ["--w" as string]: `${l.score}%` }} /></span></div>
-                <div className="adm-chips">{l.signals.map((s) => <span key={s} className="adm-chip">{s}</span>)}</div>
-                <div className="adm-acts">
-                  <a className="adm-btn sm" href={`${base}/visitors/${l.id}`}>Open visitor</a>
-                  {l.lastChat && <a className="adm-btn sm" href={`${base}/chats/${l.lastChat}`}>Open chat</a>}
-                  {l.email && <a className="adm-btn sm" href={`mailto:${l.email}`}>Email</a>}
-                  <span className="adm-muted" style={{ marginLeft: "auto", fontSize: 12, alignSelf: "center" }}>{ago(l.lastSeen, now)}</span>
+                  <span className="d-score" style={{ ["--s" as string]: l.score } as CSSProperties} aria-label={`Score ${l.score} of 100, ${l.tier}`}><b>{l.score}</b></span>
+                </a>
+                <div className="d-chips">{l.signals.slice(0, 5).map((s) => <span key={s} className="d-chip">{s}</span>)}{l.signals.length > 5 && <span className="d-chip dim">+{l.signals.length - 5}</span>}</div>
+                <div className="d-acts">
+                  {l.lastChat && <a href={`${base}/chats/${l.lastChat}`}>chat</a>}
+                  {l.email && <a href={`mailto:${l.email}`}>email</a>}
+                  <span>{ago(l.lastSeen, now)}</span>
                 </div>
               </li>
             ))}
           </ul>
-        ) : <Empty title="No one to follow up yet">Visitors who request a meeting, send an email, download the resume, return or stay a while are ranked here.</Empty>}
+        ) : <Empty>Visitors who request a meeting, send an email, download the resume, return or stay a while are ranked here.</Empty>}
       </Section>
 
-      <Section id="system" eyebrow="System" title="Health">
-        <div className="adm-grid">
-          <Card span={6} title="Uptime" action={<span className={`adm-health ${health.tone}`}>{health.text}</span>}>
-            <ul className="adm-stats">
-              {(["24h", "7d", "30d"] as const).map((x) => <li key={x} className="adm-stat"><span className="l">Last {x}</span><span className="v">{pctUp(d.system.uptime[x])}</span></li>)}
-            </ul>
+      <Section id="system" n="06" title="System" meta={<span className={`d-health ${health.tone}`}>{health.text.toLowerCase()}</span>}>
+        <div className="d-grid">
+          <Panel label="uptime" span={8} i={0} aside={<span className="d-uptimes">{(["24h", "7d", "30d"] as const).map((x) => <span key={x}>{x}<b>{pctUp(d.system.uptime[x])}</b></span>)}</span>}>
             {d.system.uptime.recent.length ? <UptimeStrip checks={d.system.uptime.recent} /> : <Empty>Health checks appear once the uptime job runs (every five minutes).</Empty>}
-          </Card>
-          <Card span={3} title="Web vitals" note={`p75 over ${fmtInt(d.system.vitals.n)} visits`}>
-            <dl className="adm-kv">
-              <div><dt>LCP</dt><dd>{fmtMs(d.system.vitals.lcp)}</dd></div>
-              <div><dt>INP</dt><dd>{fmtMs(d.system.vitals.inp)}</dd></div>
-              <div><dt>CLS</dt><dd>{d.system.vitals.cls === null ? "–" : d.system.vitals.cls.toFixed(3)}</dd></div>
+          </Panel>
+          <Panel label={`web vitals · p75 · ${fmtInt(d.system.vitals.n)} visits`} span={4} i={1}>
+            <Threshold name="LCP" value={d.system.vitals.lcp} good={2500} poor={4000} fmt={fmtMs} />
+            <Threshold name="INP" value={d.system.vitals.inp} good={200} poor={500} fmt={fmtMs} />
+            <Threshold name="CLS" value={d.system.vitals.cls} good={0.1} poor={0.25} fmt={(v) => (v === null ? "–" : v.toFixed(3))} />
+          </Panel>
+          <Panel label="browser errors" span={8} i={2}>
+            <Ranks rows={d.system.jsErrors} max={5} tone="amber" empty="No JavaScript errors in this period." />
+          </Panel>
+          <Panel label="build" span={4} i={3}>
+            <dl className="d-kv">
+              <div><dt>commit</dt><dd>{d.system.commit ?? "local"}</dd></div>
+              <div><dt>answers</dt><dd>{d.system.model}</dd></div>
+              <div><dt>helper</dt><dd>{d.system.auxModel}</dd></div>
             </dl>
-          </Card>
-          <Card span={3} title="Build">
-            <dl className="adm-kv">
-              <div><dt>Commit</dt><dd>{d.system.commit ?? "local"}</dd></div>
-              <div><dt>Answer model</dt><dd>{d.system.model}</dd></div>
-              <div><dt>Helper model</dt><dd>{d.system.auxModel}</dd></div>
-            </dl>
-          </Card>
-          <Card span={12} title="Browser errors" note="JavaScript errors visitors hit, grouped by message">
-            <RankBars rows={d.system.jsErrors} max={6} empty="No JavaScript errors reported in this period." />
-          </Card>
+          </Panel>
         </div>
       </Section>
     </main>

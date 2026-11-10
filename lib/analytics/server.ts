@@ -8,12 +8,10 @@ import { getStatus } from "@/lib/agent/status-server";
 import { escapeLike } from "@/lib/agent/chats";
 import { isUuid } from "@/lib/track/schema";
 import type { VisitorRow } from "@/lib/track/views";
-import { getLook, getPalettes } from "@/lib/designs/server";
-import { designById, fontsHref } from "@/lib/designs/registry";
 import { countryName, toPoints } from "./geo";
-import { lookFor } from "./look";
 import { clusterQuestions, fillSeries, foldCountries, headline, periodRange, rankFeatures, rankLeads, ranked, rows, shapeKpis } from "./shape";
-import type { Dashboard, Period, PublicTraffic } from "./types";
+import { hourRhythm, sessionStrip, visitorActivity, type Activity, type Strip, type StripRow } from "./strips";
+import type { AnswerSample, Dashboard, Period, PublicTraffic } from "./types";
 
 /* Dashboard reads. Every aggregate runs in SQL (supabase/analytics_migration.sql); this module only calls the RPCs in
  * parallel and shapes them with the pure helpers. A missing RPC (migration not applied) degrades to empty data. */
@@ -38,12 +36,14 @@ const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : v =
 export async function getDashboard(period: Period, now = Date.now()): Promise<Dashboard> {
   const { since, until, prevSince, bucket } = periodRange(period, now);
   const iso = (d: Date | null) => d?.toISOString() ?? null;
-  const [kpis, prev, an, out, status] = await Promise.all([
+  const [kpis, prev, an, out, status, rhythm, samples] = await Promise.all([
     rpc("admin_kpis", { p_since: iso(since), p_until: until.toISOString() }),
     prevSince ? rpc("admin_kpis", { p_since: iso(prevSince), p_until: iso(since) }) : Promise.resolve(null),
     rpc("admin_analytics", { p_since: iso(since), p_until: until.toISOString(), p_bucket: bucket, p_decline: DECLINE_MARKERS }),
     rpc("admin_outreach", { p_since: iso(since), p_until: until.toISOString(), p_limit: 150 }),
     getStatus().catch(() => null),
+    visitRhythm(since, until),
+    answerSamples(since, until),
   ]);
   const a = (an && typeof an === "object" ? an : {}) as Obj;
   const r = (a.rag && typeof a.rag === "object" ? a.rag : {}) as Obj;
@@ -54,6 +54,7 @@ export async function getDashboard(period: Period, now = Date.now()): Promise<Da
   return {
     period, generatedAt: new Date(now).toISOString(), bucket, kpis: k, prev: p, headline: headline(k, p, period),
     series: fillSeries(a.series, since, until, bucket, ["visits", "visitors"]),
+    rhythm,
     entries: ranked(a.entries),
     sections: rows(a.sections).map((s) => ({ label: String(s.label ?? "?"), value: n(s.value) ?? 0, dwell: n(s.dwell) })),
     scroll: [25, 50, 75, 100].map((pct) => ({ pct, visits: n(rows(a.scroll).find((s) => n(s.pct) === pct)?.visits) ?? 0 })),
@@ -71,6 +72,7 @@ export async function getDashboard(period: Period, now = Date.now()): Promise<Da
       models, tools: ranked(r.tools),
       series: fillSeries(r.series, since, until, bucket, ["turns"]),
       questions: clusterQuestions(r.questions),
+      samples,
     },
     leads: rankLeads(out),
     system: {
@@ -80,6 +82,40 @@ export async function getDashboard(period: Period, now = Date.now()): Promise<Da
       commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null, model: CHAT_MODEL, auxModel: AUX_MODEL,
     },
   };
+}
+
+/** Visits per UTC hour of day in the window (bots excluded): the day ring. Capped rows, so "all" stays cheap. */
+async function visitRhythm(since: Date | null, until: Date): Promise<number[]> {
+  try {
+    let qb = adminClient().from("visits").select("started_at").eq("is_bot", false).lt("started_at", until.toISOString())
+      .order("started_at", { ascending: false }).limit(10_000);
+    if (since) qb = qb.gte("started_at", since.toISOString());
+    const { data, error } = await qb;
+    if (error) throw error;
+    return hourRhythm((data ?? []).map((v) => v.started_at as string));
+  } catch (e) {
+    console.warn("[analytics] rhythm unavailable:", e instanceof Error ? e.message : e);
+    return Array<number>(24).fill(0);
+  }
+}
+
+/** The newest 1500 answers in the window with their timings (owner sessions excluded): the latency strip plot. */
+async function answerSamples(since: Date | null, until: Date): Promise<AnswerSample[]> {
+  try {
+    let qb = adminClient().from("agent_messages").select("created_at,ttfb_ms,total_ms,cached,status,error,agent_sessions!inner(is_owner)")
+      .eq("role", "assistant").eq("agent_sessions.is_owner", false).lt("created_at", until.toISOString())
+      .order("created_at", { ascending: false }).limit(1500);
+    if (since) qb = qb.gte("created_at", since.toISOString());
+    const { data, error } = await qb;
+    if (error) throw error;
+    return (data ?? []).map((m) => ({
+      t: m.created_at as string, ttfb: n(m.ttfb_ms), total: n(m.total_ms), cached: m.cached === true,
+      err: !!m.error || (n(m.status) ?? 0) >= 400,
+    }));
+  } catch (e) {
+    console.warn("[analytics] answer samples unavailable:", e instanceof Error ? e.message : e);
+    return [];
+  }
 }
 
 /** The numbers-only digest the AI summary sees: no names, emails, companies, cities or questions. */
@@ -136,7 +172,7 @@ export const PAGE_SIZE = 40;
 export type VisitorQuery = { q: string; country: string; type: string; identified: boolean; page: number };
 
 /** One page of visitors (bots hidden), most recently seen first, with free-text search over who/where/network. */
-export async function listVisitorsPage(f: VisitorQuery): Promise<{ rows: VisitorRow[]; total: number }> {
+export async function listVisitorsPage(f: VisitorQuery): Promise<{ rows: VisitorRow[]; total: number; activity: Record<string, Activity> }> {
   let qb = adminClient().from("visitors").select("*", { count: "estimated" }).eq("is_bot", false)
     .order("last_seen", { ascending: false }).range(f.page * PAGE_SIZE, f.page * PAGE_SIZE + PAGE_SIZE - 1);
   if (f.identified) qb = qb.not("email", "is", null);
@@ -148,7 +184,49 @@ export async function listVisitorsPage(f: VisitorQuery): Promise<{ rows: Visitor
   }
   const { data, error, count } = await qb;
   if (error) throw error;
-  return { rows: (data ?? []) as VisitorRow[], total: count ?? 0 };
+  const rows = (data ?? []) as VisitorRow[];
+  return { rows, total: count ?? 0, activity: await activityFor(rows.map((r) => r.id)) };
+}
+
+const KEY_EVENTS = ["agent_turn", "composer_send", "resume", "identify", "outbound", "overlay", "design"];
+
+/** Each listed visitor's last 30 days of visits and key-event counts, for the list's activity strips. Best effort:
+ *  a failure leaves the strips empty, never the list. */
+async function activityFor(ids: string[]): Promise<Record<string, Activity>> {
+  if (!ids.length) return {};
+  try {
+    const db = adminClient();
+    const { data: visits, error } = await db.from("visits").select("id,visitor_id,started_at").in("visitor_id", ids)
+      .gte("started_at", new Date(Date.now() - 30 * 86_400_000).toISOString()).limit(3000);
+    if (error) throw error;
+    const vids = (visits ?? []).map((v) => v.id as string).slice(0, 600); // keeps the in() list inside URL limits
+    const ev = vids.length
+      ? await db.from("visit_events").select("visit_id,type").in("visit_id", vids).in("type", KEY_EVENTS).limit(5000)
+      : { data: [], error: null };
+    if (ev.error) throw ev.error;
+    return visitorActivity((visits ?? []) as { id: string; visitor_id: string; started_at: string }[], (ev.data ?? []) as { visit_id: string; type: string }[], Date.now());
+  } catch (e) {
+    console.warn("[analytics] visitor activity unavailable:", e instanceof Error ? e.message : e);
+    return {};
+  }
+}
+
+/** Glyph strips (question / tool / answer / error over the conversation's duration) for listed chats. Metrics columns
+ *  only, never message text. Best effort, like activityFor. */
+export async function sessionStrips(ids: string[]): Promise<Record<string, Strip>> {
+  const ok = ids.filter((s) => isUuid(s));
+  if (!ok.length) return {};
+  try {
+    const { data, error } = await adminClient().from("agent_messages")
+      .select("session_id,created_at,role,status,error,cached,tokens_in,tokens_out").in("session_id", ok).order("created_at").order("id").limit(6000);
+    if (error) throw error;
+    const by = new Map<string, StripRow[]>();
+    for (const m of data ?? []) by.set(m.session_id as string, [...(by.get(m.session_id as string) ?? []), m as StripRow]);
+    return Object.fromEntries([...by].map(([id, r]) => [id, sessionStrip(r)]));
+  } catch (e) {
+    console.warn("[analytics] session strips unavailable:", e instanceof Error ? e.message : e);
+    return {};
+  }
 }
 
 /** The agent_messages rows of the given sessions, grouped by session (for rendering chat replicas). */
@@ -160,12 +238,4 @@ export async function messagesFor(sessionIds: string[]) {
   const by = new Map<string, Obj[]>();
   for (const m of data ?? []) by.set(m.session_id as string, [...(by.get(m.session_id as string) ?? []), m]);
   return by;
-}
-
-/** The look the owner last chose on the site (the `rithvik-design` cookie), with its display font, for the admin chrome. */
-export async function currentLook() {
-  const palettes = await getPalettes();
-  const look = lookFor(await getLook(palettes), palettes);
-  const meta = designById(look.id);
-  return { look, font: meta?.cardFont, fonts: fontsHref(meta), now: Date.now() }; // `now` for relative times on the page
 }

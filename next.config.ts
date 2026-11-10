@@ -26,8 +26,9 @@ function contentSecurityPolicy(): string {
     // motion/framer and next/font write inline styles. Google Fonts: each v7 design loads its own
     // families at runtime (DesignMeta.fonts), which next/font can't self-host.
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", ...vercelLive],
-    // next/image serves from /_next/image (same origin); data:/blob: for canvas + cobe.
-    "img-src": ["'self'", "data:", "blob:", ...(isProdDeploy ? [] : ["https://vercel.live", "https://vercel.com"])],
+    // next/image serves from /_next/image (same origin); data:/blob: for canvas + cobe; DuckDuckGo's favicon service
+    // for referrer and company logos on the admin dashboard.
+    "img-src": ["'self'", "data:", "blob:", "https://icons.duckduckgo.com", ...(isProdDeploy ? [] : ["https://vercel.live", "https://vercel.com"])],
     // next/font/google self-hosts the files at build time.
     "font-src": ["'self'", "data:", "https://fonts.gstatic.com", ...(isProdDeploy ? [] : ["https://vercel.live", "https://assets.vercel.com"])],
     "connect-src": [
