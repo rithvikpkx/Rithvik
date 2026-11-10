@@ -15,6 +15,8 @@ import Clock from "@/components/site/Clock";
 import { Icon, Logo } from "@/components/site/Glyph";
 import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
 import { readPal, usePal, useThermalMotion } from "./motion";
+import ThermalName from "./name-fx";
+import ThermalPortrait from "./portrait-fx";
 import "./thermal.css";
 
 const META = designById("thermal")!;
@@ -164,6 +166,8 @@ const SKIN: Skin = {
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),
   titleClass: "th-h2",
   sections: { work: Work, experience: Experience, play: Play, about: About, contact: Contact },
+  NameFx: ThermalName,
+  PortraitFx: ThermalPortrait,
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */
