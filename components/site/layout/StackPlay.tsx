@@ -125,6 +125,7 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => choose(m)}>{m === "logos" ? "Logos" : "Text"}</button>
           ))}
         </div>
+        {loose && <span className="ab-play-k" aria-hidden="true">Drag and toss</span>}
         <button type="button" className="ab-go" aria-pressed={loose} onClick={() => setLoose((v) => !v)}>
           <Icon name={loose ? "rotate-ccw" : "shuffle"} />{loose ? "Tidy up" : "Let them loose"}
         </button>
@@ -151,7 +152,6 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
           </section>
         ))}
       </div>
-      {loose && <span className="ab-play-k" aria-hidden="true">Drag and toss</span>}
     </div>
   );
 }
