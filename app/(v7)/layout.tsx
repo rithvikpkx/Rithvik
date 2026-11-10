@@ -11,7 +11,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 const siteUrl = "https://rithvik.ai"; // the apex is the serving host (www 307s to it); see CLAUDE.md
-const ogAlt = "Rithvik Praveen Kumar — CS + Math @ Purdue"; // kept in sync with app/opengraph-image.tsx
+const ogAlt = "Rithvik Praveen Kumar — CS + Math @ Purdue"; // kept in sync with app/opengraph-image.alt.txt
 const description =
   "Software and AI engineer studying CS + Math at Purdue. Brain-computer interfaces, computer vision, and ML small enough for a microcontroller.";
 
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website", url: siteUrl, siteName: "Rithvik Praveen Kumar", title: "Rithvik Praveen Kumar", description, locale: "en_US",
     // Declaring openGraph suppresses the opengraph-image file convention, so point at the route by hand.
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }],
+    images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: ogAlt }],
   },
-  twitter: { card: "summary_large_image", title: "Rithvik Praveen Kumar", description, images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: ogAlt }] },
+  twitter: { card: "summary_large_image", title: "Rithvik Praveen Kumar", description, images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: ogAlt }] },
   robots: { index: true, follow: true },
   alternates: { canonical: siteUrl },
 };

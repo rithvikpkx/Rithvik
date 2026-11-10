@@ -121,8 +121,9 @@ function ico(images: { px: number; buf: Buffer }[]) {
   });
   return Buffer.concat([head, ...images.map((im) => im.buf)]);
 }
-// 16 and 32 use the small optical size; 48 (Google's minimum multiple) the full mark
-const icoImgs = await Promise.all([16, 32, 48].map(async (px) => ({ px, buf: await sharp(Buffer.from(tile(px, "none", C.ink, 0.94, 0, px < 48))).png().toBuffer() })));
+// on the night tile, so it reads on light and dark tab strips / search results (an .ico cannot follow the colour scheme);
+// 16 and 32 use the small optical size, 48 (Google's minimum multiple) the full mark
+const icoImgs = await Promise.all([16, 32, 48].map(async (px) => ({ px, buf: await sharp(Buffer.from(tile(px, C.night, C.snow, 0.8, 0.22, px < 48))).png().toBuffer() })));
 writeFileSync(`${OUT}/favicon.ico`, ico(icoImgs));
 
 // ---- wire into the app's file-based metadata

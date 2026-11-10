@@ -2,6 +2,7 @@
 // so lockups and the OG image render identically everywhere with no font loading.
 // Needs opentype.js + the Geist TTFs (fonts.google.com/specimen/Geist), neither a dependency of the app:
 //   NODE_PATH=<dir with opentype.js> node scripts/brand/outline.cjs <Geist-400.ttf> <Geist-500.ttf> <GeistMono-400.ttf>
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS on purpose, so NODE_PATH can point at opentype.js */
 const fs = require("node:fs");
 const opentype = require("opentype.js");
 const [regular, medium, mono] = process.argv.slice(2).map((p) => opentype.parse(fs.readFileSync(p).buffer.slice(0)));
