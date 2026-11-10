@@ -21,7 +21,6 @@ import "./foil.css";
 const META = designById("foil")!;
 const pad = (n: number) => String(n).padStart(2, "0");
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 // the exact mark silhouette (eye punched out) as a CSS mask over the foil texture
 const G = ouroPath();
@@ -58,30 +57,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Path: roles with a date column, then the degree as a badge card. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="fo-roles">
-        {C.experience.map((x) => (
-          <li key={x.slug} className="fo-role" id={`experience-${x.slug}`}>
-            <p className="fo-when"><span className="fo-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="fo-role-h"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p data-edit={`role:${x.slug}:org`}>{x.org}</p></div>
-            <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-          </li>
-        ))}
-      </ol>
-      <article className="fo-edu" id="education" aria-label="Education">
-        <span className="fo-edu-badge">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-          <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        </span>
-        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p></div>
-        <p className="fo-edu-m"><span data-edit="edu:focus">{C.education.focus}</span>{C.education.grad && <><br /><span data-edit="edu:grad">{C.education.grad}</span></>}</p>
-      </article>
-    </>
-  );
-}
 
 /** About: the text and thesis, now + places, then the numbers. */
 function About({ content: C }: SectionProps) {
@@ -147,7 +122,7 @@ const SKIN: Skin = {
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

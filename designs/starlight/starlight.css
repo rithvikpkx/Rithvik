@@ -142,25 +142,6 @@
 
 /* 03 sky chart: the knowledge graph as a star chart */
 
-/* 04 log */
-:root[data-design="starlight"] .sl-log { border-top: 1px solid var(--sl-line); }
-:root[data-design="starlight"] .sl-role { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding: 36px 0; border-bottom: 1px solid var(--sl-line); }
-:root[data-design="starlight"] .sl-when { display: grid; gap: 8px; align-content: start; }
-:root[data-design="starlight"] .sl-when time { font: 600 26px/1 var(--sl-d); letter-spacing: .02em; color: var(--sl-ph); }
-:root[data-design="starlight"] .sl-when span { font: 500 11px/1.3 var(--sl-m); letter-spacing: .1em; text-transform: uppercase; color: var(--sl-dim); }
-:root[data-design="starlight"] .sl-role h3 { font: 600 clamp(24px, 2.4vw, 30px)/1.05 var(--sl-d); letter-spacing: .01em; text-transform: uppercase; color: var(--sl-fg); }
-:root[data-design="starlight"] .sl-org { margin-top: 8px; font: 500 12.5px/1.4 var(--sl-m); letter-spacing: .04em; color: var(--sl-mut); }
-:root[data-design="starlight"] .sl-role ul { display: grid; gap: 8px; margin-top: 18px; max-width: 62ch; }
-:root[data-design="starlight"] .sl-role ul li { position: relative; padding-left: 20px; font-size: 16.5px; line-height: 1.6; color: var(--sl-fg); }
-:root[data-design="starlight"] .sl-role ul li::before { content: ""; position: absolute; left: 2px; top: .72em; width: 5px; height: 5px; background: var(--sl-ph); }
-:root[data-design="starlight"] .sl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
-:root[data-design="starlight"] .sl-tags span { padding: 4px 8px; border: 1px solid var(--sl-line); font: 500 10.5px/1.2 var(--sl-m); letter-spacing: .06em; color: var(--sl-mut); }
-:root[data-design="starlight"] .sl-edu { display: flex; align-items: center; gap: 26px; margin-top: 56px; padding: 26px 28px; border: 1px solid var(--sl-line2); border-radius: 3px; background: rgba(2, 6, 2, .5); }
-:root[data-design="starlight"] .sl-edu-plate { flex: none; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 2px; background: #EEF3EA; box-shadow: 0 0 24px var(--sl-glow2); }
-:root[data-design="starlight"] .sl-edu-plate img { width: 56px; height: 56px; object-fit: contain; }
-:root[data-design="starlight"] .sl-edu h3 { margin-top: 10px; font: 600 28px/1.05 var(--sl-d); text-transform: uppercase; color: var(--sl-ph); }
-:root[data-design="starlight"] .sl-edu .sl-edu-m { font: 400 12.5px/1.4 var(--sl-m); color: var(--sl-mut); }
-
 /* 05 field notes */
 :root[data-design="starlight"] .sl-about-t { display: grid; gap: 22px; padding-top: 34px; }
 :root[data-design="starlight"] .sl-about-t p { font-size: clamp(18px, 1.45vw, 20px); line-height: 1.65; color: var(--sl-fg); }
@@ -300,8 +281,7 @@
   :root[data-design="starlight"] .sl-about-t { padding-top: 0; }
   :root[data-design="starlight"] .sl-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
   :root[data-design="starlight"] .sl-toys { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  :root[data-design="starlight"] .sl-role { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  :root[data-design="starlight"] .sl-when { grid-template-columns: auto 1fr; align-items: baseline; gap: 14px; }
+
 }
 @media (max-width: 640px) {
   :root[data-design="starlight"] { --sl-top: 52px; }
@@ -323,7 +303,7 @@
   :root[data-design="starlight"] .sl-toy-ic { grid-row: 2 / span 2; }
   :root[data-design="starlight"] .sl-toy-ic .ic { margin-top: 4px; }
   :root[data-design="starlight"] .sl-toy-t { font-size: 24px; }
-  :root[data-design="starlight"] .sl-edu { flex-direction: column; align-items: flex-start; padding: 22px; }
+
   :root[data-design="starlight"] .sl-places li { grid-template-columns: minmax(0, 1fr) auto; }
   :root[data-design="starlight"] .sl-pk { grid-column: 1 / -1; }
   :root[data-design="starlight"] .sl-places b { grid-column: 1; }

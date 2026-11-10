@@ -13,7 +13,6 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
 import "./starlight.css";
@@ -24,7 +23,6 @@ const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const ABBR: Record<string, string> = { home: "BOS", school: "LAF", now: "SFO" };
 const WP_LEFT = [13, 33, 52];
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 /** Notifies useSyncExternalStore when the phosphor attribute on <html> changes. */
 function subPh(cb: () => void) {
@@ -56,37 +54,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** The log: roles with a time column, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="sl-log">
-        {C.experience.map((x) => (
-          <li className="sl-role" id={`experience-${x.slug}`} key={x.slug}>
-            <p className="sl-when"><time data-edit={`role:${x.slug}:when`}>{x.when}</time><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="sl-role-b">
-              <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
-              <p className="sl-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="sl-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="sl-edu" id="education">
-        <span className="sl-edu-plate">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-          <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        </span>
-        <div>
-          <h3 data-edit="edu:school">{C.education.school}</h3>
-          <p data-edit="edu:degree">{C.education.degree}</p>
-          <p className="sl-edu-m"><EduMeta e={C.education} /></p>
-        </div>
-      </div>
-    </>
-  );
-}
 
 /** Field notes: the text, now + places with coordinates, then the numbers. */
 function About({ content: C }: SectionProps) {
@@ -148,7 +115,7 @@ const SKIN: Skin = {
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, contact: Contact },
+  sections: { work: Work, about: About, play: Play, contact: Contact },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */

@@ -151,27 +151,6 @@
 :root[data-design="foil"] .fo-mosh { position: fixed; inset: 0; z-index: 94; pointer-events: none; overflow: hidden; }
 :root[data-design="foil"] .fo-mosh i { position: absolute; display: block; will-change: transform, opacity; }
 
-/* experience: a ruled list, then the school badge */
-:root[data-design="foil"] .fo-roles { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--fo-line); }
-:root[data-design="foil"] .fo-role { display: grid; grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1.35fr); gap: 20px clamp(24px, 4vw, 56px); padding: 34px 0; border-bottom: 1px solid var(--fo-line); scroll-margin-top: 90px; }
-:root[data-design="foil"] .fo-when { margin: 4px 0 0; font: 500 13px/1.5 var(--fo-m); color: var(--fo-fg); }
-:root[data-design="foil"] .fo-when span { display: block; color: var(--fo-dim); }
-:root[data-design="foil"] .fo-role-h h3 { margin: 0; font: 500 21px/1.25 var(--fo-d); letter-spacing: -.025em; }
-:root[data-design="foil"] .fo-role-h p { margin: 8px 0 0; color: var(--fo-mut); }
-:root[data-design="foil"] .fo-role-b ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-:root[data-design="foil"] .fo-role-b li { position: relative; padding-left: 20px; line-height: 1.6; color: #D9D5E6; }
-:root[data-design="foil"] .fo-role-b li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 1.5px; rotate: 45deg; background: var(--fo-lav); }
-:root[data-design="foil"] .fo-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; }
-:root[data-design="foil"] .fo-tags span { padding: 5px 9px; border-radius: 6px; background: var(--fo-panel); border: 1px solid var(--fo-line); font: 500 12px/1 var(--fo-m); color: var(--fo-mut); }
-:root[data-design="foil"] .fo-edu { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 24px; margin-top: 40px; padding: 26px 28px; border-radius: 22px; scroll-margin-top: 90px;
-  border: 1px solid transparent; background: linear-gradient(var(--fo-panel), var(--fo-panel)) padding-box, var(--fo-foil-soft) border-box; }
-:root[data-design="foil"] .fo-edu-badge { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 18px; background: #F4F1FA; }
-:root[data-design="foil"] .fo-edu-badge img { width: 52px; height: 52px; object-fit: contain; }
-:root[data-design="foil"] .fo-edu-k { margin: 0; font: 500 11.5px/1 var(--fo-m); letter-spacing: .1em; text-transform: uppercase; color: var(--fo-mut); }
-:root[data-design="foil"] .fo-edu h3 { margin: 10px 0 0; font: 500 22px/1.2 var(--fo-d); letter-spacing: -.025em; }
-:root[data-design="foil"] .fo-edu div p:last-child { margin: 6px 0 0; color: #D9D5E6; }
-:root[data-design="foil"] .fo-edu-m { margin: 0; text-align: right; font: 500 13px/1.6 var(--fo-m); color: var(--fo-mut); }
-
 /* map: the knowledge graph on a quiet panel */
 @media (hover: hover) and (pointer: fine) { :root[data-design="foil"] .kg-key:hover { border-color: var(--fo-line2); } }
 
@@ -220,8 +199,7 @@
 @media (max-width: 1100px) {
   :root[data-design="foil"] .fo-set { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :root[data-design="foil"] .fo-stickers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  :root[data-design="foil"] .fo-role { grid-template-columns: 150px minmax(0, 1fr); }
-  :root[data-design="foil"] .fo-role-b { grid-column: 2; }
+
 }
 @media (max-width: 860px) {
   :root[data-design="foil"] .fo-tilt { width: min(360px, 88vw); }
@@ -230,10 +208,7 @@
 @media (max-width: 640px) {
   :root[data-design="foil"] .fo-set { grid-template-columns: minmax(0, 1fr); }
   :root[data-design="foil"] .fo-pc-art { aspect-ratio: 2 / 1; }
-  :root[data-design="foil"] .fo-role { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 28px 0; }
-  :root[data-design="foil"] .fo-role-b { grid-column: 1; }
-  :root[data-design="foil"] .fo-edu { grid-template-columns: auto minmax(0, 1fr); padding: 22px; gap: 18px; }
-  :root[data-design="foil"] .fo-edu-m { grid-column: 1 / -1; text-align: left; }
+
   :root[data-design="foil"] .fo-stickers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   :root[data-design="foil"] .fo-now-l div, :root[data-design="foil"] .fo-places li { grid-template-columns: 110px minmax(0, 1fr) auto; gap: 12px; }
   :root[data-design="foil"] .fo-acts .fo-btn { flex: 1 1 auto; justify-content: center; }
@@ -341,7 +316,6 @@
 /* "I am Rithvik" header button: a glass pill beside Resume */
 @media (max-width: 640px) { :root[data-design="foil"] .fo-nav-r .fo-iam { width: 44px; padding: 0; justify-content: center; } }
 /* inline-edit wrapper for the "when" text must not take the dim block "where" styling */
-:root[data-design="foil"] .fo-when .fo-when-v { display: inline; color: inherit; }
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="foil"] { --ly-head-bg: rgba(10, 10, 16, .9); --ly-line: var(--fo-line); --ly-soft: var(--fo-panel); --ly-display: var(--fo-d);

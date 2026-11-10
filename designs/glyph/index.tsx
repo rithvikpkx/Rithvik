@@ -3,7 +3,7 @@
 // the page (visible in the gaps between opaque panes); every section is a tmux pane (its ornament is the title bar);
 // headings and the name decode out of scrambled glyphs once on first view; vim keys move between panes. html.lite
 // and reduced motion turn the decode off and hold one still shader frame.
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
@@ -11,12 +11,11 @@ import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
-import { KEYS, SECTIONS, hash7 } from "./data";
+import { KEYS, SECTIONS } from "./data";
 import { useGlyphMotion } from "./motion";
 import "./glyph.css";
 
 const META = designById("glyph")!;
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const PANE: Record<SectionId, [word: string, cmd: string]> = {
   work: ["WORK", "ls ~/work"], experience: ["LOG", "git log --graph"], about: ["MAN", "man rithvik"],
   play: ["BIN", "ls ~/bin"], questions: ["FAQ", "rithvik --faq"], contact: ["MAIL", "mail rpk"],
@@ -43,23 +42,6 @@ function Name({ first, last }: { first: string; last: string }) {
   return <span className="gl-word"><span className="gl-w1" data-scr data-edit="name.first">{first}</span> <span className="gl-w2" data-edit="name.last">{last}</span></span>;
 }
 
-/** One git commit: hash, decoration, date, and a `git show` body that expands. */
-function Commit({ x, lane, deco, open }: { x: DesignProps["content"]["experience"][number]; lane?: boolean; deco?: ReactNode; open?: boolean }) {
-  return (
-    <li className={`gl-c${lane ? " l2" : ""}`} id={`experience-${x.slug}`}>
-      <span className="gl-node" aria-hidden="true">*</span>
-      <details open={open}>
-        <summary>
-          <span className="gl-c-h"><span className="gl-hash">{hash7(x.slug)}</span>{deco && <> <span className="gl-deco">({deco})</span></>} <span className="gl-dim" data-edit={`role:${x.slug}:when`}>{x.when}</span></span>
-          <span className="gl-c-s" data-edit={`role:${x.slug}:role`}>{x.role}</span>
-          <span className="gl-c-o" data-edit={`role:${x.slug}:org`}>{x.org}</span>
-        </summary>
-        <div className="gl-c-body"><ul className="gl-dash">{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><Tags tags={x.tags} /></div>
-      </details>
-    </li>
-  );
-}
-
 /** Work: a ranger-style file list with a live preview of the selected project. */
 function Work({ content: C }: SectionProps) {
   const [sel, setSel] = useState(0);
@@ -83,29 +65,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Experience: the roles as a git graph (a side lane for the earlier job), education as the root tag. */
-function Experience({ content: C }: SectionProps) {
-  const X = C.experience, ed = C.education;
-  return (
-    <ol className="gl-git">
-      {X.slice(0, 2).map((x, i) => <Commit key={x.slug} x={x} open={i === 0} deco={i === 0 ? <><b className="d-head">HEAD</b>, <b className="d-tag">tag: now</b></> : undefined} />)}
-      <li className="gl-fork" aria-hidden="true" />
-      {X.slice(2).map((x, i) => <Commit key={x.slug} x={x} lane deco={i === 0 ? <b className="d-br">earlier</b> : undefined} />)}
-      <li className="gl-join" aria-hidden="true" />
-      <li className="gl-c gl-edu" id="education">
-        <span className="gl-node" aria-hidden="true">*</span>
-        <div className="gl-edu-in">
-          <span className="gl-c-h"><span className="gl-hash">{hash7(ed.school)}</span> <span className="gl-deco">(<b className="d-tag">tag: education</b>)</span>{ed.grad && <> <span className="gl-dim" data-edit="edu:grad">{ed.grad}</span></>}</span>
-          <div className="gl-edu-row">
-            {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-            <img src={logoSrc(ed.logo)} alt="" width={36} height={36} /><span className="gl-c-s" data-edit="edu:degree">{ed.degree}</span>
-          </div>
-          <span className="gl-c-o"><span data-edit="edu:school">{ed.school}</span> · <span data-edit="edu:focus">{ed.focus}</span></span>
-        </div>
-      </li>
-    </ol>
-  );
-}
 
 /** About: a man page (name, description, environment, files) and the numbers. */
 function About({ content: C }: SectionProps) {
@@ -173,7 +132,7 @@ const SKIN: Skin = {
   SectionOrnament: TitleBar,
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */

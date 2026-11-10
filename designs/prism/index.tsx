@@ -13,7 +13,6 @@ import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { usePrismMotion } from "./motion";
 import "./prism.css";
 
@@ -23,7 +22,6 @@ const BANDS = [["#FF2D3D", "650"], ["#FF7A00", "600"], ["#E8B800", "580"], ["#12
 const band = (i: number) => BANDS[i % BANDS.length];
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const bandVar = (i: number) => ({ ["--band" as string]: band(i)[0] });
 const SEC: Record<SectionId, string> = { work: "pr-work", experience: "pr-exp", about: "pr-about", play: "pr-play", questions: "pr-faq", contact: "pr-contact" };
 
@@ -95,35 +93,6 @@ function Work({ content: C }: SectionProps) {
   );
 }
 
-/** Experience: roles with a date margin, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="pr-roles">
-        {C.experience.map((x) => (
-          <li className="pr-role" id={`experience-${x.slug}`} key={x.slug}>
-            <p className="pr-when"><b data-edit={`role:${x.slug}:when`}>{x.when}</b><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="pr-role-b">
-              <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
-              <p className="pr-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="pr-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="pr-edu" id="education">
-        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={72} height={72} loading="lazy" decoding="async" />
-        <div>
-          <h3 data-edit="edu:school">{C.education.school}</h3>
-          <p className="pr-edu-d" data-edit="edu:degree">{C.education.degree}</p>
-          <p className="pr-edu-m"><EduMeta e={C.education} /></p>
-        </div>
-      </div>
-    </>
-  );
-}
 
 /** About: the text and thesis, now + places, then the numbers in spectral colours. */
 function About({ content: C }: SectionProps) {
@@ -207,7 +176,7 @@ const SKIN: Skin = {
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */
