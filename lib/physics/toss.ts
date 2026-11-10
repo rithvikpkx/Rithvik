@@ -1,8 +1,12 @@
 /** A tiny 2D circle world for the About stack playground: gravity, floor and walls, circle-circle collisions,
  *  sleep detection. Pure (no DOM) so node:test can drive it. y grows downward. */
 
-export type Body = { x: number; y: number; vx: number; vy: number; r: number; held?: boolean };
+/** A circle, or with `a` a horizontal capsule (a flat pill: radius r, plus `a` more to each side of the centre). */
+export type Body = { x: number; y: number; vx: number; vy: number; r: number; a?: number; held?: boolean };
 export type World = { w: number; h: number; gravity?: number; bounce?: number; drag?: number };
+
+/** Half the body's width. */
+export const halfW = (b: Body) => b.r + (b.a ?? 0);
 
 const SLEEP_SPEED = 48; // px/s: a body on the floor still twitches by about gravity * dt^2 per frame
 
@@ -18,8 +22,9 @@ export function step(bodies: Body[], world: World, dt: number): number {
     b.vy += gravity * dt;
     b.vx *= damp; b.vy *= damp;
     b.x += b.vx * dt; b.y += b.vy * dt;
-    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * bounce; }
-    else if (b.x > w - b.r) { b.x = w - b.r; b.vx = -Math.abs(b.vx) * bounce; }
+    const hw = halfW(b);
+    if (b.x < hw) { b.x = hw; b.vx = Math.abs(b.vx) * bounce; }
+    else if (b.x > w - hw) { b.x = w - hw; b.vx = -Math.abs(b.vx) * bounce; }
     if (b.y > h - b.r) { b.y = h - b.r; b.vy = -Math.abs(b.vy) * bounce; b.vx *= Math.exp(-2.2 * dt); if (Math.abs(b.vy) < 40) b.vy = 0; } // floor friction + no endless micro-bounce
     else if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy) * bounce; }
   }
@@ -28,13 +33,13 @@ export function step(bodies: Body[], world: World, dt: number): number {
     for (let i = 0; i < bodies.length; i++) {
       for (let j = i + 1; j < bodies.length; j++) {
         const a = bodies[i], b = bodies[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        const min = a.r + b.r;
-        const d2 = dx * dx + dy * dy;
+        const ea = a.a ?? 0, eb = b.a ?? 0, min = a.r + b.r;
+        // Closest points of the two centre segments: the same x when their spans overlap, else the facing ends (a circle is a zero-length segment).
+        const dx = Math.max(a.x - ea, b.x - eb) <= Math.min(a.x + ea, b.x + eb) ? 0 : a.x < b.x ? b.x - eb - (a.x + ea) : b.x + eb - (a.x - ea);
+        const dy = b.y - a.y, d2 = dx * dx + dy * dy;
         if (d2 >= min * min) continue;
-        const d = Math.sqrt(d2) || 0.001;
-        if (d2 === 0) { dx = 1; dy = 0; } // identical centres: pick a direction
-        const nx = dx / d, ny = dy / d, push = min - d;
+        const d = Math.sqrt(d2);
+        const nx = d > 1e-3 ? dx / d : 1, ny = d > 1e-3 ? dy / d : 0, push = min - d; // identical centres: pick a direction
         const wa = a.held ? 0 : b.held ? 1 : 0.5, wb = b.held ? 0 : a.held ? 1 : 0.5;
         a.x -= nx * push * wa; a.y -= ny * push * wa;
         b.x += nx * push * wb; b.y += ny * push * wb;
@@ -49,7 +54,7 @@ export function step(bodies: Body[], world: World, dt: number): number {
     }
     // Pushing out of a collision must not carry a body through a wall.
     for (const b of bodies) {
-      b.x = Math.min(Math.max(b.x, b.r), w - b.r);
+      b.x = Math.min(Math.max(b.x, halfW(b)), w - halfW(b));
       b.y = Math.min(Math.max(b.y, b.r), h - b.r);
     }
   }
@@ -81,3 +86,12 @@ export function settle(bodies: Body[], world: World, max = 900): number {
 export function rest(bodies: Body[]) {
   for (const b of bodies) { b.vx = 0; b.vy = 0; }
 }
+
+/** The body for a laid-out element: its centre, as a circle for a square and a capsule for a wide box. */
+export function bodyFor(rect: { x: number; y: number; w: number; h: number }): Body {
+  const r = Math.min(rect.w, rect.h) / 2;
+  return { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2, vx: 0, vy: 0, r, a: Math.max(0, rect.w / 2 - r) };
+}
+
+/** How far a body is from where its element sits in the frozen layout: the CSS translate that draws it there. Zero means tidy. */
+export const offsetOf = (b: Body, rect: { x: number; y: number; w: number; h: number }): [number, number] => [b.x - (rect.x + rect.w / 2), b.y - (rect.y + rect.h / 2)];

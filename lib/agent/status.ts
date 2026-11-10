@@ -6,19 +6,10 @@ export const SPIN_FRAMES: string[] = SPINNERS.dots.frames;
 export const SPIN_INTERVAL = SPINNERS.dots.interval;
 /** The reasoning effort app/api/chat/route.ts asks the answer model for, shown in the start block and status line. */
 export const AGENT_EFFORT = "low";
-/** Claude Code's thinking glyph cycle, drawn instead of the braille dots in the status line. */
-export const STAR_FRAMES = ["·", "✢", "✳", "✶", "✻", "✽"];
-export const VERBS =["Retrieving", "Reading", "Grounding", "Drafting", "Verifying"];
-const VERB_MS = 1200;
 
 /** Braille frame for `elapsedMs` since the turn began. */
 export function spinFrame(elapsedMs: number): string {
   return SPIN_FRAMES[Math.floor(elapsedMs / SPIN_INTERVAL) % SPIN_FRAMES.length];
-}
-
-/** Verb that rotates every ~1.2s. */
-export function verbAt(elapsedMs: number): string {
-  return VERBS[Math.floor(elapsedMs / VERB_MS) % VERBS.length];
 }
 
 /** "42s" under a minute, otherwise whole minutes rounded up ("3m"). */
@@ -76,7 +67,7 @@ export function usageLines(u: Usage, model: string | undefined, nowMs: number): 
 
 export type StatusState =
   | { kind: "idle"; turns: number; usage?: Usage }
-  | { kind: "busy"; elapsedMs: number }
+  | { kind: "busy"; elapsedMs: number; verb: string }
   | { kind: "limited"; status: 429 | 503; retrySecs: number };
 
 /** `cls` lets the stylesheet drop the least important pieces first on a narrow panel. */
@@ -86,8 +77,8 @@ export type StatusSeg = { text: string; tone?: "spin" | "warn"; cls?: string };
 export function statusSegments(s: StatusState): StatusSeg[] {
   if (s.kind === "busy") {
     return [
-      { text: spinFrame(s.elapsedMs), tone: "spin" },
-      { text: `${verbAt(s.elapsedMs)}…` },
+      { text: spinFrame(s.elapsedMs), tone: "spin" }, // StatusLine draws the ouroboros in its place; this is the text fallback
+      { text: `${s.verb}…` },
       { text: `${(s.elapsedMs / 1000).toFixed(1)}s` },
       { text: "esc to interrupt" },
     ];

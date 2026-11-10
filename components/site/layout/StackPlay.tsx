@@ -1,36 +1,52 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { Logo } from "@/components/site/Glyph";
+import { useEffect, useRef, useState } from "react";
+import { Icon, Logo } from "@/components/site/Glyph";
 import { LOGOS } from "@/lib/assets/icons";
-import { rest, settle, sleeper, step, type Body } from "@/lib/physics/toss";
+import { bodyFor, halfW, offsetOf, rest, settle, sleeper, step, type Body } from "@/lib/physics/toss";
 
 /** Stack name → Simple Icons slug, for the names we have a logo for; anything else gets a monogram tile. */
 const SLUG: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama", PostgreSQL: "postgresql", GitHub: "github" };
-const MAX_TILES = 26;
+const MAX_TILES = 32;
+const MODE_KEY = "rithvik-stack-mode";
+type Mode = "logos" | "text";
 /** Two or three letters for a tool with no logo: the capitals ("TinyML" is TM), else the first two letters; short names whole ("SQL"). */
 const monogram = (n: string) => (n.length <= 3 ? n : (n.match(/[A-Z]/g)?.length ?? 0) >= 2 ? n.match(/[A-Z]/g)!.slice(0, 3).join("") : n.slice(0, 2));
 const MAX_SPEED = 2600; // a toss faster than this would tunnel through its neighbours
+const ROOM = 90; // how much taller the box gets while the tiles are loose, so there is somewhere to fall
 
-/** The stack as logo tiles in a small physics box: they drop in when scrolled to, pile up, and can be dragged and
- *  tossed. One rAF loop, only while something moves. Under performance mode / reduced motion they start already
- *  settled (still draggable; the loop is the visitor's, not ambient). */
+/** The stack as logo tiles (or plain name chips), frozen in tidy labelled rows so every technology is readable at once.
+ *  "Let them loose" turns on a small physics world: the tiles drop from where they sit, pile up, and can be dragged and
+ *  tossed; "Tidy up" glides them home. The tiles never leave the normal layout (physics only adds a translate), so the
+ *  frozen arrangement is always the target. One rAF loop, only while something moves. */
 export default function StackPlay({ stack }: { stack: Record<string, string[]> }) {
-  const names = [...new Set(Object.values(stack).flat())].slice(0, MAX_TILES);
+  const seen = new Set<string>();
+  const groups = Object.entries(stack)
+    .map(([g, list]) => [g, list.filter((n) => n && !seen.has(n) && seen.size < MAX_TILES && seen.add(n))] as const)
+    .filter(([, list]) => list.length);
+  const names = groups.flatMap(([, list]) => list);
+  const [mode, setMode] = useState<Mode>("logos");
+  const [loose, setLoose] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const els = useRef<(HTMLLIElement | null)[]>([]);
 
+  // The remembered Logos / Text choice (storage can be blocked, so it is only ever a convenience).
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- read after mount so server and first client render match
+  useEffect(() => { try { if (localStorage.getItem(MODE_KEY) === "text") setMode("text"); } catch {} }, []);
+  const choose = (m: Mode) => { setMode(m); try { localStorage.setItem(MODE_KEY, m); } catch {} };
+
   useEffect(() => {
     const host = box.current;
-    if (!host) return;
+    if (!host || !loose) return;
     const calm = document.documentElement.classList.contains("lite") || matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const r = host.clientWidth < 520 ? 24 : 29;
-    const world = { w: host.clientWidth, h: host.clientHeight };
-    const bodies: Body[] = names.map(() => ({ x: 0, y: 0, vx: 0, vy: 0, r }));
-    els.current.forEach((el) => { if (el) el.style.width = el.style.height = `${r * 2}px`; });
-    const place = () => bodies.forEach((b, i) => { const el = els.current[i]; if (el) el.style.transform = `translate(${b.x - b.r}px, ${b.y - b.r}px)`; });
-    // A loose grid at the top (never overlapping), so the first drop has somewhere to fall from.
-    const cols = Math.max(1, Math.floor(world.w / (r * 2 + 6)));
-    bodies.forEach((b, i) => { b.x = r + 3 + (i % cols) * (r * 2 + 6) + (Math.floor(i / cols) % 2) * 6; b.y = r + 38 + Math.floor(i / cols) * (r * 2 + 6); });
+    const chips = els.current.slice(0, names.length) as HTMLLIElement[];
+    chips.forEach((el) => { el.style.transform = ""; }); // measure the frozen layout, not the last pile
+    const hq = host.getBoundingClientRect();
+    const rects = chips.map((el) => { const q = el.getBoundingClientRect(); return { x: q.left - hq.left, y: q.top - hq.top, w: q.width, h: q.height }; });
+    const bodies: Body[] = rects.map(bodyFor);
+    const tall = Math.max(host.offsetHeight + ROOM, 280);
+    const world = { w: host.clientWidth, h: calm ? tall : host.clientHeight };
+    host.style.minHeight = `${tall}px`;
+    const place = () => bodies.forEach((b, i) => { const [dx, dy] = offsetOf(b, rects[i]); chips[i].style.transform = `translate(${dx}px, ${dy}px)`; });
 
     const sleepy = sleeper();
     let raf = 0, last = 0, running = false, held: { b: Body; dx: number; dy: number; trail: [number, number, number][] } | null = null;
@@ -45,16 +61,12 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
     };
     const wake = () => { if (!running) { running = true; last = 0; sleepy(Infinity); raf = requestAnimationFrame(frame); } };
 
-    if (calm) { settle(bodies, world); place(); } else place();
-
-    // Drop the pile the first time the box is on screen.
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); if (!calm) wake(); } }, { threshold: 0.35 });
-    io.observe(host);
+    if (calm) { settle(bodies, world); place(); } else wake();
 
     const ro = new ResizeObserver(() => {
       if (host.clientWidth === world.w && host.clientHeight === world.h) return;
       world.w = host.clientWidth; world.h = host.clientHeight;
-      for (const b of bodies) { b.x = Math.min(b.x, world.w - b.r); b.y = Math.min(b.y, world.h - b.r); }
+      for (const b of bodies) { b.x = Math.min(b.x, world.w - halfW(b)); b.y = Math.min(b.y, world.h - b.r); }
       if (calm) { settle(bodies, world); place(); } else wake();
     });
     ro.observe(host);
@@ -74,7 +86,7 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
     const move = (e: PointerEvent) => {
       if (!held) return;
       const [px, py] = local(e), { b } = held;
-      b.x = Math.min(Math.max(px + held.dx, b.r), world.w - b.r);
+      b.x = Math.min(Math.max(px + held.dx, halfW(b)), world.w - halfW(b));
       b.y = Math.min(Math.max(py + held.dy, b.r), world.h - b.r);
       held.trail.push([performance.now(), b.x, b.y]);
       if (held.trail.length > 8) held.trail.shift();
@@ -94,27 +106,52 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
     host.addEventListener("pointerup", up);
     host.addEventListener("pointercancel", up);
     return () => {
-      cancelAnimationFrame(raf); io.disconnect(); ro.disconnect();
+      cancelAnimationFrame(raf); ro.disconnect();
       host.removeEventListener("pointerdown", down); host.removeEventListener("pointermove", move);
       host.removeEventListener("pointerup", up); host.removeEventListener("pointercancel", up);
+      // Tidy up: clearing the translate lets the CSS transition glide every tile back to its place in the frozen rows.
+      host.style.minHeight = "";
+      chips.forEach((el) => { el.style.transform = ""; el.removeAttribute("data-held"); });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the tile set is read once per mount; `names` is derived from `stack`
-  }, [names.join("|")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-measure when the tile set or the chip style changes; `names` is derived from `stack`
+  }, [loose, mode, names.join("|")]);
 
+  let i = 0;
   return (
-    <div className="ab-play" ref={box} aria-label="Tools I use. Drag and toss the tiles.">
-      <ul className="ab-chips" role="list">
-        {names.map((n, i) => {
-          const slug = SLUG[n];
-          return (
-            <li key={n} className="ab-chip" data-i={i} data-name={n} ref={(el) => { els.current[i] = el; }}>
-              {slug && slug in LOGOS ? <Logo slug={slug} /> : <span className="ab-mono" aria-hidden="true">{monogram(n)}</span>}
-              <span className="sr-only">{n}</span>
-            </li>
-          );
-        })}
-      </ul>
-      <span className="ab-play-k" aria-hidden="true">Drag and toss</span>
+    <div className="ab-play" ref={box} data-mode={mode} data-loose={loose || undefined}>
+      <div className="ab-bar">
+        <div className="ab-seg" role="group" aria-label="Show technologies as">
+          {(["logos", "text"] as const).map((m) => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => choose(m)}>{m === "logos" ? "Logos" : "Text"}</button>
+          ))}
+        </div>
+        {loose && <span className="ab-play-k" aria-hidden="true">Drag and toss</span>}
+        <button type="button" className="ab-go" aria-pressed={loose} onClick={() => setLoose((v) => !v)}>
+          <Icon name={loose ? "rotate-ccw" : "shuffle"} />{loose ? "Tidy up" : "Let them loose"}
+        </button>
+      </div>
+      <div className="ab-groups">
+        {groups.map(([g, list]) => (
+          <section key={g} className="ab-group" aria-label={g}>
+            <h3 className="ab-gk">{g}</h3>
+            <ul className="ab-chips" role="list">
+              {list.map((n) => {
+                const k = i++, slug = SLUG[n], logo = slug && slug in LOGOS;
+                return (
+                  <li key={n} className="ab-chip" data-i={k} data-name={n} tabIndex={mode === "logos" ? 0 : undefined} ref={(el) => { els.current[k] = el; }}>
+                    {mode === "text" ? n : (
+                      <>
+                        {logo ? <Logo slug={slug} /> : <span className="ab-mono" aria-hidden="true">{monogram(n)}</span>}
+                        <span className="sr-only">{n}</span>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

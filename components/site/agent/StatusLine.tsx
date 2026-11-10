@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
-import { SPIN_INTERVAL, STAR_FRAMES, statusSegments, type StatusState, type Usage } from "@/lib/agent/status";
+import { useEffect, useMemo, useState } from "react";
+import Mark from "@/components/site/mark/Mark";
+import { SPIN_INTERVAL, statusSegments, type StatusState, type Usage } from "@/lib/agent/status";
+import { verbAt, verbOrder } from "@/lib/agent/verbs";
 
 /** The panel's bottom line, styled like Claude Code's. Owns its own clock so the spinner never re-renders the transcript. */
 export default function StatusLine({ turns, usage, busySince, cooldown, model }: {
@@ -21,8 +23,11 @@ export default function StatusLine({ turns, usage, busySince, cooldown, model }:
     return () => clearInterval(t);
   }, [ticking]);
 
+  // A fresh verb order per turn (busySince changes on every submit), flavoured by the current look.
+  const order = useMemo(() => (busySince === null ? [] : verbOrder(document.documentElement.dataset.design)), [busySince]);
+
   let state: StatusState = { kind: "idle", turns, usage };
-  if (busySince !== null) state = { kind: "busy", elapsedMs: Math.max(0, now - busySince) };
+  if (busySince !== null) state = { kind: "busy", elapsedMs: Math.max(0, now - busySince), verb: verbAt(order, now - busySince) };
   else if (limited) state = { kind: "limited", status: cooldown.status, retrySecs: (cooldown.until - now) / 1000 };
 
   const segs = statusSegments(state);
@@ -31,9 +36,10 @@ export default function StatusLine({ turns, usage, busySince, cooldown, model }:
   return (
     <div className="agent-status" role="status">
       {segs.map((s, i) => {
-        // Busy: the braille dots become Claude Code's star cycle.
-        const text = state.kind === "busy" && i === 0 ? STAR_FRAMES[Math.floor(state.elapsedMs / 160) % STAR_FRAMES.length] : s.text;
-        return <span key={i} className={[s.tone, s.cls].filter(Boolean).join(" ") || undefined}>{text}</span>;
+        const cls = [s.tone, s.cls].filter(Boolean).join(" ") || undefined;
+        // Busy: the spinner is the ouroboros drawing itself on and swallowing its tail (CSS-driven, no re-render per frame).
+        if (state.kind === "busy" && i === 0) return <span key={i} className={cls} aria-hidden="true"><Mark kind="tiny" draw className="spinning ag-ouro" label="" /></span>;
+        return <span key={i} className={cls}>{s.text}</span>;
       })}
     </div>
   );
