@@ -1,20 +1,25 @@
-/* The ouroboros mark. The eye is a mask hole; .mk-reveal draws the ring on; .mk-spin turns it. */
+/* The ouroboros mark. .mk-reveal draws the band on; .mk-spin turns it; .mk-body breathes. */
 .mark { display: block; width: 100%; height: auto; overflow: visible; color: currentColor; }
-.mark .mk-spin { transform-box: view-box; transform-origin: 0 0; /* view-box origin is user-space 0,0 = the ring centre */ transition: transform 900ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
+.mark .mk-spin, .mark .mk-body { transform-box: view-box; transform-origin: 0 0; /* view-box origin is user-space 0,0 = the ring centre */ }
+.mark .mk-spin { transition: transform 900ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)); }
 .mark .mk-reveal { fill: none; stroke: #fff; stroke-dasharray: 1 1; stroke-dashoffset: 0; }
-.mark .mk-eye { transform-box: fill-box; transform-origin: 50% 50%; }
-.mark.blinks .mk-eye { animation: mk-blink 7s infinite; }
-@keyframes mk-blink { 0%, 95.5%, 100% { transform: scaleY(1); } 96.5% { transform: scaleY(.08); } }
-.mark.draw .mk-reveal { animation: mk-draw 1100ms var(--ease-in-out, cubic-bezier(.77, 0, .175, 1)) both; }
+.mark.draw .mk-reveal { animation: mk-draw 1300ms var(--ease-in-out, cubic-bezier(.77, 0, .175, 1)) both; }
 @keyframes mk-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-.mark.spinning .mk-spin { animation: mk-spin 1.6s linear infinite; }
+/* idle: one slow turn plus a breath on a coprime period, so the loop never visibly repeats a pose but stays seamless */
+.mark.idle .mk-spin { animation: mk-spin 24s linear infinite; }
+.mark.idle .mk-body { animation: mk-breathe 6s ease-in-out infinite; }
+@keyframes mk-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(.955); } }
+.mark.spinning .mk-spin { animation: mk-spin 1.4s cubic-bezier(.55, .15, .45, .85) infinite; }
 @keyframes mk-spin { to { transform: rotate(360deg); } }
 .mark.mk-tiny { width: 16px; }
 .mark.mk-inverse { color: var(--mark-inverse, #fff); }
 .mark.mk-accent { color: var(--mark-accent, var(--ui-accent, #ff4d8d)); }
 .mark-slot { display: inline-block; line-height: 0; }
 @media (prefers-reduced-motion: reduce) {
-  .mark.blinks .mk-eye, .mark.draw .mk-reveal, .mark.spinning .mk-spin { animation: none; }
+  .mark.draw .mk-reveal, .mark.idle .mk-spin, .mark.idle .mk-body { animation: none; }
   .mark .mk-spin { transition: none; }
+  /* a loader must still say "working": fade instead of turning */
+  .mark.spinning .mk-spin { animation: mk-pulse 1.6s ease-in-out infinite; }
 }
-html.lite .mark.blinks .mk-eye { animation: none; }
+@keyframes mk-pulse { 50% { opacity: .45; } }
+html.lite .mark.idle .mk-spin, html.lite .mark.idle .mk-body { animation: none; }

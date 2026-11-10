@@ -15,8 +15,11 @@ export type OuroOpts = {
 export type Ouro = { d: string; eye: [number, number, number]; R: number; W: number; head: number };
 
 export const DEFAULTS: OuroOpts = { R: 31, W: 22, head: -45, hold: 60, tip: 6, T: 22, gap: 3.2, N: 1, step: 2 };
-/** Optical size for 16-32px: heavier band, wider hairline, shallower swallow so the junction still reads as a notch. */
+/** Optical size for 16-20px (favicon, kind "tiny"): heavier band, wider hairline, shallower swallow so the junction still reads. */
 export const SMALL: Partial<OuroOpts> = { R: 29.5, W: 28, hold: 40, tip: 9, T: 12, gap: 5.5 };
+
+/** The loader: three links, each swallowing the next. */
+export const CHAIN: Partial<OuroOpts> = { N: 3, W: 20, hold: 20, tip: 5, T: 14 };
 
 type V = [number, number];
 
