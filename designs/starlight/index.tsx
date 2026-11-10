@@ -15,6 +15,7 @@ import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
+import { XP } from "./experience";
 import "./starlight.css";
 
 const META = designById("starlight")!;
@@ -111,6 +112,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "starlight",
+  ...XP,
   rootClass: "sl",
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,

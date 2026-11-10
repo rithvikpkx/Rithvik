@@ -14,6 +14,7 @@ import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { usePrismMotion } from "./motion";
+import { XP } from "./experience";
 import "./prism.css";
 
 const META = designById("prism")!;
@@ -172,6 +173,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "prism",
+  ...XP,
   rootClass: "pr",
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,

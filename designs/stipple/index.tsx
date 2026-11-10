@@ -17,6 +17,7 @@ import { Icon } from "@/components/site/Glyph";
 import { ART, GOOD, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
+import { XP } from "./experience";
 import "./stipple.css";
 
 const META = designById("stipple")!;
@@ -148,6 +149,7 @@ function Contact({ content: C }: SectionProps) {
 
 const SKIN: Skin = {
   id: "stipple",
+  ...XP,
   rootClass: "st",
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,

@@ -13,6 +13,7 @@ import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
 import { KEYS, SECTIONS } from "./data";
 import { useGlyphMotion } from "./motion";
+import { XP } from "./experience";
 import "./glyph.css";
 
 const META = designById("glyph")!;
@@ -127,6 +128,7 @@ function Contact({ content: C }: SectionProps) {
 
 const SKIN: Skin = {
   id: "glyph",
+  ...XP,
   rootClass: "gl",
   sectionClass: (id) => `gl-sec gl-pane ${HUE[SECTIONS.find(([s]) => s === id)![2]]}`.trim(),
   SectionOrnament: TitleBar,

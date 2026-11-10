@@ -16,6 +16,7 @@ import { Icon } from "@/components/site/Glyph";
 import { DEFS, ON_PALE, ON_SKY, ON_SUN, cloud, edgeSvg, glyph, hourIn, icon16, isDay, skyShader, skyTile } from "./pixel";
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
+import { XP } from "./experience";
 import "./nimbus.css";
 
 const META = designById("nimbus")!;
@@ -194,6 +195,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "nimbus",
+  ...XP,
   rootClass: "nb",
   labels: { play: "Recess" },
   sectionClass: (id) => (id === "play" ? "nb-band" : `nb-sec nb-${{ work: "work", experience: "exp", about: "about", questions: "faq", contact: "contact" }[id]}`),

@@ -103,7 +103,7 @@ export default function Experience({ content: c, skin }: SectionProps) {
   const e = c.education, n = c.experience.length;
   const Link = skin.ExperienceConnector ?? Thread, Edu = skin.EducationObject ?? Seal;
   return (
-    <div className="ly-xp" ref={ref}>
+    <div className="ly-xp" ref={ref}><div className="ly-xp-in">
       <ol className="ly-xp-roles">
         {c.experience.map((r, i) => (
           <li key={r.slug} id={`experience-${r.slug}`} className="ly-st" style={{ "--i": i } as CSSProperties}>
@@ -128,7 +128,7 @@ export default function Experience({ content: c, skin }: SectionProps) {
           </div>
         </aside>
       )}
-    </div>
+    </div></div>
   );
 }
 

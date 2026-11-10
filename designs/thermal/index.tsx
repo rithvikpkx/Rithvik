@@ -15,6 +15,7 @@ import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { PALS, T_MAX, T_MIN, W, HH, bmp, heatGrid, palIndex, rankByTools, stripGrid, type PalId } from "./heat";
 import { readPal, usePal, useThermalMotion } from "./motion";
+import { XP } from "./experience";
 import "./thermal.css";
 
 const META = designById("thermal")!;
@@ -120,6 +121,7 @@ function Contact({ content: C }: SectionProps) {
 
 const SKIN: Skin = {
   id: "thermal",
+  ...XP,
   rootClass: "th",
   labels: { experience: "Record", play: "Bench" },
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),

@@ -16,6 +16,7 @@ import Mark from "@/components/site/mark/Mark";
 import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { useMercuryMotion } from "./motion";
+import { XP } from "./experience";
 import "./mercury.css";
 
 const META = designById("mercury")!;
@@ -150,6 +151,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "mercury",
+  ...XP,
   rootClass: "mc",
   sectionClass: (id) => (id === "contact" ? "mc-contact" : id === "play" ? "mc-sec mc-play" : "mc-sec"),
   titleClass: "mc-h2",

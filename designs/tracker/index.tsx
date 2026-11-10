@@ -15,6 +15,7 @@ import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import { TOY_LBL, fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
+import { XP } from "./experience";
 import "./tracker.css";
 
 const META = designById("tracker")!;
@@ -110,6 +111,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "tracker",
+  ...XP,
   rootClass: "tk",
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),

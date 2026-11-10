@@ -16,6 +16,7 @@ import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
+import { XP } from "./experience";
 import "./foil.css";
 
 const META = designById("foil")!;
@@ -118,6 +119,7 @@ function Contact() {
 
 const SKIN: Skin = {
   id: "foil",
+  ...XP,
   rootClass: "fo",
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
