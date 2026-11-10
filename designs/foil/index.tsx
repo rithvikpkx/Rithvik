@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Syntheti
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
@@ -106,18 +105,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: stickers, one holo disc per toy. */
-function Play() {
-  return (
-    <ul className="fo-stickers">{PLAY.map((t, i) => (
-      <li key={t.id}><button type="button" className="fo-st" data-play={t.id} style={{ "--h": `${(i * 61) % 360}deg` } as CSSProperties} aria-label={`Play ${t.name}: ${t.desc}`}>
-        <span className="fo-st-disc" aria-hidden="true"><i className="fo-st-foil" /><i className="fo-st-glit" /><span className="fo-st-ic"><Icon name={t.icon} /></span></span>
-        <span className="fo-st-t">{t.name}</span><span className="fo-st-d">{t.desc}</span>
-      </button></li>
-    ))}</ul>
-  );
-}
-
 /** Questions: short answers, one open at a time, and the hand-off to the agent. */
 function Questions({ content: C }: SectionProps) {
   const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
@@ -149,7 +136,7 @@ const SKIN: Skin = {
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
   NameFx: FoilName,
   PortraitFx: FoilPortrait,
 };

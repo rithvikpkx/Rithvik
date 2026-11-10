@@ -374,3 +374,9 @@
   :root[data-design="tracker"] .ly-hero > .tk-hud { display: none; }
 }
 @media (min-width: 861px) { :root[data-design="tracker"] .ly-hero > .tk-feed { top: calc(var(--ly-head-h) + 56px); } :root[data-design="tracker"] .ly-hero > .tk-feed .tk-view { aspect-ratio: 1 / 1.08; } }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="tracker"] .pf-wrap {
+  --pf-bg: #F2F2EE; --pf-fog: #F2F2EE; --pf-a: #1F3BFF; --pf-b: #E0103F; --pf-c: #F0F921; --pf-label: #E0103F;
+  --pf-r: 4px; --pf-line: rgba(12, 13, 15, .2);
+}

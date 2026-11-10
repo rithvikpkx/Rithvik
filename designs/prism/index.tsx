@@ -8,7 +8,6 @@ import { useRef, useState, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -144,25 +143,6 @@ function About({ content: C }: SectionProps) {
   );
 }
 
-/** Play: one spectral card per toy. */
-function Play() {
-  return (
-    <ul className="pr-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="pr-toy" data-play={t.id} style={bandVar(i)} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="pr-toy-n">{pad(i)}</span>
-            <span className="pr-toy-ic" aria-hidden="true"><Icon name={t.icon} /></span>
-            <span className="pr-toy-t">{t.name}</span>
-            <span className="pr-toy-d">{t.desc}</span>
-            <span className="pr-toy-bar" aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Questions: short answers, one open at a time, and the hand-off to the agent. */
 function Questions({ content: C }: SectionProps) {
   const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
@@ -199,9 +179,9 @@ const SKIN: Skin = {
   rootClass: "pr",
   sectionClass: (id) => `pr-sec ${SEC[id]}`,
   Title,
+  sections: { work: Work, experience: Experience, about: About, questions: Questions, contact: Contact },
   NameFx: PrismName,
   PortraitFx: PrismPortrait,
-  sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */
