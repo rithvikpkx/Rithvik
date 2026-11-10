@@ -372,3 +372,6 @@
   :root[data-design="starlight"] .sl-phos { width: 30px; padding: 0; justify-content: center; }
 }
 @media (min-width: 861px) { :root[data-design="starlight"] { --ly-gutter: max(136px, calc((100vw - 1180px) / 2)); } } /* clear the fixed coordinate strip on the left */
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+:root[data-design="starlight"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }

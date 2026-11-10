@@ -7,6 +7,8 @@ import { asleep, rest, settle, step, type Body } from "@/lib/physics/toss";
 /** Stack name → Simple Icons slug, for the names we have a logo for; anything else gets a monogram tile. */
 const SLUG: Record<string, string> = { Python: "python", JavaScript: "javascript", TypeScript: "typescript", "C++": "cplusplus", React: "react", "Next.js": "nextdotjs", "Node.js": "nodedotjs", Express: "express", TensorFlow: "tensorflow", Keras: "keras", "scikit-learn": "scikitlearn", Pandas: "pandas", MongoDB: "mongodb", Supabase: "supabase", Vercel: "vercel", Cloudflare: "cloudflare", "Google Apps Script": "googleappsscript", Arduino: "arduino", Ollama: "ollama", PostgreSQL: "postgresql", GitHub: "github" };
 const MAX_TILES = 26;
+/** Two or three letters for a tool with no logo: the capitals ("TinyML" is TM), else the first two letters; short names whole ("SQL"). */
+const monogram = (n: string) => (n.length <= 3 ? n : (n.match(/[A-Z]/g)?.length ?? 0) >= 2 ? n.match(/[A-Z]/g)!.slice(0, 3).join("") : n.slice(0, 2));
 const MAX_SPEED = 2600; // a toss faster than this would tunnel through its neighbours
 
 /** The stack as logo tiles in a small physics box: they drop in when scrolled to, pile up, and can be dragged and
@@ -105,7 +107,7 @@ export default function StackPlay({ stack }: { stack: Record<string, string[]> }
           const slug = SLUG[n];
           return (
             <li key={n} className="ab-chip" data-i={i} data-name={n} ref={(el) => { els.current[i] = el; }}>
-              {slug && slug in LOGOS ? <Logo slug={slug} /> : <span className="ab-mono" aria-hidden="true">{n.replace(/[^A-Za-z0-9+#]/g, "").slice(0, 2)}</span>}
+              {slug && slug in LOGOS ? <Logo slug={slug} /> : <span className="ab-mono" aria-hidden="true">{monogram(n)}</span>}
               <span className="sr-only">{n}</span>
             </li>
           );

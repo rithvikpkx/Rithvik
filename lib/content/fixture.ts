@@ -65,7 +65,7 @@ export const fixture: Content = {
     Languages: ["Python", "JavaScript", "TypeScript", "C++", "C#", "SQL"],
     Frameworks: ["React", "Next.js", "Node.js", "Express", "TensorFlow", "Keras", "scikit-learn", "Pandas"],
     "Infra and data": ["AWS", "MongoDB", "Supabase", "Vercel", "Cloudflare", "Google Apps Script"],
-    "AI and hardware": ["RAG", "Ollama", "Edge Impulse", "TinyML", "OpenBCI", "NeuroSky", "Arduino", "EEG"],
+    "AI and hardware": ["RAG", "Ollama", "Edge Impulse", "TinyML", "Arduino"],
   },
   faq: [
     ["What kind of role fits best?", "Software engineering or AI/ML internships."],

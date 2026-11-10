@@ -427,3 +427,6 @@
 :root[data-design="stipple"] .ly-head { background: var(--st-paper); } /* the cloud would eat the masthead type */
 :root[data-design="stipple"] .ly-hero-copy .ly-status { margin-top: 28px; } :root[data-design="stipple"] .ly-hero-copy .ly-line { margin-top: 10px; }
 @media (max-width: 480px) { :root[data-design="stipple"] .ly .ly-nav a { font-size: 10.5px; } }
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+:root[data-design="stipple"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }

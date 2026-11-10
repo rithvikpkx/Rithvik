@@ -138,7 +138,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
 const SKIN: Skin = {
   id: "stipple",
   rootClass: "st",
-  sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
+  sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-wide", questions: "st-ch st-wide", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
   NameFx: Name,
   ContactFrame,
