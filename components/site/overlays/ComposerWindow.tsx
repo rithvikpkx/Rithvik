@@ -56,7 +56,6 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
           <div className="cmp-row">
             <label htmlFor="cmp-to">To</label>
             <input className="field" id="cmp-to" value={content.links.email} readOnly />
-            <button type="button" className="ui-ic" data-copy={content.links.email} aria-label="Copy address"><Icon name="copy" /></button>
           </div>
           <div className="cmp-row">
             <label htmlFor="cmp-from">From</label>
@@ -81,7 +80,8 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
             style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
         </div>
         <footer className="cmp-foot">
-          <span className="cmp-note" role="status" style={error ? { color: "#ff6b6b" } : undefined}>{error || "Goes straight to my inbox"}</span>
+          <button type="button" className="ui-btn" data-copy={content.links.email}><Icon name="copy" /> Copy email</button>
+          <span className="cmp-note" role="status" style={error ? { color: "#ff6b6b" } : undefined}>{error}</span>
           <button className="ui-btn primary" type="submit" disabled={busy}>{busy ? "Sending…" : "Send"} <Icon name="send" /></button>
         </footer>
       </form>

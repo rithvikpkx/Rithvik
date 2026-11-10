@@ -1,0 +1,11 @@
+/* Glyph name + portrait effects (S9). */
+[data-kn="glyph"] .kn-g { transform: translate3d(var(--x), calc(var(--y) - var(--k) * .05em), 0); }
+[data-kn="glyph"] .kn-g[data-s] { color: transparent; }
+[data-kn="glyph"] .kn-g[data-s]::after { content: attr(data-s); position: absolute; left: 50%; top: 0; translate: -50% 0; color: var(--gl-hue); }
+/* the excited letter's cell lights up like a terminal cursor */
+[data-kn="glyph"] .kn-l::after { content: ""; position: absolute; inset: 8% -.02em 4%; background: var(--gl-hue); opacity: calc(var(--k) * .14); pointer-events: none; }
+
+[data-pfx="glyph"] { --pfx-scan: var(--gl-hue); --pfx-cap-bg: #050505; --pfx-cap-fg: var(--gl-hue); --pfx-t: 360ms; background: #050505; }
+.gl-pfx-art { width: 100%; height: 100%; font-family: var(--gl-m, ui-monospace), ui-monospace, Menlo, monospace; fill: var(--gl-hue); white-space: pre; }
+[data-pfx="glyph"][data-on] .gl-pfx-art text { animation: gl-pfx-type 240ms steps(3) both; }
+@keyframes gl-pfx-type { from { opacity: 0; } }

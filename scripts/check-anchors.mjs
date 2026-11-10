@@ -8,8 +8,8 @@ const DESIGNS = ["classic", "nimbus", "stipple", "glyph", "prism", "mercury", "t
 const STATIC = ["top", "work", "experience", "about", "play", "questions", "contact"];
 const layout = readFileSync("components/site/layout/SiteLayout.tsx", "utf8");
 const skin = readFileSync("lib/designs/skin.ts", "utf8");
-// the shared bodies: sections.tsx plus the ones big enough to live in their own folder
-const defaults = ["components/site/layout/sections.tsx", "components/site/work/Work.tsx"].map((f) => readFileSync(f, "utf8")).join("\n");
+// the shared bodies: sections.tsx and the ones in their own files
+const defaults = ["layout/sections.tsx", "layout/Experience.tsx", "work/Work.tsx"].map((f) => readFileSync(`components/site/${f}`, "utf8")).join("\n");
 const sections = (skin.match(/SECTIONS = \[([^\]]*)\]/)?.[1] ?? "").match(/"([a-z]+)"/g)?.map((s) => s.slice(1, -1)) ?? [];
 // a design overrides a body when its skin lists `sections: { work: ..., experience: ... }`
 const overrides = (src) => new Set((src.match(/sections:\s*\{([^}]*)\}/)?.[1] ?? "").match(/[a-z]+(?=:)/g) ?? []);

@@ -37,5 +37,5 @@ input.field::placeholder, textarea.field::placeholder { color: var(--ui-muted, #
 .field-err { margin: 4px 0 0; font-size: 13px; color: #ff6b6b; }
 textarea.field { resize: vertical; min-height: 140px; }
 .cmp-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 14px 14px; }
-.cmp-note { font-size: 13px; color: var(--ui-muted, #a1a1aa); }
+.cmp-note { flex: 1; min-width: 0; font-size: 13px; color: var(--ui-muted, #a1a1aa); }
 @media (max-width: 640px) { .win { left: 8px !important; right: 8px; top: auto !important; bottom: 84px; width: auto; max-height: calc(100dvh - 160px); } .resume-win { height: calc(100dvh - 160px); } }

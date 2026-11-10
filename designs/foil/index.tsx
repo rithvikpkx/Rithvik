@@ -3,22 +3,21 @@
 // thin-film shader lives only on the holo card behind the hero portrait (its portrait backdrop), which tilts toward
 // the pointer; everything else is calm CSS that wakes on hover. html.lite and reduced motion leave a still card,
 // static foil gradients, no tilt, no glare and no datamosh.
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import { useSite } from "@/components/site/SiteProvider";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
-import { Icon } from "@/components/site/Glyph";
 import { ouroPath } from "@/components/site/mark/ouro";
 import { FOIL, useFoilMotion } from "./motion";
+import { XP } from "./experience";
+import FoilName from "./name-fx";
+import FoilPortrait from "./portrait-fx";
 import "./foil.css";
 
 const META = designById("foil")!;
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 // the exact mark silhouette (eye punched out) as a CSS mask over the foil texture
 const G = ouroPath();
@@ -29,85 +28,28 @@ function Fm({ cls = "" }: { cls?: string }) {
   return <span className={`fo-fm${cls ? " " + cls : ""}`} role="img" aria-label="Rithvik Praveen Kumar"><i /></span>;
 }
 
-/** Path: roles with a date column, then the degree as a badge card. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="fo-roles">
-        {C.experience.map((x) => (
-          <li key={x.slug} className="fo-role" id={`experience-${x.slug}`}>
-            <p className="fo-when"><span className="fo-when-v" data-edit={`role:${x.slug}:when`}>{x.when}</span><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="fo-role-h"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p data-edit={`role:${x.slug}:org`}>{x.org}</p></div>
-            <div className="fo-role-b"><ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul><p className="fo-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-          </li>
-        ))}
-      </ol>
-      <article className="fo-edu" id="education" aria-label="Education">
-        <span className="fo-edu-badge">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-          <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        </span>
-        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p></div>
-        <p className="fo-edu-m"><span data-edit="edu:focus">{C.education.focus}</span>{C.education.grad && <><br /><span data-edit="edu:grad">{C.education.grad}</span></>}</p>
-      </article>
-    </>
-  );
-}
 
-/** About: the text and thesis, now + places, then the numbers. */
-function About({ content: C }: SectionProps) {
+/** Contact frame: the foil seal above the shared copy, centred. */
+function ContactFrame({ children }: { children: ReactNode }) {
   return (
-    <>
-      <div className="fo-about-txt">
-        {C.about.map((a, i) => <p key={i} className="fo-p" data-edit={`v7.about.${i}`}>{a}</p>)}
-        <ul className="fo-thesis">{C.thesis.map((t, i) => <li key={t}><i aria-hidden="true" /><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-      </div>
-      <div className="fo-now" id="now" aria-label="Right now">
-        <dl className="fo-now-l">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ul className="fo-places" aria-label="Places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span>{PLACE_LABEL[pl.key] || pl.key}</span><b>{pl.city}</b><Clock tz={pl.tz} className="" /></li>)}</ul>
-      </div>
-      <dl className="fo-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-    </>
-  );
-}
-
-/** Questions: short answers, one open at a time, and the hand-off to the agent. */
-function Questions({ content: C }: SectionProps) {
-  const oneOpen = (e: SyntheticEvent<HTMLDetailsElement>) => {
-    const d = e.currentTarget;
-    if (d.open) d.parentElement?.querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; });
-  };
-  return (
-    <div className="fo-faq-b">
-      <div className="fo-qs">{C.faq.map(([q, a], i) => <details key={q} className="fo-q" onToggle={oneOpen}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>
-      <p className="fo-sub"><button type="button" className="fo-inl" data-agent="">Ask my agent</button></p>
-    </div>
-  );
-}
-
-/** Contact: the foil seal, one line and the composer. */
-function Contact() {
-  return (
-    <>
+    <div className="fo-contact">
       <span className="fo-seal" aria-hidden="true"><Fm cls="fo-fm-l" /></span>
-      <p className="fo-big">Write to me.</p>
-      <div className="fo-acts fo-c"><button type="button" className="fo-btn fo-btn-foil fo-btn-l" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-    </>
+      {children}
+    </div>
   );
 }
 
 export const SKIN: Skin = {
   id: "foil",
+  ...XP,
   rootClass: "fo",
   labels: { work: "The set", experience: "Path", play: "Stickers" },
   sectionClass: (id) => `fo-sec fo-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "fo-h2",
+  NameFx: FoilName,
+  PortraitFx: FoilPortrait,
+  ContactFrame,
   projectArt: { palette: ["#121220", "#EEEAF6", "#B9A8FF", "#8BF0D3"], params: { hole: 0.36, rest: 4 } },
-  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Foil site: the shared layout as a set of holo cards, the portrait mounted on the lead card. */

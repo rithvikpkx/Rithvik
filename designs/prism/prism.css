@@ -123,24 +123,6 @@
 
 /* ───────── map: the one reading-free place the caustics show through ───────── */
 
-/* ───────── experience ───────── */
-:root[data-design="prism"] .pr-roles { border-bottom: 1px solid var(--pr-line); }
-:root[data-design="prism"] .pr-role { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; padding: 42px 0; border-top: 1px solid var(--pr-line); }
-:root[data-design="prism"] .pr-when { display: grid; gap: 8px; align-content: start; font: 400 12.5px/1.3 var(--pr-mono); color: var(--pr-muted); }
-:root[data-design="prism"] .pr-when b { font-weight: 500; color: var(--pr-ink); font-size: 13px; }
-:root[data-design="prism"] .pr-role h3 { font: 600 clamp(1.5rem, 2.3vw, 2.05rem)/1.08 var(--pr-sans); font-stretch: 82%; letter-spacing: -.02em; }
-:root[data-design="prism"] .pr-org { margin-top: 8px; font-size: 16px; color: var(--pr-muted); }
-:root[data-design="prism"] .pr-role ul { display: grid; gap: 10px; margin-top: 22px; max-width: 46em; }
-:root[data-design="prism"] .pr-role ul li { position: relative; padding-left: 22px; font-size: 16.5px; line-height: 1.58; color: var(--pr-ink-2); }
-:root[data-design="prism"] .pr-role ul li::before { content: ""; position: absolute; left: 0; top: .78em; width: 10px; height: 1px; background: var(--pr-ink); }
-:root[data-design="prism"] .pr-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 22px; }
-:root[data-design="prism"] .pr-tags span { padding: 5px 10px; border: 1px solid var(--pr-line); border-radius: 999px; font: 400 12px/1.2 var(--pr-mono); color: var(--pr-ink-2); }
-:root[data-design="prism"] .pr-edu { display: flex; align-items: center; gap: 28px; margin-top: 64px; padding: 30px 32px; border-radius: 20px; background: var(--pr-mist); }
-:root[data-design="prism"] .pr-edu img { flex: none; width: 72px; height: 72px; object-fit: contain; }
-:root[data-design="prism"] .pr-edu h3 { margin-top: 12px; font: 600 clamp(1.5rem, 2.3vw, 2.05rem)/1.08 var(--pr-sans); font-stretch: 82%; letter-spacing: -.02em; }
-:root[data-design="prism"] .pr-edu-d { margin-top: 6px; font-size: 16.5px; color: var(--pr-ink-2); }
-:root[data-design="prism"] .pr-edu-m { margin-top: 6px; font: 400 13px/1.4 var(--pr-mono); color: var(--pr-muted); }
-
 /* ───────── play: the anaglyph ───────── */
 :root[data-design="prism"] .pr-ana { --ax: 0px; --ay: 0px; display: grid; margin-top: 24px; padding-bottom: .16em; isolation: isolate; font: 700 clamp(6rem, 17vw, 14.5rem)/.86 var(--pr-sans); font-size: min(14.5rem, max(17vw, min(28vw, 7.5rem))); font-stretch: 72%; letter-spacing: -.05em; user-select: none; }
 :root[data-design="prism"] .pr-ana > span { grid-area: 1 / 1; mix-blend-mode: multiply; transition: transform 500ms var(--ease-out); padding-right: .05em; }
@@ -201,9 +183,7 @@
   :root[data-design="prism"] .pr-places li + li { border-top: 1px solid var(--pr-line); }
   :root[data-design="prism"] .pr-nums dl { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
   :root[data-design="prism"] .pr-nums dl > div:nth-child(odd) { padding-left: 0; border-left: 0; }
-  :root[data-design="prism"] .pr-role { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 34px 0; }
-  :root[data-design="prism"] .pr-when { grid-auto-flow: column; justify-content: start; gap: 14px; }
-  :root[data-design="prism"] .pr-edu { flex-direction: column; align-items: flex-start; gap: 18px; padding: 26px; }
+
   :root[data-design="prism"] .pr-dark { padding: 0 24px 40px; border-radius: 22px; }
   :root[data-design="prism"] .pr-dk-art { position: relative; inset: auto; margin: 0 -24px 4px; height: 62cqw; overflow: hidden; }
   :root[data-design="prism"] .pr-dk-img { left: -38cqw; top: -14cqw; margin-top: 0; width: 170cqw; }
@@ -348,3 +328,10 @@
 :root[data-design="prism"] .pf-wrap {
   --pf-a: #4B2BFF; --pf-b: #FF2E88; --pf-c: #00C2FF; --pf-label: conic-gradient(#4B2BFF, #00C2FF, #29E07A, #FFD600, #FF2E88, #4B2BFF);
 }
+
+/* ---------- S10: shared Contact / About / Questions bodies ---------- */
+.pr-dark .ly-contact-k { color: #FFFFFF; }
+:root[data-design="prism"] .pr-dark .ly-contact-h { margin-top: 22px; max-width: none; font: 600 clamp(2.2rem, 4.4cqw, 3.6rem)/.95 var(--pr-sans); font-stretch: 76%; letter-spacing: -.04em; color: #FFFFFF; }
+:root[data-design="prism"] .pr-dark .ly-contact-s { color: rgba(255, 255, 255, .72); }
+:root[data-design="prism"] .pr-dark .ly-btn { border-color: rgba(255, 255, 255, .45); color: #FFFFFF; background: transparent; }
+:root[data-design="prism"] .pr-dark .ly-btn.solid { background: #FFFFFF; color: var(--pr-ink); }

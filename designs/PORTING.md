@@ -37,8 +37,10 @@ type Skin = {
   SectionOrnament?: ComponentType<{ id; index }>;       // drawn first in every section (dividers, title bars)
   NameFx?: ComponentType<{ first; last }>;              // hero name; keep data-edit="name.first|name.last"
   PortraitFx?: ComponentType<{ on: boolean }>;          // inside the photo; `on` flips per click
-  ExperienceConnector?: ComponentType<{ index; count }>;// between roles in the shared Experience body
-  EducationObject?: ComponentType<{ education }>;       // replaces the shared education row; keep edu:* keys
+  ExperienceConnector?: ComponentType<{ index; count }>;// the material between stations (default: a thread)
+  EducationObject?: ComponentType<{ education }>;       // the themed education object (default: a seal)
+  ContactFrame?: ComponentType<{ children: ReactNode }>;  // wraps the shared Contact copy + buttons (seal, dark room, heat strip)
+  contactLead?: string;                                 // one themed line above the Contact headline
   projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
 };
 ```
@@ -55,14 +57,22 @@ Every field is optional: a new design can start as `{ id, rootClass }` plus CSS 
   params: { hole, rest, lift, density, stroke } }` (palette entries may be `var(--x, #fallback)`); SiteLayout
   publishes the palette as `--art-0..3` so the case sheet matches. No per-project assets. Review at `/lab/art`.
 - **S7 Play**: same for the shared `Play` body; delete per-design `sections.play`.
-- **S8 Experience + Education**: shared `Experience` body already renders `skin.ExperienceConnector` between
-  roles and `skin.EducationObject` for education; add one small connector/object per design, delete the
-  per-design `sections.experience`.
-- **S9 Name + portrait**: `NameFx` per design (Stipple, Glyph, Prism, Tracker already use it); `PortraitFx`
-  per design (Tether renders it inside `.pt-photo` and toggles `on` per click; the shader goes through the
-  one context in `lib/shader/`).
+- **Experience + Education** (done, S8): `components/site/layout/Experience.tsx` renders the roles as stations
+  down one connector and the education object (sticky beside them when the section is wide) with its caption.
+  A look adds `designs/<id>/experience.tsx` exporting `XP = { ExperienceConnector, EducationObject }`, spread
+  into its skin, plus `experience.css`. Connectors are built from `.xp-track` / `.xp-fill` / `.xp-head` (they
+  follow the scroll-driven `--fill`); stations get `data-lit` once the fill passes them; the object reads
+  `--px` / `--py` / `--pv` (a pointer spring). Its base state (animation: none) is the calm still.
+- **S9 Name + portrait** (done): every look has `designs/<id>/name-fx.tsx` (a `KineticName` from
+  `components/site/kinetic/` with a per-look `feel`, optional `paint`/`frame` hooks, and CSS in `fx.css` reading
+  `--k`/`--x`/`--y`/`--px`/`--py` on `.kn-l`) and `portrait-fx.tsx` (a `PhotoFx`: SVG filter primitives + CSS
+  overlays on a copy of the photo, revealed per click with a `--pfx-off`/`--pfx-on` clip-path). No second GL
+  context, no 2D canvas.
 - **S10 Questions, Contact, About**: shared bodies in `sections.tsx`; remove per-design overrides as the
   shared ones land. Copy lives in content or the bodies, never in the layout.
+- **S10 Questions, Contact, About** (done): shared bodies `layout/Questions.tsx` (3 flip cards + an ask card that
+  `layout/Contact.tsx` (every button opens the composer; the address only shows inside it). A look themes them with
+  tokens (`--ly-contact-text/-mx/-just` to centre Contact), `ContactFrame` and `contactLead`; no per-look bodies.
 
 ## Theming with CSS only
 - Shared tokens every design sets on `:root[data-design="<id>"]`: `--ui-bg/fg/muted/accent/line/field/font/mono`

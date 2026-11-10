@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { Content } from "@/lib/content/types";
 
 /** The page's sections after the hero, in render order. Each id is also the anchor the agent scrolls to. */
@@ -39,10 +39,17 @@ export type Skin = {
   /** Rendered inside the portrait photo; `on` flips with each click on the photo. The photo itself is never
    *  filtered while `on` is false. (S9) */
   PortraitFx?: ComponentType<{ on: boolean }>;
-  /** Drawn between consecutive roles by the shared Experience body (index = the role above). (S8) */
+  /** The material joining consecutive stations in the shared Experience body (index = the role above), drawn in
+   *  `.ly-st-link` from node centre to node centre; build it from `.xp-track` / `.xp-fill` / `.xp-head`, which
+   *  follow the scroll-driven `--fill`. Default: a rounded thread. (S8, components/site/layout/experience.css) */
   ExperienceConnector?: ComponentType<{ index: number; count: number }>;
-  /** Replaces the shared education row with a themed object. Keep the `edu:*` data-edit keys. (S8) */
+  /** The themed education object (decorative; the shared body renders the `edu:*` caption under it). It fills a
+   *  square box and reads `--px` / `--py` (pointer spring, -1–1) and `--pv` (speed, 0–1). Default: a seal. (S8) */
   EducationObject?: ComponentType<{ education: Content["education"] }>;
+  /** S10: the shared Contact copy and buttons render inside this frame (a seal, a dark room, a heat strip). */
+  ContactFrame?: ComponentType<{ children: ReactNode }>;
+  /** S10: one short themed line above the Contact headline ("The warmest lead is email"). */
+  contactLead?: string;
   /** Inputs for procedural project art: four colours plus free numeric knobs. Default: the registry swatch. (S6) */
   projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
 };

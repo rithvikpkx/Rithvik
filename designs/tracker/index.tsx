@@ -6,105 +6,35 @@
 // and reduced motion stop the loop; lite swaps the boxes for a few static CSS annotations (a designed still).
 import { useRef } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
-import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
-import { pad } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
+import { XP } from "./experience";
+import TrackerName from "./name-fx";
+import TrackerPortrait from "./portrait-fx";
 import "./tracker.css";
 
 const META = designById("tracker")!;
-const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
-/** The name, a "text" target the tracker boxes. */
-function Name({ first, last }: { first: string; last: string }) {
-  return <span className="tk-name" data-tk="text" data-tk-label="name" data-tk-static="name 0.99"><span data-edit="name.first">{first}</span> <span data-edit="name.last">{last}</span></span>;
-}
 
 /** A section heading; also a "text" target. */
 function Title({ label, hid }: { label: string; hid: string }) {
   return <h2 className="tk-h2 ly-title" id={hid} data-tk="text" data-tk-label="heading">{label}</h2>;
 }
 
-/** Experience: roles with a date column, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="tk-roles">
-        {C.experience.map((x) => (
-          <li className="tk-role" id={`experience-${x.slug}`} key={x.slug} data-tk="role">
-            <p className="tk-when"><b data-edit={`role:${x.slug}:when`}>{x.when}</b><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="tk-rb"><h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3><p className="tk-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="tk-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p></div>
-          </li>
-        ))}
-      </ol>
-      <div className="tk-edu" id="education" data-tk="school">
-        {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-        <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        <div><h3 data-edit="edu:school">{C.education.school}</h3><p data-edit="edu:degree">{C.education.degree}</p><p className="tk-edu-m"><EduMeta e={C.education} /></p></div>
-      </div>
-    </>
-  );
-}
-
-/** About: the text and thesis beside a "now" pane, then the numbers and the stack. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="tk-about">
-        <div className="tk-about-txt">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}
-          <ul className="tk-thesis">{C.thesis.map((t, i) => <li key={i}><span>{pad(i + 1)}</span><span data-edit={`v7.thesis.${i}`}>{t}</span></li>)}</ul>
-        </div>
-        <aside className="tk-pane tk-now" id="now" aria-label="Right now">
-          <p className="tk-pane-h"><span>now</span><span><Clock tz={C.now.tz} className="tk-clock" /></span></p>
-          <dl className="tk-kv">
-            <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-            <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-            <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-          </dl>
-          <p className="tk-pane-h tk-pane-h2"><span>places</span></p>
-          <ol className="tk-places">{C.places.map((pl) => <li key={pl.key} className={pl.key === "now" ? "is-now" : ""}><span className="tk-pl-k">{PLACE_LABEL[pl.key] ?? pl.key}</span><b>{pl.city}</b><span><Clock tz={pl.tz} className="tk-clock" /></span></li>)}</ol>
-        </aside>
-      </div>
-      <dl className="tk-nums">{C.numbers.map(([n, l], i) => <div key={l} data-tk="metric"><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-      <div className="tk-stack" aria-label="Stack">
-        {Object.entries(C.stack).map(([k, v]) => <div className="tk-stack-row" key={k}><p>{k}</p><p className="tk-tags">{v.map((t) => <span key={t}>{t}</span>)}</p></div>)}
-      </div>
-    </>
-  );
-}
-
-/** Questions: short answers. */
-function Questions({ content: C }: SectionProps) {
-  return <div className="tk-qs">{C.faq.map(([q, a], i) => <details className="tk-q" key={q}><summary><span data-edit={`faq.${i}.q`}>{q}</span><i aria-hidden="true" /></summary><p data-edit={`faq.${i}.a`}>{a}</p></details>)}</div>;
-}
-
-/** Contact: one line and the composer. */
-function Contact() {
-  return (
-    <>
-      <p className="tk-big" data-tk="text" data-tk-label="greeting">Say hello.</p>
-      <div className="tk-acts"><button type="button" className="tk-btn tk-btn-ink tk-btn-lg" data-compose="Internship opportunity" data-tk="cta"><Icon name="mail" />Write an email</button></div>
-    </>
-  );
-}
 
 export const SKIN: Skin = {
   id: "tracker",
+  ...XP,
   rootClass: "tk",
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
-  NameFx: Name,
+  NameFx: TrackerName,
+  PortraitFx: TrackerPortrait,
   projectArt: { palette: ["#F2F2EE", "#0C0D0F", "#E0103F", "#7E03A8"], params: { hole: 0.3, rest: 2 } },
-  sections: { experience: Experience, about: About, questions: Questions, contact: Contact },
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

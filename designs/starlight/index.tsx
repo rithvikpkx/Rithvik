@@ -6,23 +6,21 @@
 // Performance mode (html.lite) and reduced motion stop the flare, ring, gain jitter and IR loop.
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { DesignProps } from "@/lib/designs/types";
-import type { SectionProps, Skin } from "@/lib/designs/skin";
+import type { Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
-import { Icon } from "@/components/site/Glyph";
-import EduMeta from "@/components/site/EduMeta";
 import { deg } from "./geo";
 import { useStarlightMotion, type Flare } from "./motion";
+import { XP } from "./experience";
+import StarlightName from "./name-fx";
+import StarlightPortrait from "./portrait-fx";
 import "./starlight.css";
 
 const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const ABBR: Record<string, string> = { home: "BOS", school: "LAF", now: "SFO" };
 const WP_LEFT = [13, 33, 52];
-const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
 /** Notifies useSyncExternalStore when the phosphor attribute on <html> changes. */
 function subPh(cb: () => void) {
@@ -31,82 +29,17 @@ function subPh(cb: () => void) {
   return () => mo.disconnect();
 }
 
-/** The log: roles with a time column, then the degree. */
-function Experience({ content: C }: SectionProps) {
-  return (
-    <>
-      <ol className="sl-log">
-        {C.experience.map((x) => (
-          <li className="sl-role" id={`experience-${x.slug}`} key={x.slug}>
-            <p className="sl-when"><time data-edit={`role:${x.slug}:when`}>{x.when}</time><span data-edit={`role:${x.slug}:where`}>{x.where}</span></p>
-            <div className="sl-role-b">
-              <h3 data-edit={`role:${x.slug}:role`}>{x.role}</h3>
-              <p className="sl-org" data-edit={`role:${x.slug}:org`}>{x.org}</p>
-              <ul>{x.desc.map((d, i) => <li key={i} data-edit={`role:${x.slug}:desc.${i}`}>{d}</li>)}</ul>
-              <p className="sl-tags">{x.tags.map((t) => <span key={t}>{t}</span>)}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="sl-edu" id="education">
-        <span className="sl-edu-plate">
-          {/* eslint-disable-next-line @next/next/no-img-element -- small fixed-size logo from content */}
-          <img src={logoSrc(C.education.logo)} alt={C.education.school} width={56} height={56} loading="lazy" decoding="async" />
-        </span>
-        <div>
-          <h3 data-edit="edu:school">{C.education.school}</h3>
-          <p data-edit="edu:degree">{C.education.degree}</p>
-          <p className="sl-edu-m"><EduMeta e={C.education} /></p>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/** Field notes: the text, now + places with coordinates, then the numbers. */
-function About({ content: C }: SectionProps) {
-  return (
-    <>
-      <div className="sl-about-t">{C.about.map((a, i) => <p key={i} data-edit={`v7.about.${i}`}>{a}</p>)}</div>
-      <div className="sl-now" id="now">
-        <dl className="sl-now-l">
-          <div><dt>Building</dt><dd data-edit="v7.now.building">{C.now.building}</dd></div>
-          <div><dt>Researching</dt><dd data-edit="v7.now.researching">{C.now.researching}</dd></div>
-          <div><dt>Learning</dt><dd data-edit="v7.now.learning">{C.now.learning}</dd></div>
-        </dl>
-        <ol className="sl-places" aria-label="Places">
-          {C.places.map((pl) => (
-            <li className={pl.key === "now" ? "is-now" : ""} key={pl.key}>
-              <span className="sl-pk">{PLACE[pl.key] ?? pl.key}</span><b>{pl.city}</b>
-              <span className="sl-pc">{deg(pl.lat, "N", "S")} · {deg(pl.lng, "E", "W")}</span>
-              <Clock tz={pl.tz} className="sl-pt-t" />
-            </li>
-          ))}
-        </ol>
-      </div>
-      <dl className="sl-nums">{C.numbers.map(([n, l], i) => <div key={l}><dt data-edit={`numbers.${i}.v`}>{n}</dt><dd data-edit={`numbers.${i}.l`}>{l}</dd></div>)}</dl>
-    </>
-  );
-}
-
-/** Signal: one line and the composer. */
-function Contact() {
-  return (
-    <>
-      <p className="sl-h-big">Send a signal.</p>
-      <div className="sl-acts"><button type="button" className="sl-btn sl-hot sl-cta sl-btn-lg" data-compose="Internship opportunity"><Icon name="mail" />Write an email</button></div>
-    </>
-  );
-}
 
 export const SKIN: Skin = {
   id: "starlight",
+  ...XP,
   rootClass: "sl",
   labels: { work: "Sightings", experience: "Log", about: "Notes", contact: "Signal" },
   sectionClass: (id) => `sl-sec sl-${{ work: "work", experience: "exp", about: "about", play: "play", questions: "faq", contact: "contact" }[id]}`,
   titleClass: "sl-h2",
+  NameFx: StarlightName,
+  PortraitFx: StarlightPortrait,
   projectArt: { palette: ["#030803", "#A8FF7A", "#EAFFDC", "#5FD43A"], params: { hole: 0.34, stroke: 0.9 } },
-  sections: { experience: Experience, about: About, contact: Contact },
 };
 
 /** The whole Starlight site: the shared layout seen through an image-intensifier tube. */
@@ -147,11 +80,6 @@ export default function Starlight({ content: C }: DesignProps) {
           </span>
         ))}
       </div>
-      <aside className="sl-coords" aria-hidden="true">
-        {C.places.map((pl) => (
-          <p key={pl.key}><b>{ABBR[pl.key] ?? ""}</b><span>{deg(pl.lat, "N", "S")}</span><span>{deg(pl.lng, "E", "W")}</span><Clock tz={pl.tz} className="" /></p>
-        ))}
-      </aside>
       <aside className="sl-ruler" aria-hidden="true"><i className="sl-ruler-s" /><span className="sl-ruler-m" data-sl-el="">EL +09°</span></aside>
       <div className="sl-ring" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" /><path d="M100 2v12M100 186v12M2 100h12M186 100h12" /><path className="sl-ring-arc" d="M30 54A92 92 0 0 1 54 30" /></svg><span data-sl-ring="">IR · AZ 270° · EL +09°</span></div>
     </SiteLayout>

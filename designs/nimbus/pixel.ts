@@ -78,15 +78,7 @@ function fbm1(seed: number, period: number) { const o = [noise(seed, period), no
 const TONE = ["s", "m", "p", "w"];
 /** Quantises a value into one tone or a checker between two. */
 function tone(v: number) { const x = Math.max(0, Math.min(0.999, v)) * 3, lo = Math.floor(x), fr = x - lo; return fr < 0.34 ? TONE[lo] : fr < 0.66 ? "k" + lo + (lo + 1) : TONE[lo + 1]; }
-/** A tile of pixel sky (w×h cells) whose clouds repeat every `period` cells horizontally. */
-function skyTileGrid(seed: number, w: number, h: number, period: number, bias = 0, grad = 0) {
-  const g = grid(w, h), N = fbm1(seed, period / 8);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) put(g, x, y, tone((N(x / 8, y / 8) - 0.42) * 2.1 + bias + grad * (y / h - 0.5)));
-  return g;
-}
 const MAPSKY: Map = { s: "p0", m: "p1", p: "p2", w: "p3", k01: "k01", k12: "k12", k23: "k23" };
-/** A sky tile as SVG. */
-export const skyTile = (seed: number, w: number, h: number, period: number, bias = 0, grad = 0, cls = "") => svg(skyTileGrid(seed, w, h, period, bias, grad), MAPSKY, cls);
 
 /** A stepped pixel-cloud edge: white page on top melting into sky below (flip for the reverse). */
 export function edgeSvg(seed: number, flip: boolean) {

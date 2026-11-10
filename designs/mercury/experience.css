@@ -1,0 +1,34 @@
+/* Mercury Experience: graphite stations that turn to satin chrome when the metal reaches them, a glass tube of
+   mercury between them, and a pool of liquid chrome for education. */
+:root[data-design="mercury"] .ly-xp { --xp-w: 16px; }
+:root[data-design="mercury"] .ly-st-role { font: 400 clamp(1.5rem, 2.4vw, 2.1rem)/1.1 var(--mc-d); letter-spacing: -.01em; }
+:root[data-design="mercury"] .ly-st-node { background: radial-gradient(circle at 50% 30%, #222228, #121215 70%); color: var(--mc-dim); font: 500 12px/1 var(--mc-m); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 0 1px var(--mc-line2), 0 14px 26px -12px #000; }
+:root[data-design="mercury"] .ly-st[data-lit] .ly-st-node { background: var(--mc-satin); color: #0A0A0B; box-shadow: inset 0 -3px 6px rgba(0, 0, 0, .25), inset 0 2px 2px #fff, 0 0 0 1px rgba(255, 255, 255, .3), 0 0 26px -6px rgba(233, 234, 238, .45), 0 16px 26px -12px #000; }
+:root[data-design="mercury"] .ly-st-pts li::before { width: 6px; height: 6px; top: .62em; border-radius: 50%; background: var(--mc-sphere); }
+
+/* the tube and the metal in it */
+:root[data-design="mercury"] .mx-tube { border-radius: 99px; background: linear-gradient(90deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .015) 35%, rgba(0, 0, 0, .3) 65%, rgba(255, 255, 255, .07)); box-shadow: inset 0 0 0 1px rgba(237, 237, 239, .13), inset 0 0 8px rgba(0, 0, 0, .9); }
+:root[data-design="mercury"] .mx-metal { inset: 0 3px; border-radius: 99px; background: linear-gradient(90deg, #4A4D55, #E9EAEE 24%, #FFFFFF 34%, #A9ACB4 52%, #2A2C31 76%, #8E929B); }
+:root[data-design="mercury"] .mx-metal::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(180deg, transparent 0 46px, rgba(255, 255, 255, .55) 52px, transparent 60px); mix-blend-mode: overlay; animation: mx-flow 1.6s linear infinite; }
+@keyframes mx-flow { to { background-position: 0 60px; } }
+:root[data-design="mercury"] .mx-bead { width: 22px; height: 26px; border-radius: 50% 50% 48% 48% / 42% 42% 58% 58%; background: var(--mc-sphere); box-shadow: 0 6px 12px -4px #000, 0 0 0 1px rgba(255, 255, 255, .2); animation: mx-tremble 1.1s ease-in-out infinite alternate; }
+@keyframes mx-tremble { to { transform: scale(1.08, .9); } }
+
+/* the pool */
+:root[data-design="mercury"] .mx-blob { overflow: visible; }
+:root[data-design="mercury"] .mx-body { transform: translate(calc(var(--px) * 7px), calc(var(--py) * 5px)) scale(calc(1 + var(--pv) * .05), calc(1 - var(--pv) * .05)); transform-origin: 100px 110px; }
+:root[data-design="mercury"] .mx-core { transform-origin: 100px 100px; animation: mx-breathe 6s ease-in-out infinite alternate; }
+@keyframes mx-breathe { to { transform: scale(1.04, .96); } }
+/* a lobe that reaches toward the pointer; at rest it sinks inside the pool */
+:root[data-design="mercury"] .mx-reach { transform: translate(calc(var(--px) * 50px), calc(var(--py) * 50px)); }
+/* droplets: break away, arc round, fall back in. The base transform is the calm still: one bead just off the pool */
+:root[data-design="mercury"] .mx-drop { transform-origin: 100px 100px; transform: rotate(-38deg) translateX(84px); animation: mx-orbit 9s cubic-bezier(.45, 0, .55, 1) infinite; }
+:root[data-design="mercury"] .mx-drop2 { transform: rotate(150deg) translateX(40px); animation-duration: 13s; animation-direction: reverse; animation-delay: -4s; }
+@keyframes mx-orbit {
+  0% { transform: rotate(-60deg) translateX(40px); }
+  35% { transform: rotate(-20deg) translateX(88px); }
+  60% { transform: rotate(40deg) translateX(84px); }
+  100% { transform: rotate(300deg) translateX(40px); }
+}
+:root[data-design="mercury"] .mx-spec { fill: #fff; opacity: .85; filter: blur(1.5px); transform: translate(calc(var(--px) * -10px), calc(var(--py) * -8px)) rotate(-24deg); transform-origin: 80px 66px; transform-box: view-box; }
+:root[data-design="mercury"] .mx-shadow { transform: translateX(calc(var(--px) * 6px)); }

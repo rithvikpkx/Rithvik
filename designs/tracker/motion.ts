@@ -32,6 +32,7 @@ export function useTrackerMotion(rootRef: RefObject<HTMLElement | null>) {
     const hud = { st: $("[data-tk-state]"), fps: $("[data-tk-fps]"), fr: $("[data-tk-frame]"), obj: $("[data-tk-obj]") };
     const photo = $<HTMLElement>(".pt-photo");
     if (photo) { photo.dataset.tk = "person"; photo.dataset.tkLabel = "person"; }
+    root.querySelectorAll<HTMLElement>(".ly-st").forEach((el) => { el.dataset.tk = "role"; }); // the shared Experience stations
     const AMBIENT = innerWidth < 700 ? 1 : 2;
 
     const boxes: Box[] = Array.from(root.querySelectorAll<HTMLElement>(".tk-box"), (el) => {

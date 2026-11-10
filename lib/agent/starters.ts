@@ -18,10 +18,11 @@ export function starterAnswer(c: Content, q: string): string | null {
       return `${c.first} studies ${e.degree} at ${e.school}${e.focus ? `, with a focus on ${e.focus}` : ""}.`;
     }
     case norm(STARTER_QUESTIONS[2]):
-      return `${c.status}.`;
+      return `Yes. ${c.faq[0]?.[1] ?? c.status}`;
     case norm(STARTER_QUESTIONS[3]): {
       const l = c.links;
-      return `Email is best: [${l.email}](mailto:${l.email}). He is also on [GitHub](${l.github}) and [LinkedIn](${l.linkedin}).`;
+      // The address is only shown inside the message window; `/contact` jumps to the buttons that open it.
+      return `Email is best. Type /contact to jump to the message buttons. He is also on [GitHub](${l.github}) and [LinkedIn](${l.linkedin}).`;
     }
     default:
       return null;
