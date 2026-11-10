@@ -7,7 +7,7 @@ import Mark from "@/components/site/mark/Mark";
 import About from "./About";
 import Questions from "./Questions";
 import Contact from "./Contact";
-import { PLAY } from "@/lib/play/games";
+import PlayField from "@/components/site/play/PlayField";
 
 /** Projects as type-led cards; each opens the case sheet (the href is the no-JS fallback). */
 function Work({ content: c }: SectionProps) {
@@ -73,23 +73,7 @@ function Experience({ content: c, skin }: SectionProps) {
   );
 }
 
-/** One calm row of entries into the Play window. */
-function Play() {
-  return (
-    <ul className="ly-toys">
-      {PLAY.map((p) => (
-        <li key={p.id}>
-          <button type="button" className="ly-toy" data-play={p.id}>
-            <span className="ly-ic"><Icon name={p.icon} /></span>
-            <span><b>{p.name}</b><span>{p.desc}</span></span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** The shared default body for every section. */
 export const DEFAULT_SECTIONS: Record<SectionId, ComponentType<SectionProps>> = {
-  work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact,
+  work: Work, experience: Experience, about: About, play: PlayField, questions: Questions, contact: Contact,
 };

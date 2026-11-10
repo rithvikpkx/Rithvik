@@ -8,13 +8,12 @@ import { Fragment, useRef, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import Mark from "@/components/site/mark/Mark";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
-import { ART, GOOD, readSecs } from "./art";
+import { ART, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
 import "./stipple.css";
@@ -24,7 +23,6 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
 const CHAPTER: Record<SectionId, string> = { work: "Dispatches", experience: "Errata", about: "Foreword", play: "Supplement", questions: "Correspondence", contact: "The seal" };
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
-const SCISSORS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.6 7.6 20 18M8.6 16.4 20 6"/></svg>`;
 
 /** The hero name under the square lens: a stippled base and a crisp vermilion copy revealed through the lens. */
 function Name({ first, last }: { first: string; last: string }) {
@@ -97,25 +95,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Supplement: one coupon per toy. */
-function Play() {
-  return (
-    <div className="st-coupons">
-      {PLAY.map((p, i) => (
-        <button type="button" className="st-cp" key={p.id} data-play={p.id} aria-label={`${p.name}: ${p.desc}`}>
-          <span className="st-cp-track" aria-hidden="true"><span className="st-cp-scis" dangerouslySetInnerHTML={{ __html: SCISSORS }} /></span>
-          <span className="st-cp-main">
-            <span className="st-cp-top"><b>Coupon {pad(i)}</b><span>{GOOD[p.id] ?? "Good for one go"}</span></span>
-            <span className="st-cp-t">{p.name}</span>
-            <span className="st-cp-d">{p.desc}</span>
-          </span>
-          <span className="st-cp-stub"><span className="st-cp-ic"><Icon name={p.icon} /></span><span>Redeem</span></span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** Contact frame: the shared copy, then the seal; pressing it opens the message window too. */
 function ContactFrame({ children }: { children: ReactNode }) {
   return (
@@ -142,7 +121,7 @@ const SKIN: Skin = {
   Title: Chapter,
   NameFx: Name,
   ContactFrame,
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Stipple site: the shared layout printed on peach stock over a breathing stipple cloud. */

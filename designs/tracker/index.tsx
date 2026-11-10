@@ -8,12 +8,11 @@ import { useRef } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
-import { TOY_LBL, fmap, pad, projLabel } from "./vision";
+import { fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
 import "./tracker.css";
 
@@ -72,22 +71,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Play: the test set, one labelled sample per toy. */
-function Play() {
-  return (
-    <ul className="tk-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="tk-toy" data-play={t.id} data-tk="toy" data-tk-label={TOY_LBL[t.id] ?? "toy"} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="tk-toy-img" aria-hidden="true"><span className="tk-toy-ic"><Icon name={t.icon} /></span><span className="tk-toy-f">sample_{pad(i + 1, 3)}.png</span></span>
-            <span className="tk-toy-t"><b>{t.name}</b><span>{t.desc}</span></span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 const SKIN: Skin = {
   id: "tracker",
   rootClass: "tk",
@@ -95,7 +78,7 @@ const SKIN: Skin = {
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
   NameFx: Name,
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Tracker site: the shared layout watched by a small vision model. */

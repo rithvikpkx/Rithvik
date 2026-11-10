@@ -8,7 +8,6 @@ import { useRef, type ReactNode, type SyntheticEvent } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import { Icon } from "@/components/site/Glyph";
@@ -18,7 +17,6 @@ import "./mercury.css";
 
 const META = designById("mercury")!;
 const pad = (i: number) => String(i + 1).padStart(2, "0");
-const TILT = [-14, 9, -6, 16, -10, 5];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const hideFig = (e: SyntheticEvent<HTMLImageElement>) => { (e.currentTarget.parentNode as HTMLElement).hidden = true; };
 
@@ -80,24 +78,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Play: the chrome ribbon, then one sphere per toy. */
-function Play() {
-  return (
-    <>
-      <figure className="mc-ribbon" aria-hidden="true"><img src="/v7/mercury/chrome-ribbon-1200.webp" srcSet="/v7/mercury/chrome-ribbon-1200.webp 1200w, /v7/mercury/chrome-ribbon-2400.webp 2400w" sizes="(max-width: 700px) 160vw, 100vw" width={2400} height={1340} alt="" loading="lazy" decoding="async" onError={hideFig} /></figure>
-      <ul className="mc-toys">
-        {PLAY.map((t, i) => (
-          <li key={t.id}>
-            <button type="button" className="mc-toy" data-play={t.id} aria-label={`Play ${t.name}: ${t.desc}`} style={{ ["--tilt" as string]: `${TILT[i % 6]}deg` }}>
-              <span className="mc-sphere" aria-hidden="true"><i /></span><span className="mc-toy-n"><Icon name={t.icon} />{t.name}</span><span className="mc-toy-d">{t.desc}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
 /** Contact frame: the shared copy beside the chrome mark, over the ferrofluid pool. */
 function ContactFrame({ children }: { children: ReactNode }) {
   return (
@@ -115,7 +95,7 @@ const SKIN: Skin = {
   titleClass: "mc-h2",
   SectionOrnament: Divider,
   ContactFrame,
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Mercury site: the shared layout over one fixed chrome pool. */

@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import { KEYS, SECTIONS, hash7 } from "./data";
@@ -106,18 +105,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Play: ~/bin, one executable per toy. */
-function Play() {
-  return (
-    <ol className="gl-bin">{PLAY.map((p) => (
-      <li key={p.id}><button type="button" className="gl-prog" data-play={p.id}>
-        <span className="gl-prog-x"><span className="gl-dim">./</span>{p.id}</span>
-        <span className="gl-prog-d">{p.desc || p.name}</span>
-      </button></li>
-    ))}</ol>
-  );
-}
-
 
 const SKIN: Skin = {
   id: "glyph",
@@ -127,7 +114,7 @@ const SKIN: Skin = {
   Title,
   NameFx: Name,
   contactLead: "$ sudo hire rithvik",
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Glyph site: the shared layout as tmux panes over a dreaming text cortex. */

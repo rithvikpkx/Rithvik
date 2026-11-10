@@ -366,3 +366,9 @@
   :root[data-design="glyph"] .gl-pane > .ly-body { padding: 0 18px 30px; }
   :root[data-design="glyph"] .ly-name .gl-word { font-size: clamp(44px, 14vw, 88px); }
 }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="glyph"] .pf-wrap {
+  --pf-bg: #0A0A0A; --pf-fog: #0A0A0A; --pf-face: #121212; --pf-b: #EDEDED; --pf-c: #2A2A2A; --pf-edge: #3A3A3A;
+  --pf-line: rgba(237, 237, 237, .22); --pf-vinyl: #000; --pf-r: 0px; --pf-shadow: none;
+}

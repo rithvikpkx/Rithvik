@@ -8,7 +8,6 @@ import { useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionId, SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import { Icon } from "@/components/site/Glyph";
@@ -123,25 +122,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** Play: one spectral card per toy. */
-function Play() {
-  return (
-    <ul className="pr-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}>
-          <button type="button" className="pr-toy" data-play={t.id} style={bandVar(i)} aria-label={`Play ${t.name}: ${t.desc}`}>
-            <span className="pr-toy-n">{pad(i)}</span>
-            <span className="pr-toy-ic" aria-hidden="true"><Icon name={t.icon} /></span>
-            <span className="pr-toy-t">{t.name}</span>
-            <span className="pr-toy-d">{t.desc}</span>
-            <span className="pr-toy-bar" aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Contact frame: the shared copy inside the dark room, with the prism render behind it. */
 function ContactFrame({ children }: { children: ReactNode }) {
   return (
@@ -159,7 +139,7 @@ const SKIN: Skin = {
   Title,
   NameFx: Name,
   ContactFrame,
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Prism site: the shared layout in a white optics catalogue, lit by one dispersed beam. */

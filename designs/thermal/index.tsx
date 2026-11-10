@@ -8,7 +8,6 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -106,22 +105,6 @@ function Experience({ content: C }: SectionProps) {
   );
 }
 
-/** The bench: one channel per toy. */
-function Play() {
-  return (
-    <ol className="th-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}><button type="button" className="th-toy" data-play={t.id}>
-          <span className="th-toy-n">CH {String(i + 1).padStart(2, "0")}</span>
-          <span className="th-toy-i" aria-hidden="true"><Icon name={t.icon} /></span>
-          <span className="th-toy-t">{t.name}</span>
-          <span className="th-toy-d">{t.desc}</span>
-        </button></li>
-      ))}
-    </ol>
-  );
-}
-
 /** Contact frame: the shared copy over a crisp sensor strip that warms while the pointer is on it. */
 function ContactFrame({ children }: { children: ReactNode }) {
   const pal = usePal();
@@ -142,7 +125,7 @@ const SKIN: Skin = {
   titleClass: "th-h2",
   ContactFrame,
   contactLead: "The warmest lead is email",
-  sections: { work: Work, experience: Experience, play: Play },
+  sections: { work: Work, experience: Experience },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

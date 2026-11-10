@@ -364,5 +364,11 @@
 :root[data-design="foil"] .fo-faq-b .fo-sub { margin-top: 24px; }
 @media (max-width: 860px) { :root[data-design="foil"] .fo-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="foil"] .pf-wrap {
+  --pf-face: linear-gradient(140deg, #1F1D2B, #15141E 60%); --pf-edge: #2B2838;
+  --pf-a: var(--fo-lav); --pf-b: var(--fo-mint); --pf-c: var(--fo-pink); --pf-label: var(--fo-foil);
+}
+
 /* ---------- S10: shared Contact / About / Questions bodies ---------- */
 :root[data-design="foil"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }
