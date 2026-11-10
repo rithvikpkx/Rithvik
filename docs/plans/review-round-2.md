@@ -98,3 +98,6 @@ The owner's feedback on the v7 site after review round 1, turned into streams. R
     (Building, Learning, Reading/Listening, Places with live clocks), the stack as physics logo tiles you can toss,
     and a few animated numbers (e.g. projects shipped, commits this year). Low density.
   - Copy pass across all looks: cut slop, keep the good themed lines.
+
+Round 3 status (2026-11-10): all five streams merged on `dev` (tether beams, orb switcher, Purdue P per look,
+Play cleanup + turntable, ouroboros working line + frozen stack with Logos/Text). Owner review pending.
