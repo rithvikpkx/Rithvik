@@ -474,7 +474,7 @@ line.d-gl { stroke: var(--line); stroke-dasharray: 2 4; }
   .d-row { grid-template-columns: 36px minmax(0, 1fr) 44px; }
   .d-row > .meta { display: none; }
   .d-row > .d-strip, .d-visrow > .act { grid-column: 2 / -1; grid-row: 2; margin-top: -6px; }
-  .d-visrow > .act { display: flex; align-items: center; gap: 12px; }
+  .d-visrow > .act { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
   .d-row .when { grid-column: 3; grid-row: 1; }
   .d-row > :first-child { grid-row: 1 / span 2; align-self: start; }
 }
