@@ -11,7 +11,6 @@ import { designById } from "@/lib/designs/registry";
 import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
-import Clock from "@/components/site/Clock";
 import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
 import { deg } from "./geo";
@@ -22,7 +21,6 @@ const META = designById("starlight")!;
 const PH_KEY = "rithvik-sl-ph";
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 const PLACE: Record<string, string> = { home: "Home", school: "School", now: "Now" };
-const ABBR: Record<string, string> = { home: "BOS", school: "LAF", now: "SFO" };
 const WP_LEFT = [13, 33, 52];
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
@@ -153,11 +151,6 @@ export default function Starlight({ content: C }: DesignProps) {
           </span>
         ))}
       </div>
-      <aside className="sl-coords" aria-hidden="true">
-        {C.places.map((pl) => (
-          <p key={pl.key}><b>{ABBR[pl.key] ?? ""}</b><span>{deg(pl.lat, "N", "S")}</span><span>{deg(pl.lng, "E", "W")}</span><Clock tz={pl.tz} className="" /></p>
-        ))}
-      </aside>
       <aside className="sl-ruler" aria-hidden="true"><i className="sl-ruler-s" /><span className="sl-ruler-m" data-sl-el="">EL +09°</span></aside>
       <div className="sl-ring" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="92" /><path d="M100 2v12M100 186v12M2 100h12M186 100h12" /><path className="sl-ring-arc" d="M30 54A92 92 0 0 1 54 30" /></svg><span data-sl-ring="">IR · AZ 270° · EL +09°</span></div>
     </SiteLayout>

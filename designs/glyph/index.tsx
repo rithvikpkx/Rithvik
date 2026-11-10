@@ -18,7 +18,7 @@ const META = designById("glyph")!;
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const PANE: Record<SectionId, [word: string, cmd: string]> = {
   work: ["WORK", "ls ~/work"], experience: ["LOG", "git log --graph"], about: ["MAN", "man rithvik"],
-  play: ["BIN", "ls ~/bin"], questions: ["FAQ", "rithvik --faq"], contact: ["MAIL", "mail rpk"],
+  play: ["BIN", "ls ~/bin"], questions: ["ASK", "rithvik --ask"], contact: ["MAIL", "mail rpk"],
 };
 const HUE: Record<string, string> = { blue: "gl-hb", red: "gl-hr", amber: "" };
 

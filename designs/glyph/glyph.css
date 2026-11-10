@@ -160,9 +160,6 @@
 :root[data-design="glyph"] .gl-tree, :root[data-design="glyph"] .gl-tree ul { margin: 0; padding: 0; list-style: none; }
 :root[data-design="glyph"] .gl-tree { margin-top: 8px; font: 400 13px/22px var(--gl-b); white-space: pre; color: #D5D5D5; }
 :root[data-design="glyph"] .gl-tree b { color: var(--sh); font-weight: 600; }
-:root[data-design="glyph"] .gl-faq { margin: 8px 0 0; display: grid; gap: 12px; }
-:root[data-design="glyph"] .gl-faq dt { font: 700 12.5px/22px var(--gl-d); color: var(--gl-fg); }
-:root[data-design="glyph"] .gl-faq dd { margin: 0; color: var(--gl-mut); font-size: 14px; }
 
 /* ───────── map: the knowledge graph as a terminal plot ───────── */
 @media (hover: hover) and (pointer: fine) { :root[data-design="glyph"] .kg-links button:hover, :root[data-design="glyph"] .kg-key:hover { color: var(--gl-hue); } }

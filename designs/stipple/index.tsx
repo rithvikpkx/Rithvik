@@ -127,7 +127,7 @@ function ContactFrame({ children }: { children: ReactNode }) {
           <g filter="url(#st-seal)"><circle cx="150" cy="150" r="138" fill="#FF3B1F" /></g>
           <circle cx="150" cy="150" r="122" fill="none" stroke="#F9CDB0" strokeWidth="1.5" strokeDasharray="1 5" strokeLinecap="round" />
           <circle cx="150" cy="150" r="84" fill="none" stroke="#F9CDB0" strokeWidth="1.2" />
-          <g className="st-seal-spin"><text fontSize="14" fill="#F9CDB0"><textPath href="#st-ring" textLength="646" lengthAdjust="spacing">WRITE TO RITHVIK · OPEN TO NEW OPPORTUNITIES · SEALED BY HAND ·</textPath></text></g>
+          <g className="st-seal-spin"><text fontSize="14" fill="#F9CDB0"><textPath href="#st-ring" textLength="646" lengthAdjust="spacing">WRITE TO RITHVIK · OPEN TO NEW OPPORTUNITIES ·</textPath></text></g>
           <foreignObject x="104" y="104" width="92" height="92"><div style={{ width: 92, height: 92, color: "#F9CDB0" }}><Mark label="" /></div></foreignObject>
         </svg>
       </button>
