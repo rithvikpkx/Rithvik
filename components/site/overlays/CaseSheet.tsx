@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
+import ProjectArt from "../work/ProjectArt";
 import "../case/case.css";
 
 const FOCUSABLE = 'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -73,9 +74,7 @@ export default function CaseSheet({ slug }: { slug: string }) {
             <div><dt>Project</dt><dd data-edit={`project:${p.slug}:title`}>{p.title}</dd></div>
             <div><dt>Context</dt><dd data-edit={`project:${p.slug}:ctx`}>{p.ctx}</dd></div>
           </dl>
-          {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size static asset; hide the frame if it is missing */}
-          <figure className="case-art"><img src={`/v7/projects/${p.slug}.webp`} alt="" width={1280} height={960} decoding="async"
-            onError={(e) => e.currentTarget.parentElement?.remove()} /></figure>
+          <figure className="case-art"><ProjectArt project={p} rank={content.projects.length > 1 ? i / (content.projects.length - 1) : 0} /></figure>
           <h2>What it does</h2>
           <ul className="case-bullets">{p.desc.map((d, i) => <li key={d} data-edit={`project:${p.slug}:desc.${i}`}>{d}</li>)}</ul>
           {links.length > 0 && (
