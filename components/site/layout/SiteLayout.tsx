@@ -25,13 +25,13 @@ export default function SiteLayout({ content: c, skin, rootRef, hero, children }
   return (
     <div className={`ly ${skin.rootClass ?? ""}`.trim()} data-skin={skin.id} ref={rootRef}>
       <a className="skip" href="#work">Skip to content</a>
+      {children /* first, so fixed layers (the shader) paint beneath the page at equal z-index */}
       <Header name={c.name} skin={skin} />
       <main className="stage" id="stage" tabIndex={-1}>
         <Hero content={c} skin={skin}>{hero}</Hero>
         {SECTIONS.map((id, i) => <Section key={id} id={id} index={i} content={c} skin={skin} />)}
       </main>
       <Footer content={c} skin={skin} />
-      {children}
     </div>
   );
 }
@@ -59,11 +59,12 @@ function Hero({ content: c, skin, children }: { content: Content; skin: Skin; ch
 /** One anchored section: the skin's ornament, a one-word title, then the skin's body or the shared default. */
 function Section({ id, index, content, skin }: { id: SectionId; index: number; content: Content; skin: Skin }) {
   const Body = skin.sections?.[id] ?? DEFAULT_SECTIONS[id];
-  const Ornament = skin.SectionOrnament;
+  const { SectionOrnament: Ornament, Title } = skin;
+  const label = skin.labels?.[id] ?? SECTION_LABELS[id], hid = `${id}-h`;
   return (
-    <section className={skin.sectionClass?.(id) ?? "ly-sec ly-wrap"} id={id} aria-labelledby={`${id}-h`}>
+    <section className={skin.sectionClass?.(id) ?? "ly-sec ly-wrap"} id={id} aria-labelledby={hid}>
       {Ornament && <Ornament id={id} index={index} />}
-      <h2 className={`ly-title ${skin.titleClass ?? ""}`.trim()} id={`${id}-h`}>{skin.labels?.[id] ?? SECTION_LABELS[id]}</h2>
+      {Title ? <Title id={id} index={index} label={label} hid={hid} /> : <h2 className={`ly-title ${skin.titleClass ?? ""}`.trim()} id={hid}>{label}</h2>}
       <div className="ly-body"><Body content={content} skin={skin} /></div>
     </section>
   );

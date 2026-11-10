@@ -28,6 +28,8 @@ export type Skin = {
   sectionClass?: (id: SectionId) => string;
   /** Extra class on every section `<h2>`. */
   titleClass?: string;
+  /** A themed section heading (numerals, folios...). It must render the `<h2 id={hid}>` the section is labelled by. */
+  Title?: ComponentType<{ id: SectionId; index: number; label: string; hid: string }>;
   /** Section body overrides. Missing = the shared default body (components/site/layout/sections.tsx). */
   sections?: Partial<Record<SectionId, ComponentType<SectionProps>>>;
   /** Drawn at the top of every section, before the title (dividers, rulers). */
