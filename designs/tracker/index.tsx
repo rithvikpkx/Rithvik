@@ -16,16 +16,14 @@ import { Icon } from "@/components/site/Glyph";
 import EduMeta from "@/components/site/EduMeta";
 import { TOY_LBL, fmap, pad, projLabel } from "./vision";
 import { MAX_BOXES, SLICE_COLORS, useTrackerMotion } from "./motion";
+import TrackerName from "./name-fx";
+import TrackerPortrait from "./portrait-fx";
 import "./tracker.css";
 
 const META = designById("tracker")!;
 const PLACE_LABEL: Record<string, string> = { home: "Home", school: "School", now: "Now" };
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 
-/** The name, a "text" target the tracker boxes. */
-function Name({ first, last }: { first: string; last: string }) {
-  return <span className="tk-name" data-tk="text" data-tk-label="name" data-tk-static="name 0.99"><span data-edit="name.first">{first}</span> <span data-edit="name.last">{last}</span></span>;
-}
 
 /** A section heading; also a "text" target. */
 function Title({ label, hid }: { label: string; hid: string }) {
@@ -138,7 +136,8 @@ const SKIN: Skin = {
   labels: { play: "Test set" },
   sectionClass: (id) => (id === "contact" ? "tk-sec tk-contact" : "tk-sec"),
   Title,
-  NameFx: Name,
+  NameFx: TrackerName,
+  PortraitFx: TrackerPortrait,
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
