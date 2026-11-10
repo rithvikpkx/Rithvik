@@ -1,64 +1,99 @@
-# Porting a v7 design (pattern from Nimbus)
+# Adding a design: skin + CSS + optional shader
 
-Source: `docs/mockups/v7/themes/<id>.js` + `<id>.css`. Target: `designs/<id>/`. `designs/nimbus/` is the
-reference port; copy its shape.
+Every look renders the same page (`components/site/layout/`): sticky header, hero, the sections in a fixed
+order, footer. A design never writes that markup. It is a **skin** (`lib/designs/skin.ts`) plus scoped CSS,
+plus an optional shader and per-slot themed pieces. `designs/classic/` is the reference: a skin with no
+overrides at all.
+
+## The page (owned by the layout, identical everywhere)
+- **Header** (`Header.tsx`): sticky; ouroboros mark + full name (to `#top`) | the nav, centred on the page
+  (`NAV_SECTIONS`, labels from `skin.labels`) | "I am Rithvik". Nothing else.
+- **Hero** (`#top`): the name (`NameFx` or plain), `status`, `line`, and the tethered portrait
+  (`components/site/tether/Tether`: photo + GitHub / LinkedIn / Email / Resume on physical strings).
+- **Sections** in `SECTIONS` order: `work, experience, about, play, questions, contact`. Each is
+  `<section id={id} aria-labelledby="{id}-h">` → ornament → title → body.
+- **Footer**: the same tether, small, then one line: mark, name, ©year, Privacy · Status · For Warren Buffett.
+- Anchors `project-<slug>`, `experience-<slug>`, `education` come from the bodies (`npm run check:anchors`).
 
 ## Files
-- `index.tsx`: `"use client"`, default export `function <Name>({ content }: DesignProps)`. It must be
-  client-importable because DesignProvider lazy-loads it on a switch (SSR still renders it first).
-- `<id>.css`: imported by `index.tsx`.
-- Pure helpers (pixel art, maths, shader tweaks) in their own `.ts` with a `node:test` next to them.
-- Effects (the mockup's `mount`) in one hook, e.g. `motion.ts` → `use<Name>Motion(rootRef)`.
-- Assets → `public/v7/<id>/` (keep the originals in docs).
+- `designs/<id>/index.tsx`: `"use client"`, `const SKIN: Skin = { … }`, and a default export
+  `function <Name>({ content }: DesignProps)` returning `<SiteLayout content skin={SKIN} …>`. It stays
+  client-importable because DesignProvider lazy-loads it on a switch.
+- `designs/<id>/<id>.css`: imported by `index.tsx`, every rule scoped `:root[data-design="<id>"]`.
+- `designs/<id>/motion.ts` (optional): one effect hook on the root ref, full cleanup (a switch unmounts it).
+- Pure helpers in their own `.ts` with a `node:test` next to them. Assets in `public/v7/<id>/`.
+- Register it in `lib/designs/registry.ts` (`DESIGNS`: id, name, swatch, fonts, shader, `load`).
 
-## render(C, H) → JSX
-- Keep the mockup's markup and class names exactly, so the CSS ports with a sed. Wrap the site in
-  `<main className="stage" id="stage" tabIndex={-1}>`.
-- `esc(x)` → just `{x}`. `C` → `content` (v7 `Content`). Hide empty optional fields (`education.grad`);
-  render `content.faq` as given.
-- Helpers: `H.portrait({id, cls})` → `<Portrait id className>`; `H.mark(kind)` → `<Mark kind label="" />`
-  (`label=""` when decorative); `H.graph({id})` → `<KnowledgeGraph id>`; `H.icon/H.logo` → `<Icon name>` /
-  `<Logo slug>`; `H.PLAY` → `PLAY` from `@/lib/play/games`.
-- Hooks stay declarative: `data-case / data-compose / data-resume / data-agent / data-play / data-copy`
-  (SiteProvider) and `data-theme-go` (DesignProvider). Give `data-case` links a real `href={/work/<slug>}`.
-- Generated SVG strings (pixel art, patterns) can go in via `dangerouslySetInnerHTML` on the wrapper the
-  mockup already had; they are our own constants, never user input, and keep thousands of rects out of React.
-- Anything that depends on the clock or the visitor (`H.clock`, `?hour=`, local time) differs between server
-  and client: read it with `useSyncExternalStore` and a server snapshot of `0`/`null`, render a neutral value
-  until hydrated (see `designs/nimbus/time.ts`). Nothing fills `data-clock` for you.
+## The Skin contract (`lib/designs/skin.ts`)
+```ts
+type Skin = {
+  id: string;
+  rootClass?: string;                                   // class on the page root; your CSS hangs off it
+  labels?: Partial<Record<SectionId, string>>;          // one-word themed titles (also the nav labels)
+  sectionClass?: (id: SectionId) => string;             // extra classes on each <section>
+  titleClass?: string;                                  // extra class on the default <h2>
+  Title?: ComponentType<{ id; index; label; hid }>;     // themed heading; must render <h2 id={hid}>
+  sections?: Partial<Record<SectionId, ComponentType<SectionProps>>>; // body overrides; default = shared
+  SectionOrnament?: ComponentType<{ id; index }>;       // drawn first in every section (dividers, title bars)
+  NameFx?: ComponentType<{ first; last }>;              // hero name; keep data-edit="name.first|name.last"
+  PortraitFx?: ComponentType<{ on: boolean }>;          // inside the photo; `on` flips per click
+  ExperienceConnector?: ComponentType<{ index; count }>;// between roles in the shared Experience body
+  EducationObject?: ComponentType<{ education }>;       // replaces the shared education row; keep edu:* keys
+  projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
+};
+```
+`SiteLayout` also takes runtime nodes a design builds in its component (they can use the design's state):
+`rootRef` (for `motion.ts`), `hero` (a layer inside `#top` behind the copy: shader host, HUD, one themed
+control), `portraitBackdrop` (behind the hero portrait, in its box: Foil's holo card) and `children`
+(root-level, rendered first: `<ShaderCanvas>`, SVG defs, fixed overlays).
 
-## mount(root, H) → effects
-- One `useEffect` on a root ref; port the body nearly verbatim. Every listener, observer, timer, rAF and
-  Web Animation is undone in the cleanup (a design switch unmounts it).
-- Simple per-element handlers (form submit, `<details>` toggle) become React props instead.
-- `H.reduceMotion()` → read `matchMedia("(prefers-reduced-motion: reduce)")` **or** `html.lite` at event
-  time, not once. `H.fine` → `matchMedia("(hover: hover) and (pointer: fine)")`. `H.openAgent` etc. →
-  `useSite()`.
+Every field is optional: a new design can start as `{ id, rootClass }` plus CSS and get the full page.
 
-## CSS
-- `sed 's/:root\[data-theme="<id>"\]/:root[data-design="<id>"]/g'` scopes every rule (including
-  `.lite`, `body` and the chrome overrides, which keep working because the shared components kept the
-  mockup's class names). Replace `"Geist"` / `"Geist Mono"` with `var(--font-geist-sans)` /
-  `var(--font-geist-mono)` (next/font).
-- Design fonts come from the registry's `fonts` query; the layout and DesignProvider load them.
+### Where the wave-2 streams plug in
+- **S6 Work**: rewrite the shared `Work` body in `components/site/layout/sections.tsx` and read
+  `skin.projectArt` (default to the registry `swatch`); delete the per-design `sections.work` overrides.
+- **S7 Play**: same for the shared `Play` body; delete per-design `sections.play`.
+- **S8 Experience + Education**: shared `Experience` body already renders `skin.ExperienceConnector` between
+  roles and `skin.EducationObject` for education; add one small connector/object per design, delete the
+  per-design `sections.experience`.
+- **S9 Name + portrait**: `NameFx` per design (Stipple, Glyph, Prism, Tracker already use it); `PortraitFx`
+  per design (Tether renders it inside `.pt-photo` and toggles `on` per click; the shader goes through the
+  one context in `lib/shader/`).
+- **S10 Questions, Contact, About**: shared bodies in `sections.tsx`; remove per-design overrides as the
+  shared ones land. Copy lives in content or the bodies, never in the layout.
+
+## Theming with CSS only
+- Shared tokens every design sets on `:root[data-design="<id>"]`: `--ui-bg/fg/muted/accent/line/field/font/mono`
+  (chrome) and `--pt-*` (portrait + nodes + strings: `--pt-photo-r`, `--pt-node-bg`, `--pt-beam`,
+  `--pt-pulse-a/b` …).
+- Layout tokens (defaults in `layout.css` at zero specificity): `--ly-display`, `--ly-name-font/-weight/-style/
+  -track/-case`, `--ly-head-bg`, `--ly-head-font`, `--ly-line`, `--ly-soft`, `--ly-gutter`, `--ly-head-h`.
+- Then restyle the shared classes under your scope: `.ly-head`, `.ly-nav a[aria-current]`, `.ly-iam`,
+  `.ly-name`, `.ly-first`, `.ly-last`, `.ly-status`, `.ly-line`, `.ly-title`, `.ly-foot-mini`, `.pt-*`.
+  Rings or bezels around the photo use `--pt-x / --pt-y / --pt-w` (the photo box in the figure).
+- Anything a look sets on a token from an element below `:root` (next/font variables on the root class) must
+  be declared on that element (`.cl { --ly-name-font: var(--cl-serif) }`).
 
 ## Shader
-- Nothing mounts it for you: render `<ShaderCanvas spec={meta.shader} dark={meta.dark} />` once inside the
-  design (`designById("<id>")`). With `host` set, the canvas goes into that element of your markup.
-- If the mockup rewrites the shader per visitor (Nimbus bakes the sun/hour and palette), derive a new spec
-  from the registry one in a `useMemo` and pass `undefined` until it is known, so it mounts once.
-- The runtime already freezes to one still under `html.lite` / reduced motion.
+Render `<ShaderCanvas spec={meta.shader} dark={meta.dark} />` once, as a `SiteLayout` child. With `host` set
+in the registry, put the host element where it belongs (in `hero` for a hero-only field, in `portraitBackdrop`,
+or as a fixed root child). One WebGL context per page; no second canvas for effects. The runtime already
+freezes to one still under `html.lite` / reduced motion.
+
+## Motion
+- One effect on the root ref; every listener, observer, timer, rAF and animation undone in the cleanup.
+- Calm = `matchMedia("(prefers-reduced-motion: reduce)")` or `html.lite`, read at event time. Designs must
+  render a designed still under it.
+- Hooks stay declarative: `data-case / data-compose / data-resume / data-agent / data-play / data-copy`
+  (SiteProvider). Give `data-case` links a real `href={/work/<slug>}`.
+- Clock- or visitor-dependent values: `useSyncExternalStore` with a neutral server snapshot
+  (`components/site/Clock.tsx`).
+
+## Copy
+One-word titles, no eyebrows, no emoji, no exclamation marks. No counts hardcoded as words (use
+`countWord` from `lib/words.ts`). GitHub / LinkedIn / Email / Resume live only in the two tether clusters.
 
 ## Verify
-`python3 -m http.server --directory docs/mockups/v7 8707` vs `/preview?theme=<id>` at 1440×900 and 390×844
-(normal + `html.lite`), section by section; rAF fps over 3s; no horizontal overflow; tab through the first
-screen; no console errors; `tsc`, `eslint designs/<id>`, `next build --webpack`.
-
-## Counts in copy
-Never hardcode counts the mockup wrote as words ("Six projects"): use `countWord(content.projects.length)` from `lib/words.ts`.
-
-## Performance mode
-The site-wide toggle is `<LiteToggle className="v7-lite" />`, mounted once by `components/site/SitePage.tsx`; designs only react to `html.lite`.
-
-## Clocks
-`data-clock="<tz>"` → `<Clock tz={…} className="…" />` from `components/site/Clock.tsx` (hydration-safe, minute resolution). Nimbus keeps its own `time.ts` only because it also bakes the visitor's hour into its shader.
+`tsc --noEmit`, `eslint designs/<id>`, `npm run check:anchors`, `next build --webpack`; then `?theme=<id>` at
+1440×900 and 390×844 (top, mid-page with the sticky header, footer), normal and `html.lite`; no horizontal
+overflow; no console errors.
