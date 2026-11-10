@@ -17,6 +17,8 @@ import EduMeta from "@/components/site/EduMeta";
 import { DEFS, ON_PALE, ON_SKY, ON_SUN, cloud, edgeSvg, glyph, hourIn, icon16, isDay, skyShader, skyTile } from "./pixel";
 import { clock, useTick, useVisitorHour } from "./time";
 import { useNimbusMotion } from "./motion";
+import NimbusName from "./name-fx";
+import NimbusPortrait from "./portrait-fx";
 import "./nimbus.css";
 
 const META = designById("nimbus")!;
@@ -231,6 +233,8 @@ const SKIN: Skin = {
   sectionClass: (id) => (id === "play" ? "nb-band" : `nb-sec nb-${{ work: "work", experience: "exp", about: "about", questions: "faq", contact: "contact" }[id]}`),
   titleClass: "nb-h2",
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
+  NameFx: NimbusName,
+  PortraitFx: NimbusPortrait,
 };
 
 /** The whole Nimbus site: the shared layout under a pixel sky that follows the visitor's clock. */

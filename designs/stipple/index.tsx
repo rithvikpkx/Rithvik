@@ -18,6 +18,8 @@ import EduMeta from "@/components/site/EduMeta";
 import { ART, GOOD, readSecs } from "./art";
 import { DEFS } from "./defs";
 import { useStippleMotion } from "./motion";
+import StippleName from "./name-fx";
+import StipplePortrait from "./portrait-fx";
 import "./stipple.css";
 
 const META = designById("stipple")!;
@@ -28,16 +30,6 @@ const pad = (i: number) => String(i + 1).padStart(2, "0");
 const logoSrc = (l: string) => (/^(\/|https?:)/.test(l) ? l : `/images/${l}`); // content stores the bare file name
 const SCISSORS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.6 7.6 20 18M8.6 16.4 20 6"/></svg>`;
 
-/** The hero name under the square lens: a stippled base and a crisp vermilion copy revealed through the lens. */
-function Name({ first, last }: { first: string; last: string }) {
-  return (
-    <span className="st-name" data-lens data-lens-idle>
-      <span className="st-name-base"><span className="st-n1" data-edit="name.first">{first}</span> <span className="st-n2" data-edit="name.last">{last}</span></span>
-      <span className="st-name-crisp" aria-hidden="true"><span className="st-n1">{first}</span> <span className="st-n2">{last}</span></span>
-      <span className="st-lens-frame" aria-hidden="true"><i /><b className="st-lens-xy">x 000 · y 000</b></span>
-    </span>
-  );
-}
 
 /** A chapter heading: stippled roman numeral, chapter name, folio. */
 function Chapter({ id, index, hid }: { id: SectionId; index: number; label: string; hid: string }) {
@@ -179,7 +171,8 @@ const SKIN: Skin = {
   rootClass: "st",
   sectionClass: (id) => ({ work: "st-ch st-wide", play: "st-ch st-wide", about: "st-ch st-plate", questions: "st-ch st-plate", contact: "st-ch st-seal-sec", experience: "st-ch" })[id],
   Title: Chapter,
-  NameFx: Name,
+  NameFx: StippleName,
+  PortraitFx: StipplePortrait,
   sections: { work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact },
 };
 
