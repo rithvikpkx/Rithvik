@@ -7,7 +7,7 @@
   --pf-bg: color-mix(in srgb, var(--ui-fg) 4%, var(--ui-bg));       /* frame fill (may be a gradient) */
   --pf-fog: color-mix(in srgb, var(--ui-fg) 4%, var(--ui-bg));      /* edge vignette; a plain colour */
   --pf-grid: color-mix(in srgb, var(--ui-fg) 16%, transparent);     /* the dot grid that moves with the pan */
-  --pf-face: color-mix(in srgb, var(--ui-fg) 3%, var(--ui-bg));     /* toy surfaces (may be a gradient) */
+  --pf-face: color-mix(in srgb, var(--ui-bg) 88%, #fff);            /* toy surfaces (may be a gradient): white on light looks, lifted on dark */
   --pf-ink: var(--ui-fg);
   --pf-a: var(--ui-accent);                                         /* three shape colours */
   --pf-b: color-mix(in srgb, var(--ui-accent) 50%, var(--ui-fg));
@@ -17,7 +17,8 @@
   --pf-vinyl: #141416;
   --pf-label: var(--pf-a);
   --pf-tag: var(--ui-bg);                                           /* name tags */
-  --pf-r: 28px;                                                     /* frame + tile corners */
+  /* --pf-pod: the Count the Dots capsule; unset = --pf-ink (its dots are --pf-a) */
+  --pf-r: 28px;                                                    /* frame + tile corners */
   --pf-shadow: 0 26px 40px -24px rgb(0 0 0 / .5);
   --pf-font: var(--ui-mono, ui-monospace, monospace);
 }
@@ -31,12 +32,12 @@
 }
 .pf[data-drag] { cursor: grabbing; }
 .pf[data-drag] .pf-toy { pointer-events: none; }
-.pf::after { content: ""; position: absolute; z-index: 2; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px var(--pf-line), inset 0 0 56px 18px var(--pf-fog); }
+.pf::after { content: ""; position: absolute; z-index: 2; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px var(--pf-line), inset 0 0 70px var(--pf-fog); }
 .pf-grid { position: absolute; inset: -28px; background: radial-gradient(circle, var(--pf-grid) 1.2px, transparent 1.7px) 0 0 / 28px 28px; will-change: transform; }
 .pf-plane { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .pf-at { position: absolute; left: 0; top: 0; width: var(--w); height: var(--h); will-change: transform; }
 .pf-at[data-off] > * { visibility: hidden; } /* out of view: skip painting (the button itself stays focusable) */
-.pf-hint { position: absolute; z-index: 3; left: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px 7px 9px; border-radius: 999px; background: var(--pf-tag); color: var(--ui-muted); font: 500 11px/1 var(--pf-font); letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 0 0 1px var(--pf-line); pointer-events: none; transition: opacity 400ms ease; }
+.pf-hint { position: absolute; z-index: 3; right: 16px; top: 16px; /* top-right: the bottom corners sit under the fixed dock and switcher */ display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px 7px 9px; border-radius: 999px; background: var(--pf-tag); color: var(--ui-muted); font: 500 11px/1 var(--pf-font); letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 0 0 1px var(--pf-line); pointer-events: none; transition: opacity 400ms ease; }
 .pf-hint svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .pf[data-moved] .pf-hint { opacity: 0; }
 
@@ -88,7 +89,7 @@
 .pf-hub { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--pf-ink); }
 
 /* count the dots: a capsule display flashing three groups of dots */
-.pf-dots .pf-shape { border-radius: 999px; background: var(--pf-ink); box-shadow: var(--pf-shadow); }
+.pf-dots .pf-shape { border-radius: 999px; background: var(--pf-pod, var(--pf-ink)); box-shadow: var(--pf-shadow); }
 .pf-dots i { position: absolute; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--pf-a); opacity: 0; animation: pf-flash 3.6s infinite; }
 .pf-dots i.g1 { opacity: 1; animation-delay: 1.2s; }
 .pf-dots i.g2 { animation-delay: 2.4s; }
@@ -153,5 +154,5 @@ html.lite .pf * { animation: none !important; }
 
 @media (max-width: 640px) {
   .pf { height: clamp(420px, 68vh, 600px); border-radius: calc(var(--pf-r) * .7); }
-  .pf-name { font-size: 13px; } /* the plane is drawn at 62%; keep tags legible */
+  .pf-name { font-size: 16px; } /* the plane is drawn at 62%; keep tags legible */
 }

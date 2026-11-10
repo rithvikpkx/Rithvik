@@ -367,3 +367,10 @@
   :root[data-design="thermal"] .th-pal { position: static; order: 2; justify-self: center; margin-top: 28px; }
   :root[data-design="thermal"] .th-vf-bl { display: none; }
 }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="thermal"] .pf-wrap {
+  --pf-bg: var(--th-bg2); --pf-fog: var(--th-bg2); --pf-face: #101626; --pf-edge: #26304A;
+  --pf-a: #FF9A2E; --pf-b: #E2336B; --pf-c: #3A2A8C; --pf-ink: var(--th-fg);
+  --pf-label: radial-gradient(circle, #FFE626, #FF9A2E 45%, #E2336B 80%, #3A2A8C); /* the label reads hot at the spindle */
+}

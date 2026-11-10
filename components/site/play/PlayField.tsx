@@ -194,7 +194,7 @@ export default function PlayField() {
       s.w = f.clientWidth; s.h = f.clientHeight;
       s.s = s.w < 640 ? 0.62 : s.w < 1000 ? 0.8 : 1;
       plane.current!.style.transform = `scale(${s.s})`;
-      if (first) { first = false; s.x = (s.w / s.s - TW) / 2; s.y = (s.h / s.s - TH) / 2 + 20; }
+      if (first) { first = false; s.x = s.w / s.s >= TW ? (s.w / s.s - TW) / 2 : -30; /* phones open on the record */ s.y = Math.min(0, (s.h / s.s - TH) / 2 + 60); }
       const nn: [number, number] = [copiesFor(s.w / s.s, TW, PAD), copiesFor(s.h / s.s, TH, PAD)];
       if (nn[0] !== s.n[0] || nn[1] !== s.n[1]) { s.n = nn; setN(nn); }
       paint();
@@ -279,8 +279,8 @@ function Preview({ k }: { k: string }) {
         <svg viewBox="0 0 100 100">
           {[0, 1].map((m) => (
             <g key={m} transform={m ? "matrix(-1 0 0 1 100 0)" : undefined}>
-              <path pathLength={1} d="M50 78 C38 70 26 58 30 44 C33 33 44 30 47 40 C49 47 42 52 37 48" />
-              <path pathLength={1} className="b" d="M50 26 C44 34 36 30 34 24 M50 60 C42 64 36 70 28 70" />
+              <path pathLength={1} d="M50 48 C38 18 8 14 12 38 C15 56 38 56 50 50 C38 62 22 78 34 86 C44 92 50 72 50 52" />
+              <path pathLength={1} className="b" d="M49 40 C46 28 40 20 32 16" />
             </g>
           ))}
         </svg>
