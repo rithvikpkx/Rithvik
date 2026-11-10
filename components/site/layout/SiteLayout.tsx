@@ -15,20 +15,22 @@ type Props = {
   rootRef?: Ref<HTMLDivElement>;
   /** The look's layer inside the hero, behind the copy: a shader host, a viewfinder, a themed control. */
   hero?: ReactNode;
+  /** Drawn behind the hero portrait, inside its box (a holo card, a camera feed). */
+  portraitBackdrop?: ReactNode;
   /** Root-level extras: the ShaderCanvas, SVG defs, cursor trails. */
   children?: ReactNode;
 };
 
 /** The one page composition every look renders: sticky header, hero, the sections in a fixed order, footer.
  *  A design is a `Skin` (lib/designs/skin.ts) plus CSS; it never re-implements this markup. */
-export default function SiteLayout({ content: c, skin, rootRef, hero, children }: Props) {
+export default function SiteLayout({ content: c, skin, rootRef, hero, portraitBackdrop, children }: Props) {
   return (
     <div className={`ly ${skin.rootClass ?? ""}`.trim()} data-skin={skin.id} ref={rootRef}>
       <a className="skip" href="#work">Skip to content</a>
       {children /* first, so fixed layers (the shader) paint beneath the page at equal z-index */}
       <Header name={c.name} skin={skin} />
       <main className="stage" id="stage" tabIndex={-1}>
-        <Hero content={c} skin={skin}>{hero}</Hero>
+        <Hero content={c} skin={skin} backdrop={portraitBackdrop}>{hero}</Hero>
         {SECTIONS.map((id, i) => <Section key={id} id={id} index={i} content={c} skin={skin} />)}
       </main>
       <Footer content={c} skin={skin} />
@@ -37,7 +39,7 @@ export default function SiteLayout({ content: c, skin, rootRef, hero, children }
 }
 
 /** First screen: the name, the status and the one line under it, and the tethered portrait. */
-function Hero({ content: c, skin, children }: { content: Content; skin: Skin; children?: ReactNode }) {
+function Hero({ content: c, skin, backdrop, children }: { content: Content; skin: Skin; backdrop?: ReactNode; children?: ReactNode }) {
   const Name = skin.NameFx;
   return (
     <section className="ly-hero" id="top" aria-labelledby="top-h">
@@ -50,7 +52,7 @@ function Hero({ content: c, skin, children }: { content: Content; skin: Skin; ch
           <p className="ly-status" data-edit="v7.status">{c.status}</p>
           <p className="ly-line" data-edit="v7.line">{c.line}</p>
         </div>
-        <div className="ly-hero-pt"><Tether id="hero" fx={skin.PortraitFx} /></div>
+        <div className="ly-hero-pt">{backdrop}<Tether id="hero" fx={skin.PortraitFx} /></div>
       </div>
     </section>
   );

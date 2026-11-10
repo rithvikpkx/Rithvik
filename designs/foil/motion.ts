@@ -11,7 +11,7 @@ const prm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 /** Calm = reduced motion or performance mode; read live so toggling takes effect at once. */
 const calm = () => prm() || lite();
 
-/** The mockup's mount(): hero card tilt + lenticular + shader light, nav mark sheen, project card
+/** The mockup's mount(): hero card tilt (behind the portrait) + shader light, foil-mark sheen, project card
  *  hover tilt, datamosh into the case sheet. Pointer-driven transforms touch only the card elements;
  *  everything is undone on unmount (design switch). */
 export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (slug: string) => void) {
@@ -28,16 +28,16 @@ export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (sl
     const fine = () => matchMedia("(hover: hover) and (pointer: fine)").matches;
 
     /* hero card: springs toward the pointer; the same pose drives the glare and the lenticular strip */
-    const hero = $<HTMLElement>(".fo-hero"), wrap = $<HTMLElement>(".fo-hero-card"), tilt = $<HTMLElement>("#fo-tilt"), lent = $<HTMLElement>("#fo-lent");
-    if (!hero || !wrap || !tilt || !lent) return;
+    const hero = $<HTMLElement>(".ly-hero"), wrap = $<HTMLElement>(".fo-hero-card"), tilt = $<HTMLElement>("#fo-tilt"), lent = $<HTMLElement>("#fo-lent");
+    if (!hero || !wrap || !tilt) return;
     const S = { x: 0, y: 0, tx: 0, ty: 0, k: 0, kt: 0, raf: 0, intro: 0, heroOn: true };
-    const reset = () => { tilt.style.transform = ""; tilt.style.removeProperty("--gx"); tilt.style.removeProperty("--gy"); lent.style.removeProperty("--k"); };
+    const reset = () => { tilt.style.transform = ""; tilt.style.removeProperty("--gx"); tilt.style.removeProperty("--gy"); lent?.style.removeProperty("--k"); };
     function pose() {
       const amp = prm() ? 0.3 : 1;
       tilt!.style.transform = `rotateX(${(-S.y * 9 * amp).toFixed(2)}deg) rotateY(${(S.x * 13 * amp).toFixed(2)}deg)`;
       tilt!.style.setProperty("--gx", (50 + S.x * 46).toFixed(1) + "%");
       tilt!.style.setProperty("--gy", (40 + S.y * 46).toFixed(1) + "%");
-      lent!.style.setProperty("--k", sstep(0, 1, S.k).toFixed(3));
+      lent?.style.setProperty("--k", sstep(0, 1, S.k).toFixed(3));
     }
     // a lenticular flips at an angle: past ~a third of the way right it shows the role (with a little hysteresis)
     const flip = () => { if (S.kt === 0 && S.x > 0.34) S.kt = 1; else if (S.kt === 1 && S.x < 0.24) S.kt = 0; };
@@ -101,12 +101,6 @@ export function useFoilMotion(root: RefObject<HTMLElement | null>, openCase: (sl
       S.intro = requestAnimationFrame(f);
     }
     const introT = setTimeout(intro, 700);
-
-    // the mark on the card chases its tail once when clicked
-    on($(".fo-card-art"), "click", () => {
-      if (calm()) return;
-      $$(".fo-deboss .mark").forEach((m) => m.animate([{ rotate: "0deg" }, { rotate: "-360deg" }], { duration: 1200, easing: "cubic-bezier(.77,0,.175,1)" }));
-    });
 
     /* project cards: a few degrees of tilt and a sliding holo layer while hovered (fine pointers only) */
     const set = $<HTMLElement>("#fo-set");
