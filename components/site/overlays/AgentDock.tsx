@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
 import { EditModeContext } from "@/components/EditModeProvider";
 import { DesignContext } from "../DesignProvider";
@@ -7,6 +7,7 @@ import { useSite } from "../SiteProvider";
 import { Icon } from "../Glyph";
 import { setAdminMode } from "../agent/adminCommands";
 import StatusLine from "../agent/StatusLine";
+import Handoff from "../agent/Handoff";
 import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
 import { scrollAndHighlight } from "../agent/highlight";
@@ -41,11 +42,18 @@ export default function AgentDock() {
 
   // openAgent(question) prefills the prompt; derived during render so no effect has to set state.
   // Also remembers the case sheet the agent was summoned over, for page context (one overlay at a time).
+  // With a rect the question flies in from there instead (Handoff), and is sent once it lands.
   const [seen, setSeen] = useState(overlay);
   const [caseSlug, setCaseSlug] = useState<string | null>(null);
+  const [fly, setFly] = useState<{ id: number; q: string; from: DOMRect } | null>(null);
   if (overlay !== seen) {
     setSeen(overlay);
-    if (overlay?.kind === "agent" && overlay.question) setInput(overlay.question);
+    if (overlay?.kind === "agent" && overlay.question) {
+      const { question: q, originRect: from } = overlay;
+      if (from) setFly((f) => ({ id: (f?.id ?? 0) + 1, q, from }));
+      else setInput(q);
+    }
+    if (overlay?.kind !== "agent") setFly(null);
     if (overlay?.kind === "case") setCaseSlug(overlay.slug);
     else if (overlay?.kind !== "agent") setCaseSlug(null);
   }
@@ -70,6 +78,21 @@ export default function AgentDock() {
   useEffect(() => { latest.current = { agent, open, input, full, overlay }; });
 
   const go = (q: string) => { if (agent.submit(q)) { setInput(""); setPalIdx(0); recalled.current = null; } };
+  // The flown question has landed in the prompt: leave it there for a beat so the eye catches it, then send it as if typed.
+  const landTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const land = (q: string) => {
+    setInput(q);
+    clearTimeout(landTimer.current);
+    landTimer.current = setTimeout(() => { const L = latest.current; if (L.input === q && L.agent.submit(q)) { setInput(""); recalled.current = null; } }, 240);
+  };
+  useEffect(() => () => clearTimeout(landTimer.current), []);
+  const flyTarget = useCallback(() => inputRef.current, []);
+  const tick = useRef<HTMLSpanElement>(null);
+  // Keystroke feedback: the prompt glyph nudges down a hair, like a key travelling. WAAPI (transform only), skipped in performance mode.
+  const keyFeel = () => {
+    if (document.documentElement.classList.contains("lite") || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    tick.current?.animate([{ transform: "translateY(1.5px) scale(.94)" }, { transform: "none" }], { duration: 90, easing: "ease-out" });
+  };
   const h = useMemo<RowHandlers>(() => ({
     send: (q) => { if (latest.current.agent.submit(q)) setInput(""); },
     fill: (q) => { setInput(q); inputRef.current?.focus(); },
@@ -171,7 +194,6 @@ export default function AgentDock() {
         <section className="agent-panel" aria-label="RAG, Rithvik's agent">
           <header className="agent-head">
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
-            <span className="agent-model">{process.env.NEXT_PUBLIC_CHAT_MODEL}</span>
             <span className="agent-actions">
               <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
               <button type="button" className="ag-btn" aria-label="Download chat as Markdown" title="Download chat" disabled={!agent.canExport} onClick={agent.downloadChat}><Icon name="download" /></button>
@@ -193,8 +215,7 @@ export default function AgentDock() {
               ))}
             </div>
           )}
-          <StatusLine turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} />
-        </section>
+          </section>
       )}
       {!open && agent.pending && (
         // A multi-step turn can open a case sheet (collapsing the panel) with more steps queued: confirm them here.
@@ -205,17 +226,19 @@ export default function AgentDock() {
         </div>
       )}
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>
-        <span className="ab-prompt" aria-hidden="true">❯</span>
+        <span className="ab-prompt" ref={tick} aria-hidden="true" />
         <label htmlFor="agent-input" className="sr-only">Ask about Rithvik</label>
         <textarea id="agent-input" ref={inputRef} className="ab-input" rows={1} value={input} maxLength={500} enterKeyHint="send"
           placeholder={narrow ? "Ask about Rithvik" : "Ask about Rithvik, or type / for commands"}
-          onChange={(e) => { setInput(e.target.value); setPalIdx(0); }}
+          onChange={(e) => { setInput(e.target.value); setPalIdx(0); keyFeel(); }}
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />
         <kbd className="ab-kbd" aria-hidden="true">⌘K</kbd>
         <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
+      {open && <StatusLine turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
+      {fly && open && <Handoff key={fly.id} question={fly.q} from={fly.from} target={flyTarget} onLand={() => land(fly.q)} onDone={() => setFly(null)} />}
     </div>
   );
 }

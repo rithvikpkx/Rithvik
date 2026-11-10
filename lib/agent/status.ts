@@ -4,7 +4,11 @@ import { SPINNERS } from "../assets/misc.ts";
 
 export const SPIN_FRAMES: string[] = SPINNERS.dots.frames;
 export const SPIN_INTERVAL = SPINNERS.dots.interval;
-export const VERBS = ["Retrieving", "Reading", "Grounding", "Drafting", "Verifying"];
+/** The reasoning effort app/api/chat/route.ts asks the answer model for, shown in the start block and status line. */
+export const AGENT_EFFORT = "low";
+/** Claude Code's thinking glyph cycle, drawn instead of the braille dots in the status line. */
+export const STAR_FRAMES = ["·", "✢", "✳", "✶", "✻", "✽"];
+export const VERBS =["Retrieving", "Reading", "Grounding", "Drafting", "Verifying"];
 const VERB_MS = 1200;
 
 /** Braille frame for `elapsedMs` since the turn began. */

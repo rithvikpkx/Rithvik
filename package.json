@@ -8,6 +8,8 @@
     "start": "next start",
     "eval": "node scripts/eval-agent.mjs",
     "check:anchors": "node scripts/check-anchors.mjs",
+    "brand": "node --experimental-strip-types --no-warnings scripts/brand/build.mts",
+    "brand:concepts": "node --experimental-strip-types --no-warnings scripts/brand/concepts.mts",
     "lint": "eslint"
   },
   "dependencies": {

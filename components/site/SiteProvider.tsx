@@ -11,7 +11,8 @@ export type Overlay =
   | { kind: "case"; slug: string }
   | { kind: "composer"; subject: string; body?: string; meta?: ComposerMeta }
   | { kind: "resume" }
-  | { kind: "agent"; question?: string }
+  /** `originRect` = fly the question from there into the dock's input, then send it (see AgentDock); without it the question only prefills the prompt. */
+  | { kind: "agent"; question?: string; originRect?: DOMRect }
   | { kind: "play"; id?: string }
   | null;
 
@@ -23,7 +24,8 @@ type SiteCtx = {
   openCase: (slug: string) => void;
   openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void; // body prefills the draft; it never sends
   openResume: () => void;
-  openAgent: (question?: string) => void;
+  /** Opens the agent. With `opts.originRect` the question flies from that rect into the prompt and is sent; plain `openAgent(q)` prefills it. */
+  openAgent: (question?: string, opts?: { originRect?: DOMRect }) => void;
   openPlay: (id?: string) => void;
   close: () => void;
   toasts: Toast[];
@@ -99,7 +101,7 @@ export default function SiteProvider({ content, children, overlays = <Overlays /
     openCase: (slug) => setOverlay({ kind: "case", slug }),
     openComposer: (subject = "", body?: string, meta?: ComposerMeta) => setOverlay({ kind: "composer", subject, body, meta }),
     openResume: () => setOverlay({ kind: "resume" }),
-    openAgent: (question) => setOverlay({ kind: "agent", question }),
+    openAgent: (question, opts) => setOverlay({ kind: "agent", question, originRect: opts?.originRect }),
     openPlay: (id) => setOverlay({ kind: "play", id }),
     close: () => setOverlay(null),
   }), [content, overlay, toasts, toast, dismissToast, lite, setLite]);

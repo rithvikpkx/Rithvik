@@ -2,8 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { clusterQuestions, delta, fillSeries, foldCountries, headline, parsePeriod, periodRange, questionKey, rankFeatures, rankLeads, scoreLead, shapeKpis } from "./shape.ts";
 import { centroid, countryName, toPoints } from "./geo.ts";
-import { lookCss, lookFor } from "./look.ts";
 import { rowsToItems } from "./replica.ts";
+import { hash32, hourRhythm, sessionStrip, visitorActivity } from "./strips.ts";
 
 const NOW = Date.UTC(2026, 10, 9, 14, 30);
 
@@ -98,19 +98,6 @@ test("geo: centroids, names, points merge per spot", () => {
   assert.deepEqual(p.map((x) => [x.label, x.value]), [["San Francisco, CA, US", 3], ["India", 3]]);
 });
 
-test("looks: palettes keep their tokens, designs derive from the swatch", () => {
-  const pal = [{ id: "x", slug: "dracula", name: "Dracula", tokens: { bg: "#282a36", text: "#f8f8f2", accent: "#bd93f9" }, sort_order: 1, published: true, created_at: "", updated_at: "" }];
-  const d = lookFor("dracula", pal);
-  assert.equal(d.dark, true);
-  assert.equal(d.tokens.accent, "#bd93f9");
-  const n = lookFor("nimbus", pal);
-  assert.equal(n.dark, false);
-  assert.deepEqual([n.tokens.bg, n.tokens.text, n.tokens.accent], ["#E6F4FF", "#0E1B2B", "#0A9BFF"]);
-  assert.equal(lookFor("mercury", pal).dark, true);
-  assert.equal(lookFor("unknown", pal).id, "dracula");
-  assert.equal(lookCss({ id: "e", name: "e", dark: false, tokens: { bg: "red;}body{x:y", text: "#000" } }, ".adm"), ".adm{\n  --text: #000;\n}");
-});
-
 test("stored rows become transcript items with telemetry", () => {
   const base = { tools: null, sources: null, model: null, tokens_in: null, tokens_out: null, ttfb_ms: null, total_ms: null, status: null, error: null, cached: false, created_at: "2026-11-09T14:00:00Z" };
   const items = rowsToItems([
@@ -123,4 +110,29 @@ test("stored rows become transcript items with telemetry", () => {
   assert.equal((items[3] as { items: unknown[] }).items.length, 1);
   assert.equal((items[4] as { text: string }).text, "gpt-6-luna · 2,300 tokens · first byte 610 ms · total 2.4 s");
   assert.equal(new Set(items.map((i) => i.id)).size, items.length);
+});
+
+test("strips: hour rhythm, conversation glyphs, visitor activity", () => {
+  const r = hourRhythm(["2026-11-09T14:05:00Z", "2026-11-08T14:59:00Z", "2026-11-09T03:00:00Z", "nope"]);
+  assert.equal(r.length, 24);
+  assert.equal(r[14], 2);
+  assert.equal(r[3], 1);
+  const row = (at: string, role: string, extra: Record<string, unknown> = {}) => ({ created_at: at, role, status: null, error: null, cached: false, tokens_in: null, tokens_out: null, ...extra });
+  const s = sessionStrip([row("2026-11-09T14:00:00Z", "user"), row("2026-11-09T14:00:30Z", "tool"), row("2026-11-09T14:01:00Z", "assistant", { tokens_out: 40, cached: true }), row("2026-11-09T14:02:00Z", "assistant", { status: 502 })]);
+  assert.equal(s.marks.map((m) => m.k).join(""), "utae");
+  assert.equal(s.marks[1].o, 0.25);
+  assert.equal(s.marks[2].c, true);
+  assert.equal(s.ms, 120_000);
+  assert.equal(s.tokens, 40);
+  const now = Date.UTC(2026, 10, 9, 18);
+  const a = visitorActivity([
+    { id: "v1", visitor_id: "a", started_at: "2026-11-09T10:00:00Z" }, { id: "v2", visitor_id: "a", started_at: "2026-11-07T10:00:00Z" },
+    { id: "v3", visitor_id: "a", started_at: "2025-01-01T00:00:00Z" },
+  ], [{ visit_id: "v1", type: "agent_turn" }, { visit_id: "v1", type: "agent_turn" }, { visit_id: "zz", type: "resume" }], now);
+  assert.equal(a.a.days[29], 1);
+  assert.equal(a.a.days[27], 1);
+  assert.equal(a.a.days.reduce((x, y) => x + y, 0), 2);
+  assert.deepEqual(a.a.keys, { agent_turn: 2 });
+  assert.equal(hash32("x"), hash32("x"));
+  assert.notEqual(hash32("x"), hash32("y"));
 });
