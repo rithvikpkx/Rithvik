@@ -37,8 +37,8 @@ type Skin = {
   SectionOrnament?: ComponentType<{ id; index }>;       // drawn first in every section (dividers, title bars)
   NameFx?: ComponentType<{ first; last }>;              // hero name; keep data-edit="name.first|name.last"
   PortraitFx?: ComponentType<{ on: boolean }>;          // inside the photo; `on` flips per click
-  ExperienceConnector?: ComponentType<{ index; count }>;// between roles in the shared Experience body
-  EducationObject?: ComponentType<{ education }>;       // replaces the shared education row; keep edu:* keys
+  ExperienceConnector?: ComponentType<{ index; count }>;// the material between stations (default: a thread)
+  EducationObject?: ComponentType<{ education }>;       // the themed education object (default: a seal)
   projectArt?: { palette: [string, string, string, string]; params?: Record<string, number> };
 };
 ```
@@ -53,9 +53,12 @@ Every field is optional: a new design can start as `{ id, rootClass }` plus CSS 
 - **S6 Work**: rewrite the shared `Work` body in `components/site/layout/sections.tsx` and read
   `skin.projectArt` (default to the registry `swatch`); delete the per-design `sections.work` overrides.
 - **S7 Play**: same for the shared `Play` body; delete per-design `sections.play`.
-- **S8 Experience + Education**: shared `Experience` body already renders `skin.ExperienceConnector` between
-  roles and `skin.EducationObject` for education; add one small connector/object per design, delete the
-  per-design `sections.experience`.
+- **Experience + Education** (done, S8): `components/site/layout/Experience.tsx` renders the roles as stations
+  down one connector and the education object (sticky beside them when the section is wide) with its caption.
+  A look adds `designs/<id>/experience.tsx` exporting `XP = { ExperienceConnector, EducationObject }`, spread
+  into its skin, plus `experience.css`. Connectors are built from `.xp-track` / `.xp-fill` / `.xp-head` (they
+  follow the scroll-driven `--fill`); stations get `data-lit` once the fill passes them; the object reads
+  `--px` / `--py` / `--pv` (a pointer spring). Its base state (animation: none) is the calm still.
 - **S9 Name + portrait**: `NameFx` per design (Stipple, Glyph, Prism, Tracker already use it); `PortraitFx`
   per design (Tether renders it inside `.pt-photo` and toggles `on` per click; the shader goes through the
   one context in `lib/shader/`).
