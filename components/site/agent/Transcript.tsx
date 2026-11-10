@@ -1,10 +1,11 @@
 "use client";
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { COMMANDS, runsOnClick } from "@/lib/agent/commands";
 import { STARTER_QUESTIONS } from "@/lib/agent/starters";
 import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
 import ArtifactView from "../charts/ArtifactView";
+import StartBlock from "./StartBlock";
 import type { Choice, Item } from "./types";
 
 export type RowHandlers = {
@@ -19,17 +20,42 @@ export type RowHandlers = {
 const STARTERS = [...STARTER_QUESTIONS, "/theme random"];
 const ASK_DONE: Record<string, string> = { yes: "Allowed", no: "Skipped", always: "Allowed for this session", auto: "Allowed for this session" };
 
-/** Welcome box: rows are padded to a fixed width so the box-drawing frame lines up in a mono font. */
-function banner(projects: number, roles: number): string {
-  const W = 36;
-  const rows = ["✻ RAG · Rithvik Augmented Generation", `  grounded in ${projects} projects + ${roles} roles`, "  /help · esc to interrupt"];
-  const pad = (t: string) => t + " ".repeat(Math.max(0, W - [...t].length));
-  return `╭${"─".repeat(W + 2)}╮\n${rows.map((r) => `│ ${pad(r)} │`).join("\n")}\n╰${"─".repeat(W + 2)}╯`;
+/** True when motion should be skipped (performance mode or reduced motion): text then appears as it arrives. */
+const instant = () => document.documentElement.classList.contains("lite") || matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Reveals a streaming answer at a typed cadence. The reveal speeds up with the backlog (an eighth of it per frame),
+ *  so it never falls noticeably behind the stream; once the stream ends the full text shows. */
+function useTyped(text: string, live: boolean): string {
+  const [n, setN] = useState(0);
+  const target = useRef(text);
+  useEffect(() => { target.current = text; });
+  useEffect(() => {
+    if (!live || instant()) return;
+    let raf = 0;
+    const tick = () => {
+      setN((c) => { const len = target.current.length; return c < len ? c + Math.max(1, Math.ceil((len - c) / 8)) : c; });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [live]);
+  return live && !instant() ? text.slice(0, n) : text;
 }
 
-/** Wraps the mark and /help in accent spans without ever touching the text itself. */
-function accent(box: string) {
-  return box.split(/(✻|\/help|RAG)/).map((p, i) => (p === "✻" || p === "/help" || p === "RAG" ? <span key={i} className="acc">{p}</span> : p));
+/** One answer row: markdown over the typed reveal, copy button once it is done. */
+function Answer({ text, streaming, onCopy }: { text: string; streaming: boolean; onCopy: (t: string) => void }) {
+  const shown = useTyped(text, streaming);
+  return (
+    <div className="t-line">
+      <span className={`t-dot${streaming ? " live" : ""}`} aria-hidden="true" />
+      <div className={`t-body${streaming ? " caret" : ""}`}><SimpleMarkdown text={shown} /></div>
+      {!streaming && (
+        <div className="t-acts">
+          <button type="button" aria-label="Copy answer" title="Copy" onClick={() => onCopy(text)}><Icon name="copy" /></button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item; h: RowHandlers; projects: number; roles: number; first: boolean }) {
@@ -37,8 +63,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "banner":
       return (
         <>
-          <pre className="agent-banner">{accent(banner(projects, roles))}</pre>
-          <p className="t-tips">Try &quot;what has he built?&quot;, /resume or /theme random</p>
+          <StartBlock model={process.env.NEXT_PUBLIC_CHAT_MODEL} projects={projects} roles={roles} />
           {first && (
             <div className="t-starters">
               {STARTERS.map((s) => <button key={s} type="button" className="t-chip" onClick={() => h.send(s)}>{s}</button>)}
@@ -51,7 +76,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "tool":
       return (
         <div className="t-line">
-          <span className="t-dot" aria-hidden="true">⏺</span>
+          <span className="t-dot" aria-hidden="true" />
           <span className="t-tool"><b>{item.name}</b><span className="args">({item.args})</span></span>
           {item.result !== undefined && (
             <span className="t-res">
@@ -67,7 +92,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "help":
       return (
         <div className="t-line">
-          <span className="t-dot" aria-hidden="true">⏺</span>
+          <span className="t-dot" aria-hidden="true" />
           <div className="t-body">
             <ul className="t-cmds" aria-label="Commands">
               {COMMANDS.map(([c, d]) => (
@@ -81,17 +106,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
         </div>
       );
     case "answer":
-      return (
-        <div className="t-line">
-          <span className={`t-dot${item.streaming ? " live" : ""}`} aria-hidden="true">{item.streaming ? "○" : "⏺"}</span>
-          <div className={`t-body${item.streaming ? " caret" : ""}`}><SimpleMarkdown text={item.text} /></div>
-          {!item.streaming && (
-            <div className="t-acts">
-              <button type="button" aria-label="Copy answer" title="Copy" onClick={() => h.copy(item.text)}><Icon name="copy" /></button>
-            </div>
-          )}
-        </div>
-      );
+      return <Answer text={item.text} streaming={item.streaming} onCopy={h.copy} />;
     case "artifact":
       return <ArtifactView spec={item.spec} />;
     case "suggest":
@@ -103,7 +118,7 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
     case "ask":
       return (
         <div className="t-line">
-          <span className="t-dot" aria-hidden="true">⏺</span>
+          <span className="t-dot" aria-hidden="true" />
           {item.tool ? (
             <>
               <span className="t-tool"><b>{item.tool.name}</b><span className="args">({item.tool.args})</span></span>
