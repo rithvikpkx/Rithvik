@@ -255,26 +255,6 @@ export default function Switcher() {
       onBlur={(e) => { if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false); }}
     >
       <div className="sw-plate" aria-hidden="true" />
-      <div className="sw-side">
-        <div className="sw-lcd" aria-hidden="true">
-          <span className="sw-lcd-k">{shown.design ? "design" : "palette"} {String(shownIdx + 1).padStart(2, "0")}/{looks.length}</span>
-          <span className="sw-lcd-v" style={{ fontFamily: shown.font }}>{shown.name}</span>
-        </div>
-        <div className="sw-row">
-          <button
-            type="button"
-            className="sw-lever"
-            role="switch"
-            aria-checked={lite}
-            aria-label="Performance mode"
-            title={lite ? "Performance mode on: effects rest" : "Performance mode: effects rest, the design stays"}
-            onClick={() => { setLite(!lite); toast(lite ? "Full effects back on" : "Performance mode on. Effects rest, the design stays."); }}
-          >
-            <span className="sw-slot"><span className="sw-bat" /></span>
-          </button>
-          <StatusDot />
-        </div>
-      </div>
       <div ref={dialRef} className="sw-dial">
         <div className="sw-well" aria-hidden="true" />
         <svg className="sw-ticks" viewBox="0 0 132 132" aria-hidden="true">
@@ -319,6 +299,27 @@ export default function Switcher() {
           <span className="sw-skirt" />
           <span className="sw-cap" />
           <span className="sw-ptr" />
+        </div>
+      </div>
+      {/* after the dial so Tab runs knob → lever → lamp */}
+      <div className="sw-side">
+        <div className="sw-lcd" aria-hidden="true">
+          <span className="sw-lcd-k">{shown.design ? "design" : "palette"} {String(shownIdx + 1).padStart(2, "0")}/{looks.length}</span>
+          <span className="sw-lcd-v" style={{ fontFamily: shown.font }}>{shown.name}</span>
+        </div>
+        <div className="sw-row">
+          <button
+            type="button"
+            className="sw-lever"
+            role="switch"
+            aria-checked={lite}
+            aria-label="Performance mode"
+            title={lite ? "Performance mode on: effects rest" : "Performance mode: effects rest, the design stays"}
+            onClick={() => { setLite(!lite); toast(lite ? "Full effects back on" : "Performance mode on. Effects rest, the design stays."); }}
+          >
+            <span className="sw-slot"><span className="sw-bat" /></span>
+          </button>
+          <StatusDot />
         </div>
       </div>
     </div>
