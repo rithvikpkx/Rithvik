@@ -1,6 +1,7 @@
 /* Tether: the portrait plus four contacts on strings (never filtered). Designs restyle via --pt-* tokens and scoped
    .pt-* rules. Geometry is a 400x500 box; positions are percentages, so it scales with its wrapper's width. */
-.pt { position: relative; margin: 0; width: 100%; aspect-ratio: 400 / 500; touch-action: pan-y; }
+/* --pt-x/y/w: the photo box as percentages of the figure, for skins that draw rings or bezels around it */
+.pt { --pt-x: 17.5%; --pt-y: 4%; --pt-w: 65%; position: relative; margin: 0; width: 100%; aspect-ratio: 400 / 500; touch-action: pan-y; }
 .pt-photo { position: absolute; aspect-ratio: 1; padding: 0; border: 0; border-radius: var(--pt-photo-r, 50%); overflow: hidden; background: var(--pt-photo-bg, #ddd); box-shadow: 0 0 0 var(--pt-ring-w, 0px) var(--pt-ring, transparent), var(--pt-shadow, 0 30px 80px -30px rgba(0, 0, 0, .45)); animation: pt-in 700ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)) both; }
 button.pt-photo { cursor: pointer; }
 .pt-photo img { width: 100%; height: 100%; object-fit: cover; }
