@@ -287,3 +287,10 @@
 :root[data-design="mercury"] .mc-about-txt, :root[data-design="mercury"] .mc-faq { max-width: 1180px; margin-inline: auto; }
 :root[data-design="mercury"] .mc-play .mc-ribbon { margin-top: 0; }
 @media (max-width: 860px) { :root[data-design="mercury"] .mc .ly-hero { padding-top: calc(var(--ly-head-h) + 30svh); } } /* phones: the pool is the first event, the name sits under it */
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="mercury"] .pf-wrap {
+  --pf-face: linear-gradient(150deg, #3A3B41, #17171A 48%, #2E2F34 72%, #1B1B1E); --pf-edge: #5B5D64;
+  --pf-a: #E9EAEE; --pf-b: #9EA2AD; --pf-c: #44464D; --pf-vinyl: #0B0B0D; --pf-pod: #0B0B0D; /* the dots capsule; chrome dots need a dark ground */
+  --pf-label: conic-gradient(#FFFFFF, #8A8D96, #F4F5F8, #5D6068, #FFFFFF, #9A9DA6, #FFFFFF);
+}

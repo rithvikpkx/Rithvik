@@ -4,8 +4,8 @@ import type { SectionId, SectionProps } from "@/lib/designs/skin";
 import { Icon } from "@/components/site/Glyph";
 import Mark from "@/components/site/mark/Mark";
 import Clock from "@/components/site/Clock";
-import { PLAY } from "@/lib/play/games";
 import Experience from "./Experience";
+import PlayField from "@/components/site/play/PlayField";
 
 const PLACE_LABEL = { home: "Home", school: "School", now: "Now" } as const;
 
@@ -54,22 +54,6 @@ function About({ content: c }: SectionProps) {
   );
 }
 
-/** One calm row of entries into the Play window. */
-function Play() {
-  return (
-    <ul className="ly-toys">
-      {PLAY.map((p) => (
-        <li key={p.id}>
-          <button type="button" className="ly-toy" data-play={p.id}>
-            <span className="ly-ic"><Icon name={p.icon} /></span>
-            <span><b>{p.name}</b><span>{p.desc}</span></span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Recruiter questions as native disclosures, plus a hand-off to the agent. */
 function Questions({ content: c }: SectionProps) {
   return (
@@ -94,5 +78,5 @@ function Contact({ content: c }: SectionProps) {
 
 /** The shared default body for every section. */
 export const DEFAULT_SECTIONS: Record<SectionId, ComponentType<SectionProps>> = {
-  work: Work, experience: Experience, about: About, play: Play, questions: Questions, contact: Contact,
+  work: Work, experience: Experience, about: About, play: PlayField, questions: Questions, contact: Contact,
 };

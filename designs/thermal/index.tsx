@@ -8,7 +8,6 @@ import { useMemo, useRef, useState } from "react";
 import type { DesignProps } from "@/lib/designs/types";
 import type { SectionProps, Skin } from "@/lib/designs/skin";
 import { designById } from "@/lib/designs/registry";
-import { PLAY } from "@/lib/play/games";
 import SiteLayout from "@/components/site/layout/SiteLayout";
 import ShaderCanvas from "@/components/site/ShaderCanvas";
 import Clock from "@/components/site/Clock";
@@ -69,22 +68,6 @@ function Work({ content: C }: SectionProps) {
 }
 
 
-/** The bench: one channel per toy. */
-function Play() {
-  return (
-    <ol className="th-toys">
-      {PLAY.map((t, i) => (
-        <li key={t.id}><button type="button" className="th-toy" data-play={t.id}>
-          <span className="th-toy-n">CH {String(i + 1).padStart(2, "0")}</span>
-          <span className="th-toy-i" aria-hidden="true"><Icon name={t.icon} /></span>
-          <span className="th-toy-t">{t.name}</span>
-          <span className="th-toy-d">{t.desc}</span>
-        </button></li>
-      ))}
-    </ol>
-  );
-}
-
 /** About text beside an instrument panel (now + places with clocks), then the readings. */
 function About({ content: C }: SectionProps) {
   const nowRows: [string, string, string][] = [["Building", C.now.building, "building"], ["Researching", C.now.researching, "researching"], ["Learning", C.now.learning, "learning"]];
@@ -126,7 +109,7 @@ const SKIN: Skin = {
   labels: { experience: "Record", play: "Bench" },
   sectionClass: (id) => (id === "contact" ? "th-sec th-contact" : "th-sec"),
   titleClass: "th-h2",
-  sections: { work: Work, play: Play, about: About, contact: Contact },
+  sections: { work: Work, about: About, contact: Contact },
 };
 
 /** The whole Thermal site: the shared layout plus the viewfinder, heat field and palette in the hero. */

@@ -376,3 +376,10 @@
 :root[data-design="nimbus"] .ly-line { color: var(--nb-muted); }
 :root[data-design="nimbus"] .nb-band > .ly-title { max-width: 1240px; margin: 0 auto .42em; padding-inline: clamp(20px, 5vw, 64px); color: var(--nb-ink); }
 :root[data-design="nimbus"] .nb-contact .ly-title { margin-bottom: 0; }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="nimbus"] .pf-wrap {
+  --pf-bg: linear-gradient(180deg, #DDF0FF, #F4FAFF 70%); --pf-fog: #E9F5FF; --pf-grid: rgba(11, 111, 201, .16);
+  --pf-a: var(--nb-sky); --pf-b: var(--nb-sun); --pf-c: var(--nb-pale); --pf-label: var(--nb-sun); --pf-vinyl: #0E1B2B;
+  --pf-r: 34px; --pf-shadow: 0 22px 34px -22px rgba(7, 115, 209, .55);
+}
