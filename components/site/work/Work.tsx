@@ -92,8 +92,7 @@ export default function Work({ content: c, skin }: SectionProps) {
             const [ux, uy] = facetDir(i, n);
             return (
               <a key={p.slug} className="wk-facet" href={`/work/${p.slug}`} data-case={p.slug} tabIndex={-1} data-on={i === on ? "" : undefined}
-                style={{ clipPath: wedgeClip(i, n, hole), "--ux": ux, "--uy": uy } as CSSProperties}
-                onPointerEnter={(e) => mouse(e) && setOn(i)}>
+                style={{ clipPath: wedgeClip(i, n, hole), "--ux": ux, "--uy": uy } as CSSProperties}>
                 <span className="wk-art"><ProjectArt project={p} params={params} rank={n > 1 ? i / (n - 1) : 0} /></span>
               </a>
             );

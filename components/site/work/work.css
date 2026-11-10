@@ -2,7 +2,7 @@
    --ui-* tokens and the look's --art-* tokens (SiteLayout), so every look themes it without touching this file.
    Look hooks: skin.projectArt.params (hole, rest, lift), --wk-disc-w, --wk-ease, and the classes below under :root[data-design="x"]. */
 /* side by side when there is room for both, stacked otherwise (narrow panes as well as phones) */
-.wk { --wk-ease: cubic-bezier(.34, 1.56, .64, 1); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 40px clamp(40px, 6vw, 112px); align-items: center; }
+.wk { --wk-ease: cubic-bezier(.34, 1.56, .64, 1); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 40px clamp(40px, 6vw, 112px); align-items: center; }
 
 /* the disc: a square that spins (JS writes the rotation), facets clipped into wedges and pushed out a little */
 .wk-disc { position: relative; justify-self: center; width: min(100%, var(--wk-disc-w, 560px)); aspect-ratio: 1; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -10,7 +10,8 @@
 .wk-spin { position: absolute; inset: 0; will-change: transform; }
 .wk-facet { position: absolute; inset: 0; display: block; transform: translate(calc(var(--ux) * var(--wk-rest)), calc(var(--uy) * var(--wk-rest))); transition: transform 560ms var(--wk-ease), filter 300ms ease; filter: saturate(.55) brightness(.94); -webkit-user-drag: none; }
 .wk-facet[data-on] { transform: translate(calc(var(--ux) * var(--wk-lift)), calc(var(--uy) * var(--wk-lift))); filter: none; }
-@media (hover: hover) and (pointer: fine) { .wk-facet:hover { filter: none; } }
+/* hover only lifts a facet a little; what faces the list changes with the list, a spin or a key */
+@media (hover: hover) and (pointer: fine) { .wk-facet:not([data-on]):hover { filter: none; transform: translate(calc(var(--ux) * (var(--wk-rest) + 7px)), calc(var(--uy) * (var(--wk-rest) + 7px))); } }
 /* the art's centre sits in the middle of its facet rather than under the hub */
 .wk-art { position: absolute; left: calc(50% * (1 - var(--wk-art))); top: calc(50% * (1 - var(--wk-art))); width: calc(100% * var(--wk-art)); height: calc(100% * var(--wk-art)); transform: translate(calc(var(--ux) * 28% / var(--wk-art)), calc(var(--uy) * 28% / var(--wk-art))); }
 .wk-art .art { display: block; width: 100%; height: 100%; }
