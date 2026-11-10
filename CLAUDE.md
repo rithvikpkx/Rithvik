@@ -63,14 +63,14 @@ Three root layouts via route groups, no top-level `app/layout.tsx` (crossing gro
 - `app/(plain)/` — `/buffett` (below).
 - `app/(lab)/` — `/lab/<stream>` component harnesses (noindex, unlinked).
 
-`components/site/SitePage.tsx` renders every v7 page: `getContent()` + `getPalettes()` + `getLook()` (cookie or `?theme=`) → `SiteProvider` → `DesignProvider` → `ActiveDesign` → the design component, plus `DesignDial` and `LiteToggle`. **Pages are per-request** (they read the cookie), so there is no page ISR; instead the reads are cached: `getContent()` is `unstable_cache` 60s tagged `v7-content` (admin actions call `updateTag(CONTENT_TAG)` so saves show at once) and `getPalettes()` 60s.
+`components/site/SitePage.tsx` renders every v7 page: `getContent()` + `getPalettes()` + `getLook()` (cookie or `?theme=`) → `SiteProvider` → `DesignProvider` → `ActiveDesign` → the design component, plus the `Switcher`. **Pages are per-request** (they read the cookie), so there is no page ISR; instead the reads are cached: `getContent()` is `unstable_cache` 60s tagged `v7-content` (admin actions call `updateTag(CONTENT_TAG)` so saves show at once) and `getPalettes()` 60s.
 
 - **Content** (`lib/content/`): `Content` = the mockup's `C` shape; `map.ts` `toContent()` (tested) maps DB rows, falling back per field to `fixture.ts`. DB: v7 columns on `projects`/`experience`/`education` + `site_content` keys `v7.*` (status, line, thesis, about, now, places, stack, faq, numbers) + `profile.work_authorization`. `v7.*` keys are NOT embedded (skipped in backfill) until Step 3 adds proper text builders.
 - **Designs** (`lib/designs/registry.ts` + `designs/<id>/`): nine designs (Nimbus, Stipple, Glyph, Prism, Mercury, Thermal, Starlight, Tracker, Foil), each `index.tsx` + `motion.ts` (the mockup's `mount()` as one effect with full cleanup) + `<id>.css` scoped under `[data-design="<id>"]`, lazy-loaded. **Classic** (`designs/classic/`) renders every legacy palette and is the first-visit default (GitHub Light). New design → follow `designs/PORTING.md`.
-- **Switching** (`components/site/DesignProvider.tsx`, `useDesign()`): cookie + localStorage, no flash on reload, a view-transition sweep that grows out of the dial (the dial is its own transition layer, `view-transition-name: v7-dial`, so its pill rotation stays live during the sweep), `T` cycles Classic + the nine designs, `?theme=` deep links, `data-theme-go` hooks, toast with Undo.
+- **Switching** (`components/site/DesignProvider.tsx`, `useDesign()`): cookie + localStorage, no flash on reload, a view-transition sweep that grows out of the switcher knob (the unit is its own transition layer, `view-transition-name: v7-dial`, so it stays live during the sweep). **Switching never locks**: the newest switch wins (a stale load bails, the running sweep is skipped). Chrome hit-tests every event to `<html>` during a view transition, so the switcher routes those to its controls by geometry, `T` cycles Classic + the nine designs, `?theme=` deep links, `data-theme-go` hooks, toast with Undo.
 - **Shared components** (`components/site/`): `SiteProvider` (`useSite()`: content, overlays, toasts, `html.lite`; wires `data-case/compose/resume/agent/play/copy` clicks), lazy overlays (`CaseSheet`, `ComposerWindow`, `ResumeWindow`, `PlayWindow`, `AgentDock`, `Toasts`), `portrait/Portrait` (**the photo is never filtered, tinted, blended or masked**), `mark/Mark` (ouroboros), `graph/KnowledgeGraph` (`lib/graph/kg.ts`, tested), `Glyph` (`Icon`/`Logo` from `lib/assets`), `Clock`, `ShaderCanvas`.
 - **Shader runtime** (`lib/shader/`): ONE WebGL context for the page (a switch swaps programs), shared GLSL head, per-design `setUniform` API (`uniforms` prop / `useShaderUniforms()`), adaptive resolution, pause off-screen/hidden, a single still frame under `html.lite` or reduced motion, fps watchdog that offers performance mode once. No design may create a second context or a 2D canvas for effects.
-- **Performance mode** = the `html.lite` class (single source of truth; `LiteToggle` bottom-left, restored pre-paint from `localStorage[rithvik-lite]`). Designs must render a designed still under it.
+- **Performance mode** = the `html.lite` class (single source of truth; the lever on the switcher, restored pre-paint from `localStorage[rithvik-lite]`). Designs must render a designed still under it.
 - **Edit mode on v7**: the site has no visible login button — `rithvik.ai/?edit` opens the login panel (or edit mode if the tab is signed in). Edit chrome CSS: `components/EditMode.css` (old tokens mapped from `--ui-*`). Editing the v7 content fields is Step 3.
 
 ### Buffett mode (`/buffett`)
@@ -81,7 +81,7 @@ A bare-HTML homage to berkshirehathaway.com, reached via the **For Warren Buffet
 
 ### Palette themes (`lib/themes.ts`, `components/ThemeStyleInjector.tsx`)
 
-Legacy palettes are rows in the `themes` table (`tokens` JSONB: `bg, bg-soft, text, muted, accent, accent-glow, green`). `ThemeStyleInjector` emits `:root[data-theme="<slug>"]{…}` for every row (slugs + values validated against an allowlist before injection). On v7 a palette renders **Classic**, which maps the 7 tokens onto the shared `--ui-*` / `--pt-*` / `--kg-*` tokens so overlays follow the palette. Classic lifts `--muted` per slug where a palette failed 4.5:1 — **a palette added later must pass 4.5:1 on its own** (or add a line in `designs/classic/classic.css`). The dial (`components/ThemeDial.tsx` → `ThemeDialView`, CSS in `ThemeDial.css`) lists designs, a divider, then palettes (`components/site/DesignDial.tsx`).
+Legacy palettes are rows in the `themes` table (`tokens` JSONB: `bg, bg-soft, text, muted, accent, accent-glow, green`). `ThemeStyleInjector` emits `:root[data-theme="<slug>"]{…}` for every row (slugs + values validated against an allowlist before injection). On v7 a palette renders **Classic**, which maps the 7 tokens onto the shared `--ui-*` / `--pt-*` / `--kg-*` tokens so overlays follow the palette. Classic lifts `--muted` per slug where a palette failed 4.5:1 — **a palette added later must pass 4.5:1 on its own** (or add a line in `designs/classic/classic.css`). The switcher (`components/site/switcher/`: a detented knob with drag/inertia/spring physics in `physics.ts` (tested), wheel/arrows, clickable jewels; the performance lever; the /status lamp) lists designs, a gap, then palettes, bottom-left.
 
 ### Inline editing (passwordless OTP)
 
@@ -233,10 +233,10 @@ app/
 designs/
   registry: lib/designs/registry.ts;  <id>/index.tsx + motion.ts + <id>.css;  classic/ (palettes);  PORTING.md
 components/
-  site/               — SitePage, SiteProvider, DesignProvider, ActiveDesign, DesignDial, ShaderCanvas, LiteToggle, Glyph, Clock,
+  site/               — SitePage, SiteProvider, DesignProvider, ActiveDesign, switcher/, ShaderCanvas, LiteToggle (lab only), Glyph, Clock,
                         EditModeOverlays, overlays/*, agent/*, case/*, windows/*, play/*, portrait/*, mark/*, graph/*
   EditModeProvider, InlineLoginPanel, EditBar, EditMode.css, SecondaryContextPanel, EditableText, EditableTagList
-  ThemeDial (+ .css), ThemeProvider, ThemeStyleInjector, SimpleMarkdown
+  ThemeProvider, ThemeStyleInjector, SimpleMarkdown
 lib/
   content/            — Content type, fixture, toContent (tested), getContent (cached)
   designs/            — registry (+ tested), server (getPalettes, getLook), types
@@ -255,7 +255,7 @@ docs/plans/v4-overhaul.md (plan + status), step1-contract.md;  docs/mockups/v7/ 
 - **Design looks unstyled** → its CSS must be scoped `:root[data-design="<id>"]` and imported by `designs/<id>/index.tsx`; shared chrome primitives live in `app/(v7)/core.css`.
 - **Shader blank / two canvases** → `lib/shader/runtime.ts` logs compile errors with design line numbers; a design must render exactly one `<ShaderCanvas>`.
 - **Edit-mode save / `requireAuth()` redirects to login** → browser client isn't `createBrowserClient` (cookie mismatch in `lib/supabase-browser.ts`).
-- **Dial rotation doesn't animate during a switch** → `.theme-dial-aside` lost `view-transition-name: v7-dial` (app/(v7)/core.css), or a pill gained its own `view-transition-name`.
+- **Switcher knob freezes during a switch** → `.theme-dial-aside` (the switcher keeps that class) lost `view-transition-name: v7-dial` (app/(v7)/core.css), or a child gained its own `view-transition-name`.
 - **Theme missing from the dial** → `SELECT slug,name,sort_order,published FROM themes`; palette rows are cached 60s (`getPalettes`).
 - **RAG hallucinating wildly** → right chunk missing/low-ranked. Embed the question, query `match_primary` with `match_count=17`; if buried, check logs for `[rag] hyde failed`. Recovery: re-embed primary.
 - **RAG canned refusal for known facts** → `[rag] empty-context guard fired` = both retrievals hit 0 rows. Verify index is HNSW: `SELECT indexdef FROM pg_indexes WHERE tablename='primary_embeddings';`.

@@ -1,9 +1,7 @@
 import SiteProvider from "@/components/site/SiteProvider";
 import DesignProvider from "@/components/site/DesignProvider";
 import ActiveDesign from "@/components/site/ActiveDesign";
-import DesignDial from "@/components/site/DesignDial";
-import LiteToggle from "@/components/site/LiteToggle";
-import StatusDot from "@/components/site/StatusDot";
+import Switcher from "@/components/site/switcher/Switcher";
 import AskSelection from "@/components/site/AskSelection";
 import Tracker from "@/components/site/Tracker";
 import InlineEdit from "@/components/site/InlineEdit";
@@ -25,9 +23,7 @@ export default async function SitePage({ theme, children }: { theme?: string | n
         <ActiveDesign initial={look}>
           <Design content={content} />
         </ActiveDesign>
-        <DesignDial />
-        <LiteToggle className="v7-lite" />
-        <StatusDot />
+        <Switcher />
         <AskSelection />
         <Tracker />
         <InlineEdit />
