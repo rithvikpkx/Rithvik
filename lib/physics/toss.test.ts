@@ -1,6 +1,30 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { asleep, settle, sleeper, step, type Body } from "./toss.ts";
+import { asleep, bodyFor, halfW, offsetOf, settle, sleeper, step, type Body } from "./toss.ts";
+
+test("wide capsules stack on the floor without overlapping and stay inside the walls", () => {
+  const w = { w: 600, h: 300 };
+  const bodies: Body[] = Array.from({ length: 10 }, (_, i) => ({ x: 90 + (i % 4) * 130, y: 20 + i * 14, vx: 0, vy: 0, r: 15, a: 20 + (i % 3) * 25 }));
+  settle(bodies, w, 1500);
+  for (const b of bodies) { assert.ok(b.x - halfW(b) >= -0.01 && b.x + halfW(b) <= w.w + 0.01); assert.ok(b.y + b.r <= w.h + 0.01); }
+  for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
+    const a = bodies[i], b = bodies[j];
+    const xOverlap = Math.min(a.x + (a.a ?? 0), b.x + (b.a ?? 0)) - Math.max(a.x - (a.a ?? 0), b.x - (b.a ?? 0));
+    if (xOverlap > 3) assert.ok(Math.abs(a.y - b.y) >= a.r + b.r - 3, `pills ${i}/${j} overlap`);
+  }
+});
+
+test("frozen layout -> physics -> tidy: bodies start on their elements, fall, and tidy returns every offset to zero", () => {
+  const rects = [{ x: 10, y: 40, w: 52, h: 52 }, { x: 70, y: 40, w: 52, h: 52 }, { x: 10, y: 100, w: 110, h: 30 }];
+  const bodies = rects.map(bodyFor);
+  assert.equal(bodies[0].a, 0); // a square is a circle
+  assert.ok(bodies[2].a! > 0); // a wide box is a capsule
+  assert.deepEqual(bodies.map((b, i) => offsetOf(b, rects[i])), [[0, 0], [0, 0], [0, 0]]); // frozen: no offset
+  settle(bodies, { w: 200, h: 260 }, 900);
+  assert.ok(bodies.every((b, i) => offsetOf(b, rects[i])[1] > 0), "physics: everything dropped");
+  const tidy = rects.map(bodyFor); // tidy = rebuild the bodies from the frozen layout
+  assert.ok(tidy.every((b, i) => offsetOf(b, rects[i]).every((v) => v === 0)));
+});
 
 const world = { w: 400, h: 300 };
 const pile = (n: number, r = 28): Body[] => Array.from({ length: n }, (_, i) => ({ x: 40 + (i % 6) * 62, y: r + Math.floor(i / 6) * 60, vx: 0, vy: 0, r }));
