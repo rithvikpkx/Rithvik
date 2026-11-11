@@ -1,0 +1,239 @@
+/* Corsa: a night garage, one Rosso Corsa car on a turntable. Carbon surfaces, warm-white type, Rosso as the one
+   loud colour; motorsport instruments (rev lights, tach, sector markers, kerbs) carry the details. Tokens first,
+   then the hero (stage, still, dash, tach), the sections, the shared chrome, then calm. Every rule is scoped. */
+
+/* ───────── tokens ───────── */
+:root[data-design="corsa"] {
+  --co-bg: #0B0B0D; --co-bg2: #111114; --co-bg3: #17171B; --co-fg: #F4F1EA; --co-soft: #D3CFC7; --co-mut: #A6A29B; --co-dim: #8A867F;
+  --co-line: rgba(244, 241, 234, .1); --co-line2: rgba(244, 241, 234, .2);
+  --co-red: #D40000; --co-red-t: #FF4A3D; --co-giallo: #F6C400; /* --co-red-t: Rosso lifted to pass 4.5:1 as text on carbon */
+  --co-sans: "Saira", system-ui, -apple-system, "Segoe UI", sans-serif; --co-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* tyre compounds: soft, medium, hard, intermediate, wet */
+  --co-soft-t: #E8202A; --co-med-t: #F6C400; --co-hard-t: #ECECEC; --co-inter-t: #2FB04A; --co-wet-t: #1E6FE0;
+  /* a 2x2 twill, low contrast so text on it stays crisp; --co-sheen is the clearcoat over it */
+  --co-carbon: repeating-linear-gradient(45deg, rgb(255 255 255 / .022) 0 3px, transparent 3px 6px), repeating-linear-gradient(-45deg, rgb(0 0 0 / .32) 0 3px, transparent 3px 6px);
+  --co-sheen: linear-gradient(115deg, rgb(255 255 255 / .05), transparent 38%, transparent 62%, rgb(255 255 255 / .025));
+  /* chrome */
+  --ui-bg: #111114; --ui-fg: var(--co-fg); --ui-muted: var(--co-mut); --ui-accent: var(--co-red-t); --ui-accent-fg: #0B0B0D;
+  --ui-line: var(--co-line2); --ui-field: rgba(244, 241, 234, .06); --ui-font: var(--co-sans); --ui-mono: var(--co-mono);
+  --ui-r: 6px; --ui-blur: none; --ui-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 0 0 1px rgba(0, 0, 0, .6), 0 30px 70px -24px rgba(0, 0, 0, .85);
+  --agent-font: var(--co-mono); --agent-text-font: var(--co-sans); --agent-r: 8px;
+  /* portrait: the photo round, a carbon gap, then the tach bezel (index.tsx) */
+  --pt-ring: #0B0B0D; --pt-ring-w: 5px; --pt-photo-bg: #17171B; --pt-photo-r: 50%; --pt-shadow: 0 0 0 6px rgba(244, 241, 234, .08), 0 40px 80px -30px #000;
+  --pt-node-bg: linear-gradient(160deg, #222228, #121215); --pt-node-fg: var(--co-fg); --pt-node-line: rgba(244, 241, 234, .22); --pt-node-r: 10px; --pt-node-size: 12%;
+  /* cable: a carbon sheath, rev-light pulses running green, red, blue from the portrait to the node */
+  --pt-sheath: #141418; --pt-sheath-w: 4.5px; --pt-edge: rgba(244, 241, 234, .42); --pt-edge-w: 1px; --pt-sheen: rgba(255, 255, 255, .22); --pt-cap: butt;
+  --pt-core: #FF2A14; --pt-glow: #FF2A14; --pt-head: #FFFFFF; --pt-halo: .2; --pt-body: .55; --pt-pulse-a: #2FD158; --pt-pulse-m: #FF2A14; --pt-pulse-b: #3E7BFF;
+  /* knowledge graph */
+  --kg-h: min(80vh, 760px); --kg-edge: rgba(244, 241, 234, .14); --kg-edge-lit: var(--co-red-t); --kg-label: #DAD6CE; --kg-font: var(--co-mono);
+  --kg-me: var(--co-red-t); --kg-field: var(--co-giallo); --kg-project: var(--co-red-t); --kg-role: #F4F1EA; --kg-school: #E6CB8A; --kg-place: #4F8DF5;
+  --kg-skill: rgba(244, 241, 234, .45); --kg-card-bg: #141418; --kg-card-fg: var(--co-fg);
+  /* the shared layout */
+  --ly-head-bg: rgba(11, 11, 13, .9); --ly-line: var(--co-line); --ly-soft: var(--co-bg2); --ly-display: var(--co-sans); --ly-head-font: var(--co-sans);
+  --ly-name-font: var(--co-sans); --ly-name-weight: 800; --ly-name-style: italic; --ly-name-track: -.012em; --ly-name-case: uppercase;
+  scrollbar-color: #2A2A30 var(--co-bg);
+}
+:root[data-design="corsa"] body { background: var(--co-bg); color: var(--co-fg); }
+:root[data-design="corsa"] ::selection { background: var(--co-red); color: #fff; }
+:root[data-design="corsa"] :focus-visible { outline: 1.5px solid var(--co-red-t); outline-offset: 3px; }
+
+/* ───────── base ───────── */
+:root[data-design="corsa"] .co { font: 400 16px/1.6 var(--co-sans); color: var(--co-fg); overflow-x: clip; }
+:root[data-design="corsa"] .co a { color: inherit; }
+:root[data-design="corsa"] .co .mark { display: block; width: 100%; height: auto; }
+
+/* ───────── header: carbon, a red underline that leans like a livery stripe ───────── */
+:root[data-design="corsa"] .ly-head { font: 600 13px/1 var(--co-sans); letter-spacing: .08em; text-transform: uppercase; }
+:root[data-design="corsa"] .ly-head[data-past] { border-bottom-color: transparent; box-shadow: 0 1px 0 var(--co-line), inset 0 -2px 0 -1px rgba(212, 0, 0, .5); }
+:root[data-design="corsa"] .ly-brand-n { font-style: italic; font-weight: 700; letter-spacing: .06em; font-stretch: 112%; }
+:root[data-design="corsa"] .ly-brand .ly-mk { width: 22px; height: 22px; color: var(--co-red-t); }
+:root[data-design="corsa"] .ly-nav a { position: relative; border-radius: 0; color: var(--co-mut); }
+:root[data-design="corsa"] .ly-nav a[aria-current="true"] { background: none; color: var(--co-fg); }
+:root[data-design="corsa"] .ly-nav a::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 3px; background: var(--co-red); transform: skewX(-30deg) scaleX(0); transform-origin: left; transition: transform 260ms var(--ease-out); }
+:root[data-design="corsa"] .ly-nav a[aria-current="true"]::after { transform: skewX(-30deg) scaleX(1); }
+/* "I am Rithvik": a parallelogram in Rosso, like a team-radio tag */
+:root[data-design="corsa"] .ly-iam { height: 32px; padding: 0 18px; border: 0; border-radius: 0; background: var(--co-red); color: #fff; font-style: italic; font-weight: 700;
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%); transition: background-color 160ms ease; }
+:root[data-design="corsa"] .ly-iam .iam-ic { width: 14px; height: 14px; color: #fff; }
+@media (hover: hover) and (pointer: fine) { :root[data-design="corsa"] .ly-iam:hover { background: #F01A10; border: 0; } }
+
+/* ───────── hero: the garage ───────── */
+:root[data-design="corsa"] .ly-hero { --co-cx: .52; --co-cy: .7; --co-f: .5; align-items: start; min-height: max(100svh, 860px); padding-bottom: 0; cursor: grab; touch-action: pan-y pinch-zoom; }
+:root[data-design="corsa"] .ly-hero[data-drag], :root[data-design="corsa"] .co-stage[data-drag] { cursor: grabbing; }
+:root[data-design="corsa"] .ly-hero-copy, :root[data-design="corsa"] .ly-hero-pt { cursor: auto; }
+:root[data-design="corsa"] .ly-hero-in { grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr); padding-top: clamp(0px, 3vh, 32px); }
+/* the stage takes the hero's custom properties (the framing) and paints the room behind the car */
+:root[data-design="corsa"] .co-stage { --co-cx: inherit; --co-cy: inherit; --co-f: inherit; position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background:
+    radial-gradient(38% 15% at calc(var(--co-cx) * 100%) calc(var(--co-cy) * 100% + 7%), rgba(255, 246, 236, .11), transparent 72%),
+    radial-gradient(60% 50% at 50% -12%, rgba(255, 246, 234, .085), transparent 70%),
+    radial-gradient(50% 40% at calc(var(--co-cx) * 100%) 108%, rgba(212, 0, 0, .14), transparent 70%),
+    linear-gradient(180deg, #0E0E11 0%, #0B0B0D 52%, #111115 calc(var(--co-cy) * 100% - 4%), #0A0A0C 100%); }
+/* the garage floor: faint pit-box lines converging under the car */
+:root[data-design="corsa"] .co-stage::before { content: ""; position: absolute; left: -20%; right: -20%; top: calc(var(--co-cy) * 100% - 6%); bottom: -10%;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 1px), rgba(244, 241, 234, .05) calc(12.5% - 1px) 12.5%);
+  transform: perspective(500px) rotateX(62deg); transform-origin: 50% 0; -webkit-mask: linear-gradient(transparent, #000 30%, #000 60%, transparent); mask: linear-gradient(transparent, #000 30%, #000 60%, transparent); }
+:root[data-design="corsa"] .co-stage::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 55%, transparent 55%, rgba(0, 0, 0, .55)); }
+:root[data-design="corsa"] .co-gl { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; transition: opacity 700ms ease; }
+/* the still (also the poster while three.js loads): placed by the same framing numbers as the live car */
+:root[data-design="corsa"] .co-still { position: absolute; z-index: 1; left: calc(var(--co-cx) * 100%); top: calc(var(--co-cy) * 100%); width: calc(var(--co-f) * 141%); height: auto; translate: -50% -50%; max-width: none; transition: opacity 500ms ease 250ms; user-select: none; }
+:root[data-design="corsa"] .co-stage[data-state="live"] .co-still { opacity: 0; }
+/* loading: a tyre-blanket bar under the car */
+:root[data-design="corsa"] .co-load { position: absolute; z-index: 2; left: calc(var(--co-cx) * 100%); top: calc(var(--co-cy) * 100% + var(--co-f) * 17vw); translate: -50% 0; display: grid; justify-items: center; gap: 8px; opacity: 0; transition: opacity 300ms ease; font: 500 10.5px/1 var(--co-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--co-mut); }
+:root[data-design="corsa"] .co-load i { position: relative; display: block; width: 150px; height: 4px; background: rgba(244, 241, 234, .1); overflow: hidden; }
+:root[data-design="corsa"] .co-load i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--co-wet-t), var(--co-hard-t) 40%, var(--co-med-t) 70%, var(--co-soft-t)); clip-path: inset(0 calc(100% - var(--load, 0) * 100%) 0 0); transition: clip-path 200ms linear; }
+:root[data-design="corsa"] .co-stage[data-state="loading"] .co-load { opacity: 1; }
+
+/* the dash: rev lights and three readouts, under the car */
+:root[data-design="corsa"] .co-hud { --rpm: .116; --lit: 0; position: absolute; z-index: 2; left: var(--ly-gutter); bottom: 108px; display: grid; justify-items: start; gap: 10px; pointer-events: none; }
+:root[data-design="corsa"] .co-revs { display: flex; gap: 5px; padding: 6px 9px; border-radius: 3px; background: rgba(8, 8, 10, .82); box-shadow: inset 0 0 0 1px var(--co-line); }
+:root[data-design="corsa"] .co-revs i { width: 13px; height: 6px; border-radius: 1px; --c: #2FD158; background: var(--c); opacity: clamp(.14, (var(--lit) - var(--i)) * 10, 1); box-shadow: 0 0 clamp(0px, (var(--lit) - var(--i)) * 10px, 8px) var(--c); }
+:root[data-design="corsa"] .co-revs i:nth-child(n + 6) { --c: #FF2A14; }
+:root[data-design="corsa"] .co-revs i:nth-child(n + 11) { --c: #3E7BFF; }
+:root[data-design="corsa"] .co-hud[data-limit] .co-revs i { animation: co-limit 110ms steps(2) infinite; }
+@keyframes co-limit { 50% { opacity: .15; } }
+:root[data-design="corsa"] .co-dash { display: flex; align-items: stretch; gap: 1px; background: var(--co-line); box-shadow: 0 0 0 1px var(--co-line); }
+:root[data-design="corsa"] .co-dash > span { display: grid; gap: 5px; align-content: center; min-width: 92px; padding: 8px 12px; background: rgba(8, 8, 10, .86); }
+:root[data-design="corsa"] .co-dash small { font: 500 9.5px/1 var(--co-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--co-mut); }
+:root[data-design="corsa"] .co-dash small em { font-style: normal; color: var(--co-soft); }
+:root[data-design="corsa"] .co-dash b { font: 600 15px/1 var(--co-mono); font-variant-numeric: tabular-nums; color: var(--co-fg); }
+:root[data-design="corsa"] .co-dash .co-gear { min-width: 0; justify-items: center; }
+:root[data-design="corsa"] .co-gear b { font: italic 800 26px/1 var(--co-sans); color: var(--co-fg); }
+:root[data-design="corsa"] #co-delta[data-k="up"] { color: #36D06A; }
+:root[data-design="corsa"] #co-delta[data-k="down"] { color: var(--co-giallo); }
+:root[data-design="corsa"] #co-delta[data-k="best"] { color: #C27BFF; } /* purple: the fastest lap so far, as on a timing screen */
+:root[data-design="corsa"] .co-hint { font: 500 10px/1 var(--co-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--co-dim); }
+:root[data-design="corsa"] .co-hint::before, :root[data-design="corsa"] .co-hint::after { content: "‹"; margin-right: 8px; color: var(--co-red-t); }
+:root[data-design="corsa"] .co-hint::after { content: "›"; margin: 0 0 0 8px; }
+/* the model's CC BY credit, as small print in the garage's corner */
+:root[data-design="corsa"] .co-credit { position: absolute; z-index: 2; right: var(--ly-gutter); bottom: 108px; max-width: 22em; text-align: right; font: 400 10.5px/1.4 var(--co-mono); color: var(--co-dim); }
+:root[data-design="corsa"] .co-credit a { text-decoration: underline; text-decoration-color: rgba(244, 241, 234, .3); text-underline-offset: 2px; }
+
+/* the copy */
+:root[data-design="corsa"] .ly-name { font-size: clamp(2.7rem, 6.6vw, 6.4rem); line-height: .9; font-stretch: 122%; color: var(--co-fg); }
+:root[data-design="corsa"] .ly-last { margin-top: .12em; font-size: .5em; font-weight: 600; font-stretch: 110%; letter-spacing: .04em; color: var(--co-soft); }
+:root[data-design="corsa"] .ly-status { display: inline-flex; align-items: center; gap: 12px; font: 600 12.5px/1.4 var(--co-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--co-fg); }
+:root[data-design="corsa"] .ly-status::before { content: ""; width: 26px; height: 10px; flex: none; background: linear-gradient(90deg, var(--co-red) 0 55%, transparent 55% 68%, var(--co-fg) 68% 80%, transparent 80% 88%, var(--co-red) 88%); transform: skewX(-24deg); }
+:root[data-design="corsa"] .ly-line { color: var(--co-soft); max-width: 27em; }
+
+/* the portrait: tach bezel behind it */
+:root[data-design="corsa"] .ly-hero-pt { width: min(100%, 340px); justify-self: end; }
+:root[data-design="corsa"] .co-tach { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; --rpm: .116; }
+:root[data-design="corsa"] .co-bezel { fill: #0E0E11; stroke: rgba(244, 241, 234, .12); stroke-width: 1; }
+:root[data-design="corsa"] .co-arc { fill: none; stroke: rgba(244, 241, 234, .2); stroke-width: 1.5; }
+:root[data-design="corsa"] .co-arc-red { stroke: var(--co-red); stroke-width: 5; }
+:root[data-design="corsa"] .co-tk { stroke: rgba(244, 241, 234, .45); stroke-width: 1.2; }
+:root[data-design="corsa"] .co-tk-m { stroke: var(--co-fg); stroke-width: 2.2; }
+:root[data-design="corsa"] .co-tk[data-red] { stroke: var(--co-red-t); }
+:root[data-design="corsa"] .co-tn { fill: var(--co-mut); font: italic 700 15px/1 var(--co-sans); text-anchor: middle; dominant-baseline: central; }
+:root[data-design="corsa"] .co-tn[data-red] { fill: var(--co-red-t); }
+:root[data-design="corsa"] .co-needle { transform-box: view-box; transform-origin: 200px 150px; transform: rotate(calc(150deg + var(--rpm) * 240deg)); }
+:root[data-design="corsa"] .co-needle path { fill: var(--co-red-t); filter: drop-shadow(0 0 4px rgba(255, 42, 20, .8)); }
+:root[data-design="corsa"] .pt-photo { box-shadow: 0 0 0 var(--pt-ring-w) var(--pt-ring), 0 0 0 calc(var(--pt-ring-w) + 1.5px) rgba(244, 241, 234, .55), var(--pt-shadow); }
+:root[data-design="corsa"] .pt-node { border-width: 1px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 10px 18px -8px #000; transition: background 160ms ease, color 160ms ease, border-color 160ms ease, scale 200ms var(--ease-out); }
+:root[data-design="corsa"] .pt-node::after { border-radius: 3px; font: 500 11px/1.2 var(--co-mono); border: 1px solid var(--co-line2); }
+@media (hover: hover) and (pointer: fine) { :root[data-design="corsa"] .pt-node:hover { background: var(--co-red); color: #fff; border-color: transparent; } }
+
+/* ───────── sections: a sector marker on a livery stripe, then the title ───────── */
+:root[data-design="corsa"] .co-sec { position: relative; max-width: 1280px; margin: 0 auto; padding: clamp(112px, 13vw, 184px) clamp(20px, 5vw, 64px) 0; }
+:root[data-design="corsa"] .co-sector { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+:root[data-design="corsa"] .co-sector b { display: inline-grid; place-items: center; min-width: 40px; height: 22px; padding: 0 8px; background: var(--co-red); color: #fff; font: italic 700 12px/1 var(--co-mono); letter-spacing: .06em; transform: skewX(-14deg); }
+:root[data-design="corsa"] .co-livery { flex: 1; height: 9px; max-width: 360px; background: linear-gradient(180deg, var(--co-red) 0 44%, transparent 44% 58%, var(--co-fg) 58% 76%, transparent 76% 86%, var(--co-giallo) 86%); transform: skewX(-30deg); transform-origin: left; }
+@supports (animation-timeline: view()) {
+  :root:not(.lite)[data-design="corsa"] .co-livery { animation: co-lay linear both; animation-timeline: view(); animation-range: entry 10% cover 35%; }
+}
+@keyframes co-lay { from { transform: skewX(-30deg) scaleX(0); } }
+:root[data-design="corsa"] .co-h2 { margin: 0 0 clamp(36px, 5vw, 64px); font: italic 800 clamp(2.5rem, 6vw, 5.4rem)/.92 var(--co-sans); font-stretch: 120%; letter-spacing: -.012em; text-transform: uppercase; }
+:root[data-design="corsa"] .co .chip { border-radius: 2px; background: transparent; box-shadow: inset 0 0 0 1px var(--co-line2); color: var(--co-soft); font: 500 11.5px/1.3 var(--co-mono); padding: 5px 8px; }
+:root[data-design="corsa"] .co-sec .ly-btn { border-radius: 3px; font: italic 700 14px/1 var(--co-sans); letter-spacing: .04em; text-transform: uppercase; }
+
+/* about: carbon tiles under a clearcoat */
+:root[data-design="corsa"] .ab-tile, :root[data-design="corsa"] .ab-play { border-radius: 6px; background: var(--co-sheen), var(--co-carbon), var(--co-bg2); box-shadow: inset 0 0 0 1px var(--co-line), inset 0 1px 0 rgba(255, 255, 255, .04); }
+:root[data-design="corsa"] .ab-v { font-weight: 700; font-style: italic; font-stretch: 108%; letter-spacing: -.01em; }
+:root[data-design="corsa"] .ab-k .ic { color: var(--co-red-t); }
+:root[data-design="corsa"] .ab-seg, :root[data-design="corsa"] .ab-seg button, :root[data-design="corsa"] .ab-go { border-radius: 3px; }
+:root[data-design="corsa"] .ab-seg button[aria-pressed="true"] { background: var(--co-red); color: #fff; }
+:root[data-design="corsa"] .ab-chip { border-radius: 10px; background: linear-gradient(160deg, #1F1F24, #131316); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 0 1px var(--co-line), 0 8px 16px -8px #000; }
+:root[data-design="corsa"] .ab-play[data-mode="text"] .ab-chip { border-radius: 3px; }
+
+/* questions: cards with the SP3 door's sweep as their one big corner */
+:root[data-design="corsa"] .qz { --qz-r: 4px; --qz-tail: 40px; }
+:root[data-design="corsa"] .qz-face { background: var(--co-sheen), var(--co-carbon), var(--co-bg2); border-color: var(--co-line2); }
+:root[data-design="corsa"] .qz-back { background: linear-gradient(160deg, #C80000, #8E0000); border-color: #FF4A3D; color: #fff; }
+:root[data-design="corsa"] .qz-back :is(.qz-n, .qz-flipback) { color: rgba(255, 255, 255, .82); }
+:root[data-design="corsa"] .qz-q { font-weight: 700; font-style: italic; font-stretch: 106%; }
+
+/* contact: the pit board */
+:root[data-design="corsa"] .co-board { position: relative; padding: clamp(28px, 4vw, 52px) clamp(22px, 4vw, 52px) clamp(18px, 2vw, 28px); border-radius: 6px 6px 6px 48px; background: var(--co-sheen), var(--co-carbon), #0F0F12;
+  box-shadow: inset 0 0 0 1px var(--co-line2), inset 0 3px 0 var(--co-red), 0 40px 80px -40px #000; }
+:root[data-design="corsa"] .co-board-revs { position: absolute; right: clamp(22px, 4vw, 52px); top: 22px; display: flex; gap: 5px; }
+:root[data-design="corsa"] .co-board-revs i { width: 12px; height: 5px; border-radius: 1px; --c: #2FD158; background: var(--c); opacity: .15; transition: opacity 120ms ease calc(var(--i) * 45ms), box-shadow 120ms ease calc(var(--i) * 45ms); }
+:root[data-design="corsa"] .co-board-revs i:nth-child(n + 4) { --c: #FF2A14; }
+:root[data-design="corsa"] .co-board-revs i:nth-child(n + 7) { --c: #3E7BFF; }
+:root[data-design="corsa"] .co-board:is(:hover, :focus-within) .co-board-revs i { opacity: 1; box-shadow: 0 0 8px var(--c); }
+:root[data-design="corsa"] .ly-contact-k { color: var(--co-red-t); }
+:root[data-design="corsa"] .ly-contact-h { font-weight: 800; font-style: italic; font-stretch: 112%; letter-spacing: -.015em; text-transform: uppercase; }
+:root[data-design="corsa"] .cl-node { border-radius: 14px; }
+
+/* play: the field is a carbon floor; the toys in Rosso, giallo and graphite */
+:root[data-design="corsa"] .pf-wrap {
+  --pf-bg: var(--co-sheen), var(--co-carbon), #0E0E11; --pf-fog: #0E0E11; --pf-grid: rgba(244, 241, 234, .1);
+  --pf-face: linear-gradient(160deg, #222227, #141417); --pf-edge: #2E2E35; --pf-ink: var(--co-fg);
+  --pf-a: #D40000; --pf-b: #F6C400; --pf-c: #3A3A42; --pf-line: rgba(244, 241, 234, .12); --pf-tag: #141418;
+  --pf-label: radial-gradient(circle, #F4F1EA 0 18%, #D40000 19% 60%, #8E0000); --pf-r: 8px; --pf-shadow: 0 26px 40px -24px #000;
+}
+
+/* ───────── shared chrome ───────── */
+:root[data-design="corsa"] .sw-ic { border-radius: 4px; }
+:root[data-design="corsa"] .agent-bar { position: relative; background: #0F0F12; border-color: var(--co-line2); }
+:root[data-design="corsa"] .agent-bar::before { content: ""; position: absolute; left: 14px; width: 64px; top: -1px; height: 2px; background: var(--co-red); transform: skewX(-30deg); pointer-events: none; }
+:root[data-design="corsa"] .ab-prompt { color: var(--co-red-t); }
+:root[data-design="corsa"] .ab-input { caret-color: var(--co-red-t); }
+:root[data-design="corsa"] .ab-input:focus-visible { outline: 0; }
+:root[data-design="corsa"] .ab-send { border-radius: 4px; background: var(--co-red); color: #fff; }
+:root[data-design="corsa"] .agent-panel { background: #0D0D10; border-color: var(--co-line2); }
+:root[data-design="corsa"] .agent-head, :root[data-design="corsa"] .agent-status { background: #111114; font-family: var(--co-mono); }
+:root[data-design="corsa"] .at-mark, :root[data-design="corsa"] .agent-status span:first-child { color: var(--co-red-t); }
+:root[data-design="corsa"] .t-chip, :root[data-design="corsa"] .t-key, :root[data-design="corsa"] .agent-palette button { border-radius: 3px; }
+:root[data-design="corsa"] .win { border-color: var(--co-line2); background: #0D0D10; }
+:root[data-design="corsa"] .win-bar { background: linear-gradient(var(--co-red), var(--co-red)) 0 0 / 56px 2px no-repeat, #111114; }
+:root[data-design="corsa"] .win-title { font: 500 12px/1 var(--co-mono); letter-spacing: .04em; color: var(--co-soft); }
+:root[data-design="corsa"] .ui-btn, :root[data-design="corsa"] input.field, :root[data-design="corsa"] textarea.field { border-radius: 3px; }
+:root[data-design="corsa"] :is(input, textarea).field:focus-visible { outline: 0; border-color: var(--co-red-t); }
+:root[data-design="corsa"] .sheet-body { border-radius: 10px 10px 0 0; background: linear-gradient(90deg, var(--co-red) 0 33%, var(--co-fg) 33% 40%, transparent 40%) 0 0 / 100% 3px no-repeat, #0D0D10; }
+:root[data-design="corsa"] .case-kind, :root[data-design="corsa"] .case-meta dt, :root[data-design="corsa"] .case h2 { font-family: var(--co-mono); letter-spacing: .1em; text-transform: uppercase; font-size: 11.5px; }
+:root[data-design="corsa"] .case h1 { font-style: italic; font-weight: 800; font-stretch: 115%; text-transform: uppercase; letter-spacing: -.01em; }
+:root[data-design="corsa"] .toast { border-radius: 4px; font: 500 12.5px/1.3 var(--co-mono); }
+:root[data-design="corsa"] .play-win { --btn-r: 3px; --r-sm: 4px; --r-xs: 2px; --chip-bg: rgba(244, 241, 234, .08); --ok: #2FD158; --font-d: var(--co-sans);
+  --rec-pill-bg: #141418; --rec-pill-fg: #F4F1EA; --rec-pill-muted: #A6A29B; --rec-label: #D40000; --rec-label-ink: #fff; }
+:root[data-design="corsa"] .play-body { background: var(--co-carbon), #0D0D10; }
+
+/* ───────── responsive ───────── */
+@media (max-width: 860px) {
+  /* phones: the copy and portrait first, then the garage as a band beneath them */
+  :root[data-design="corsa"] .ly-hero { --co-cx: .5; --co-cy: .46; --co-f: .86; min-height: 0; padding-bottom: calc(76vw + 96px); }
+  :root[data-design="corsa"] .ly-hero-in { grid-template-columns: minmax(0, 1fr); }
+  :root[data-design="corsa"] .ly-hero-pt { justify-self: center; width: min(78vw, 320px); margin-top: 8px; }
+  :root[data-design="corsa"] .co-stage { inset: auto 0 0; height: calc(76vw + 96px); }
+  :root[data-design="corsa"] .co-stage::after { background: linear-gradient(var(--co-bg), transparent 22%, transparent 80%, rgba(0, 0, 0, .5)); }
+  :root[data-design="corsa"] .co-load { top: calc(var(--co-cy) * 100% + 22vw); }
+  :root[data-design="corsa"] .co-hud { left: 50%; translate: -50% 0; top: auto; bottom: calc(76vw + 72px); justify-items: center; gap: 8px; }
+  :root[data-design="corsa"] .co-dash > span { min-width: 76px; padding: 7px 9px; }
+  :root[data-design="corsa"] .co-revs i { width: 10px; }
+  :root[data-design="corsa"] .co-hint { display: none; }
+  :root[data-design="corsa"] .co-credit { left: 16px; right: 16px; bottom: 10px; max-width: none; text-align: center; font-size: 9.5px; }
+  :root[data-design="corsa"] .ly-nav a::after { left: 6px; right: 6px; }
+}
+@media (max-width: 480px) { :root[data-design="corsa"] .ly-iam { width: 40px; padding: 0; } }
+
+/* ───────── performance mode + reduced motion: the still, quiet instruments ───────── */
+:root.lite[data-design="corsa"] .ly-hero { cursor: auto; }
+:root.lite[data-design="corsa"] .co-hint, :root.lite[data-design="corsa"] .co-load { display: none; }
+:root.lite[data-design="corsa"] .co-still { transition: none; }
+:root.lite[data-design="corsa"] .co-board-revs i { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-design="corsa"] .ly-hero { cursor: auto; }
+  :root[data-design="corsa"] .co-hint, :root[data-design="corsa"] .co-load { display: none; }
+  :root[data-design="corsa"] .co-hud[data-limit] .co-revs i { animation: none; }
+  :root[data-design="corsa"] .co-gl, :root[data-design="corsa"] .co-still, :root[data-design="corsa"] .co-board-revs i, :root[data-design="corsa"] .ly-nav a::after { transition: none; }
+}
