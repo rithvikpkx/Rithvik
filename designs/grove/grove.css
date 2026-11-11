@@ -92,3 +92,4 @@
 /* ───────── calm: a designed still (moss and flowers stay; the wind stops) ───────── */
 :root.lite[data-design="grove"] .gv-sprig { animation: none; }
 @media (prefers-reduced-motion: reduce) { :root[data-design="grove"] .gv-sprig { animation: none; } }
+@media (max-width: 640px) { :root[data-design="grove"] .gv-sprig-a { display: none; } } /* on a phone the corner vine would sit on the headline */
