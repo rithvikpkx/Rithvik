@@ -227,10 +227,12 @@
 @media (max-width: 860px) {
   :root[data-design="sprawl"] .ly-hero::before { background: linear-gradient(180deg, rgba(5, 4, 12, .55), rgba(5, 4, 12, .2) 50%, transparent 70%); }
   :root[data-design="sprawl"] .sp-hud { inset: 68px 10px 22px; }
-  :root[data-design="sprawl"] .sp-hud-tr { display: none; }
+  :root[data-design="sprawl"] .sp-hud > .sp-hud-tr { display: none; }
   :root[data-design="sprawl"] .ly-nav a::after { left: 5px; right: 5px; }
   :root[data-design="sprawl"] .sp-sign { padding: 24px 18px; border-radius: 16px; }
 }
+
+@media (max-width: 520px) { :root[data-design="sprawl"] .sp-hud > span { display: none; } } /* phones: the name needs the room; the corners stay */
 
 /* ───────── performance mode + reduced motion: a designed still (rain hangs, tubes lit, nothing flickers) ───────── */
 :root.lite[data-design="sprawl"] .sp-rain i { animation: none; will-change: auto; }
