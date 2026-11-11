@@ -12,6 +12,7 @@
   --ui-line: var(--bp-ink3); --ui-field: rgba(234, 243, 255, .08); --ui-font: var(--bp-sans); --ui-mono: var(--bp-mono);
   --ui-r: 2px; --ui-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 28px 60px -24px rgba(2, 12, 30, .85); --ui-blur: none;
   --agent-text-font: var(--bp-sans);
+  --warp: .7; --warp-line: var(--bp-ink3); /* drawing paper is stiff: the tiles bow a little */
   /* portrait: a square print in a hairline frame; the strings are construction lines the ink pulses along */
   --pt-ring: rgba(234, 243, 255, .85); --pt-ring-w: 1px; --pt-photo-bg: var(--bp-paper2); --pt-photo-r: 0px; --pt-shadow: 0 34px 60px -30px rgba(2, 12, 30, .9);
   --pt-node-bg: var(--bp-paper2); --pt-node-fg: var(--bp-ink); --pt-node-line: var(--bp-ink2); --pt-node-r: 50%; --pt-node-size: 12%;
