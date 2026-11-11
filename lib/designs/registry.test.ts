@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BOOT_SCRIPT, DESIGNS, htmlAttrsFor, isDarkColor, resolveLook } from "./registry.ts";
-import { MORE_DESIGNS } from "./more.ts";
 
-test("the nine base designs plus later ones, each with a full swatch and a shader (Corsa draws with three.js instead)", () => {
-  assert.equal(DESIGNS.length, 9 + MORE_DESIGNS.length);
+test("the nine base designs and any added ones, each with a full swatch and shader (Corsa draws with three.js instead)", () => {
+  assert.ok(DESIGNS.length >= 9);
+  assert.equal(new Set(DESIGNS.map((d) => d.id)).size, DESIGNS.length);
   for (const d of DESIGNS) {
     assert.equal(d.swatch.length, 4, d.id);
     if (d.id === "corsa") { assert.equal(d.shader, undefined); continue; } // the documented three.js exception: no shared shader beside it
@@ -33,4 +33,11 @@ test("isDarkColor", () => {
 
 test("boot script parses", () => {
   assert.doesNotThrow(() => new Function(BOOT_SCRIPT));
+});
+
+test("every design folder with a meta.ts is registered (merges must not drop a look)", async () => {
+  const { readdirSync, existsSync } = await import("node:fs");
+  const folders = readdirSync("designs", { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(`designs/${e.name}/meta.ts`)).map((e) => e.name);
+  const ids = new Set(DESIGNS.map((d) => d.id));
+  for (const f of folders) assert.ok(ids.has(f), `designs/${f} is not in lib/designs/more.ts`);
 });

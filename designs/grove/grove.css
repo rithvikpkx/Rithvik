@@ -1,0 +1,95 @@
+/* Grove: the nature element. Tokens (the family's --el-* set, the cable, the field), then the moss name, the portrait,
+   the Experience vine and topiary, the Contact clearing. Shared structure lives in designs/elemental/elemental.css. */
+:root[data-design="grove"] {
+  --el-bg: #0C1610; --el-panel: #0F1C14; --el-panel2: #132319; --el-fg: #EEF3E2; --el-soft: #CBD8BD; --el-mut: #93A88A;
+  --el-acc: #8FD16A; --el-acc2: #F2B6C6; --el-hot: #D8F59A; --el-acc-fg: #0B1A0E;
+  --el-line: rgba(200, 235, 170, .11); --el-line2: rgba(200, 235, 170, .24); --el-glow: rgba(143, 209, 106, .4);
+  --el-stops: #F4F0B8, #D8F59A 22%, #8FD16A 52%, #3F7F3A 82%, #1F3D22;
+  --el-d: "Caprasimo", Georgia, serif; --el-b: "Figtree", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Fragment Mono", ui-monospace, Menlo, monospace;
+  --warp: 1.5; --el-r: 20px; --el-name-w: 400; --el-name-track: -.005em; --el-h2-w: 400; --el-role-track: -.005em;
+  /* new leaves, backlit */
+  --el-mat: linear-gradient(180deg, #D8F59A, #8FD16A 55%, #5FA33F); --el-mat-fg: #0B1A0E;
+  --el-tile: radial-gradient(90% 70% at 20% 0%, rgba(216, 245, 154, .07), transparent 60%), linear-gradient(165deg, #162A1D, #0E1A12); --el-tile-c: #112016; --el-tile-r: 26px;
+  --el-node: radial-gradient(circle at 50% 30%, #23402A, #0E1A12 72%); --el-node-lit: radial-gradient(circle at 40% 30%, #F4F0B8, #8FD16A 45%, #3F7F3A); --el-node-r: 50% 50% 50% 8px;
+  --el-scrim: linear-gradient(90deg, rgba(7, 16, 11, .72), rgba(7, 16, 11, .34) 42%, transparent 64%);
+  --el-tex: radial-gradient(70% 40% at 85% 0%, rgba(216, 245, 154, .05), transparent), radial-gradient(50% 30% at 0% 100%, rgba(143, 209, 106, .04), transparent);
+  /* portrait: a ring of moss; the cables are green stems carrying sap-light */
+  --pt-photo-bg: #132319; --pt-shadow: 0 0 60px -20px rgba(143, 209, 106, .4), 0 40px 80px -40px #000;
+  --pt-node-bg: #132319; --pt-node-fg: var(--el-fg); --pt-node-line: rgba(143, 209, 106, .45); --pt-node-r: 50% 50% 50% 10px;
+  --pt-sheath: #2F5A26; --pt-sheath-w: 5px; --pt-body: 1; --pt-edge: rgba(190, 235, 150, .5); --pt-edge-w: 1px; --pt-sheen: rgba(230, 255, 200, .35); --pt-cap: round;
+  --pt-core: #B9E68A; --pt-glow: #8FD16A; --pt-head: #FBFFE8; --pt-halo: .2; --pt-pulse-a: #FBFFE8; --pt-pulse-m: #D8F59A; --pt-pulse-b: #5FA33F;
+}
+@media (max-width: 860px) { :root[data-design="grove"] { --el-scrim: linear-gradient(180deg, rgba(7, 16, 11, .64), rgba(7, 16, 11, .28) 55%, transparent 80%); } }
+
+/* the ring: a wreath of moss round the photo (the same filter as the name, on a plain band) */
+:root[data-design="grove"] .gv .pt::before { content: ""; position: absolute; left: calc(var(--pt-x) - 9px); top: calc(var(--pt-y) - 9px); width: calc(var(--pt-w) + 18px); aspect-ratio: 1; border-radius: 50%;
+  border: 11px solid #6FB24E; filter: url(#gv-moss-s); }
+
+/* ───────── name: living moss ───────── */
+[data-kn="grove"] .kn-g { color: #6FB24E; filter: url(#gv-moss);
+  transform: translate3d(var(--x), var(--y), 0) skewX(calc(var(--px) * var(--k) * -13deg)) scaleY(calc(1 + var(--k) * .05)); transform-origin: 50% 100%; }
+@media (max-width: 860px) { [data-kn="grove"] .kn-g { filter: url(#gv-moss-s); } }
+/* flowers tucked into the moss: two per letter, buds at rest, opening under the pointer */
+[data-kn="grove"] .kn-l { --b: calc(.4 + var(--k) * .9); }
+[data-kn="grove"] .kn-l::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at calc(32% + sin(var(--i) * 2.7) * 18%) calc(30% + cos(var(--i) * 1.9) * 12%), #FFE58A 0 calc(var(--b) * .022em), #F7C6D2 calc(var(--b) * .026em) calc(var(--b) * .06em), rgba(242, 182, 198, .5) calc(var(--b) * .066em), transparent calc(var(--b) * .07em)),
+    radial-gradient(circle at calc(64% + cos(var(--i) * 3.3) * 16%) calc(66% + sin(var(--i) * 1.3) * 14%), #FFF6C2 0 calc(var(--b) * .018em), #FFFFFF calc(var(--b) * .022em) calc(var(--b) * .048em), transparent calc(var(--b) * .054em));
+  filter: drop-shadow(0 .01em .01em rgba(0, 0, 0, .5)); }
+
+/* ───────── portrait: botanical print ───────── */
+[data-pfx="grove"] { --pfx-off: circle(0% at 0% 100%); --pfx-on: circle(150% at 0% 100%); --pfx-t: 900ms; --pfx-cap-bg: rgba(12, 22, 16, .74); --pfx-cap-fg: #D8F59A; }
+[data-pfx="grove"] .pfx-scan { display: none; }
+/* real leaf shadows falling across the print, swaying */
+.gv-pfx-shade { inset: -12%; mix-blend-mode: multiply; opacity: .7; filter: blur(3px); animation: gv-sway 5s ease-in-out infinite alternate; transform-origin: 0 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23173A1C'%3E%3Cpath d='M0 0c30 4 44 20 40 46C16 40 4 24 0 0Z'/%3E%3Cpath d='M100 8c-26 2-40 16-38 40 22-4 34-18 38-40Z'/%3E%3Cpath d='M8 100c6-26 22-36 46-32-8 22-24 32-46 32Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; }
+@keyframes gv-sway { to { transform: rotate(3deg) translate(2%, 1%); } }
+.gv-pfx-dapple { mix-blend-mode: screen; background: radial-gradient(14% 10% at 66% 30%, rgba(244, 240, 184, .5), transparent), radial-gradient(9% 7% at 38% 58%, rgba(244, 240, 184, .35), transparent), radial-gradient(18% 12% at 80% 74%, rgba(244, 240, 184, .3), transparent); animation: gv-dapple 4s ease-in-out infinite alternate; }
+@keyframes gv-dapple { to { opacity: .55; transform: translate(-3%, 2%); } }
+
+/* ───────── experience: the vine and the topiary ───────── */
+:root[data-design="grove"] .ly-xp { --xp-w: 22px; }
+:root[data-design="grove"] .gx-twig { left: calc(50% - 1px); width: 2px; border-radius: 2px; background: rgba(200, 235, 170, .14); }
+/* the vine: a stem with leaves alternating left and right every 44px */
+:root[data-design="grove"] .gx-vine { background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 44'%3E%3Cpath d='M11 12c-3-6-8-8-11-6 2 5 6 7 11 6Z' fill='%238FD16A'/%3E%3Cpath d='M11 34c3-6 8-8 11-6-2 5-6 7-11 6Z' fill='%236FB24E'/%3E%3Cpath d='M11 12 4 7M11 34l7-5' stroke='%233F7F3A' stroke-width='.6'/%3E%3C/svg%3E") 0 0 / 22px 44px repeat-y,
+    linear-gradient(90deg, transparent calc(50% - 1.5px), #4E8A36 calc(50% - 1.5px), #8FD16A 50%, #3F7F3A calc(50% + 1.5px), transparent calc(50% + 1.5px));
+  filter: drop-shadow(0 0 6px rgba(143, 209, 106, .35)); }
+:root[data-design="grove"] .gx-bud { width: 22px; height: 22px; border-radius: 50% 0 50% 50%; rotate: -45deg; background: radial-gradient(circle at 70% 30%, #F4F0B8, #8FD16A 55%, #3F7F3A); box-shadow: 0 0 14px rgba(143, 209, 106, .6); animation: gx-unfurl 2.4s ease-in-out infinite alternate; }
+@keyframes gx-unfurl { to { rotate: -20deg; scale: 1.15; } }
+
+:root[data-design="grove"] .gx-top > * { position: absolute; display: block; }
+:root[data-design="grove"] .gx-shadow { left: 14%; right: 14%; bottom: 22%; height: 10%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); transform: translateX(calc(var(--px) * -10px)); }
+/* the P sways from its base toward the pointer, like a shrub in the wind */
+:root[data-design="grove"] .gx-p { left: 4%; top: 4%; width: 92%; height: 92%; overflow: visible; transform-origin: 50% 70%; transform: rotate(calc(var(--px) * 3deg)) skewX(calc(var(--px) * -4deg)); }
+:root[data-design="grove"] .gx-p .pp-o { fill: #2B2016; }
+:root[data-design="grove"] .gx-p .pp-c { fill: #0C1610; }
+:root[data-design="grove"] .gx-p .pp-r { fill: #A9D77E; filter: url(#gv-moss-p); }
+:root[data-design="grove"] .gx-p .pp-f { fill: #5FA33F; filter: url(#gv-moss-p); }
+/* flowers: buds that open while the pointer is over the object */
+:root[data-design="grove"] .gx-fl { scale: .35; transition: scale 600ms cubic-bezier(.3, 1.6, .5, 1) var(--d, 0ms); }
+:root[data-design="grove"] .gx-fl ellipse { fill: #F7C6D2; }
+:root[data-design="grove"] .gx-fl circle { fill: #FFE58A; }
+@media (hover: hover) and (pointer: fine) { :root[data-design="grove"] .ly-xp-edu:hover .gx-fl { scale: 1; } }
+:root[data-design="grove"] .ly-edu-obj:active .gx-fl { scale: 1; }
+
+/* ───────── contact: a clearing ───────── */
+:root[data-design="grove"] .gv-clearing { position: relative; }
+:root[data-design="grove"] .gv-sprig { position: absolute; width: clamp(90px, 12vw, 160px); height: auto; aspect-ratio: 1; overflow: visible; pointer-events: none; animation: gv-sprig 5s ease-in-out infinite alternate; }
+:root[data-design="grove"] .gv-sprig-a { left: -2%; top: calc(-1 * clamp(70px, 9vw, 130px)); transform-origin: 0 100%; }
+:root[data-design="grove"] .gv-sprig-b { right: 0; bottom: 4%; transform-origin: 100% 0; scale: -1 -1; animation-delay: -2.5s; }
+@keyframes gv-sprig { to { rotate: 4deg; } }
+:root[data-design="grove"] .gv-stem { fill: none; stroke: #5FA33F; stroke-width: 2; stroke-linecap: round; }
+:root[data-design="grove"] .gv-leaf { fill: #8FD16A; }
+:root[data-design="grove"] .gv-leaf:nth-child(odd) { fill: #6FB24E; }
+
+/* ───────── play: a meadow ───────── */
+:root[data-design="grove"] .pf-wrap { --pf-bg: radial-gradient(120% 90% at 50% 0%, #1F3D22, #0E1A12 68%); --pf-fog: #0C1610; --pf-grid: rgba(200, 235, 170, .12);
+  --pf-face: linear-gradient(165deg, #23402A, #132319); --pf-edge: #2F5A26; --pf-a: #8FD16A; --pf-b: #F2B6C6; --pf-c: #3F7F3A; --pf-ink: #EEF3E2; --pf-line: rgba(200, 235, 170, .18);
+  --pf-label: radial-gradient(circle, #FFE58A 0 14%, #F2B6C6 32%, #8FD16A 60%, #3F7F3A); --pf-tag: #132319; --pf-r: 28px; --pf-shadow: 0 24px 40px -22px rgba(0, 0, 0, .85); }
+
+/* ───────── calm: a designed still (moss and flowers stay; the wind stops) ───────── */
+:root.lite[data-design="grove"] .gv-sprig { animation: none; }
+@media (prefers-reduced-motion: reduce) { :root[data-design="grove"] .gv-sprig { animation: none; } }
+@media (max-width: 640px) { :root[data-design="grove"] .gv-sprig-a { display: none; } } /* on a phone the corner vine would sit on the headline */

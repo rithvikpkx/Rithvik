@@ -2,18 +2,20 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PLAY } from "@/lib/play/games";
 import { copiesFor, onScreen, place, velocity, wrap } from "@/lib/play/field";
+import DarkroomPreview from "./DarkroomPreview";
 import "./playfield.css";
 
 /** One toy placed on the tile of the plane (world px). `k` is the PLAY id. Two staggered rows of three: row two sits half a column over. */
 type Spot = { k: string; x: number; y: number; w: number; h: number; r?: number };
-const TW = 1200, TH = 880, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
+const TW = 1400, TH = 880, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
 const SPOTS: Spot[] = [
   { k: "records", x: 50, y: 95, w: 300, h: 225 },
-  { k: "artboard", x: 475, y: 90, w: 250, h: 230, r: -4 },
-  { k: "typeracer", x: 840, y: 115, w: 320, h: 150, r: 4 },
-  { k: "center", x: 285, y: 530, w: 230, h: 230, r: 2 },
-  { k: "angle", x: 685, y: 535, w: 230, h: 210 },
-  { k: "dots", x: 1125, y: 505, w: 150, h: 270, r: 7 },
+  { k: "artboard", x: 425, y: 90, w: 250, h: 230, r: -4 },
+  { k: "typeracer", x: 740, y: 115, w: 320, h: 150, r: 4 },
+  { k: "darkroom", x: 1110, y: 80, w: 240, h: 240, r: 3 },
+  { k: "center", x: 235, y: 530, w: 230, h: 230, r: 2 },
+  { k: "angle", x: 700, y: 535, w: 230, h: 210 },
+  { k: "dots", x: 1190, y: 505, w: 150, h: 270, r: 7 },
 ];
 const TOYS = new Map(PLAY.map((p) => [p.id, p]));
 const LABEL_H = 44; // the name tag under a toy counts towards its on-screen box
@@ -255,11 +257,9 @@ function Preview({ k }: { k: string }) {
   switch (k) {
     case "records": return (
       <span className="pf-shape">
-        <span className="pf-well" />
-        <span className="pf-disc"><span className="pf-lab"><i /></span></span>
-        <span className="pf-sheen" />
-        <span className="pf-arm" />
-        <span className="pf-btn"><i /></span>
+        <span className="pf-disc">{PF_DOTS.map(([x, y], i) => <i key={i} style={{ left: `${x}%`, top: `${y}%` }} />)}</span>
+        <span className="pf-scr">{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <i key={i} style={{ animationDelay: `${(i * 137) % 900}ms` }} />)}</span>
+        <span className="pf-knobs"><i /><i /><i /></span>
       </span>
     );
     case "artboard": return (
@@ -296,9 +296,17 @@ function Preview({ k }: { k: string }) {
         <span className="pf-cross" /><span className="pf-target" /><span className="pf-box" />
       </span>
     );
+    case "darkroom": return <DarkroomPreview />;
     default: return null;
   }
 }
+
+// Deck preview: beat dots on three rings of the disc ([x%, y%]).
+const PF_DOTS: [number, number][] = [
+  [50, 8], [73, 14], [88, 33], [90, 58], [78, 80], [55, 91], [30, 86], [13, 68], [10, 42], [24, 20],
+  [50, 22], [68, 32], [75, 52], [66, 70], [47, 77], [30, 68], [26, 48], [35, 31],
+  [50, 36], [62, 50], [48, 63], [37, 50],
+];
 
 // Count the Dots: three flashes of 5, 8 and 6 dots, scattered inside the capsule ([x%, y%, flash]).
 const DOTS: [number, number, number][] = [

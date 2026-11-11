@@ -1,0 +1,98 @@
+/* Stone: the earth element. Tokens (the family's --el-* set, the cable, the field), then the name, the portrait, the
+   Experience core and slab, the Contact tablet. Shared structure lives in designs/elemental/elemental.css. */
+:root[data-design="stone"] {
+  --el-bg: #17120E; --el-panel: #1C1611; --el-panel2: #241C16; --el-fg: #EFE5D5; --el-soft: #D2C4AE; --el-mut: #A69580;
+  --el-acc: #D9A55B; --el-acc2: #9AA978; --el-hot: #F1C879; --el-acc-fg: #1B1209;
+  --el-line: rgba(240, 220, 190, .1); --el-line2: rgba(240, 220, 190, .22); --el-glow: rgba(217, 165, 91, .38);
+  --el-stops: #F7E2B0, #F1C879 20%, #D9A55B 48%, #9A6A3A 78%, #4A3524;
+  --el-d: "Cinzel", "Trajan Pro", Georgia, serif; --el-b: "Alegreya Sans", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+  --warp: .55; --el-r: 4px; --el-name-w: 900; --el-name-track: .02em; --el-case: uppercase; --el-h2-w: 800; --el-role-case: none; --el-role-track: .01em;
+  /* a granite speckle every stone surface shares */
+  --sn-speck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .88 0 0 0 0 .78 1.6 0 0 0 -.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --sn-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .88 0 0 0 0 .78 .5 0 0 0 -.19'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --el-mat: var(--sn-speck) 0 0 / 140px, linear-gradient(180deg, #E9C27C, #C08A45 60%, #8A5E2E); --el-mat-fg: #1B1209;
+  --el-tile: var(--sn-grain) 0 0 / 200px, linear-gradient(170deg, #2A2119, #1A140F); --el-tile-c: #1F1813; --el-tile-r: 6px;
+  --el-node: var(--sn-speck) 0 0 / 120px, radial-gradient(circle at 45% 35%, #3B3026, #1A140F 72%); --el-node-lit: var(--sn-speck) 0 0 / 120px, radial-gradient(circle at 45% 35%, #FBE3A8, #E0A75A 45%, #8A5E2E); --el-node-r: 12px;
+  --el-scrim: linear-gradient(90deg, rgba(14, 10, 8, .74), rgba(14, 10, 8, .36) 42%, transparent 64%);
+  --el-tex: var(--sn-grain), repeating-linear-gradient(176deg, transparent 0 46px, rgba(0, 0, 0, .1) 46px 48px, transparent 48px 120px);
+  /* portrait: a hewn stone ring; the cables are rope-wrapped rock veins carrying amber light */
+  --pt-photo-bg: #241C16; --pt-photo-r: 50%; --pt-shadow: 0 30px 70px -30px #000, 0 0 0 1px rgba(0, 0, 0, .5);
+  --pt-node-bg: #241C16; --pt-node-fg: var(--el-fg); --pt-node-line: rgba(240, 220, 190, .3); --pt-node-r: 12px;
+  --pt-sheath: #3B3026; --pt-sheath-w: 6px; --pt-body: 1; --pt-edge: rgba(240, 220, 190, .35); --pt-edge-w: 1px; --pt-sheen: rgba(255, 240, 210, .18); --pt-cap: butt;
+  --pt-core: #D9A55B; --pt-glow: #E0A75A; --pt-head: #FFF0CC; --pt-halo: .18; --pt-pulse-a: #FFF0CC; --pt-pulse-m: #F1C879; --pt-pulse-b: #9A6A3A;
+}
+@media (max-width: 860px) { :root[data-design="stone"] { --el-scrim: linear-gradient(180deg, rgba(14, 10, 8, .66), rgba(14, 10, 8, .3) 55%, transparent 80%); } }
+
+/* the ring: a hewn millstone round the photo, lit from the upper left */
+:root[data-design="stone"] .sn .pt::before { content: ""; position: absolute; left: calc(var(--pt-x) - 12px); top: calc(var(--pt-y) - 12px); width: calc(var(--pt-w) + 24px); aspect-ratio: 1; border-radius: 50%;
+  background: var(--sn-speck) 0 0 / 160px, conic-gradient(from 300deg, #6E5B47, #3B3026 30%, #241C16 55%, #4A3D30 80%, #6E5B47);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 13px), #000 calc(100% - 12px)); mask: radial-gradient(closest-side, transparent calc(100% - 13px), #000 calc(100% - 12px));
+  box-shadow: inset 0 2px 1px rgba(255, 240, 210, .25); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .7)); }
+
+/* ───────── name: chiselled, crumbling ───────── */
+[data-kn="stone"] .kn-g { color: transparent; -webkit-text-fill-color: transparent; -webkit-background-clip: text; background-clip: text;
+  background: linear-gradient(calc(100deg + sin(var(--i) * 1.9) * 40deg), transparent calc(50% - var(--k) * 1%), rgba(20, 12, 8, .95) calc(50% - var(--k) * .6%) calc(50% + var(--k) * .6%), transparent calc(50% + var(--k) * 1%)),
+    var(--sn-speck) 0 0 / 90px, linear-gradient(180deg, #F6EEDF, #D6C6AC 55%, #A8957A);
+  -webkit-background-clip: text; background-clip: text;
+  filter: drop-shadow(0 -1px 0 rgba(255, 246, 225, .35)) drop-shadow(0 3px 2px rgba(0, 0, 0, .75));
+  transform: translate3d(var(--x), calc(var(--y) + var(--k) * .11em), 0) rotate(calc(sin(var(--i) * 2.1) * var(--k) * 9deg)); transform-origin: 50% 100%; }
+/* chips breaking off a struck letter */
+[data-kn="stone"] .kn-g::before, [data-kn="stone"] .kn-g::after { content: ""; position: absolute; top: 40%; width: .15em; height: .12em; background: #CDBB9E; clip-path: polygon(0 30%, 60% 0, 100% 70%, 30% 100%); pointer-events: none; opacity: 0; scale: var(--k); }
+[data-kn="stone"] .kn-g::before { left: 20%; } [data-kn="stone"] .kn-g::after { left: 65%; width: .1em; height: .09em; }
+[data-kn="stone"][data-live] .kn-g::before { animation: sn-chip 900ms cubic-bezier(.4, 0, .9, .6) infinite; animation-delay: calc(var(--i) * -110ms); }
+[data-kn="stone"][data-live] .kn-g::after { animation: sn-chip 1.2s cubic-bezier(.4, 0, .9, .6) infinite reverse; animation-delay: calc(var(--i) * -70ms); animation-direction: normal; }
+@keyframes sn-chip { 0% { opacity: 0; translate: 0 0; rotate: 0deg; } 10% { opacity: 1; } 100% { opacity: 0; translate: calc(sin(var(--i)) * .3em) 1.1em; rotate: 220deg; } }
+/* dust settling off the base */
+[data-kn="stone"] .kn-l::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: -.04em; height: .3em; border-radius: 50%; background: radial-gradient(closest-side, rgba(225, 205, 170, .5), transparent); filter: blur(.04em); opacity: calc(var(--k) * .9); scale: calc(.6 + var(--k) * .7) 1; pointer-events: none; }
+
+/* ───────── portrait: relief ───────── */
+[data-pfx="stone"] { --pfx-off: polygon(0 0, 100% 0, 100% 0, 82% 0, 64% 0, 47% 0, 30% 0, 14% 0, 0 0); --pfx-on: polygon(0 0, 100% 0, 100% 112%, 82% 104%, 64% 116%, 47% 103%, 30% 114%, 14% 105%, 0 115%); --pfx-t: 900ms; --pfx-cap-bg: rgba(23, 18, 14, .78); --pfx-cap-fg: #F1D8A6; }
+[data-pfx="stone"] .pfx-scan { display: none; }
+.sn-pfx-dust { background: radial-gradient(120% 40% at 50% 0%, rgba(240, 220, 180, .22), transparent 70%), linear-gradient(transparent 60%, rgba(30, 20, 12, .35)); }
+
+/* ───────── experience: the core sample and the slab ───────── */
+:root[data-design="stone"] .ly-xp { --xp-w: 16px; }
+:root[data-design="stone"] .sx-core { border-radius: 3px; background: var(--sn-speck) 0 0 / 80px, repeating-linear-gradient(180deg, #4A3D30 0 18px, #2E251D 18px 31px, #6E5B47 31px 37px, #3B3026 37px 58px, #241C16 58px 64px); box-shadow: inset 2px 0 2px rgba(255, 240, 210, .12), inset -3px 0 4px rgba(0, 0, 0, .6); }
+:root[data-design="stone"] .sx-vein { inset: 0 5px; border-radius: 2px; background: linear-gradient(90deg, #8A5E2E, #F1C879 45%, #FFF0CC 50%, #F1C879 55%, #8A5E2E); box-shadow: 0 0 14px rgba(241, 200, 121, .55); }
+:root[data-design="stone"] .sx-vein::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, transparent 0 40px, rgba(255, 250, 230, .8) 44px, transparent 48px); background-size: 100% 48px; animation: sx-glint 2.4s linear infinite; mix-blend-mode: screen; }
+@keyframes sx-glint { to { background-position: 0 48px; } }
+/* the crystal at the vein's tip */
+:root[data-design="stone"] .sx-gem { width: 20px; height: 26px; clip-path: polygon(50% 0, 100% 38%, 78% 100%, 22% 100%, 0 38%); background: linear-gradient(140deg, #FFF8E2, #F1C879 40%, #B07A3A 75%, #6E4A22); filter: drop-shadow(0 0 8px rgba(241, 200, 121, .9)); animation: sx-gem 2.6s ease-in-out infinite alternate; }
+@keyframes sx-gem { to { rotate: 8deg; scale: 1.08; } }
+
+:root[data-design="stone"] .sx-slab { --lx: calc(var(--px) * -3px); --ly: calc(var(--py) * -3px); }
+:root[data-design="stone"] .sx-slab > *, :root[data-design="stone"] .sx-cut > * { position: absolute; display: block; }
+:root[data-design="stone"] .sx-block { inset: 18% 2%; border-radius: 6px; background: var(--sn-speck) 0 0 / 180px, radial-gradient(120% 120% at 30% 20%, #4E4134, #2A2119 60%, #1A140F);
+  box-shadow: inset 0 2px 1px rgba(255, 240, 210, .2), inset 0 -4px 8px rgba(0, 0, 0, .55), 0 26px 40px -18px #000; clip-path: polygon(0 3%, 6% 0, 40% 2%, 72% 0, 100% 4%, 98% 60%, 100% 96%, 70% 100%, 30% 98%, 2% 100%, 0 58%); }
+:root[data-design="stone"] .sx-cut { inset: 6%; }
+:root[data-design="stone"] :is(.sx-hi, .sx-lo, .sx-floor, .sx-ring, .sx-face) { inset: 0; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
+/* the cut's walls: a lit edge and a shadowed edge on opposite sides, flipping with the lantern */
+:root[data-design="stone"] .sx-hi { background: rgba(255, 236, 200, .5); transform: translate(calc(-2px + var(--lx)), calc(-2px + var(--ly))); }
+:root[data-design="stone"] .sx-lo { background: #0B0806; transform: translate(calc(2.5px - var(--lx)), calc(3px - var(--ly))); }
+:root[data-design="stone"] .sx-floor { background: var(--sn-speck) 0 0 / 120px, linear-gradient(170deg, #2B231B, #1A140F); }
+:root[data-design="stone"] .sx-ring { -webkit-mask-image: var(--p-ring); mask-image: var(--p-ring); background: var(--sn-speck) 0 0 / 100px, linear-gradient(160deg, #A99A86, #6E5F4D); opacity: .9; }
+/* the face is gilded in the cut, the way inscriptions are, so the P keeps its colours in stone */
+:root[data-design="stone"] .sx-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); background: var(--sn-speck) 0 0 / 90px, linear-gradient(calc(150deg + var(--px) * 30deg), #F4DDA2, #CDAE6E 45%, #8F7440 80%); }
+/* the lantern: a warm pool of light on the slab, following the pointer */
+:root[data-design="stone"] .sx-lamp { inset: 18% 2%; border-radius: 6px; pointer-events: none; mix-blend-mode: soft-light; background: radial-gradient(45% 60% at calc(50% + var(--px) * 40%) calc(50% + var(--py) * 40%), rgba(255, 220, 160, .9), transparent 70%); }
+/* a press knocks dust off the slab's top edge (--pv is the object's speed) */
+:root[data-design="stone"] .sx-dust { left: 10%; right: 10%; top: 18%; height: 0; }
+:root[data-design="stone"] .sx-dust b { position: absolute; top: 0; width: 3px; height: 3px; border-radius: 50%; background: #D8C6A6; opacity: calc(var(--pv) * 2); translate: 0 calc(var(--pv) * 70px); }
+:root[data-design="stone"] .sx-dust b:nth-child(1) { left: 8%; } :root[data-design="stone"] .sx-dust b:nth-child(2) { left: 24%; translate: 0 calc(var(--pv) * 110px); }
+:root[data-design="stone"] .sx-dust b:nth-child(3) { left: 41%; } :root[data-design="stone"] .sx-dust b:nth-child(4) { left: 57%; translate: 0 calc(var(--pv) * 90px); }
+:root[data-design="stone"] .sx-dust b:nth-child(5) { left: 73%; } :root[data-design="stone"] .sx-dust b:nth-child(6) { left: 90%; translate: 0 calc(var(--pv) * 130px); }
+
+/* ───────── contact: the tablet ───────── */
+:root[data-design="stone"] .sn-tablet { position: relative; padding: clamp(28px, 4vw, 52px) clamp(22px, 4vw, 56px) clamp(10px, 2vw, 20px); border-radius: 6px;
+  background: var(--sn-grain) 0 0 / 200px, linear-gradient(170deg, rgba(58, 47, 37, .86), rgba(28, 22, 17, .9)); box-shadow: inset 0 2px 1px rgba(255, 240, 210, .18), inset 0 -6px 14px rgba(0, 0, 0, .5), 0 40px 70px -30px #000;
+  clip-path: polygon(0 2%, 4% 0, 50% 1%, 96% 0, 100% 3%, 99% 50%, 100% 97%, 94% 100%, 50% 99%, 5% 100%, 0 96%, 1% 50%); }
+/* chisel marks along the top: a row of short angled cuts */
+:root[data-design="stone"] .sn-tablet::before { content: ""; position: absolute; left: 4%; right: 4%; top: 12px; height: 6px; background: repeating-linear-gradient(115deg, transparent 0 10px, rgba(0, 0, 0, .45) 10px 12px, rgba(255, 240, 210, .14) 12px 13px, transparent 13px 26px); opacity: .7; }
+
+/* ───────── play: a slate table ───────── */
+:root[data-design="stone"] .pf-wrap { --pf-bg: var(--sn-grain) 0 0 / 200px, radial-gradient(120% 90% at 50% 0%, #3A2F25, #1A140F 70%); --pf-fog: #17120E; --pf-grid: rgba(240, 220, 190, .1);
+  --pf-face: var(--sn-speck) 0 0 / 120px, linear-gradient(165deg, #4A3D30, #2A2119); --pf-edge: #5E4D3C; --pf-a: #D9A55B; --pf-b: #9AA978; --pf-c: #6E5B47; --pf-ink: #EFE5D5; --pf-line: rgba(240, 220, 190, .16);
+  --pf-label: radial-gradient(circle, #FBE3A8, #E0A75A 45%, #8A5E2E); --pf-tag: #241C16; --pf-r: 6px; --pf-shadow: 0 26px 40px -20px rgba(0, 0, 0, .95); }
+
+@media (prefers-reduced-motion: reduce) { :root[data-design="stone"] .sx-dust { display: none; } }
+:root.lite[data-design="stone"] .sx-dust { display: none; }
