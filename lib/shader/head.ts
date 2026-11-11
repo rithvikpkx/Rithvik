@@ -1,7 +1,7 @@
 /** Shared GLSL prepended to every design's fragment shader (docs/mockups/v7/CONTRACT.md "Shader"):
- *  precision, the per-frame uniforms, and the noise helpers `hash21 vnoise snoise fbm`. */
+ *  precision, the per-frame uniforms (u_px = canvas pixels per CSS px), and the noise helpers `hash21 vnoise snoise fbm`. */
 export const GLSL_HEAD = `precision highp float;
-uniform vec2 u_res; uniform float u_time; uniform vec2 u_mouse; uniform float u_scroll; uniform float u_dark;
+uniform vec2 u_res; uniform float u_time; uniform vec2 u_mouse; uniform float u_scroll; uniform float u_dark; uniform float u_px;
 uniform vec3 u_c0; uniform vec3 u_c1; uniform vec3 u_c2; uniform vec3 u_c3;
 float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);

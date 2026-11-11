@@ -15,4 +15,5 @@ export const PLAY: PlayEntry[] = [
   { id: "records", name: "Deck", desc: "Play a 1927 record through knobs and a scope", icon: "music" },
   { id: "artboard", name: "Artboard", desc: "Sketch and diagram, then export", icon: "palette" },
   ...GAMES.map((g) => ({ id: g.id, name: g.name, desc: g.desc, icon: GAME_ICONS[g.id] })),
+  { id: "darkroom", name: "Darkroom", desc: "29 image effects on my portrait, as a constellation", icon: "share-2" },
 ];

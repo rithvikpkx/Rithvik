@@ -51,3 +51,26 @@ export function createSlowDetector(threshold = 32, needed = 2) {
   let streak = 0;
   return { push(fps: number) { streak = fps < threshold ? streak + 1 : 0; return streak >= needed; } };
 }
+
+/** `count` × vec4 of fixed randoms in [0,1) for a particle pass (mulberry32, so every load draws the same cloud). */
+export function pointSeeds(count: number, seed = 1): Float32Array {
+  const out = new Float32Array(count * 4);
+  let a = seed >>> 0;
+  for (let i = 0; i < out.length; i++) {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    out[i] = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  return out;
+}
+
+const REF_AREA = 1440 * 900; // the laptop viewport the full count is tuned for
+
+/** How many of `count` points to draw: fewer on a small screen (sqrt of the area ratio, so a phone stays dense) and
+ *  fewer again as the adaptive resolution drops (the square of `scale / base`), never under a quarter of the budget. */
+export function pointBudget(count: number, cssArea: number, scale: number, base: number): number {
+  const area = Math.min(1, Math.sqrt(Math.max(0, cssArea) / REF_AREA));
+  const perf = Math.max(0.25, Math.min(1, (scale / base) ** 2));
+  return Math.max(1, Math.round(count * Math.max(0.25, area) * perf));
+}

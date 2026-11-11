@@ -1,0 +1,39 @@
+/* Sprawl name + portrait effects. */
+
+/* the name: two neon signs. A pale tube core, its gas colour as a tight glow and a wide bloom */
+[data-kn="sprawl"] { --tube: #FF2A6D; --core: #FFE1EC; }
+[data-kn="sprawl"] .ly-last { --tube: #05D9E8; --core: #DDFDFF; }
+[data-kn="sprawl"] .kn-part { color: var(--core); text-shadow: 0 0 .02em #fff, 0 0 .07em var(--tube), 0 0 .22em var(--tube), 0 0 .6em color-mix(in srgb, var(--tube) 45%, transparent); }
+[data-kn="sprawl"] .kn-g { opacity: var(--fl, 1); transform: translate3d(calc(var(--x) + var(--gx, 0px)), var(--y), 0); }
+/* the glitch slice: a copy of the letter in the other sign's colour, a thin band of it slipping sideways */
+[data-kn="sprawl"] .kn-l::after { content: attr(data-c); position: absolute; left: 50%; top: 0; translate: -50% 0; pointer-events: none;
+  color: #DDFDFF; text-shadow: -.04em 0 #05D9E8, .04em 0 #FF2A6D; opacity: clamp(0, calc(var(--k) * 3 - .4), .9);
+  clip-path: inset(var(--gy, 40%) 0 calc(78% - var(--gy, 40%)) 0); transform: translate3d(calc(var(--x) - var(--gx, 0px) * 1.8), var(--y), 0); }
+[data-kn="sprawl"] .ly-last .kn-l::after { color: #FFE1EC; }
+/* one tube in the last name is on its way out: a rare stutter, never in calm mode */
+[data-kn="sprawl"] .ly-last .kn-w:first-child .kn-l:nth-child(4) .kn-g { animation: sp-buzz 7.5s steps(1) infinite; }
+@keyframes sp-buzz { 0%, 91%, 93.5%, 95%, 100% { opacity: 1; } 92%, 94% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { [data-kn="sprawl"] .kn-g { animation: none !important; } [data-kn="sprawl"] .kn-l::after { display: none; } }
+html.lite [data-kn="sprawl"] .kn-g { animation: none !important; }
+html.lite [data-kn="sprawl"] .kn-l::after { display: none; }
+
+/* the portrait: a projector hologram */
+[data-pfx="sprawl"] { --pfx-scan: #05D9E8; --pfx-cap-bg: rgba(5, 4, 14, .78); --pfx-cap-fg: #9EF6FF; --pfx-t: 520ms; background: #04030B; }
+[data-pfx="sprawl"] .pfx-img { transform: scale(1.03); opacity: .92; animation: sp-pfx-jit 3.6s steps(1) infinite; }
+@keyframes sp-pfx-jit { 0%, 88%, 92%, 100% { translate: 0 0; } 89% { translate: -6px 0; } 90.5% { translate: 4px 0; } }
+.sp-pfx-lines { background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .38) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; }
+.sp-pfx-band { inset: auto 0; top: 0; height: 22%; background: linear-gradient(transparent, rgba(5, 217, 232, .22) 70%, rgba(220, 253, 255, .5) 98%, transparent); mix-blend-mode: screen; animation: sp-pfx-roll 2.8s linear infinite; }
+@keyframes sp-pfx-roll { from { transform: translateY(-100%); } to { transform: translateY(560%); } }
+/* face lock: chamfered corner brackets on the face, a crosshair breathing in the middle */
+.sp-pfx-lock { inset: auto; left: 34%; top: 28%; width: 32%; height: 36%; color: #FF2A6D; filter: drop-shadow(0 0 3px rgba(255, 42, 109, .8));
+  background: linear-gradient(currentColor, currentColor) 0 0 / 14px 2px, linear-gradient(currentColor, currentColor) 0 0 / 2px 14px,
+    linear-gradient(currentColor, currentColor) 100% 0 / 14px 2px, linear-gradient(currentColor, currentColor) 100% 0 / 2px 14px,
+    linear-gradient(currentColor, currentColor) 0 100% / 14px 2px, linear-gradient(currentColor, currentColor) 0 100% / 2px 14px,
+    linear-gradient(currentColor, currentColor) 100% 100% / 14px 2px, linear-gradient(currentColor, currentColor) 100% 100% / 2px 14px;
+  background-repeat: no-repeat; animation: sp-pfx-lock 520ms cubic-bezier(.2, .9, .3, 1.3) both; }
+@keyframes sp-pfx-lock { from { scale: 1.5; opacity: 0; } }
+.sp-pfx-lock i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; translate: -50% -50%; border: 1.5px solid currentColor; border-radius: 50%; animation: sp-pfx-breathe 1.8s ease-in-out infinite; }
+@keyframes sp-pfx-breathe { 50% { scale: 1.6; opacity: .5; } }
+.sp-pfx-data { inset: 6% auto auto 5%; display: grid; gap: 4px; padding: 6px 7px; background: rgba(4, 3, 12, .62); font: 600 8.5px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; color: #9EF6FF; text-shadow: 0 0 6px rgba(5, 217, 232, .8); }
+.sp-pfx-data b { font-weight: 600; }
+.sp-pfx-data b:nth-child(2) { color: #FF8AB0; text-shadow: 0 0 6px rgba(255, 42, 109, .8); }

@@ -130,3 +130,14 @@ html.lite .pf * { animation: none !important; }
   .pf { height: clamp(420px, 68vh, 600px); border-radius: calc(var(--pf-r) * .7); }
   .pf-name { font-size: 16px; } /* the plane is drawn at 62%; keep tags legible */
 }
+
+/* darkroom: the portrait in Atkinson dither (a mask painted in the look's ink) under a twinkling constellation */
+.pf-darkroom .pf-shape { border-radius: 30px; background: var(--pf-face); box-shadow: var(--pf-shadow), inset 0 0 0 1px var(--pf-line); overflow: hidden; }
+.pf-dr-ph { position: absolute; inset: 8%; border-radius: 22px; background: var(--pf-ink); -webkit-mask: var(--m, linear-gradient(#0000, #0000)) center / cover; mask: var(--m, linear-gradient(#0000, #0000)) center / cover; opacity: 0; transition: opacity 600ms ease; }
+.pf-dr-ph[data-ready] { opacity: .82; }
+.pf-dr-ln { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.pf-dr-ln line { stroke: color-mix(in srgb, var(--pf-a) 55%, transparent); stroke-width: 1; stroke-dasharray: 2 3; }
+.pf-darkroom i { position: absolute; border-radius: 50%; translate: -50% -50%; background: var(--pf-a); box-shadow: 0 0 0 3px var(--pf-face), 0 0 0 4.5px var(--pf-a), 0 0 14px color-mix(in srgb, var(--pf-a) 70%, transparent); animation: pf-twinkle 4s ease-in-out infinite; }
+.pf-darkroom i.c1 { background: var(--pf-b); box-shadow: 0 0 0 3px var(--pf-face), 0 0 0 4.5px var(--pf-b), 0 0 14px color-mix(in srgb, var(--pf-b) 70%, transparent); }
+.pf-darkroom i.c2 { background: var(--pf-ink); box-shadow: 0 0 0 3px var(--pf-face), 0 0 0 4.5px var(--pf-ink); }
+@keyframes pf-twinkle { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: .72; opacity: .75; } }
