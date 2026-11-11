@@ -6,11 +6,11 @@
 .play-win .win-title { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--ui-font, "Geist", -apple-system, "Segoe UI", system-ui, sans-serif); color: var(--ui-muted, #a1a1aa); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .play-win .win-actions { display: flex; align-items: center; gap: 6px; flex: none; }
 @media (max-width: 640px) { .play-win { left: 8px !important; right: 8px; top: auto !important; bottom: 84px; width: auto; max-height: calc(100dvh - 160px); } }
-/* ───────── Play window: records (scratchable vinyl), artboard, games. Maps the design's --ui-* tokens onto the names the toys use ───────── */
+/* ───────── Play window: deck (disc player), artboard, games. Maps the design's --ui-* tokens onto the names the toys use ───────── */
 .play-win { width: min(1040px, calc(100vw - 32px)); height: min(720px, calc(100dvh - 100px));
   --accent: var(--ui-accent, #ff4d8d); --fg: var(--ui-fg, #f4f4f5); --muted: var(--ui-muted, #a1a1aa); --bg: var(--ui-bg, #0f0f12); --bg-soft: var(--ui-field, rgba(255, 255, 255, .06)); --line: var(--ui-line, rgba(255, 255, 255, .14)); --line-strong: var(--ui-line, rgba(255, 255, 255, .14));
   --font-b: var(--ui-font, "Geist", -apple-system, "Segoe UI", system-ui, sans-serif); --font-l: var(--ui-mono, "Geist Mono", ui-monospace, Menlo, monospace); --r-sm: calc(var(--ui-r, 14px) * .6); --r-xs: 4px; --chip-bg: var(--ui-field, rgba(255, 255, 255, .06)); --ok: #22c55e; --btn-r: 999px;
-  --rec-pill-bg: #111214; --rec-pill-fg: #f4f4f5; --rec-pill-muted: #a1a1aa; --rec-label: #efe7d4; --rec-label-ink: #3a2a1a; }
+}
 .play-win .win-bar { gap: 10px; }
 .play-tabs { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .play-tabs button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ui-muted, #a1a1aa); font: 500 13px/1 var(--ui-font, "Geist", -apple-system, "Segoe UI", system-ui, sans-serif); white-space: nowrap; cursor: pointer; }
@@ -24,7 +24,6 @@
 .play-win .btn:active { transform: var(--press, scale(.97)); }
 .play-win .btn:disabled { opacity: .45; cursor: not-allowed; }
 .play-win .label { font: 500 12px/1.4 var(--ui-mono, "Geist Mono", ui-monospace, Menlo, monospace); text-transform: uppercase; letter-spacing: .06em; color: var(--ui-muted, #a1a1aa); }
-@media (max-width: 760px) { .records { grid-template-columns: minmax(0, 1fr); justify-items: center; } .records .rec-stage { max-width: 300px; } }
 /* artboard: the Excalidraw editor, full-bleed in the window, its accent and UI font taken from the look */
 .play-body:has(> .artboard:not([hidden])) { padding: 0; overflow: hidden; }
 .artboard { position: relative; }
@@ -86,5 +85,4 @@
 html.lite .play-win { -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-motion: reduce) { .play-win, .play-win * { transition-duration: .01ms !important; animation: none !important; } }
 .play-pane[hidden] { display: none !important; }
-@media (max-width: 560px) { .play-win .records .rec-pill-wrap { --pill-w: calc(100vw - 150px); } }
 .play-win :is(h3, p) { margin: 0; }
