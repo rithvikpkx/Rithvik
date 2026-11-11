@@ -12,6 +12,8 @@ export default function LumenPortrait({ on }: { on: boolean }) {
   return (
     <PhotoFx on={on} look="lumen" label="gradient map" filter={<>
       <feColorMatrix type="matrix" values={LUM} />
+      {/* deepen the mid-tones first, so the face sits in the colour rather than washing toward white */}
+      <feComponentTransfer><feFuncR type="gamma" exponent="1.35" /><feFuncG type="gamma" exponent="1.35" /><feFuncB type="gamma" exponent="1.35" /></feComponentTransfer>
       <feComponentTransfer result="map"><feFuncR type="table" tableValues={R} /><feFuncG type="table" tableValues={G} /><feFuncB type="table" tableValues={B} /></feComponentTransfer>
       <feGaussianBlur in="map" stdDeviation="7" result="glow" />
       <feBlend in="map" in2="glow" mode="screen" />
