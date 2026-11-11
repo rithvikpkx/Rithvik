@@ -8,7 +8,6 @@ import type { Design, NewItem, Turn } from "./types";
 /** Everything a slash command may touch; the hook supplies it so this file stays free of React. */
 export type SlashCtx = {
   add: (item: NewItem, undo?: () => void) => void;
-  ask: (question: string, key: string, run: () => void) => void;
   clear: () => void;
   toggleFull: () => void;
   close: () => void;
@@ -45,8 +44,8 @@ function localTime(tz: string): string {
 
 /* eslint-disable @next/next/no-location-assign-relative-destination -- /status and /buffett are deliberate full document loads */
 
-/** Runs one slash command as a tool-call row. Explicit commands act at once (the visitor typed them);
- *  only /contact asks first, since it opens a window. Unknown commands never go to the model. */
+/** Runs one slash command as a tool-call row. Every command acts at once: the visitor typed it, so no
+ *  confirmation. Unknown commands never go to the model. */
 export function runSlash(raw: string, c: SlashCtx): void {
   const cmd = parseCommand(raw);
   if (!cmd) return;
@@ -77,9 +76,9 @@ export function runSlash(raw: string, c: SlashCtx): void {
     case "/contact":
       if (!arg) { tool("Navigate", "#contact", "Jumped to contact"); c.scroll(["contact", "top"]); break; }
     // falls through
-    case "/compose": c.ask(`Draft an email${arg ? ` about "${arg}"` : ""} to Rithvik?`, "compose", () => c.openComposer(arg)); break;
-    case "/status": c.ask("Leave this page for /status?", "nav-status", () => { window.location.href = "/status"; }); break;
-    case "/buffett": c.ask("Leave this page for the plain-HTML /buffett?", "nav-buffett", () => { window.location.href = "/buffett"; } /* full load: separate root layout */); break;
+    case "/compose": tool("Compose", arg, "Opening the email composer"); c.openComposer(arg); break;
+    case "/status": tool("Navigate", "/status", "Opening status"); window.location.href = "/status"; break;
+    case "/buffett": tool("Navigate", "/buffett", "Opening the plain-HTML page"); window.location.href = "/buffett"; /* full load: separate root layout */ break;
     case "/play": {
       const a = arg.toLowerCase();
       const g = a && PLAY.find((x) => x.id === a || x.name.toLowerCase().includes(a));

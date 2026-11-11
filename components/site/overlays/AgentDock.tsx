@@ -65,7 +65,6 @@ export default function AgentDock() {
     const away = <A extends unknown[]>(f: (...a: A) => void) => (...a: A) => { inputRef.current?.blur(); f(...a); };
     return {
       content, design, caseSlug,
-      view: () => ({ full: latest.current.full, covered: !!latest.current.overlay && latest.current.overlay.kind !== "agent" }),
       openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay), lite: site.lite, setLite: site.setLite,
       close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
     };
@@ -97,7 +96,7 @@ export default function AgentDock() {
   const h = useMemo<RowHandlers>(() => ({
     send: (q) => { if (latest.current.agent.submit(q)) setInput(""); },
     fill: (q) => { setInput(q); inputRef.current?.focus(); },
-    answer: (id, c) => latest.current.agent.answerAsk(id, c),
+    press: (row, btn) => latest.current.agent.press(row, btn),
     undo: (id) => latest.current.agent.undo(id),
     copy: (t) => latest.current.agent.copy(t, "Copied"),
     cite: (a) => { scrollAndHighlight(a); },
@@ -143,7 +142,7 @@ export default function AgentDock() {
   const matches = open ? matchCommands(input, admin) : [];
   const pal = Math.min(palIdx, Math.max(0, matches.length - 1));
 
-  /** Prompt keys: palette, history, confirmations (Enter/n/a), send (Enter; Shift+Enter is a newline),
+  /** Prompt keys: palette, history, undo, send (Enter; Shift+Enter is a newline),
    *  full screen, Ctrl+L / Ctrl+U, "?" for help. */
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // History only walks when the caret is on the first/last line, so ↑/↓ still move through a multi-line draft.
@@ -174,11 +173,6 @@ export default function AgentDock() {
       setInput(v);
       return;
     }
-    if (!input && agent.pendingId !== null && ["Enter", "n", "a"].includes(e.key)) {
-      e.preventDefault();
-      agent.answerAsk(agent.pendingId, e.key === "Enter" ? "yes" : e.key === "n" ? "no" : "always");
-      return;
-    }
     const last = items[items.length - 1];
     if (!input && e.key === "u" && last?.kind === "tool" && last.undo) { e.preventDefault(); agent.undo(last.id); return; }
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); host.toggleFull(); return; }
@@ -190,7 +184,7 @@ export default function AgentDock() {
   };
 
   return (
-    <div className="agent" data-open={open} data-full={open && full} data-pending={!open && !!agent.pending}>
+    <div className="agent" data-open={open} data-full={open && full}>
       {open && (
         <section className="agent-panel" aria-label="RAG, Rithvik's agent">
           <header className="agent-head">
@@ -218,14 +212,6 @@ export default function AgentDock() {
           )}
           </section>
       )}
-      {!open && agent.pending && (
-        // A multi-step turn can open a case sheet (collapsing the panel) with more steps queued: confirm them here.
-        <div className="agent-pending" role="group" aria-label="Agent wants to">
-          <span className="q">{agent.pending.question}{agent.pending.detail && ` ${agent.pending.detail.slice(1).join(" · ")}`}</span>
-          <button type="button" className="t-key primary" onClick={() => agent.answerAsk(agent.pending!.id, "yes")}>{agent.pending.once ? "⏎ Send" : "⏎ Yes"}</button>
-          <button type="button" className="t-key" onClick={() => agent.answerAsk(agent.pending!.id, "no")}>{agent.pending.once ? "n Edit" : "n No"}</button>
-        </div>
-      )}
       <form className="agent-bar" autoComplete="off" onSubmit={(e) => { e.preventDefault(); if (busy && !input.trim()) agent.interrupt(); else go(input); }}>
         <span className="ab-prompt" ref={tick} aria-hidden="true" />
         <label htmlFor="agent-input" className="sr-only">Ask about Rithvik</label>
@@ -238,7 +224,7 @@ export default function AgentDock() {
         <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
-      {open && <StatusLine turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
+      {open && <StatusLine actions={items.some((i) => i.kind === "actions")} turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
       {fly && open && <Handoff key={fly.id} question={fly.q} from={fly.from} target={flyTarget} onLand={() => land(fly.q)} onDone={() => setFly(null)} />}
     </div>
   );

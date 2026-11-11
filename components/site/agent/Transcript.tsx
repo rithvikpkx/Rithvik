@@ -6,19 +6,18 @@ import SimpleMarkdown from "@/components/SimpleMarkdown";
 import { Icon } from "../Glyph";
 import ArtifactView from "../charts/ArtifactView";
 import StartBlock from "./StartBlock";
-import type { Choice, Item } from "./types";
+import type { Item } from "./types";
 
 export type RowHandlers = {
   send: (q: string) => void; // welcome chips: send now
   fill: (q: string) => void; // suggestion chips: fill the input, never send
-  answer: (id: number, c: Choice) => void;
+  press: (rowId: number, buttonId: number) => void; // an action button: the only way a side effect runs
   undo: (id: number) => void;
   copy: (text: string) => void;
   cite: (anchor: string) => void; // footnote click: scroll to + highlight the source
 };
 
 const STARTERS = [...STARTER_QUESTIONS, "/theme random"];
-const ASK_DONE: Record<string, string> = { yes: "Allowed", no: "Skipped", always: "Allowed for this session", auto: "Allowed for this session" };
 
 /** True when motion should be skipped (performance mode or reduced motion): text then appears as it arrives. */
 const instant = () => document.documentElement.classList.contains("lite") || matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -115,30 +114,16 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
           {item.chips.map((c) => <button key={c} type="button" className="t-chip sugg" title={c} onClick={() => h.fill(c)}>{c}</button>)}
         </div>
       );
-    case "ask":
+    case "actions":
       return (
-        <div className="t-line">
-          <span className="t-dot" aria-hidden="true" />
-          {item.tool ? (
-            <>
-              <span className="t-tool"><b>{item.tool.name}</b><span className="args">({item.tool.args})</span></span>
-              <span className="t-res">{item.question}</span>
-            </>
-          ) : (
-            <span className="t-tool"><b>{item.question}</b></span>
-          )}
-          {item.detail && (
-            <ul className="t-detail" aria-label="What will be sent">{item.detail.map((d) => <li key={d}>{d}</li>)}</ul>
-          )}
-          {item.state === "pending" ? (
-            <div className="t-confirm">
-              <button type="button" className="t-key primary" onClick={() => h.answer(item.id, "yes")}>{item.once ? "⏎ Send" : "⏎ Yes"}</button>
-              <button type="button" className="t-key" onClick={() => h.answer(item.id, "no")}>{item.once ? "n Edit" : "n No"}</button>
-              {!item.once && <button type="button" className="t-key" onClick={() => h.answer(item.id, "always")}>a Always this session</button>}
-            </div>
-          ) : (
-            <span className="t-res">{item.once ? (item.state === "yes" ? "Confirmed" : "Not sent. Tell me what to change.") : ASK_DONE[item.state]}</span>
-          )}
+        <div className="t-acts-row" role="group" aria-label="Actions">
+          {item.detail && <ul className="t-detail" aria-label="What will be sent">{item.detail.map((d) => <li key={d}>{d}</li>)}</ul>}
+          <div className="t-buttons">
+            {item.buttons.map((b) => (
+              <button key={b.id} type="button" className="t-chip act" data-done={b.clicked || undefined} disabled={b.once && b.clicked}
+                onClick={() => h.press(item.id, b.id)}>{b.label}</button>
+            ))}
+          </div>
         </div>
       );
     case "sources":

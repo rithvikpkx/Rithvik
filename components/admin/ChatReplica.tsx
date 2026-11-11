@@ -9,7 +9,7 @@ import type { MessageRow } from "@/lib/agent/chats";
 
 // Read-only: the visitor's controls render as they saw them but do nothing here (copy still copies).
 const H: RowHandlers = {
-  send: () => {}, fill: () => {}, answer: () => {}, undo: () => {}, cite: () => {},
+  send: () => {}, fill: () => {}, press: () => {}, undo: () => {}, cite: () => {},
   copy: (t) => { navigator.clipboard?.writeText(t).catch(() => {}); },
 };
 

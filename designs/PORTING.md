@@ -12,7 +12,7 @@ overrides at all.
   (`components/site/tether/Tether`: photo + GitHub / LinkedIn / Email / Resume on physical strings).
 - **Sections** in `SECTIONS` order: `work, experience, about, play, questions, contact`. Each is
   `<section id={id} aria-labelledby="{id}-h">` → ornament → title → body.
-- **Footer**: the same tether, small, then one line: mark, name, ©year, Privacy · Status · For Warren Buffett.
+- **Footer**: one quiet line: mark, name, ©year, Privacy · Status · For Warren Buffett (no portrait or contact buttons).
 - Anchors `project-<slug>`, `experience-<slug>`, `education` come from the bodies (`npm run check:anchors`).
 
 ## Files
@@ -71,7 +71,7 @@ Every field is optional: a new design can start as `{ id, rootClass }` plus CSS 
 - **S10 Questions, Contact, About**: shared bodies in `sections.tsx`; remove per-design overrides as the
   shared ones land. Copy lives in content or the bodies, never in the layout.
 - **S10 Questions, Contact, About** (done): shared bodies `layout/Questions.tsx` (3 flip cards + an ask card that
-  `layout/Contact.tsx` (every button opens the composer; the address only shows inside it). A look themes them with
+  `layout/Contact.tsx` (headline, one line, then the **contact cloud** `layout/ContactCloud.tsx`: GitHub / LinkedIn / Email / Resume as big round buttons orbiting on a soft spring (`layout/cloud.ts`, tested), a faint filament between them, a still arrangement under `html.lite`; Email opens the composer, the address only shows inside it). A look themes the cloud with the portrait node tokens (`--pt-node-bg/-fg/-line/-r`, `--pt-glow`, `--ui-accent`; `--cl-size` = diameter) and the rest with
   tokens (`--ly-contact-text/-mx/-just` to centre Contact), `ContactFrame` and `contactLead`; no per-look bodies.
 
 ## Theming with CSS only
@@ -103,7 +103,7 @@ freezes to one still under `html.lite` / reduced motion.
 
 ## Copy
 One-word titles, no eyebrows, no emoji, no exclamation marks. No counts hardcoded as words (use
-`countWord` from `lib/words.ts`). GitHub / LinkedIn / Email / Resume live only in the two tether clusters.
+`countWord` from `lib/words.ts`). GitHub / LinkedIn / Email / Resume live only in the hero tether and the Contact cloud.
 
 ## Verify
 `tsc --noEmit`, `eslint designs/<id>`, `npm run check:anchors`, `next build --webpack`; then `?theme=<id>` at

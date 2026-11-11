@@ -158,7 +158,9 @@
 
 /* ───────── the shared layout, themed ───────── */
 :root[data-design="mercury"] { --ly-head-bg: rgba(10, 10, 11, .94); --ly-line: var(--mc-line); --ly-soft: var(--mc-s1); --ly-display: var(--mc-d);
-  --ly-name-font: var(--mc-d); --ly-name-weight: 400; --ly-name-track: -.025em; }
+  --ly-name-font: var(--mc-d); --ly-name-weight: 700; --ly-name-track: -.02em; }
+/* the name: a sturdier weight, and a text optical size so Bodoni's hairlines stay readable at display size (auto would pick the thinnest cut) */
+:root[data-design="mercury"] .ly-name { font-variation-settings: "opsz" 26; }
 :root[data-design="mercury"] .mc .ly-hero, :root[data-design="mercury"] .mc-contact, :root[data-design="mercury"] .mc .ly-foot { z-index: 1; } /* above the fixed pool */
 :root[data-design="mercury"] .ly-brand .ly-mk { width: 28px; height: 28px; color: #E9EAEE; transition: rotate 900ms var(--ease-liquid); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="mercury"] .ly-brand:hover .ly-mk { rotate: -360deg; } }

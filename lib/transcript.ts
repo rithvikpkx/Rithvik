@@ -1,6 +1,6 @@
 /**
  * Builds the Markdown export of an agent conversation from the transcript rows the panel shows:
- * every message, the rewrite and search rows, tool calls with their confirmation outcome, answers,
+ * every message, the rewrite and search rows, tool calls, offered action buttons (and whether each was clicked), answers,
  * footnote sources, suggestions and notes, each stamped, under a header (site, date, session, model).
  *
  * Pure and dependency-free so it can be unit-tested with node:test; the same function feeds the
@@ -28,7 +28,7 @@ export type TranscriptItem =
   | { kind: "answer"; text: string; at?: number }
   | { kind: "suggest"; chips: string[]; at?: number }
   | { kind: "artifact"; spec: ArtifactSpec; at?: number }
-  | { kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string }; detail?: string[]; once?: boolean; at?: number }
+  | { kind: "actions"; buttons: { label: string; clicked: boolean }[]; detail?: string[]; at?: number }
   | { kind: "sources"; items: { n: number; label: string; anchor?: string }[]; at?: number }
   | { kind: "note"; text: string; tone?: "warn"; at?: number }
   | { kind: "banner" | "help"; at?: number };
@@ -68,15 +68,6 @@ function clock(at: number | undefined): string {
 export function transcriptFilename(now: number): string {
   const stamp = formatTimestamp(now).replace(" ", "-").replace(":", "");
   return stamp ? `rag-chat-${stamp}.md` : "rag-chat.md";
-}
-
-/** What the visitor chose on a confirmation row. A once-only send reads "sent", never "always". */
-function outcome(i: Extract<TranscriptItem, { kind: "ask" }>): string {
-  if (i.state === "pending") return "awaiting confirmation";
-  if (i.state === "no") return i.once ? "declined, not sent" : "declined";
-  if (i.state === "always") return "allowed (always this session)";
-  if (i.state === "auto") return "allowed automatically (always this session)";
-  return i.once ? "confirmed and sent" : "allowed";
 }
 
 /** A line break survives Markdown only with two trailing spaces. */
@@ -123,13 +114,9 @@ export function buildTranscriptMarkdown(items: TranscriptItem[], exportedAt: num
         out.push(`- **${i.name}**(${i.args})${i.result !== undefined ? ` — ${i.result}` : ""}`);
         for (const [k, v] of i.lines ?? []) out.push(`  - ${k}: ${v}`);
         break;
-      case "ask": {
-        const call = i.tool ? `**${i.tool.name}**(${i.tool.args}) — ${i.question}` : `**${i.question}**`;
-        list = true;
-        out.push(`- ${call} → **${outcome(i)}**`);
-        for (const d of i.detail ?? []) out.push(`  - ${d}`);
+      case "actions":
+        para("_Offered actions_", "", ...i.buttons.map((b) => `- ${b.label} — ${b.clicked ? "**clicked**" : "not clicked"}`), ...(i.detail ?? []).map((d) => `  - ${d}`), "");
         break;
-      }
       case "answer":
         para(i.text.trim(), "");
         break;

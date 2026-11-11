@@ -316,6 +316,8 @@ void main(){
     shader: {
       colors: ["#FFFFFF","#0B0B0F","#E8EBF1","#5B3CFF"], scale: 0.6, host: "#pr-gl",
       source: `#define TAU 6.2831853
+uniform vec2 u_pc; // the portrait's centre in 0..1 screen units (y up); the prism is built around it
+uniform float u_pr; // the prism's circumradius in screen heights (0 = not measured yet: use the default stage)
 vec3 hue(float h){ return clamp(abs(mod(h * 6. + vec3(0., 4., 2.), 6.) - 3.) - 1., 0., 1.); }
 // visible spectrum: 0 = red, 1 = violet, softened so it reads like light falling on paper
 vec3 spec(float x){ vec3 c = hue(x * .79); return mix(c, vec3(1.), .08); }
@@ -350,6 +352,7 @@ void main(){
   vec3 col = u_c0;
   vec2 C = mix(vec2(asp * .69, .5), vec2(asp * .5, .215), tall);
   float R = mix(.2, .145, tall);
+  if (u_pr > 0.) { C = vec2(u_pc.x * asp, u_pc.y); R = u_pr; } // centred on the photo: the triangle's centroid is its incircle's centre
   float vign = exp(-dot(p - C, p - C) * mix(1.6, 3.2, tall));
   col = mix(col, u_c2, F * (.42 + .58 * vign));
 
@@ -366,11 +369,11 @@ void main(){
   col = clamp(col + (cv - avg) * amt * 1.6 - (1. - avg) * amt * .045, 0., 1.);
 
   // prism, local frame: apex up, a slow sway, a nudge from the pointer and the scroll
-  float a0 = .05 * sin(t * .23) + (u_mouse.x - .5) * .08 + u_scroll * 1.6;
+  float a0 = .022 * sin(t * .23) + (u_mouse.x - .5) * .04 + u_scroll * 1.6; // a gentle sway: the photo stays visibly centred
   vec2 q = rot(p - C, -a0);
   float d = sdTri(q, R);
   vec2 T = vec2(0., 2. * R / 1.7320508), BL = vec2(-R, -R / 1.7320508), BR = vec2(R, -R / 1.7320508);
-  vec2 A = C + rot(mix(BL, T, .56), a0), E = C + rot(mix(T, BR, .5), a0);
+  vec2 A = C + rot(mix(BL, T, .66), a0), E = C + rot(mix(T, BR, .34), a0); // the inner beam crosses above the photo, not behind it
   float inside = 1. - smoothstep(-px, px, d);
 
   // incident beam: a hairline of white light falling from the top

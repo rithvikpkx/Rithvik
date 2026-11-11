@@ -82,11 +82,10 @@ function Section({ id, index, content, skin }: { id: SectionId; index: number; c
   );
 }
 
-/** The same cluster as the hero, smaller, then one quiet line: mark, name, year, and three tiny links. */
+/** One quiet line: mark, name, year, and three tiny links (the contact buttons live in the Contact section). */
 function Footer({ content: c }: { content: Content; skin: Skin }) {
   return (
     <footer className="ly-foot">
-      <div className="ly-foot-pt"><Tether id="foot" /></div>
       <div className="ly-foot-mini">
         <span className="ly-foot-who"><span className="ly-mk"><Mark kind="tiny" label="" /></span>{c.name}</span>
         <span>© {new Date().getFullYear()}</span>
