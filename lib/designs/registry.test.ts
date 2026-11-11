@@ -2,11 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BOOT_SCRIPT, DESIGNS, htmlAttrsFor, isDarkColor, resolveLook } from "./registry.ts";
 
-test("the nine base designs and any added ones, each with a full swatch and shader", () => {
+test("the nine base designs and any added ones, each with a full swatch and shader (Corsa draws with three.js instead)", () => {
   assert.ok(DESIGNS.length >= 9);
   assert.equal(new Set(DESIGNS.map((d) => d.id)).size, DESIGNS.length);
   for (const d of DESIGNS) {
     assert.equal(d.swatch.length, 4, d.id);
+    if (d.id === "corsa") { assert.equal(d.shader, undefined); continue; } // the documented three.js exception: no shared shader beside it
     assert.equal(d.shader?.colors.length, 4, d.id);
     assert.match(d.shader!.source, /void main\(\)/, d.id);
   }

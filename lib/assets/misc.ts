@@ -6,4 +6,4 @@ export const CREDITS = {"sf":"Crissy Field and the Golden Gate Bridge, public do
 
 /** One-line credits for what the v7 site actually ships (owner rule: credit every borrowed asset once, in the footer). */
 export const SITE_CREDITS =
-  "Icons: Lucide (ISC), Simple Icons (CC0). Spinners: cli-spinners (MIT). Record: LP photo by Evan-Amos, public domain. Music: Chili Pepper by Fred Longshaw, 1927, public domain";
+  "Icons: Lucide (ISC), Simple Icons (CC0). Spinners: cli-spinners (MIT). Record: LP photo by Evan-Amos, public domain. Music: Chili Pepper by Fred Longshaw, 1927, public domain. 3D car (Corsa look): \"Daytona SP3\" by supercarmodels (Sketchfab), CC BY 4.0, badges removed, not affiliated with Ferrari";

@@ -22,7 +22,9 @@ function contentSecurityPolicy(): string {
   const vercelLive = isProdDeploy ? [] : ["https://vercel.live"];
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : []), ...vercelLive],
+    // 'wasm-unsafe-eval': the Corsa look decodes its meshopt-compressed car model with a WebAssembly decoder
+    // (compiling wasm only; JS eval stays blocked). Without it the look keeps its still image.
+    "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", ...(isDev ? ["'unsafe-eval'"] : []), ...vercelLive],
     // motion/framer and next/font write inline styles. Google Fonts: each v7 design loads its own
     // families at runtime (DesignMeta.fonts), which next/font can't self-host.
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", ...vercelLive],

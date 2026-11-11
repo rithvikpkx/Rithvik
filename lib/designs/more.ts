@@ -10,7 +10,8 @@ import { META as stone } from "../../designs/stone/meta.ts";
 import { META as volt } from "../../designs/volt/meta.ts";
 import { META as grove } from "../../designs/grove/meta.ts";
 import { META as blueprint } from "../../designs/blueprint/meta.ts";
+import { META as corsa } from "../../designs/corsa/meta.ts";
 
 /** Designs added after the original nine. Each lives entirely in designs/<id>/ (its metadata and shader in
  *  designs/<id>/meta.ts); registering it is one import and one entry here. See docs/design-systems.md. */
-export const MORE_DESIGNS: DesignMeta[] = [flux, sprawl, lucid, clay, lumen, ember, tide, stone, volt, grove, blueprint];
+export const MORE_DESIGNS: DesignMeta[] = [flux, sprawl, lucid, clay, lumen, ember, tide, stone, volt, grove, blueprint, corsa];
