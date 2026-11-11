@@ -16,7 +16,10 @@ html.lite [data-kn="flux"] .kn-l::after { display: none; }
 [data-pfx="flux"] .pfx-scan { display: none; }
 .fl-pfx-bg { background: radial-gradient(circle at 50% 42%, #16122E, #05060C 72%); }
 .fl-pfx-dots img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.fl-pfx-dots { -webkit-mask: radial-gradient(circle, #000 0 32%, transparent 50%) 50% 50% / var(--d) var(--d); mask: radial-gradient(circle, #000 0 32%, transparent 50%) 50% 50% / var(--d) var(--d); }
+.fl-pfx-dots { -webkit-mask: radial-gradient(circle, #000 0 40%, transparent 58%) 50% 50% / var(--d) var(--d); mask: radial-gradient(circle, #000 0 40%, transparent 58%) 50% 50% / var(--d) var(--d); }
+/* a soft glow of the same keyed figure under the points, so it reads as a lit cloud rather than a screen */
+.fl-pfx-dots.fl-pfx-glow { -webkit-mask: none; mask: none; opacity: .4; }
+.fl-pfx-glow img { filter: url(#pfx-flux) blur(7px) !important; }
 .fl-pfx-a { --d: calc(100cqi / 70); }
 .fl-pfx-b { -webkit-mask: radial-gradient(circle, #000 0 32%, transparent 50%) 50% 50% / var(--d) var(--d), radial-gradient(circle at 50% 46%, #000 34%, transparent 74%); -webkit-mask-composite: source-in;
   mask: radial-gradient(circle, #000 0 32%, transparent 50%) 50% 50% / var(--d) var(--d), radial-gradient(circle at 50% 46%, #000 34%, transparent 74%); mask-composite: intersect; }

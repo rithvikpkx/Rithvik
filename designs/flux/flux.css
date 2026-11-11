@@ -124,7 +124,7 @@
 @media (max-width: 860px) {
   :root[data-design="flux"] .ly-hero::before { background: linear-gradient(180deg, rgba(5, 6, 12, .5), rgba(5, 6, 12, .15) 50%, transparent 70%); }
   :root[data-design="flux"] .ly-nav a::after { bottom: 0; }
-  :root[data-design="flux"] .fl-hint { bottom: 18px; left: 0; right: 0; text-align: center; }
+  :root[data-design="flux"] .fl-hint { display: none; } /* the hero is not a full screen here: the line would sit under the agent bar */
 }
 
 /* ───────── chrome ───────── */

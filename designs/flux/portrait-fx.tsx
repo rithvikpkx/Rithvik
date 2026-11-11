@@ -19,10 +19,11 @@ export default function FluxPortrait({ on }: { on: boolean }) {
   return (
     <PhotoFx on={on} look="flux" label="point cloud" noPhoto filter={<>
       <feColorMatrix type="matrix" values={KEY} />
-      <feComponentTransfer><feFuncR type="gamma" exponent=".45" /><feFuncG type="gamma" exponent=".45" /><feFuncB type="gamma" exponent=".45" /></feComponentTransfer>
+      <feComponentTransfer><feFuncR type="gamma" exponent=".6" /><feFuncG type="gamma" exponent=".6" /><feFuncB type="gamma" exponent=".6" /></feComponentTransfer>
       <feComponentTransfer><feFuncR type="table" tableValues={R} /><feFuncG type="table" tableValues={G} /><feFuncB type="table" tableValues={B} /></feComponentTransfer>
     </>}>
       <span className="fl-pfx-bg" />
+      {layer("fl-pfx-glow")}
       {layer("fl-pfx-c")}
       {layer("fl-pfx-b")}
       {layer("fl-pfx-a")}
