@@ -32,9 +32,9 @@ void main(){
   vec3 col = vec3(0.); float W = 0.;
   for (int i = 0; i < 7; i++) {
     float fi = float(i);
-    vec2 o = L + vec2(cos(t * (.07 + fi * .011) + fi * 2.4) * .42, sin(t * (.06 + fi * .009) + fi * 1.7) * .3) * spread;
+    vec2 o = L + vec2(cos(t * (.07 + fi * .011) + fi * 2.4) * .5, sin(t * (.06 + fi * .009) + fi * 1.7) * .34) * spread;
     vec2 dm = o - m; o += dm * .45 * exp(-dot(dm, dm) * 7.) * u_hover; // the pointer parts the light
-    vec2 d = q - o; float w = exp(-dot(d, d) * 5.5) + 1e-4;
+    vec2 d = q - o; float w = exp(-dot(d, d) * 13. / (spread * spread)) + 1e-5; // narrow kernels keep each colour its own region
     vec3 c = i == 0 ? u_c0 : i == 1 ? u_c1 : i == 2 ? u_c2 : i == 3 ? u_c3 : i == 4 ? vec3(1., .44, .72) : i == 5 ? vec3(1., .8, .45) : vec3(.1, .12, .55);
     col += c * w; W += w;
   }
@@ -43,7 +43,8 @@ void main(){
   vec2 e = (p - L) / (vec2(.78, .62) * spread);
   float E = exp(-dot(e, e) * 1.1);
   float hand = exp(-dot(p - m, p - m) * 16.) * u_hover;
-  col = col * (E * 1.35 + hand * .5) + vec3(.9, .93, 1.) * (pow(E, 5.) * .22 + hand * .16 + ring * .25);
+  col = mix(vec3(dot(col, vec3(.299, .587, .114))), col, 1.3); // the blend greys colours; push them back to vivid
+  col = max(col, 0.) * (E * 1.5 + hand * .45) + vec3(.9, .93, 1.) * (pow(E, 8.) * .08 + hand * .12 + ring * .25);
   col = 1. - exp(-col * 1.2); // soft shoulder: light, never clipped
   // fine grain, so the low-res canvas reads as a photograph of light rather than as banding
   col += (hash21(fc + fract(t * 7.) * 91.) - .5) * (3. / 255.);

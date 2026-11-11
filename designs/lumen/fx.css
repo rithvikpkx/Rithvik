@@ -3,7 +3,7 @@
 [data-kn="lumen"] .kn-g {
   background: radial-gradient(circle at calc(50% + var(--px) * 70%) calc(45% + var(--py) * 70%), #FFFFFF 0 6%, #A8C0FF 16%, #4F6BFF 34%, #9A5CFF 54%, #FF6A3D 76%, #FFB38A 92%) 50% 50% / 220% 220% no-repeat;
   -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: color-mix(in srgb, #FFFFFF calc(100% - clamp(0%, var(--k) * 140%, 100%)), transparent);
+  -webkit-text-fill-color: color-mix(in srgb, #FFFFFF calc(100% - clamp(0%, (var(--k) - .12) * 160%, 100%)), transparent);
   transform: translate3d(var(--x), calc(var(--y) - var(--k) * .035em), 0);
   filter: drop-shadow(0 0 calc(var(--k) * .22em) rgba(110, 139, 255, calc(var(--k) * .55)));
 }
