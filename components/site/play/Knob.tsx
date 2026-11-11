@@ -25,7 +25,7 @@ export default function Knob({ label, value, onChange, def = 0.5, bipolar = fals
   const [touch, setTouch] = useState(false);
   const [held, setHeld] = useState(false);
   const cb = useRef(onChange);
-  cb.current = onChange;
+  useEffect(() => { cb.current = onChange; }); // latest handler for the wheel listener
 
   /** Commits a new value (clamped, and snapped to the centre detent on bipolar knobs). */
   const put = (v: number, free = false) => {

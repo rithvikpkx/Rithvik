@@ -2,7 +2,7 @@
    scope is the only canvas. A look themes it through the --rec-* tokens below (set on `.play-win` or the design root); each falls back to
    the shared --ui-* tokens, so a new design gets a coherent deck for free. */
 .deck {
-  container: dk / inline-size; width: 100%;
+  container: dk / inline-size; width: 100%; min-height: 100%; display: grid; align-content: center;
   /* --rec-disc the disc colour · --rec-dot dots, grooves and the play glyph (must contrast the disc) · --rec-screen / --rec-trace the scope's glass and its ink
      --rec-body the bezel and knob caps · --rec-hit a dot as it passes the pointer */
   --dk-disc: var(--rec-disc, var(--accent));
@@ -15,23 +15,9 @@
   --dk-link: 30px; /* the connector between the screen and a knob */
   --dk-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
-.dk-grid { display: grid; gap: 28px; justify-items: center; align-items: center; }
+.dk-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; justify-items: center; align-items: center; }
 .dk-rack { width: 100%; max-width: 560px; display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
 .dk-top { display: contents; }
-
-/* wide: the disc left, the instrument right; narrow: stacked, the layer switches drop below the volume */
-@container dk (min-width: 760px) {
-  .dk-grid { grid-template-columns: var(--dk-d) minmax(0, 1fr); gap: 44px; justify-items: stretch; }
-  .dk-rack { grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; justify-self: center; }
-  .dk-grid { --dk-d: min(44cqw, 460px, max(300px, calc(100dvh - 260px))); }
-  .dk-hint { grid-column: 1 / -1; }
-}
-@container dk (max-width: 759px) {
-  .dk-grid { --dk-d: min(100cqw, 340px); }
-  .dk-layers { order: 4; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 6px; }
-  .dk-layers::before, .dk-layers::after, .dk-layers li::before { display: none; }
-  .dk-hint { order: 5; }
-}
 
 /* ---------- the disc ---------- */
 .dk-disc { position: relative; width: var(--dk-d, 340px); aspect-ratio: 1; justify-self: center; }
@@ -55,7 +41,7 @@
 .dk-play:hover { scale: 1.06; }
 .dk-play:active { scale: .94; }
 .dk-play:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
-.dk-play .ic { position: relative; width: 38%; height: 38%; fill: currentColor; stroke: none; }
+.dk-play .ic { position: relative; width: calc(var(--dk-d, 340px) * .1); height: calc(var(--dk-d, 340px) * .1); fill: currentColor; stroke: none; }
 .dk-play span { position: relative; font: 500 11px/1 var(--font-l); letter-spacing: .1em; text-transform: uppercase; }
 
 /* ---------- the screen ---------- */
@@ -72,7 +58,7 @@
 .dk-read { bottom: 6%; display: flex; justify-content: space-between; gap: 8px; white-space: nowrap; }
 
 /* layer switches: wired to the screen's right edge */
-.dk-layers { grid-column: 2; position: relative; display: grid; align-content: center; gap: 2px; margin: 0; padding: 0 0 0 14px; list-style: none; }
+.dk-layers { align-self: center; position: relative; display: grid; gap: 2px; margin: 0; padding: 0 0 0 14px; list-style: none; }
 .dk-layers::before { content: ""; position: absolute; left: -24px; width: 24px; top: 50%; height: 1.5px; background: var(--dk-line); }
 .dk-layers::after { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 1.5px; background: var(--dk-line); }
 .dk-layers li { position: relative; }
@@ -118,6 +104,21 @@
 .dk-vol input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); }
 .dk-vol span { font: 500 11px/1 var(--font-l); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .dk-hint { margin: 10px 0 0; text-align: center; font-size: 12.5px; line-height: 1.5; color: var(--muted); text-wrap: balance; }
+
+/* wide: the disc left, the instrument right; narrow: stacked, the layer switches drop below the volume */
+@container dk (min-width: 760px) {
+  .dk-grid { grid-template-columns: var(--dk-d) minmax(0, 1fr); gap: 44px; justify-items: stretch; }
+  .dk-rack { grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; justify-self: center; }
+  .dk-layers { grid-column: 2; }
+  .dk-grid { --dk-d: min(44cqw, 460px, max(300px, calc(100dvh - 260px))); }
+  .dk-hint { grid-column: 1 / -1; }
+}
+@container dk (max-width: 759px) {
+  .dk-grid { --dk-d: min(100cqw, 340px); }
+  .dk-layers { grid-column: 1; order: 4; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: 6px; }
+  .dk-layers::before, .dk-layers::after, .dk-layers li::before { display: none; }
+  .dk-hint { order: 5; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .dk-play, .dk-cap, .dk-sw, .dk-sw::after, .dk-vol input::-webkit-slider-thumb { transition: none !important; }

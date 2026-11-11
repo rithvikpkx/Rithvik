@@ -18,7 +18,7 @@
 .play-tabs .ic { width: 14px; height: 14px; }
 .play-body { flex: 1; min-height: 0; overflow: auto; padding: clamp(16px, 3vw, 32px); }
 .play-pane { height: 100%; }
-.play-pane[data-pane="records"] { display: grid; place-items: center; }
+.play-pane[data-pane="records"] { display: block; }
 .play-pane[data-pane="records"][hidden] { display: none; }
 .play-win .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--ui-accent, #ff4d8d); color: var(--ui-accent-fg, #0f0f12); font: 500 14px/1 var(--ui-font, "Geist", -apple-system, "Segoe UI", system-ui, sans-serif); cursor: pointer; }
 .play-win .btn:active { transform: var(--press, scale(.97)); }

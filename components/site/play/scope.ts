@@ -36,10 +36,10 @@ export function createScope(canvas: HTMLCanvasElement): Scope {
       g.fillRect(b * bw + bw * 0.15, H - h, bw * 0.7, h);
     }
     // waveform: three passes, wide and faint to thin and bright, make the glow without a blur filter
-    const mid = H * 0.42, amp = H * 0.4, step = 4;
+    const mid = H * 0.42, amp = H * 0.36, step = 4;
     g.beginPath();
     for (let i = 0, x = 0; i < td.length; i += step, x++) {
-      const px = (i / (td.length - 1)) * W, py = mid + Math.max(-1, Math.min(1, ((td[i] - 128) / 128) * 1.6)) * amp;
+      const px = (i / (td.length - 1)) * W, py = mid + Math.max(-1, Math.min(1, ((td[i] - 128) / 128) * 1.1)) * amp;
       if (x) g.lineTo(px, py); else g.moveTo(px, py);
     }
     g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = color;
