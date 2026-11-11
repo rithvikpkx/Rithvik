@@ -13,9 +13,7 @@ const full: TranscriptItem[] = [
   { kind: "tool", name: "Search", args: 'site, "what has he built"', result: "3 records · BoilerFrame 0.81, Purdue 0.64", at: AT },
   { kind: "answer", text: "He built BoilerFrame [1].", at: AT },
   { kind: "sources", items: [{ n: 1, label: "BoilerFrame", anchor: "project-boilerframe" }], at: AT },
-  { kind: "ask", question: 'Open project "BoilerFrame"?', state: "yes", tool: { name: "OpenProject", args: "boilerframe" }, at: AT },
-  { kind: "ask", question: "Draft an email to Rithvik?", state: "no", tool: { name: "DraftEmail", args: "Hello" }, at: AT },
-  { kind: "ask", question: "Send this to Rithvik?", state: "yes", once: true, detail: ["Name: Ada", "Times: Tue 10:00"], tool: { name: "RequestMeeting", args: "Ada" }, at: AT },
+  { kind: "actions", buttons: [{ label: "↗ Open BoilerFrame", clicked: true }, { label: "Draft email", clicked: false }, { label: "Send meeting request", clicked: true }], detail: ["Name: Ada", "Times: Tue 10:00"], at: AT },
   { kind: "tool", name: "Calendar", args: "check_availability, 2026-08-18", result: "Free 10:00-11:00", at: AT },
   { kind: "suggest", chips: ["How did he learn it?", "  ", "What's next?"], at: AT },
   { kind: "note", text: "Interrupted", at: AT },
@@ -40,10 +38,8 @@ test("one RAG heading per reply, with answer and footnote sources", () => {
   assert.ok(md.includes("_Sources_\n\n- [1] BoilerFrame"));
 });
 
-test("confirmation outcomes: allowed, declined, sent", () => {
-  assert.ok(md.includes('- **OpenProject**(boilerframe) — Open project "BoilerFrame"? → **allowed**'));
-  assert.ok(md.includes("→ **declined**"));
-  assert.ok(md.includes("→ **confirmed and sent**\n  - Name: Ada\n  - Times: Tue 10:00"));
+test("offered actions list each button and whether it was clicked, with the send details", () => {
+  assert.ok(md.includes("_Offered actions_\n\n- ↗ Open BoilerFrame — **clicked**\n- Draft email — not clicked\n- Send meeting request — **clicked**\n  - Name: Ada\n  - Times: Tue 10:00"));
 });
 
 test("calendar tool result, suggestions (blanks dropped) and notes", () => {
@@ -51,17 +47,6 @@ test("calendar tool result, suggestions (blanks dropped) and notes", () => {
   assert.ok(md.includes('_Suggested follow-ups: "How did he learn it?" · "What\'s next?"_'));
   assert.ok(md.includes("> **Note:** Interrupted"));
   assert.ok(md.includes("> **Notice:** Rate limited"));
-});
-
-test("pending, always, auto and a declined send read correctly", () => {
-  const m = buildTranscriptMarkdown([
-    { kind: "user", text: "q" },
-    { kind: "ask", question: "Open the resume?", state: "pending" },
-    { kind: "ask", question: "Open the resume?", state: "always" },
-    { kind: "ask", question: "Open the resume?", state: "auto" },
-    { kind: "ask", question: "Send this to Rithvik?", state: "no", once: true },
-  ], AT);
-  assert.ok(m.includes("awaiting confirmation") && m.includes("allowed (always this session)") && m.includes("allowed automatically") && m.includes("declined, not sent"));
 });
 
 test("chrome and empty placeholders are skipped; an empty chat says so", () => {

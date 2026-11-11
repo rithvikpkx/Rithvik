@@ -8,37 +8,34 @@ button.pt-photo { cursor: pointer; }
 .pt-photo[aria-pressed="false"] img, div.pt-photo img { filter: none !important; mix-blend-mode: normal !important; opacity: 1 !important; }
 @keyframes pt-in { from { opacity: 0; scale: .94; } }
 
-.pt-beams { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-/* The cables: a shaded sheath (edge outline, body, sheen, dim core) with pulses of light running portrait -> node.
-   Every layer is a copy of one path (pathLength 1), so the dash maths below is in fractions of the cable.
-   Tokens a look can set: --pt-sheath, --pt-sheath-w, --pt-edge, --pt-edge-w, --pt-sheen, --pt-core, --pt-glow, --pt-head,
-   --pt-halo (ambient glow opacity), --pt-cap, --pt-pulse-a/-m/-b (the tail's colours, top to bottom). */
-.pt-cable path { fill: none; stroke-linecap: var(--pt-cap, round); stroke-linejoin: round; }
-.pt-edge { stroke: var(--pt-edge, transparent); stroke-width: calc(var(--pt-sheath-w, 4.5px) + 2 * var(--pt-edge-w, 0px)); }
+.pt-beams, .pt-fx { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+/* The cables are clear glass fibre: a hairline rim, a mostly transparent tinted body, a lit inner edge and a faint fibre.
+   The pulse (Tether.tsx, driven per frame along the live path) runs inside it, so it reads as light in glass.
+   Tokens a look can set: --pt-sheath (body tint), --pt-sheath-w, --pt-edge (rim), --pt-edge-w, --pt-sheen, --pt-core, --pt-glow,
+   --pt-head, --pt-halo (ambient glow opacity), --pt-cap, --pt-pulse-a/-m/-b (the tail's colours, portrait to node). */
+.pt-cable path, .pt-mk path { fill: none; stroke-linecap: var(--pt-cap, round); stroke-linejoin: round; }
 .pt-halo { stroke: var(--pt-glow, var(--pt-pulse-a, #888)); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3.4); opacity: var(--pt-halo, .12); }
-.pt-sheath { stroke: var(--pt-sheath, var(--pt-beam, #777)); stroke-width: var(--pt-sheath-w, 4.5px); }
-.pt-sheen { stroke: var(--pt-sheen, rgba(255, 255, 255, .38)); stroke-width: 1px; transform: translate(-1.05px, -.5px); } /* a thin lit edge on the sheath */
-.pt-core { stroke: var(--pt-core, var(--pt-pulse-a, #fff)); stroke-width: 1.3px; opacity: .55; }
+.pt-edge { stroke: var(--pt-edge, rgba(255, 255, 255, .6)); stroke-width: calc(var(--pt-sheath-w, 4.5px) + 2 * var(--pt-edge-w, 1px)); opacity: .85; } /* masked per cable (Tether.tsx) so only the rim survives and the body stays clear */
+.pt-mk-o { stroke: #fff; stroke-width: calc(var(--pt-sheath-w, 4.5px) + 2 * var(--pt-edge-w, 1px) + 1px); }
+.pt-mk-i { stroke: #000; stroke-width: var(--pt-sheath-w, 4.5px); }
+.pt-sheath { stroke: var(--pt-sheath, var(--pt-beam, #777)); stroke-width: var(--pt-sheath-w, 4.5px); opacity: var(--pt-body, .3); }
+.pt-sheen { stroke: var(--pt-sheen, rgba(255, 255, 255, .5)); stroke-width: 1px; transform: translate(-1.05px, -.5px); } /* a thin lit edge on the glass */
+.pt-core { stroke: var(--pt-core, var(--pt-pulse-a, #fff)); stroke-width: 1px; opacity: .4; }
 
-/* the light: a dash per layer (wide soft glow, gradient tail, bloom, white head), all sharing one front so they read as one
-   comet. --l is each layer's dash length; offset = l - front, front runs from just before the photo to past the node. */
-@property --pt-f { syntax: "<number>"; inherits: true; initial-value: -.03; } /* the pulse front: a registered number, because a var() inside keyframes will not interpolate */
-.pt-p { --l: .05; stroke-dasharray: var(--l) 3; stroke-dashoffset: calc(var(--l) - var(--pt-f)); animation: pt-run var(--cd, 3.6s) linear var(--dl, 0s) infinite both; }
-.pt-glow { --l: .34; stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 2.3); opacity: .24; }
-.pt-tail { --l: .22; stroke-width: calc(var(--pt-sheath-w, 4.5px) * .8); opacity: .95; }
-.pt-bloom { --l: .08; stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 2); opacity: .6; }
-.pt-head { --l: .035; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * .6); }
-@keyframes pt-run { 0% { --pt-f: -.03; } 46%, 100% { --pt-f: 1.36; } }
-/* the occasional surge: every third pulse a brighter, wider one rides on top (same start as the regular pulse) */
-.pt-s { animation-name: pt-surge; animation-duration: calc(var(--cd, 3.6s) * 3); }
-.pt-sglow { --l: .3; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3.4); opacity: .3; }
-.pt-shead { --l: .12; stroke: var(--pt-head, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * .95); }
-@keyframes pt-surge { 0%, 66.6% { --pt-f: -.03; } 82%, 100% { --pt-f: 1.36; } }
+/* the light inside the glass: lit tube around the pulse, soft tail, bloom, white-hot head. Script sets only geometry + visibility. */
+.pt-lit { fill: none; stroke-linecap: round; }
+.pt-lit-w { stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3); opacity: .3; }
+.pt-lit-t { stroke-width: calc(var(--pt-sheath-w, 4.5px) * 1.1); opacity: .95; }
+.pt-lit-c { stroke: var(--pt-head, #fff); stroke-width: 1.7px; opacity: .85; }
+.pt-bloom { opacity: .85; }
+.pt-hot { fill: var(--pt-head, #fff); opacity: .55; }
+.pt-head { fill: var(--pt-head, #fff); }
+/* the landing on the portrait's ring: a soft flare and an arc spreading along the rim */
+.pt-arc { fill: none; stroke: var(--pt-head, #fff); stroke-width: 3; stroke-linecap: round; opacity: .9; }
 
 .pt-node { position: absolute; width: max(var(--pt-node-size, 13%), 34px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; padding: 0; border-radius: var(--pt-node-r, 50%); background: var(--pt-node-bg, #fff); color: var(--pt-node-fg, #111); border: var(--bw, 1px) solid var(--pt-node-line, rgba(0, 0, 0, .14)); text-decoration: none; cursor: pointer; user-select: none; -webkit-user-drag: none; will-change: transform; transition: scale 200ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)), background-color 200ms ease, color 200ms ease; }
-/* the arrival glow: a soft ring around the node that flares when its cable's pulse lands (33% of the cycle) */
-.pt-node::before { content: ""; position: absolute; inset: -38%; z-index: -1; border-radius: 50%; pointer-events: none; opacity: 0; background: radial-gradient(closest-side, transparent 52%, var(--pt-glow, #fff) 62%, transparent 100%); animation: pt-arrive var(--cd, 3.6s) linear var(--dl, 0s) infinite; }
-@keyframes pt-arrive { 0%, 31% { opacity: 0; scale: .9; } 35% { opacity: .9; scale: 1.05; } 62%, 100% { opacity: 0; scale: 1.15; } }
+/* the charge glow: --g (0..1) is written by script each frame (build, dim, dark at launch); with no script or in calm mode it is a steady faint glow */
+.pt-node::before { content: ""; position: absolute; inset: -42%; z-index: -1; border-radius: 50%; pointer-events: none; opacity: calc(var(--g, .35) * .95); scale: calc(.86 + var(--g, .35) * .24); background: radial-gradient(closest-side, transparent 50%, var(--pt-glow, #fff) 60%, transparent 100%); }
 .pt-node .logo, .pt-node .ic { width: 40%; height: 40%; pointer-events: none; }
 .pt-node:active { scale: .94; }
 .pt[data-drag] .pt-node { cursor: grabbing; }
@@ -49,16 +46,14 @@ button.pt-photo { cursor: pointer; }
 
 /* before the opening runs the nodes and strings wait, so they can drop in; without JS they are simply there */
 @media (scripting: enabled) {
-  .pt:not([data-live]) .pt-node, .pt:not([data-live]) .pt-beams { opacity: 0; }
+  .pt:not([data-live]) .pt-node, .pt:not([data-live]) .pt-beams, .pt:not([data-live]) .pt-fx { opacity: 0; }
 }
 .pt[data-live="drop"] .pt-beams { animation: pt-fade 300ms ease both; }
 @keyframes pt-fade { from { opacity: 0; } }
 
-.pt[data-paused] .pt-cable path, .pt[data-paused] .pt-node::before { animation-play-state: paused; }
-/* calm: no pulses; the cables rest as lit cable, a steady core and a soft halo, and the nodes keep a faint glow */
-@media (prefers-reduced-motion: reduce) { .pt-p { display: none; } .pt-core { opacity: 1; } .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); } .pt-node::before { animation: none; opacity: .35; } .pt-node, .pt-photo { transition: none; animation: none; } }
-html.lite .pt-p { display: none; }
-html.lite .pt-core { opacity: 1; }
+/* calm (reduced motion / performance mode): clear glass with a steady faint fibre, no light, no flashes, nodes keep a calm glow */
+@media (prefers-reduced-motion: reduce) { .pt-light, .pt-land { display: none; } .pt-core { opacity: .8; } .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); } .pt-node, .pt-photo { transition: none; animation: none; } }
+html.lite .pt-light, html.lite .pt-land { display: none; }
+html.lite .pt-core { opacity: .8; }
 html.lite .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); }
-html.lite .pt-node::before { animation: none; opacity: .35; }
 html.lite .pt-photo { animation: none; }

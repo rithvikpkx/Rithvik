@@ -101,3 +101,16 @@ The owner's feedback on the v7 site after review round 1, turned into streams. R
 
 Round 3 status (2026-11-10): all five streams merged on `dev` (tether beams, orb switcher, Purdue P per look,
 Play cleanup + turntable, ouroboros working line + frozen stack with Logos/Text). Owner review pending.
+
+## Round 4 (owner, 2026-11-10)
+- **Switcher**: the orb ring is rough, doesn't scale with more looks, and perf mode + status look bolted on. He likes
+  lab concept C's "one blob consumes another" spirit but not its long, unlabelled drag. Next step is a concepts page
+  (wild, physical, abstract pickers + rendered web references); nothing is built until he picks one.
+- **Pulse**: no visible pulse travelling. New spec: each node charges a glow, dims, then fires a pulse node →
+  portrait through a clear glass cable; staggered and repeating.
+- **Agent**: no auto-scroll after answers; Yes/No/Always confirmations become plain clickable action buttons.
+- **Artboard**: the real Excalidraw library (lazy-loaded, self-hosted assets) with export options.
+- **Contact/footer**: an orbiting cloud of bigger GitHub/LinkedIn/Email/Resume buttons replaces Contact's three
+  buttons; the footer drops the portrait cluster and keeps only the slim line.
+- **Prism**: portrait centred inside the prism. **Mercury**: no drip on the name; heavier type.
+Models: Opus/high for the concepts page + Artboard, Sonnet/high for the rest (owner OK).

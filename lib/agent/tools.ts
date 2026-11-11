@@ -63,7 +63,7 @@ export function toolDefs(a: Allowed): ToolDef[] {
       data: { type: "object", description: "Shape depends on type (see tool description)" },
     }, ["type", "title", "data"]),
     ...(calendarTools as unknown as ToolDef[]),
-    fn("request_meeting", "Prepare a meeting or interview request to Rithvik from what the visitor told you. It is NOT sent: the visitor reviews and confirms it on the page first.", {
+    fn("request_meeting", "Prepare a meeting or interview request to Rithvik from what the visitor told you. It is NOT sent: the visitor sees a button listing the details and sends it by clicking.", {
       name: { type: "string", description: "Visitor's name" },
       email: { type: "string", description: "Visitor's email, exactly as they gave it" },
       company: { type: "string", description: "Visitor's company or school" },
@@ -220,7 +220,7 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
     }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }
     kept.push(v);
-    replies.push({ id: c.id, content: v.result ?? "Queued: the visitor is asked to confirm on the page. Do not claim it already happened." });
+    replies.push({ id: c.id, content: v.result ?? "Offered as a button the visitor may click. Do not claim it already happened." });
   }
   return { kept, replies };
 }
