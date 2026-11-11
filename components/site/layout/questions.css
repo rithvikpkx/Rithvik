@@ -5,7 +5,11 @@
   --r: 0deg; --dy: 0px;
   position: relative; perspective: 1100px; min-height: 300px;
   transform: translateY(var(--dy)) rotate(var(--r)); transition: transform 420ms var(--ease-out);
+  /* the warp reads this to shape its silhouette, so it matches the faces (and follows a skin's --qz-r / --qz-tail) */
+  border-radius: var(--qz-r, 28px) var(--qz-r, 28px) var(--qz-r, 28px) var(--qz-tail, 6px); --warp-line: var(--ly-line);
 }
+.qz-ask { --warp-line: color-mix(in srgb, var(--ui-accent) 45%, var(--ly-line)); }
+.qz-tile[data-flipped] { --warp-line: color-mix(in srgb, var(--ui-accent) 38%, var(--ly-line)); }
 /* tossed on a table: each card sits a little off true, and straightens when you reach for it */
 .qz-tile:nth-child(1) { --r: -1.3deg; }
 .qz-tile:nth-child(2) { --r: .9deg; --dy: 14px; }
@@ -15,7 +19,7 @@
 
 .qz-card {
   position: absolute; inset: 0; transform-style: preserve-3d;
-  transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) + var(--flip, 0deg)));
+  transform: rotateY(var(--flip, 0deg));
   transition: transform 640ms cubic-bezier(.34, 1.38, .5, 1);
 }
 .qz-tile[data-flipped] { --flip: 180deg; }
@@ -27,6 +31,9 @@
   box-shadow: 0 1px 0 color-mix(in srgb, var(--ui-fg) 6%, transparent), 0 16px 32px -22px color-mix(in srgb, var(--ui-fg) 40%, transparent);
 }
 button.qz-face { cursor: pointer; }
+/* while the card is bent the drop shadow (clipped at the box) fades out rather than popping */
+.qz-face { transition: box-shadow 200ms ease; }
+.qz-tile[data-warp] .qz-face { box-shadow: 0 1px 0 transparent, 0 16px 32px -22px transparent; }
 .qz-back { transform: rotateY(180deg); background: color-mix(in srgb, var(--ui-accent) 15%, var(--ui-bg)); border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ly-line)); }
 .qz-n { font: 500 12px/1 var(--ui-mono); letter-spacing: .08em; color: var(--ui-muted); }
 .qz-q { margin: 0; font: 500 clamp(1.25rem, 1.75vw, 1.6rem)/1.18 var(--ly-display); letter-spacing: -.02em; text-wrap: balance; }
