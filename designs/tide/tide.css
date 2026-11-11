@@ -1,0 +1,104 @@
+/* Tide: the water element. Tokens (the family's --el-* set, the cable, the field), then the name, the portrait, the
+   Experience channel and the submerged P, the Contact pool. Shared structure lives in designs/elemental/elemental.css. */
+:root[data-design="tide"] {
+  --el-bg: #04131D; --el-panel: #061A27; --el-panel2: #082233; --el-fg: #E6FAFF; --el-soft: #BFE3EC; --el-mut: #85AEBB;
+  --el-acc: #3BDDEB; --el-acc2: #7FB8FF; --el-hot: #A6F6FF; --el-acc-fg: #03141E;
+  --el-line: rgba(140, 230, 255, .12); --el-line2: rgba(140, 230, 255, .25); --el-glow: rgba(60, 220, 240, .45);
+  --el-stops: #E9FDFF, #A6F6FF 20%, #3BDDEB 50%, #1A6FB0 80%, #0A3A52;
+  --el-d: "DM Serif Display", Georgia, serif; --el-b: "Manrope", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "DM Mono", ui-monospace, Menlo, monospace;
+  --el-r: 14px; --el-name-w: 400; --el-name-track: -.01em; --el-name-style: italic; --el-h2-w: 400; --el-role-track: 0em;
+  /* glass with water behind it */
+  --el-mat: linear-gradient(180deg, #A6F6FF, #3BDDEB 50%, #1A8FB0); --el-mat-fg: #03141E;
+  --el-tile: linear-gradient(180deg, rgba(166, 246, 255, .05), transparent 40%), linear-gradient(160deg, #0A2434, #061722); --el-tile-c: #071C29; --el-tile-r: 20px;
+  --el-node: radial-gradient(circle at 50% 30%, #12384C, #061722 72%); --el-node-lit: radial-gradient(circle at 40% 30%, #FFFFFF, #A6F6FF 22%, #3BDDEB 55%, #1A6FB0); --el-node-r: 50%;
+  --el-scrim: linear-gradient(90deg, rgba(3, 14, 22, .7), rgba(3, 14, 22, .3) 42%, transparent 64%);
+  --el-tex: radial-gradient(80% 50% at 15% 0%, rgba(70, 227, 240, .05), transparent), linear-gradient(transparent 70%, rgba(26, 111, 176, .05));
+  /* a web of focused light (turbulence ridges), tiled: the P and the portrait slide it over themselves */
+  --td-caus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='c' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='.022' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .8 0 0 0 0 1 0 0 0 0 1 -11 0 0 0 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  /* portrait: a sea-glass rim; cables are glass tubes with water light running through */
+  --pt-photo-bg: #082233; --pt-shadow: 0 0 70px -16px rgba(60, 220, 240, .4), 0 40px 80px -40px #000;
+  --pt-node-bg: rgba(8, 34, 51, .92); --pt-node-fg: var(--el-fg); --pt-node-line: rgba(140, 230, 255, .4); --pt-node-r: 50%;
+  --pt-sheath: #2C8FB0; --pt-sheath-w: 6px; --pt-body: .28; --pt-edge: rgba(190, 245, 255, .7); --pt-edge-w: 1px; --pt-sheen: rgba(255, 255, 255, .6); --pt-cap: round;
+  --pt-core: #A6F6FF; --pt-glow: #3BDDEB; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #FFFFFF; --pt-pulse-m: #7FF0FF; --pt-pulse-b: #2A7FD0;
+}
+@media (max-width: 860px) { :root[data-design="tide"] { --el-scrim: linear-gradient(180deg, rgba(3, 14, 22, .62), rgba(3, 14, 22, .25) 55%, transparent 80%); } }
+
+/* a meniscus round the photo: a thin bright rim of water, refracting */
+:root[data-design="tide"] .td .pt::before { content: ""; position: absolute; left: calc(var(--pt-x) - 7px); top: calc(var(--pt-y) - 7px); width: calc(var(--pt-w) + 14px); aspect-ratio: 1; border-radius: 50%;
+  background: conic-gradient(from 210deg, rgba(166, 246, 255, .9), rgba(59, 221, 235, .2) 25%, rgba(255, 255, 255, .85) 48%, rgba(26, 111, 176, .25) 70%, rgba(166, 246, 255, .9));
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  filter: blur(.4px) drop-shadow(0 0 10px rgba(60, 220, 240, .5)); animation: td-turn 14s linear infinite; }
+@keyframes td-turn { to { rotate: 1turn; } }
+
+/* ───────── name: a wave through the letters ───────── */
+[data-kn="tide"] .kn-g { color: color-mix(in srgb, #A6F6FF calc(var(--k) * 100%), #E6FAFF);
+  text-shadow: 0 0 calc(var(--k) * .3em) rgb(60 220 240 / calc(var(--k) * .9)), 0 .03em 0 rgba(0, 20, 30, .5);
+  transform: translate3d(var(--x), calc(var(--y) + var(--w, 0) * .09em), 0) skewY(calc(var(--w, 0) * -4deg)) scaleX(calc(1 + var(--w, 0) * .03)); }
+/* a ring spreading on the water under each letter the pointer touches */
+[data-kn="tide"] .kn-g::after { content: ""; position: absolute; left: 50%; top: 82%; width: .9em; height: .22em; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  border: .02em solid rgba(166, 246, 255, .9); box-shadow: 0 0 .1em rgba(60, 220, 240, .6); opacity: 0; }
+[data-kn="tide"][data-live] .kn-g::after { animation: td-ring 1.1s cubic-bezier(.2, .6, .3, 1) infinite; animation-delay: calc(var(--i) * -90ms); }
+@keyframes td-ring { 0% { scale: .2; opacity: 0; } 20% { opacity: calc(var(--k) * 1); } 100% { scale: 1.5; opacity: 0; } }
+
+/* ───────── portrait: under the surface ───────── */
+[data-pfx="tide"] { --pfx-off: circle(0% at 50% 50%); --pfx-on: circle(75% at 50% 50%); --pfx-t: 820ms; --pfx-cap-bg: rgba(3, 20, 30, .7); --pfx-cap-fg: #CFF7FF; }
+[data-pfx="tide"] .pfx-scan { display: none; }
+[data-pfx="tide"] .pfx-img { transform: scale(1.06); }
+.td-pfx-caustic { inset: -40%; background: var(--td-caus) 0 0 / 180px 180px; mix-blend-mode: screen; opacity: .75; animation: td-drift 9s linear infinite; }
+@keyframes td-drift { to { transform: translate(180px, 90px); } }
+.td-pfx-shafts { background: repeating-linear-gradient(105deg, transparent 0 9%, rgba(200, 250, 255, .14) 11%, transparent 15%); mix-blend-mode: screen; animation: td-sway 6s ease-in-out infinite alternate; }
+@keyframes td-sway { to { transform: translateX(6%) skewX(-4deg); } }
+.td-pfx-bubbles i { position: absolute; bottom: -4%; width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(220, 252, 255, .8); background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .9) 0 18%, transparent 30%); animation: td-bub 4s ease-in infinite; }
+.td-pfx-bubbles i:nth-child(1) { left: 22%; } .td-pfx-bubbles i:nth-child(2) { left: 40%; animation-delay: -1.4s; width: 5px; height: 5px; }
+.td-pfx-bubbles i:nth-child(3) { left: 63%; animation-delay: -2.6s; } .td-pfx-bubbles i:nth-child(4) { left: 78%; animation-delay: -.7s; width: 4px; height: 4px; } .td-pfx-bubbles i:nth-child(5) { left: 52%; animation-delay: -3.3s; width: 9px; height: 9px; }
+@keyframes td-bub { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 100% { translate: 10px -360px; opacity: 0; } }
+
+/* ───────── experience: the channel and the submerged P ───────── */
+:root[data-design="tide"] .ly-xp { --xp-w: 14px; }
+:root[data-design="tide"] .tx-glass { border-radius: 99px; background: linear-gradient(90deg, rgba(166, 246, 255, .14), rgba(166, 246, 255, .02) 35%, rgba(0, 0, 0, .25) 65%, rgba(166, 246, 255, .1)); box-shadow: inset 0 0 0 1px rgba(166, 246, 255, .18); }
+:root[data-design="tide"] .tx-water { inset: 0 2px; border-radius: 99px; background: linear-gradient(90deg, #1A6FB0, #3BDDEB 35%, #A6F6FF 48%, #3BDDEB 62%, #1A6FB0); box-shadow: 0 0 16px rgba(60, 220, 240, .45); overflow: hidden; }
+/* the current: bright bands and bubbles carried down the channel */
+:root[data-design="tide"] .tx-water::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(2.5px 2.5px at 40% 50%, rgba(255, 255, 255, .95) 0 90%, transparent) 0 0 / 100% 34px, repeating-linear-gradient(170deg, transparent 0 16px, rgba(255, 255, 255, .4) 20px, transparent 26px); animation: tx-current 1.4s linear infinite; }
+@keyframes tx-current { to { background-position: 0 34px, 0 26px; } }
+:root[data-design="tide"] .tx-drop { width: 20px; height: 26px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 38% 34%, #fff 0 14%, #A6F6FF 30%, #3BDDEB 62%, #1A6FB0); box-shadow: 0 0 18px rgba(60, 220, 240, .7); animation: tx-wobble 1.3s ease-in-out infinite alternate; }
+@keyframes tx-wobble { to { scale: 1.08 .92; } }
+
+:root[data-design="tide"] .tx-sub { --sx: calc(var(--px) * 9px); --sy: calc(var(--py) * 7px); }
+:root[data-design="tide"] .tx-sub > *, :root[data-design="tide"] .tx-p > * { position: absolute; display: block; }
+/* the floor: a disc of deep water under the P */
+:root[data-design="tide"] .tx-floor { inset: 4%; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #0E4C66, #072C3F 55%, #04131D 78%, transparent 80%); box-shadow: inset 0 0 40px rgba(0, 0, 0, .5); }
+:root[data-design="tide"] .tx-floor::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--td-caus) 0 0 / 150px 150px; mix-blend-mode: screen; opacity: .35; animation: tx-caus 11s linear infinite; }
+:root[data-design="tide"] .tx-shadow { inset: 8%; background: #000; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; opacity: .45; filter: blur(5px); transform: translate(calc(14px - var(--sx)), calc(16px - var(--sy))); }
+:root[data-design="tide"] .tx-p { inset: 8%; transform: translate(var(--sx), var(--sy)); }
+/* the water wavers: the whole P sways a little in the refraction */
+:root[data-design="tide"] .tx-p { animation: tx-waver 5s ease-in-out infinite alternate; }
+@keyframes tx-waver { to { transform: translate(calc(var(--sx) + 3px), calc(var(--sy) - 2px)) skewX(1.5deg); } }
+:root[data-design="tide"] :is(.tx-sil, .tx-ring, .tx-face, .tx-caus) { inset: 0; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
+:root[data-design="tide"] .tx-sil { background: linear-gradient(170deg, #0C3247, #041722); }
+:root[data-design="tide"] .tx-ring { -webkit-mask-image: var(--p-ring); mask-image: var(--p-ring); background: linear-gradient(160deg, #CFF7FF, #5FA9C4 45%, #2C6F8C); }
+:root[data-design="tide"] .tx-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); background: linear-gradient(170deg, #E3D2A4, #B49A62 55%, #6D7F6A); } /* the gold face, cooled and greened by the water */
+:root[data-design="tide"] .tx-caus { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); background: var(--td-caus) 0 0 / 120px 120px; mix-blend-mode: screen; animation: tx-caus 8s linear infinite; }
+@keyframes tx-caus { to { background-position: 120px 60px; } }
+/* the surface highlight: slides against the pointer like a reflection */
+:root[data-design="tide"] .tx-surf { inset: 4%; border-radius: 50%; pointer-events: none; background: radial-gradient(40% 18% at calc(34% - var(--px) * 16%) calc(26% - var(--py) * 12%), rgba(255, 255, 255, .5), transparent 70%), radial-gradient(closest-side, transparent 92%, rgba(166, 246, 255, .55) 97%, transparent); mix-blend-mode: screen; }
+:root[data-design="tide"] .tx-ripples { left: calc(50% + var(--px) * 30%); top: calc(50% + var(--py) * 30%); width: 0; height: 0; }
+:root[data-design="tide"] .tx-ripples b { position: absolute; left: -60px; top: -60px; width: 120px; height: 120px; border-radius: 50%; border: 1.5px solid rgba(190, 245, 255, .55); opacity: 0; animation: tx-rip 3s cubic-bezier(.2, .6, .3, 1) infinite; }
+:root[data-design="tide"] .tx-ripples b:nth-child(2) { animation-delay: -1s; } :root[data-design="tide"] .tx-ripples b:nth-child(3) { animation-delay: -2s; }
+@keyframes tx-rip { 0% { scale: .1; opacity: .9; } 100% { scale: 1.6; opacity: 0; } }
+
+/* ───────── contact: a still pool ───────── */
+:root[data-design="tide"] .td-pool { position: relative; }
+:root[data-design="tide"] .td-rings { position: absolute; left: 50%; bottom: 10%; width: 0; height: 0; pointer-events: none; z-index: -1; }
+:root[data-design="tide"] .td-rings i { position: absolute; left: -260px; top: -70px; width: 520px; height: 140px; border-radius: 50%; border: 1.5px solid rgba(166, 246, 255, .4); opacity: 0; animation: td-pool 6s cubic-bezier(.2, .6, .3, 1) infinite; }
+:root[data-design="tide"] .td-rings i:nth-child(2) { animation-delay: -2s; } :root[data-design="tide"] .td-rings i:nth-child(3) { animation-delay: -4s; }
+@keyframes td-pool { 0% { scale: .1; opacity: 0; } 15% { opacity: .9; } 100% { scale: 1.5; opacity: 0; } }
+
+/* ───────── play: a shallow tide pool ───────── */
+:root[data-design="tide"] .pf-wrap { --pf-bg: radial-gradient(120% 90% at 50% 0%, #0E4C66, #061A27 65%); --pf-fog: #04131D; --pf-grid: rgba(166, 246, 255, .12);
+  --pf-face: linear-gradient(170deg, #12384C, #082233); --pf-edge: #1A5A74; --pf-a: #3BDDEB; --pf-b: #A6F6FF; --pf-c: #1A6FB0; --pf-ink: #E6FAFF; --pf-line: rgba(140, 230, 255, .2);
+  --pf-label: radial-gradient(circle, #FFFFFF, #A6F6FF 28%, #3BDDEB 58%, #1A6FB0); --pf-tag: #082233; --pf-r: 22px; --pf-shadow: 0 24px 40px -22px rgba(0, 0, 0, .8); }
+
+/* ───────── calm: a designed still ───────── */
+:root.lite[data-design="tide"] .td .pt::before, :root.lite[data-design="tide"] .td-rings i { animation: none !important; }
+:root.lite[data-design="tide"] .td-rings i:first-child { opacity: .5; scale: .8; }
+@media (prefers-reduced-motion: reduce) { :root[data-design="tide"] .td .pt::before, :root[data-design="tide"] .td-rings i { animation: none !important; } }
