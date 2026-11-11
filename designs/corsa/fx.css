@@ -11,7 +11,7 @@
     calc(var(--k) * var(--d) * -.38em) 0 .05em rgb(244 241 234 / calc(var(--k) * 16%));
 }
 [data-kn="corsa"] .kn-g::before, [data-kn="corsa"] .kn-g::after {
-  content: ""; position: absolute; top: 34%; height: .045em; width: calc(var(--k) * 1.3em); pointer-events: none;
+  content: ""; position: absolute; z-index: -1; top: 34%; height: .05em; width: calc(var(--k) * 1.5em); pointer-events: none;
   left: 50%; background: linear-gradient(90deg, #D40000, transparent);
   /* anchored at the glyph's trailing edge and grown backwards: flipped by --dir */
   transform-origin: 0 50%; scale: calc(-1 * var(--d)) 1; translate: calc(var(--d) * -.3em) 0;

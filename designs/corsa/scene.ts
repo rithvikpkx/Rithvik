@@ -185,6 +185,7 @@ export async function openGarage({ host, input, onProgress, onReady, onFrame }: 
     const skip = (t: EventTarget | null) => !!(t as Element | null)?.closest?.("a, button, input, textarea, [data-edit], .ly-hero-copy, .ly-hero-pt, .co-hud");
     const down = (e: PointerEvent) => {
       if (drag || e.button > 0 || skip(e.target)) return;
+      e.preventDefault(); // an orbit, not a text selection sweeping across the hero
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
       host.dataset.drag = "";
     };
