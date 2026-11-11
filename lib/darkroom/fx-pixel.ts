@@ -81,7 +81,7 @@ const CHARSETS = [" .:-=+*#%@", " ░▒▓█", " .1i0O8@", " `.-':_,^=;><+!rc*
 const ascii: Effect = {
   id: "ascii", name: "ASCII", family: "pixel", tags: ["text", "mono", "retro", "digital", "terminal", "grid"],
   desc: "The portrait set in type: every cell is a character chosen by its brightness.",
-  params: [P("cell", "Cell size", 5, 16, 1, 8), P("set", "Charset", 0, 3, 1, 0, ["Classic", "Blocks", "Binary", "Fine"]), P("ink", "Ink", 0, 2, 1, 0, ["Light on dark", "Dark on light", "Colour"])],
+  params: [P("cell", "Cell size", 5, 16, 1, 8), P("set", "Charset", 0, 3, 1, 0, ["Classic", "Blocks", "Binary", "Fine"]), P("ink", "Ink", 0, 2, 1, 1, ["Light on dark", "Dark on light", "Colour"])],
   apply(src, p, env) {
     const cw = Math.max(3, Math.round(p.cell * env.k)), ch = Math.round(cw * 1.8), chars = CHARSETS[p.set], atlas = env.atlas(chars, cw, ch);
     const cols = Math.ceil(src.w / cw), rows = Math.ceil(src.h / ch), small = resize(src, cols, rows), out = newFrame(src.w, src.h);
@@ -157,11 +157,14 @@ const mosaic: Effect = {
   params: [P("cells", "Cells across", 8, 44, 1, 20), P("seed", "Seed", 0, 99, 1, 3), P("pal", "Palette", 0, 2, 1, 0, ["Mozayk", "Paper", "Image"])],
   apply(src, p) {
     const n = p.cells, cs = src.w / n, rows = Math.ceil(src.h / cs), small = resize(src, n, rows), out = newFrame(src.w, src.h), aa = 2 / cs * 1.2;
-    const bg: RGB = p.pal === 1 ? PAPER : [10, 9, 14], inks: RGB[] = p.pal === 1 ? [INK, [210, 60, 40], [40, 60, 150], [30, 120, 90]] : MOZ;
+    let sum = 0;
+    for (let i = 0; i < small.data.length; i += 4) sum += lumaAt(small.data, i);
+    const bright = sum / (small.data.length / 4) > 0.5, bg: RGB = p.pal === 1 ? PAPER : [10, 9, 14], inks: RGB[] = p.pal === 1 ? [INK, [210, 60, 40], [40, 60, 150], [30, 120, 90]] : MOZ;
     for (let y = 0; y < src.h; y++) for (let x = 0; x < src.w; x++) {
       const gx = Math.min(n - 1, (x / cs) | 0), gy = Math.min(rows - 1, (y / cs) | 0), si = (gy * n + gx) * 4, o = (y * src.w + x) * 4;
       let u = ((x / cs) - gx) * 2 - 1, v = ((y / cs) - gy) * 2 - 1;
-      const tone = p.pal === 1 ? 1 - lumaAt(small.data, si) : lumaAt(small.data, si), hr = hash(gx, gy, p.seed), rot = Math.floor(hash(gx, gy, p.seed + 31) * 4);
+      const L = lumaAt(small.data, si), tone = p.pal === 1 || bright ? 1 - L : L, // paper wants ink where it is dark; on black, a light backdrop is flipped so the subject, not the wall, gets the heavy shapes
+         hr = hash(gx, gy, p.seed), rot = Math.floor(hash(gx, gy, p.seed + 31) * 4);
       let idx = Math.floor(clamp(Math.pow(tone, 1.5) * 1.05 - 0.02) * (SHAPES.length - 0.01));
       if (hash(gx, gy, p.seed + 57) < 0.55) idx = clamp(idx + Math.floor(hash(gx, gy, p.seed + 91) * 5) - 2, 0, SHAPES.length - 1);
       for (let r = 0; r < rot; r++) { const t = u; u = -v; v = t; }

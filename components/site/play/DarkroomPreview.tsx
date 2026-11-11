@@ -36,7 +36,7 @@ export default function DarkroomPreview() {
 
   return (
     <span className="pf-shape">
-      <span className="pf-dr-ph" style={mask ? ({ "--m": `url(${mask})` } as CSSProperties) : undefined} />
+      <span className="pf-dr-ph" data-ready={mask ? "" : undefined} style={mask ? ({ "--m": `url(${mask})` } as CSSProperties) : undefined} />
       <svg className="pf-dr-ln" viewBox="0 0 100 100" preserveAspectRatio="none">
         {LINKS.map(([a, b]) => <line key={`${a}-${b}`} x1={DOTS[a][0]} y1={DOTS[a][1]} x2={DOTS[b][0]} y2={DOTS[b][1]} vectorEffect="non-scaling-stroke" />)}
       </svg>

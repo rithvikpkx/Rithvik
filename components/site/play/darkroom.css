@@ -18,6 +18,7 @@
 .dr-search:focus-within { border-color: var(--accent); }
 .dr-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font: 400 14px/1 var(--font-b); caret-color: var(--accent); }
 .dr-search input::-webkit-search-cancel-button { display: none; }
+.dr .dr-search input:focus, .dr .dr-search input:focus-visible { outline: none; box-shadow: none; border: 0; } /* the pill carries the focus ring */
 .dr-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--fg); font: 500 13px/1 var(--font-b); white-space: nowrap; cursor: pointer; }
 .dr-chip:hover:not(:disabled) { border-color: var(--accent); }
 .dr-chip:active:not(:disabled) { transform: var(--press, scale(.97)); }
@@ -99,9 +100,14 @@ html.lite .dr-dot i { animation: none; }
 @media (max-width: 760px) {
   .play-body:has(> .play-pane[data-pane="darkroom"]) { overflow: auto; padding: 12px; }
   .play-pane[data-pane="darkroom"] { height: auto; }
-  .dr { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "view" "sky" "panel"; }
+  /* one column; the picture stays pinned at the top while you tap through the constellation below it */
+  .dr { height: auto; display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+  .dr-view { display: contents; }
+  .dr-frame { order: 0; position: sticky; top: 6px; z-index: 6; align-self: center; width: min(100%, 230px); box-shadow: 0 8px 22px -8px rgb(0 0 0 / .35); }
+  .dr-actions, .dr-note { order: 1; align-self: center; }
+  .dr-sky-wrap { order: 2; }
+  .dr-panel { order: 3; }
   .dr-sky { flex: none; height: 380px; }
-  .dr-frame { width: min(100%, 360px); }
   .dr-panel { overflow: visible; }
   .dr-key { display: none; }
   .dr-card { width: min(210px, 62%); }
