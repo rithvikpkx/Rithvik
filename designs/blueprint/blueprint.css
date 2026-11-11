@@ -289,6 +289,7 @@
 /* ───────── responsive ───────── */
 @media (max-width: 860px) {
   :root[data-design="blueprint"] .bp-lead, :root[data-design="blueprint"] .bp-set { display: none; }
+  :root[data-design="blueprint"] .ly-hero { padding-top: calc(var(--ly-head-h) + 64px); } /* room for the name's dimension under the strip */
   :root[data-design="blueprint"] .bp-reg:nth-child(3), :root[data-design="blueprint"] .bp-reg:nth-child(4) { display: none; }
   :root[data-design="blueprint"] .bp-tb { position: static; margin-top: 14px; width: fit-content; }
   :root[data-design="blueprint"] .bp-zone i:nth-child(n + 5) { display: none; }

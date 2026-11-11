@@ -1,9 +1,9 @@
 /* Blueprint name + portrait effects (S9). */
 
 /* construction lines under the lettering: a cap line and a baseline per line of the name, faint at rest */
-[data-kn="blueprint"] .kn-part { position: relative; }
+[data-kn="blueprint"] .kn-part { position: relative; width: fit-content; }
 [data-kn="blueprint"] .kn-part::before, [data-kn="blueprint"] .kn-part::after {
-  content: ""; position: absolute; left: -28px; right: 0; height: 0; border-top: 1px dashed rgba(234, 243, 255, .16); pointer-events: none;
+  content: ""; position: absolute; left: -28px; right: -48px; height: 0; border-top: 1px dashed rgba(234, 243, 255, .16); pointer-events: none;
   transform-origin: left; transition: border-color 300ms ease;
 }
 [data-kn="blueprint"] .kn-part::before { top: .1em; }

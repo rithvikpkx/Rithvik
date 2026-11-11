@@ -28,7 +28,7 @@ export function useBlueprintMotion(root: RefObject<HTMLElement | null>) {
     if (!calm()) el.setAttribute("data-bp-armed", "");
     const plot = new IntersectionObserver((en) => en.forEach((e) => {
       if (e.isIntersecting) { (e.target as HTMLElement).dataset.drawn = ""; plot.unobserve(e.target); }
-    }), { threshold: 0.25 });
+    }), { threshold: 0, rootMargin: "0px 0px -12% 0px" }); // plot once a sheet edge is a little way up the screen
     el.querySelectorAll(".stage > section:not(#top) .bp-draw").forEach((d) => plot.observe(d));
     // the hero is on screen at load, so its marks plot at once (an element hidden by its own clip never "intersects")
     let hRaf = requestAnimationFrame(() => { hRaf = requestAnimationFrame(() => el.querySelectorAll<HTMLElement>(".bp-hero .bp-draw").forEach((d) => { d.dataset.drawn = ""; })); });
