@@ -1,114 +1,115 @@
-/* Look switcher: a cluster of marbles, one per look, around a socket. Collapsed it is one orb (the current look) in
-   the bottom-left corner; open, the other looks spring out onto two orbits (designs inner, palettes outer) and a
-   hollow bead (performance mode) and a lamp (status) appear where the nucleus was. Orb positions and squash are
-   written by JS springs (transform only); everything here animates transform and opacity. Tinted live from the
-   look in the socket (--sw-bg/fg/ac). */
+/* Look picker ("Meniscus"). Collapsed it is a glass puck in the bottom-left corner holding a lens that shows the current
+   look; open, the puck grows into a capsule: status lamp | strip of two-tone stripes (designs, palettes) | performance
+   switch. A glass lens rides the strip after the pointer and magnifies it. The lens, the magnified copy and the stripes
+   are moved by JS springs (transform only); everything else is CSS. Fixed dark glass, whatever the page looks like. */
 .sw {
-  --sw-ink: color-mix(in srgb, var(--sw-ac) 78%, var(--sw-fg));
+  --glass: rgba(14, 15, 20, .82); --glass-line: rgba(255, 255, 255, .16); --glass-fg: #eef0f6; --glass-mu: rgba(238, 240, 246, .62);
+  --sw-spring: cubic-bezier(.3, 1.14, .45, 1);
+  --sw-mono: var(--font-geist-mono, ui-monospace), ui-monospace, Menlo, monospace; /* fixed, not the look's mono: the object is one thing */
   position: fixed; left: 12px; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 90;
-  width: var(--w); height: var(--h); pointer-events: none; /* the closed unit is only its nucleus */
-  --sw-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace; /* fixed, not the look's mono: the object is one thing */
-  font-family: var(--sw-mono); -webkit-tap-highlight-color: transparent;
+  width: 52px; height: 52px; color: var(--glass-fg); font-family: var(--sw-mono); -webkit-tap-highlight-color: transparent;
+  transition: width 560ms var(--sw-spring), height 560ms var(--sw-spring);
 }
+.sw[data-open] { width: var(--cw); height: 64px; }
+html.lite .sw, html.lite .sw-glass { transition-timing-function: cubic-bezier(.2, .8, .2, 1); }
 /* where the agent bar spans the width (min(720px, 100vw - 32px)), sit just above it */
 @media (max-width: 820px) { .sw { bottom: calc(max(12px, env(safe-area-inset-bottom, 0px)) + 68px); } }
 
-/* --- field: the soft disc behind the orbits, the orbit lines, the socket ------------------------------------ */
-.sw-field {
-  position: absolute; left: 2px; top: 34px; width: 232px; height: 232px; border-radius: 50%;
-  background: color-mix(in srgb, var(--sw-bg) 78%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15); backdrop-filter: blur(14px) saturate(1.15);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sw-fg) 12%, transparent), 0 22px 46px -16px rgba(0,0,0,.5);
-  opacity: 0; transform: scale(.1); transform-origin: 22px 208px; /* unfolds from the corner */
-  transition: opacity 200ms ease, transform 420ms var(--ease-drawer);
+/* --- housing: the glass that grows from puck to capsule; the surf is the full-size content, bottom-left anchored --- */
+.sw-glass {
+  position: absolute; inset: 0; border-radius: 26px; overflow: hidden; overflow: clip; background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: inset 0 0 0 1px var(--glass-line), inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 40px -18px rgba(0, 0, 0, .7);
+  transition: border-radius 560ms var(--sw-spring);
 }
-.sw[data-open] .sw-field { opacity: 1; transform: none; pointer-events: auto; }
-.sw-field svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: color-mix(in srgb, var(--sw-fg) 16%, transparent); stroke-width: 1; }
-.sw-field circle:last-child { stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: .1 5; } /* palettes ride a dotted orbit */
-.sw-socket, .sw-pulse { position: absolute; left: 78px; top: 78px; width: 76px; height: 76px; border-radius: 50%; }
-.sw-socket {
-  border: 1.5px solid color-mix(in srgb, var(--sw-ac) 38%, transparent);
-  box-shadow: inset 0 0 20px color-mix(in srgb, var(--sw-ac) 16%, transparent);
-  transition: transform 220ms var(--ease-out), border-color 160ms ease, box-shadow 160ms ease;
-}
-.sw[data-hot] .sw-socket { transform: scale(1.16); border-color: var(--sw-ac); box-shadow: inset 0 0 22px color-mix(in srgb, var(--sw-ac) 35%, transparent), 0 0 22px color-mix(in srgb, var(--sw-ac) 45%, transparent); }
-.sw-pulse { border: 2px solid var(--sw-ac); animation: sw-pulse 680ms var(--ease-out) both; } /* the glow when an orb snaps in */
-@keyframes sw-pulse { from { transform: scale(.95); opacity: .85; } to { transform: scale(2); opacity: 0; } }
+.sw[data-open] .sw-glass { border-radius: 32px; }
+.sw-surf { position: absolute; left: 0; bottom: 0; width: var(--cw); height: 64px; }
+.sw-in { position: absolute; inset: 0; transition: opacity 300ms ease 120ms; }
+.sw:not([data-open]) .sw-in { opacity: 0; visibility: hidden; transition: opacity 160ms ease, visibility 0s linear 160ms; } /* hidden = out of the tab order */
+.sw-in::before, .sw-in::after { content: ""; position: absolute; top: 19px; width: 1px; height: 26px; background: rgba(255, 255, 255, .1); } /* where the caps end */
+.sw-in::before { left: calc(var(--cap) - 1px); }
+.sw-in::after { left: calc(var(--cw) - var(--cap)); }
 
-/* --- readout ----------------------------------------------------------------------------------------------- */
-.sw-label {
-  position: absolute; left: 2px; top: 2px; display: flex; align-items: baseline; gap: 8px; max-width: min(340px, calc(100vw - 28px)); padding: 6px 12px; border-radius: 999px; white-space: nowrap;
-  background: color-mix(in srgb, var(--sw-bg) 86%, transparent); color: var(--sw-fg);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sw-fg) 14%, transparent);
-  opacity: 0; transform: translateY(6px); transition: opacity 160ms ease, transform 300ms var(--ease-out);
+/* --- strip ------------------------------------------------------------------------------------------------- */
+.sw-vp {
+  position: absolute; top: 0; left: var(--cap); width: var(--vw); height: 100%; overflow: hidden; overflow: clip; touch-action: none; cursor: default;
+  --l: 0px; --r: 0px; /* soft fade where the strip continues past the window */
+  -webkit-mask-image: linear-gradient(90deg, #0000 0, #000 var(--l), #000 calc(100% - var(--r)), #0000 100%);
+  mask-image: linear-gradient(90deg, #0000 0, #000 var(--l), #000 calc(100% - var(--r)), #0000 100%);
 }
-.sw[data-open] .sw-label { opacity: 1; transform: none; transition-delay: 70ms; }
-.sw-label b { font-size: 13px; font-weight: 600; line-height: 1; overflow: hidden; text-overflow: ellipsis; }
-.sw-label span { font: 600 9px/1 var(--sw-mono); letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
+.sw-vp[data-fl] { --l: 22px; }
+.sw-vp[data-fr] { --r: 22px; }
+.sw-row { position: absolute; left: 0; top: 0; width: var(--content); height: 100%; will-change: transform; }
+.sw-b { position: absolute; top: 0; height: 100%; padding: 0; border: 0; background: none; outline: none; cursor: default; }
+.sw-b[aria-checked="true"]::after { /* the current look keeps a pip, so you can find it after the lens moves on */
+  content: ""; position: absolute; left: 50%; top: 5px; width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%; background: rgba(255, 255, 255, .9);
+}
+.sw-st, .sw-mt {
+  position: absolute; top: 13px; width: 3px; height: 30px; margin-left: -1.5px; border-radius: 1.5px;
+  background: linear-gradient(var(--b) 0 50%, var(--a) 50%); box-shadow: 0 0 0 .5px rgba(255, 255, 255, .3);
+}
+.sw-st { left: 50%; transform: scaleY(.46); }
+.sw-lbl { position: absolute; top: 48px; font: 500 8px/1 var(--sw-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--glass-mu); white-space: nowrap; pointer-events: none; }
+.sw-track { position: absolute; top: 58px; height: 2px; border-radius: 1px; background: rgba(255, 255, 255, .1); pointer-events: none; }
+.sw-track b { display: block; height: 100%; border-radius: 1px; background: rgba(255, 255, 255, .55); will-change: transform; }
 
-/* --- orbs -------------------------------------------------------------------------------------------------- */
-.sw-orbs { position: absolute; inset: 0; pointer-events: none; }
-.sw-orb {
-  position: absolute; left: 0; top: 0; width: 56px; height: 56px; margin: -28px 0 0 -28px; padding: 0; border: 0; border-radius: 50%;
-  background: none; cursor: grab; touch-action: none; outline: none; pointer-events: none; z-index: 1;
-  transform: translate3d(24px, 242px, 0) scale(0); /* until JS springs them out: folded into the corner */
-  --ring: 5px; -webkit-tap-highlight-color: transparent;
+/* --- lens: glass over the strip; empty it shows the magnified stripes, idle it holds the current look ----------- */
+.sw-lens {
+  position: absolute; left: 0; top: 0; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; pointer-events: none; will-change: transform;
+  transform: translate(3px, 15px); /* the puck position, until JS takes over */
+  background: rgba(255, 255, 255, .05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), inset 0 -6px 12px rgba(255, 255, 255, .12), inset 0 5px 10px rgba(0, 0, 0, .35), 0 6px 16px -6px rgba(0, 0, 0, .8);
 }
-.sw-orb::before { content: ""; position: absolute; inset: -32px; border-radius: 50%; } /* a bigger hit target than the marble (it is drawn small) */
-.sw-orb.is-design::before { inset: -18px; }
-.sw-orb.is-sel { z-index: 2; --ring: 2.5px; }
-.sw-orb.is-sel::before { inset: 0; }
-.sw-orb.is-held { z-index: 4; }
-.sw-orb:active { cursor: grabbing; }
-.sw:not([data-open]) .sw-orb.is-sel, .sw[data-open] .sw-orb { pointer-events: auto; }
-.sw-face {
-  position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
-  background:
-    radial-gradient(circle at 34% 27%, rgba(255,255,255,.5), transparent 34%),
-    radial-gradient(circle at 63% 67%, var(--o-ac) 0 33%, transparent 34.5%),
-    var(--o-bg);
-  box-shadow: inset 0 0 0 var(--ring) color-mix(in srgb, var(--o-fg) 32%, transparent), 0 9px 16px -6px rgba(0,0,0,.5);
-}
-.sw-orb.is-sel .sw-face {
-  box-shadow: inset 0 0 0 var(--ring) color-mix(in srgb, var(--o-fg) 32%, transparent), 0 0 0 4px color-mix(in srgb, var(--o-ac) 50%, transparent), 0 0 30px color-mix(in srgb, var(--o-ac) 60%, transparent);
-}
-.sw-orb:focus-visible .sw-face { outline: 2px solid var(--sw-ink); outline-offset: 4px; }
+.sw[data-kbd] .sw-lens { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6), inset 0 -6px 12px rgba(255, 255, 255, .12), inset 0 5px 10px rgba(0, 0, 0, .35), 0 0 0 2px #fff, 0 6px 16px -6px rgba(0, 0, 0, .8); }
+.sw-lens::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(110% 80% at 30% 16%, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 40%); pointer-events: none; }
+.sw-mag { position: absolute; left: 0; top: 0; width: var(--cw); height: 64px; transform-origin: 0 0; }
+.sw-mrow { position: absolute; left: 0; top: 0; width: var(--content); height: 100%; }
+.sw-fill { position: absolute; inset: 3px; border-radius: 50%; background: radial-gradient(circle, var(--a) 0 25%, var(--b) 27%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); }
 
-/* --- performance bead + status lamp ------------------------------------------------------------------------ */
-.sw-calm, .sw-lamp {
-  position: absolute; padding: 0; border: 0; background: none; cursor: pointer; opacity: 0; transform: scale(.4); pointer-events: none;
-  transition: opacity 160ms ease, transform 320ms cubic-bezier(.3, 1.6, .5, 1);
+/* --- end caps: status lamp (left), performance switch (right) ------------------------------------------------ */
+.sw-lamp, .sw-calm {
+  position: absolute; top: 28px; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border: 0; border-radius: 50%; background: none;
+  display: grid; place-items: center; cursor: pointer; color: var(--glass-fg); outline: none;
 }
-.sw[data-open] .sw-calm, .sw[data-open] .sw-lamp { opacity: 1; transform: none; pointer-events: auto; transition-delay: 90ms; }
-.sw-calm::before, .sw-lamp::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; }
-.sw-calm { left: 9px; top: 227px; width: 30px; height: 30px; }
-.sw-calm i {
-  position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--sw-ac);
-  background: radial-gradient(circle, color-mix(in srgb, var(--sw-ac) 70%, transparent) 0 26%, transparent 28%);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--sw-ac) 55%, transparent);
-  transition: transform 420ms cubic-bezier(.3, 1.7, .5, 1), opacity 240ms ease;
-}
-.sw[data-open] .sw-calm[aria-checked="false"] i { animation: sw-breathe 2.6s ease-in-out infinite; } /* alive: full effects on */
-/* calm: the bead goes still, hollow and dim */
-.sw-calm[aria-checked="true"] i { transform: scale(.72); opacity: .5; border-color: color-mix(in srgb, var(--sw-fg) 55%, transparent); background: none; box-shadow: none; }
-.sw-calm:active i { transform: scale(.8); }
-@keyframes sw-breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.86); opacity: .72; } }
-.sw-calm:focus-visible, .sw-lamp:focus-visible { outline: 2px solid var(--sw-ink); outline-offset: 3px; border-radius: 50%; }
+.sw-lamp { left: 19px; }
+.sw-calm { left: calc(var(--cw) - 19px); }
+.sw-lamp i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .4); transition: background 300ms ease, box-shadow 300ms ease; }
+.sw-lamp[data-state="ok"] i { background: #53e08a; box-shadow: 0 0 0 1.5px rgba(83, 224, 138, .2), 0 0 9px 1px rgba(83, 224, 138, .55); animation: sw-breathe 3.4s ease-in-out infinite; }
+.sw-lamp[data-state="down"] i { background: #ff6b6b; box-shadow: 0 0 0 1.5px rgba(255, 107, 107, .2), 0 0 9px 1px rgba(255, 107, 107, .55); }
+html.lite .sw-lamp i { animation: none; }
+@keyframes sw-breathe { 50% { box-shadow: 0 0 0 1.5px rgba(83, 224, 138, .12), 0 0 4px 0 rgba(83, 224, 138, .3); } }
+.sw-calm svg { width: 14px; height: 8px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; opacity: .8; overflow: visible; transition: opacity 160ms ease; }
+.sw-calm:hover svg { opacity: 1; }
+.sw-calm .flat, .sw-calm[aria-checked="true"] .wave { display: none; } /* alive: a wave. calm: a flat line, in a lit ring */
+.sw-calm[aria-checked="true"] .flat { display: inline; }
+.sw-calm[aria-checked="true"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5), 0 0 10px rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .1); }
+.sw-lamp:focus-visible, .sw-calm:focus-visible { box-shadow: 0 0 0 2px #fff; }
 
-.sw-lamp { left: 55px; top: 245px; width: 14px; height: 14px; display: block; }
-.sw-lamp i {
-  display: block; width: 100%; height: 100%; border-radius: 50%; background: color-mix(in srgb, var(--sw-fg) 40%, transparent);
-  transition: background 300ms ease, box-shadow 300ms ease;
+/* --- peek chip: names the look under the pointer / focus (or the end cap) ---------------------------------- */
+.sw-peek {
+  position: absolute; left: 0; bottom: calc(100% + 10px); display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px;
+  background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: inset 0 0 0 1px var(--glass-line);
+  color: var(--glass-fg); white-space: nowrap; pointer-events: none;
+  opacity: 0; transform: translateY(6px); transition: opacity 200ms ease, transform 300ms var(--ease-out);
 }
-.sw-lamp[data-state="ok"] i { background: #3fb950; box-shadow: 0 0 9px 1px #3fb950; }
-.sw-lamp[data-state="down"] i { background: #ff5a5a; box-shadow: 0 0 9px 1px #ff5a5a; }
+.sw[data-open] .sw-peek { opacity: 1; transform: none; transition-delay: 80ms; }
+.sw-peek b { font: 600 12px/1 var(--font-geist-sans, system-ui), system-ui, sans-serif; }
+.sw-peek span:last-child { font: 400 9.5px/1 var(--sw-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--glass-mu); }
+.sw-mini { position: relative; flex: none; width: 26px; height: 18px; border-radius: 5px; background: var(--b); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22); }
+.sw-mini::before { content: ""; position: absolute; left: 4px; top: 5px; width: 11px; height: 2px; border-radius: 1px; background: var(--f); }
+.sw-mini::after { content: ""; position: absolute; right: 4px; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--a); }
+.sw-peek[data-sys] .sw-mini { background: #0e1712; }
+.sw-peek[data-sys] .sw-mini::before { display: none; }
+.sw-peek[data-sys] .sw-mini::after { right: 10px; bottom: 6px; background: #53e08a; box-shadow: 0 0 6px #53e08a; }
 
-/* reduced motion: things appear in place instead of unfolding; no breathing, no pulse */
+/* --- the collapsed puck's own hit area ---------------------------------------------------------------------- */
+.sw-puck { position: absolute; inset: 0; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; z-index: 3; touch-action: manipulation; outline: none; }
+.sw[data-open] .sw-puck { pointer-events: none; }
+.sw-puck:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, .5); }
+
+/* reduced motion: things appear in place, the lens does not squash (JS), nothing breathes */
 @media (prefers-reduced-motion: reduce) {
-  .sw-field, .sw-label, .sw-calm, .sw-lamp { transition-property: opacity; }
-  .sw-field, .sw-calm, .sw-lamp { transform: none; }
-  .sw-label { transform: none; }
-  .sw-calm i, .sw-socket { transition: none; }
-  .sw[data-open] .sw-calm[aria-checked="false"] i, .sw-pulse { animation: none; }
+  .sw, .sw-glass, .sw-in, .sw-peek { transition-duration: .01s; transition-delay: 0s; }
+  .sw-peek { transform: none; }
+  .sw-lamp[data-state="ok"] i { animation: none; }
 }
