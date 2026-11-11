@@ -6,7 +6,7 @@ Based on "Daytona SP3" by supercarmodels
   (copy obtained from github.com/Johnviti/3D-Animation, which ships the model with this licence)
 
 Changes: every badge, logo, wordmark, the seat-belt patch, caliper print, dashboard logo, wheel caps and the
-licence plate were removed; all textures were dropped; the mesh was welded, simplified (827k -> 440k triangles),
-given new creased normals, and meshopt-compressed. The stills are renders of this modified model.
+licence plate were removed; all textures were dropped (plain trim colours instead); the full 827k-triangle mesh is kept
+(simplifying it opened holes in the body panels) and meshopt-compressed. The stills are renders of this modified model.
 
 Not affiliated with or endorsed by Ferrari S.p.A.

@@ -8,7 +8,7 @@ import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { AUTO_SPIN, coast, fitDistance, gearFor, lapTimer, rpmFor, viewOffset, type Lap } from "./telemetry";
 
 export const MODEL_URL = "/v7/corsa/sp3.glb";
-const MODEL_BYTES = 4_420_000; // fallback for progress when the response has no Content-Length
+const MODEL_BYTES = 7_860_000; // fallback for progress when the response has no Content-Length
 const CAR_LEN = 4.69; // metres: the SP3 is 4,686 mm long
 const FOV = 24;
 const START_YAW = 0.85; // a three-quarter front view to open on
