@@ -6,7 +6,7 @@
   --el-line: rgba(140, 230, 255, .12); --el-line2: rgba(140, 230, 255, .25); --el-glow: rgba(60, 220, 240, .45);
   --el-stops: #E9FDFF, #A6F6FF 20%, #3BDDEB 50%, #1A6FB0 80%, #0A3A52;
   --el-d: "DM Serif Display", Georgia, serif; --el-b: "Manrope", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "DM Mono", ui-monospace, Menlo, monospace;
-  --el-r: 14px; --el-name-w: 400; --el-name-track: -.01em; --el-name-style: italic; --el-h2-w: 400; --el-role-track: 0em;
+  --warp: 1.9; --el-r: 14px; --el-name-w: 400; --el-name-track: -.01em; --el-name-style: italic; --el-h2-w: 400; --el-role-track: 0em;
   /* glass with water behind it */
   --el-mat: linear-gradient(180deg, #A6F6FF, #3BDDEB 50%, #1A8FB0); --el-mat-fg: #03141E;
   --el-tile: linear-gradient(180deg, rgba(166, 246, 255, .05), transparent 40%), linear-gradient(160deg, #0A2434, #061722); --el-tile-c: #071C29; --el-tile-r: 20px;

@@ -6,7 +6,7 @@
   --el-line: rgba(200, 235, 170, .11); --el-line2: rgba(200, 235, 170, .24); --el-glow: rgba(143, 209, 106, .4);
   --el-stops: #F4F0B8, #D8F59A 22%, #8FD16A 52%, #3F7F3A 82%, #1F3D22;
   --el-d: "Caprasimo", Georgia, serif; --el-b: "Figtree", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Fragment Mono", ui-monospace, Menlo, monospace;
-  --el-r: 20px; --el-name-w: 400; --el-name-track: -.005em; --el-h2-w: 400; --el-role-track: -.005em;
+  --warp: 1.5; --el-r: 20px; --el-name-w: 400; --el-name-track: -.005em; --el-h2-w: 400; --el-role-track: -.005em;
   /* new leaves, backlit */
   --el-mat: linear-gradient(180deg, #D8F59A, #8FD16A 55%, #5FA33F); --el-mat-fg: #0B1A0E;
   --el-tile: radial-gradient(90% 70% at 20% 0%, rgba(216, 245, 154, .07), transparent 60%), linear-gradient(165deg, #162A1D, #0E1A12); --el-tile-c: #112016; --el-tile-r: 26px;

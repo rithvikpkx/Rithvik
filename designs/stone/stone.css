@@ -6,7 +6,7 @@
   --el-line: rgba(240, 220, 190, .1); --el-line2: rgba(240, 220, 190, .22); --el-glow: rgba(217, 165, 91, .38);
   --el-stops: #F7E2B0, #F1C879 20%, #D9A55B 48%, #9A6A3A 78%, #4A3524;
   --el-d: "Cinzel", "Trajan Pro", Georgia, serif; --el-b: "Alegreya Sans", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Spline Sans Mono", ui-monospace, Menlo, monospace;
-  --el-r: 4px; --el-name-w: 900; --el-name-track: .02em; --el-case: uppercase; --el-h2-w: 800; --el-role-case: none; --el-role-track: .01em;
+  --warp: .55; --el-r: 4px; --el-name-w: 900; --el-name-track: .02em; --el-case: uppercase; --el-h2-w: 800; --el-role-case: none; --el-role-track: .01em;
   /* a granite speckle every stone surface shares */
   --sn-speck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .88 0 0 0 0 .78 1.6 0 0 0 -.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   --sn-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .88 0 0 0 0 .78 .5 0 0 0 -.19'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");

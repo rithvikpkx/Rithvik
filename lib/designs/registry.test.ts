@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BOOT_SCRIPT, DESIGNS, htmlAttrsFor, isDarkColor, resolveLook } from "./registry.ts";
 
-test("the nine and every added design, each unique, with a full swatch and shader", () => {
+test("the nine base designs and any added ones, each with a full swatch and shader", () => {
   assert.ok(DESIGNS.length >= 9);
   assert.equal(new Set(DESIGNS.map((d) => d.id)).size, DESIGNS.length);
   for (const d of DESIGNS) {

@@ -1,48 +1,102 @@
-/** The scratchable record deck's engine (ported from the v7 mockup's `rec`): platter physics plus Web Audio. DOM-free; the Records component supplies paint hooks. */
-const DEG_PER_SEC = 78 * 6; // a 78 rpm record
-const SEC_PER_DEG = 1 / DEG_PER_SEC;
-const SRC = "/v7/chili-pepper.mp3";
+/** The Play deck's audio engine: the 1927 "Chili Pepper" through a small Web Audio graph (layers, tone filter, echo, volume, analyser)
+ *  plus the disc's spin physics. DOM-free; the Records component supplies the paint hook. */
+import { clamp01, delayParams, speedRate, toneFilter, volumeGain } from "@/lib/play/deckmap";
 
+const BASE_DEG = 120; // disc degrees per second at 1x
+const SRC = "/v7/chili-pepper.mp3";
+const ECHO_S = 0.34; // fixed echo time; the Delay knob sets how much returns
+
+export type Layer = "orig" | "lofi" | "rev";
+export type DeckParams = { sound: number; speed: number; delay: number; volume: number; layers: Record<Layer, boolean> };
+export const DEFAULTS: DeckParams = { sound: 0.5, speed: 0.5, delay: 0, volume: 0.8, layers: { orig: true, lofi: false, rev: false } };
+
+export type DeckFrame = { angle: number; pos: number; dur: number; rate: number; analyser: AnalyserNode | null };
 export type DeckHooks = {
-  /** Called every frame with the platter angle in degrees. */
-  spin: (angle: number) => void;
-  /** Called at about 4 Hz (and on seeks) with the playhead and track length in seconds. */
-  time: (pos: number, dur: number) => void;
-  /** Play/scratch state changed. */
-  state: (on: boolean, scratching: boolean) => void;
+  /** Every animation frame while the deck is alive; return true while the screen still has signal to show (keeps the loop running through echo tails). */
+  frame: (f: DeckFrame) => boolean;
+  /** Playing / paused changed. */
+  state: (on: boolean) => void;
   /** The audio could not load; the deck keeps spinning silently. */
   fail: () => void;
 };
 
 type AC = typeof AudioContext;
+type Graph = {
+  gOrig: GainNode; gLofi: GainNode; gRev: GainNode; fwdIn: GainNode; revIn: GainNode;
+  lp: BiquadFilterNode; hp: BiquadFilterNode; wet: GainNode; fb: GainNode; vol: GainNode; analyser: AnalyserNode;
+};
 
 export class Deck {
   on = false;
+  params: DeckParams = { ...DEFAULTS, layers: { ...DEFAULTS.layers } };
   private ctx: AudioContext | null = null;
-  private out: GainNode | null = null;
+  private g: Graph | null = null;
   private buf: AudioBuffer | null = null;
   private rev: AudioBuffer | null = null;
-  private src: AudioBufferSourceNode | null = null;
-  private srcGain: GainNode | null = null;
+  private srcs: AudioBufferSourceNode[] = [];
+  private fades: GainNode[] = [];
   private loading: Promise<void> | null = null;
-  private drag = false;
   private angle = 0;
   private vel = 0;
   private pos = 0;
-  private lastA = 0;
-  private moves: [number, number][] = [];
-  private grainT = 0;
   private raf = 0;
   private last = 0;
-  private textT = 0;
   private dead = false;
 
   constructor(private hooks: DeckHooks, private reduce: boolean) {}
 
   private get dur() { return this.buf ? this.buf.duration : 72; }
   private wrapT(t: number) { const d = this.dur; return ((t % d) + d) % d; }
+  /** The speed the audio is really running at right now (0 once stopped). */
+  private get rate() { return this.srcs[0] ? this.srcs[0].playbackRate.value : this.on ? speedRate(this.params.speed) : 0; }
 
-  /** Creates the AudioContext (only ever called from a user gesture) and decodes the track plus a reversed copy for backspin. */
+  /** Builds the graph: both sources feed layer gains, then tone (low-pass + high-pass), an echo with damped feedback, a compressor, and the volume. The analyser listens before the volume so the scope does not shrink with it. */
+  private build(ctx: AudioContext): Graph {
+    const gain = (v = 1) => { const n = ctx.createGain(); n.gain.value = v; return n; };
+    const filter = (type: BiquadFilterType, f: number, q = 0.707) => { const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; return n; };
+    const bus = gain(), fwdIn = gain(), revIn = gain(), gOrig = gain(0.8), gLofi = gain(0.75), gRev = gain(0.55);
+    const lp = filter("lowpass", 20000), hp = filter("highpass", 20), mix = gain();
+    // lo-fi: a gramophone's narrow band plus a little saturation
+    const shaper = ctx.createWaveShaper();
+    shaper.curve = Float32Array.from({ length: 256 }, (_, i) => Math.tanh(((i / 255) * 2 - 1) * 2.5));
+    fwdIn.connect(gOrig).connect(bus);
+    fwdIn.connect(filter("highpass", 380)).connect(filter("lowpass", 3000)).connect(shaper).connect(gLofi).connect(bus);
+    revIn.connect(filter("lowpass", 1800)).connect(gRev).connect(bus);
+    bus.connect(lp).connect(hp).connect(mix);
+    const delay = ctx.createDelay(1), wet = gain(0), fb = gain(0);
+    delay.delayTime.value = ECHO_S;
+    hp.connect(delay).connect(filter("lowpass", 3500)).connect(wet).connect(mix);
+    delay.connect(fb).connect(delay);
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 5;
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.78;
+    const vol = gain();
+    mix.connect(comp);
+    comp.connect(analyser);
+    comp.connect(vol).connect(ctx.destination);
+    return { gOrig, gLofi, gRev, fwdIn, revIn, lp, hp, wet, fb, vol, analyser };
+  }
+
+  /** Pushes every stored param onto the graph (smoothed, so knobs never click). */
+  private apply() {
+    const ctx = this.ctx, g = this.g, p = this.params;
+    if (!ctx || !g) return;
+    const t = ctx.currentTime, ease = (a: AudioParam, v: number, k = 0.03) => a.setTargetAtTime(v, t, k);
+    const tone = toneFilter(p.sound), echo = delayParams(p.delay);
+    ease(g.lp.frequency, tone.lp); ease(g.hp.frequency, tone.hp);
+    ease(g.wet.gain, echo.wet); ease(g.fb.gain, echo.feedback);
+    ease(g.vol.gain, volumeGain(p.volume), 0.02);
+    ease(g.gOrig.gain, p.layers.orig ? 0.8 : 0, 0.04); ease(g.gLofi.gain, p.layers.lofi ? 0.75 : 0, 0.04); ease(g.gRev.gain, p.layers.rev ? 0.55 : 0, 0.04);
+    const r = speedRate(p.speed);
+    if (this.on) for (const s of this.srcs) ease(s.playbackRate, r, 0.05);
+  }
+
+  /** Stores one knob/slider/layer value (0..1) and applies it when the graph exists; before the first play it just waits. */
+  set(k: "sound" | "speed" | "delay" | "volume", v: number) { this.params[k] = clamp01(v); this.apply(); this.kick(); }
+  setLayer(l: Layer, on: boolean) { this.params.layers[l] = on; this.apply(); }
+
+  /** Creates the AudioContext (only ever called from a user gesture) and decodes the track plus a reversed copy. */
   private load(): Promise<void> {
     if (this.loading) return this.loading;
     this.loading = (async () => {
@@ -50,20 +104,16 @@ export class Deck {
       const ctx = new Ctor();
       this.ctx = ctx;
       try {
-        const out = ctx.createGain();
-        out.gain.value = 0.9;
-        out.connect(ctx.destination);
-        this.out = out;
         const buf = await ctx.decodeAudioData(await (await fetch(SRC)).arrayBuffer());
         if (this.dead) return;
         const n = buf.length, rv = ctx.createBuffer(1, n, buf.sampleRate), o = rv.getChannelData(0);
         const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
         for (let i = 0; i < n; i++) o[i] = (L[n - 1 - i] + R[n - 1 - i]) * 0.5;
-        this.buf = buf;
-        this.rev = rv;
-        this.hooks.time(this.pos, this.dur);
+        this.buf = buf; this.rev = rv;
+        this.g = this.build(ctx);
+        this.apply();
       } catch (e) {
-        this.ctx = null; this.out = null;
+        this.ctx = null; this.g = null;
         ctx.close().catch(() => {});
         throw e;
       }
@@ -80,84 +130,66 @@ export class Deck {
     } catch { this.loading = null; return false; }
   }
 
-  /** Starts the looping track at the playhead, easing the rate up from `fromRate` to 1. */
+  /** Starts the looping track (and its mirrored reverse twin, which stays in sync because both loop at the same speed) at the playhead, easing up from `fromRate`. */
   private startMain(fromRate: number) {
-    const ctx = this.ctx, out = this.out;
-    if (!ctx || !out || !this.buf) return;
+    const ctx = this.ctx, g = this.g;
+    if (!ctx || !g || !this.buf || !this.rev) return;
     this.stopMain(false);
-    const t = ctx.currentTime, s = ctx.createBufferSource(), g = ctx.createGain();
-    s.buffer = this.buf; s.loop = true; s.connect(g); g.connect(out);
-    s.playbackRate.setValueAtTime(Math.max(0.01, fromRate), t);
-    s.playbackRate.linearRampToValueAtTime(1, t + 0.55);
-    s.start(t, this.wrapT(this.pos));
-    this.src = s; this.srcGain = g;
+    const t = ctx.currentTime, to = speedRate(this.params.speed);
+    for (const [buffer, into, offset] of [[this.buf, g.fwdIn, this.wrapT(this.pos)], [this.rev, g.revIn, this.wrapT(this.dur - this.pos)]] as const) {
+      const s = ctx.createBufferSource(), f = ctx.createGain();
+      s.buffer = buffer; s.loop = true;
+      s.playbackRate.setValueAtTime(Math.max(0.01, fromRate), t);
+      s.playbackRate.linearRampToValueAtTime(to, t + 0.55);
+      s.connect(f).connect(into);
+      s.start(t, offset);
+      this.srcs.push(s); this.fades.push(f);
+    }
   }
 
-  /** Stops the main track: a slow spin-down when `spinDown`, else a near-instant cut. */
+  /** Stops the sources: a slow spin-down (pitch falls with the disc) when `spinDown`, else a near-instant cut. */
   private stopMain(spinDown: boolean) {
-    const s = this.src, ctx = this.ctx, g = this.srcGain;
-    if (!s || !ctx || !g) return;
-    this.src = null;
+    const ctx = this.ctx, srcs = this.srcs, fades = this.fades;
+    this.srcs = []; this.fades = [];
+    if (!ctx) return;
     const t = ctx.currentTime;
-    try {
-      if (spinDown) {
-        s.playbackRate.cancelScheduledValues(t);
-        s.playbackRate.setValueAtTime(s.playbackRate.value, t);
-        s.playbackRate.exponentialRampToValueAtTime(0.02, t + 0.9);
-        g.gain.setTargetAtTime(0, t + 0.6, 0.12);
-        s.stop(t + 1.1);
-      } else {
-        g.gain.setTargetAtTime(0, t, 0.008);
-        s.stop(t + 0.05);
-      }
-    } catch { /* already stopped */ }
-  }
-
-  /** One short scratch grain at the playhead; rate sign picks forward or reversed audio. */
-  private grain(rate: number) {
-    const ctx = this.ctx, out = this.out;
-    if (!ctx || !out || !this.buf) return;
-    const t = ctx.currentTime, fwd = rate >= 0, s = ctx.createBufferSource(), g = ctx.createGain();
-    s.buffer = fwd ? this.buf : this.rev;
-    s.playbackRate.value = Math.min(3.5, Math.max(0.12, Math.abs(rate)));
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.95, t + 0.005);
-    g.gain.setTargetAtTime(0, t + 0.045, 0.014);
-    s.connect(g); g.connect(out);
-    // the reversed buffer is read from the mirrored position
-    s.start(t, fwd ? this.wrapT(this.pos) : this.wrapT(this.dur - this.pos), 0.12);
-  }
-
-  /** Pushes the platter angle every frame, and the clock text at ~4 Hz (or when forced). */
-  private paint(force: boolean) {
-    this.hooks.spin(this.angle % 360);
-    const now = performance.now();
-    if (force || now - this.textT > 250) { this.textT = now; this.hooks.time(this.pos, this.dur); }
+    srcs.forEach((s, i) => {
+      try {
+        if (spinDown) {
+          s.playbackRate.cancelScheduledValues(t);
+          s.playbackRate.setValueAtTime(s.playbackRate.value, t);
+          s.playbackRate.exponentialRampToValueAtTime(0.02, t + 0.9);
+          fades[i].gain.setTargetAtTime(0, t + 0.6, 0.12);
+          s.stop(t + 1.1);
+        } else {
+          fades[i].gain.setTargetAtTime(0, t, 0.008);
+          s.stop(t + 0.05);
+        }
+      } catch { /* already stopped */ }
+    });
   }
 
   private frame = (now: number) => {
     this.raf = 0;
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0;
     this.last = now;
-    if (!this.drag) {
-      if (this.reduce) {
-        // reduced motion: no spinning platter, but the playhead still advances
-        this.vel = 0;
-        if (this.on) this.pos = this.wrapT(this.pos + dt);
-      } else {
-        const target = this.on ? DEG_PER_SEC : 0;
-        this.vel += (target - this.vel) * Math.min(1, dt * (this.on ? 2.2 : 1.3));
-        if (!this.on && Math.abs(this.vel) < 2) this.vel = 0;
-        this.angle += this.vel * dt;
-        this.pos = this.wrapT(this.pos + this.vel * dt * SEC_PER_DEG);
-      }
+    const spinning = this.srcs.length > 0 || (this.on && !this.buf);
+    const target = spinning && this.on ? BASE_DEG * speedRate(this.params.speed) : 0;
+    // the disc has inertia: it eases to speed and coasts to a stop (reduced motion: no spin at all)
+    if (this.reduce) this.vel = 0;
+    else {
+      this.vel += (target - this.vel) * Math.min(1, dt * (this.on ? 2.2 : 1.3));
+      if (!this.on && Math.abs(this.vel) < 2) this.vel = 0;
+      this.angle += this.vel * dt;
     }
-    this.paint(false);
-    if (this.on || this.vel !== 0 || this.drag) this.raf = requestAnimationFrame(this.frame);
-    else { this.last = 0; this.paint(true); }
+    if (spinning) this.pos = this.wrapT(this.pos + dt * this.rate);
+    const busy = this.hooks.frame({ angle: this.angle % 360, pos: this.pos, dur: this.dur, rate: this.rate, analyser: this.g?.analyser ?? null });
+    if (this.on || this.vel !== 0 || busy) this.raf = requestAnimationFrame(this.frame);
+    else this.last = 0;
   };
 
-  private kick() { if (!this.raf && !this.dead) { this.last = 0; this.raf = requestAnimationFrame(this.frame); } }
+  /** Starts the frame loop if idle (also paints one frame after a seek or knob move while paused). */
+  kick() { if (!this.raf && !this.dead) { this.last = 0; this.raf = requestAnimationFrame(this.frame); } }
 
   /** Play or pause (a click is the user gesture that creates the AudioContext). */
   async toggle() {
@@ -165,69 +197,29 @@ export class Deck {
     if (this.dead) return;
     if (!ok && !this.buf) this.hooks.fail();
     this.on = !this.on;
-    this.hooks.state(this.on, this.drag);
-    if (this.buf) { if (this.on) this.startMain(this.vel / DEG_PER_SEC); else this.stopMain(true); }
+    this.hooks.state(this.on);
+    if (this.buf) { if (this.on) this.startMain(this.vel / BASE_DEG); else this.stopMain(true); }
     this.kick();
-  }
-
-  /** Grabs the platter at pointer angle `a` (degrees): the main track cuts so scratching is audible alone. */
-  grab(a: number) {
-    if (this.drag) return;
-    this.drag = true; this.vel = 0; this.lastA = a; this.moves = [[performance.now(), 0]];
-    this.hooks.state(this.on, true);
-    this.ready().then(() => { if (this.drag) this.stopMain(false); });
-    if (this.src) this.stopMain(false);
-    this.kick();
-  }
-
-  /** Drags to pointer angle `a`; velocity from the last few moves sets the grain rate. */
-  move(a: number) {
-    if (!this.drag) return;
-    const now = performance.now();
-    let da = a - this.lastA;
-    if (da > 180) da -= 360;
-    if (da < -180) da += 360;
-    this.angle += da; this.pos = this.wrapT(this.pos + da * SEC_PER_DEG); this.lastA = a;
-    this.moves.push([now, da]);
-    if (this.moves.length > 5) this.moves.shift();
-    const span = Math.max(8, now - this.moves[0][0]) / 1000;
-    this.vel = this.moves.slice(1).reduce((s, m) => s + m[1], 0) / span;
-    if (now - this.grainT > 26 && Math.abs(da) > 0.25) { this.grainT = now; this.grain(this.vel / DEG_PER_SEC); }
-  }
-
-  /** Lets go; if playing, the track resumes at the release speed and eases back to 1x. */
-  release() {
-    if (!this.drag) return;
-    this.drag = false;
-    this.hooks.state(this.on, false);
-    if (this.on && this.buf) this.startMain(Math.min(1, Math.abs(this.vel) / DEG_PER_SEC));
-    this.kick();
-  }
-
-  /** Arrow-key scratch: nudges the platter 36 degrees. */
-  async nudge(dir: 1 | -1) {
-    await this.ready();
-    if (this.dead) return;
-    this.angle += dir * 36; this.pos = this.wrapT(this.pos + dir * 36 * SEC_PER_DEG);
-    this.grain(dir * 1.3);
-    this.paint(true);
   }
 
   /** Jumps the playhead to a fraction (0..1) of the track. */
   seek(frac: number) {
-    this.pos = Math.max(0, Math.min(1, frac)) * this.dur;
-    if (this.on && this.buf) this.startMain(1);
-    this.paint(true);
+    this.pos = clamp01(frac) * this.dur;
+    if (this.on && this.buf) this.startMain(this.rate || 1);
+    this.kick();
   }
+
+  /** Moves the playhead by `sec` seconds (wrapping), for the keyboard. */
+  seekBy(sec: number) { this.seek(this.wrapT(this.pos + sec) / this.dur); }
 
   /** Stops everything and releases the AudioContext. */
   destroy() {
     this.dead = true;
     cancelAnimationFrame(this.raf);
-    try { this.src?.stop(); } catch { /* not started */ }
-    this.src = null;
-    this.out?.disconnect();
+    for (const s of this.srcs) { try { s.stop(); } catch { /* not started */ } }
+    this.srcs = [];
+    this.g?.vol.disconnect();
     this.ctx?.close().catch(() => {});
-    this.ctx = null; this.out = null;
+    this.ctx = null; this.g = null;
   }
 }

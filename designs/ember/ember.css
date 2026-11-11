@@ -6,7 +6,7 @@
   --el-line: rgba(255, 170, 120, .12); --el-line2: rgba(255, 170, 120, .26); --el-glow: rgba(255, 100, 20, .55);
   --el-stops: #FFF1C9, #FFC447 18%, #FF6A1A 45%, #C2290B 75%, #5A1206;
   --el-d: "Big Shoulders Display", Impact, "Arial Narrow", sans-serif; --el-b: "Barlow", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --el-r: 6px; --el-name-w: 900; --el-name-track: .004em; --el-case: uppercase; --el-h2-w: 850; --el-role-case: uppercase; --el-role-track: .01em; --el-nav-case: uppercase;
+  --warp: 1.1; --el-r: 6px; --el-name-w: 900; --el-name-track: .004em; --el-case: uppercase; --el-h2-w: 850; --el-role-case: uppercase; --el-role-track: .01em; --el-nav-case: uppercase;
   /* forged iron, lit from the fire below */
   --el-mat: linear-gradient(180deg, #FFB13B, #F0520E 55%, #B8280A); --el-mat-fg: #1A0B05;
   --el-tile: radial-gradient(120% 90% at 50% 120%, rgba(255, 90, 20, .16), transparent 60%), linear-gradient(170deg, #1E1310, #120A08); --el-tile-c: #170D0A; --el-tile-r: 10px;

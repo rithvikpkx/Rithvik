@@ -6,7 +6,7 @@
   --el-line: rgba(160, 190, 255, .12); --el-line2: rgba(160, 190, 255, .26); --el-glow: rgba(125, 249, 255, .55);
   --el-stops: #FFFFFF, #7DF9FF 30%, #A98BFF 70%, #4A3AB8;
   --el-d: "Saira", "Arial Narrow", sans-serif; --el-b: "Saira", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Share Tech Mono", ui-monospace, Menlo, monospace;
-  --el-r: 3px; --el-name-w: 850; --el-name-track: -.005em; --el-case: uppercase; --el-name-style: italic; --el-h2-w: 800; --el-role-case: none; --el-role-track: 0em; --el-nav-case: uppercase;
+  --warp: 1.3; --el-r: 3px; --el-name-w: 850; --el-name-track: -.005em; --el-case: uppercase; --el-name-style: italic; --el-h2-w: 800; --el-role-case: none; --el-role-track: 0em; --el-nav-case: uppercase;
   /* charged glass: cyan plasma behind a dark pane */
   --el-mat: linear-gradient(180deg, #E8FEFF, #7DF9FF 45%, #3FB8E8); --el-mat-fg: #050616;
   --el-tile: linear-gradient(180deg, rgba(125, 249, 255, .05), transparent 30%), linear-gradient(160deg, #10132E, #090B1E); --el-tile-c: #0C0E25; --el-tile-r: 4px;

@@ -114,3 +114,16 @@ Play cleanup + turntable, ouroboros working line + frozen stack with Logos/Text)
   buttons; the footer drops the portrait cluster and keeps only the slim line.
 - **Prism**: portrait centred inside the prism. **Mercury**: no drip on the name; heavier type.
 Models: Opus/high for the concepts page + Artboard, Sonnet/high for the rest (owner OK).
+
+## Round 5: new design systems (owner, 2026-11-10)
+Guide: `docs/design-systems.md` (quality bar, anatomy, per-slot checklist, rules, inspiration library). New designs
+register from `designs/<id>/meta.ts` + one line in `lib/designs/more.ts`.
+Design systems (Opus/high, branches `feat/ds-*`): elemental family (fire, water, earth, lightning, nature; inspired by
+elemental-ninja energy, no Ninjago IP), Claude + OpenAI (visual language only, no logos, "not affiliated" line),
+particle clouds, cyberpunk (Night City / Blade Runner feel, no copied assets), Ferrari Daytona SP3 (three.js allowed
+for this look only, licensed model, no Ferrari marks), liquid glass, blueprint. Bitmap skipped (Nimbus + Glyph cover
+it; dither/halftone live in Darkroom).
+Features (Sonnet/high): Meniscus picker with a visible cap + scrolling overflow (replaces the orbs); drum-machine
+player (heartbeatdrummachine-style) replaces the turntable; Darkroom Play toy (alembic-style constellation of
+~30 grainrad/mozayk-style effects on the portrait; the per-look portrait click stays); Hello Monday-style cursor warp
+on cards.
