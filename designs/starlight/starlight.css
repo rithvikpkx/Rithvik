@@ -225,10 +225,6 @@
 :root[data-design="starlight"][data-sl-ph="white"] .play-body { background-color: #04060A; }
 :root[data-design="starlight"] .play-win .btn { border-radius: 2px; font: 600 11px/1 var(--sl-m); letter-spacing: .12em; text-transform: uppercase; }
 :root[data-design="starlight"] .play-win .label { font-family: var(--sl-m); letter-spacing: .14em; }
-:root[data-design="starlight"] .ab-tools > button, :root[data-design="starlight"] .ab-sizes button { border-radius: 2px; font: 500 10.5px/1 var(--sl-m); letter-spacing: .08em; text-transform: uppercase; }
-:root[data-design="starlight"] .ab-tools .ab-cue { font-style: normal; color: var(--sl-ph); }
-:root[data-design="starlight"] .ab-tools button[aria-pressed="true"] { background: var(--sl-ph); border-color: var(--sl-ph); color: var(--sl-ink); }
-:root[data-design="starlight"] .ab-paper { border-radius: 2px; background-color: #EEF4EA; }
 :root[data-design="starlight"] .rec-hint { font: 500 11px/1.5 var(--sl-m); letter-spacing: .06em; text-transform: uppercase; color: var(--sl-mut); }
 :root[data-design="starlight"] .rl-title { font-style: normal; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
 :root[data-design="starlight"] .rl-mark { color: #0B2A08; }

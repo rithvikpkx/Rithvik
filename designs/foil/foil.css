@@ -254,9 +254,6 @@
 :root[data-design="foil"] .play-win .btn { background: var(--fo-foil); color: #0A0A10; }
 :root[data-design="foil"] .play-win .btn.ghost { background: var(--fo-panel2); color: var(--fo-fg); }
 :root[data-design="foil"] .rl-mark { color: #8F7BEA; }
-:root[data-design="foil"] .ab-paper { background-color: #F6F3FB; background-image: radial-gradient(rgba(42, 35, 64, .16) 1px, transparent 1.2px); }
-:root[data-design="foil"] .ab-tools > button, :root[data-design="foil"] .ab-sizes button { border-color: var(--fo-line2); }
-:root[data-design="foil"] .ab-tools button[aria-pressed="true"] { background: var(--fo-fg); color: var(--fo-bg); }
 :root[data-design="foil"] .g-title { font: 500 1.4rem/1.2 var(--fo-d); letter-spacing: -.03em; }
 :root[data-design="foil"] .g-canvas-box, :root[data-design="foil"] .cd-box { background: #13121B; border-color: var(--fo-line2); }
 :root[data-design="foil"] .tr-text { background: #13121B; box-shadow: inset 0 0 0 1px var(--fo-line); }

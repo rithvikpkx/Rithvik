@@ -218,8 +218,6 @@
 :root[data-design="thermal"] .play-tabs button { border-radius: 3px; font: 500 12px/1 var(--th-mono); }
 :root[data-design="thermal"] .play-body { background: #06080F; background-image: radial-gradient(rgba(150, 175, 210, .08) 1px, transparent 1.2px); background-size: 20px 20px; }
 :root[data-design="thermal"] .play-win .btn { border-radius: 3px; }
-:root[data-design="thermal"] .ab-tools > button, :root[data-design="thermal"] .ab-sizes button { border-radius: 3px; font: 500 12px/1 var(--th-mono); }
-:root[data-design="thermal"] .ab-paper { border-radius: 3px; }
 :root[data-design="thermal"] .g-title { font-weight: 500; }
 :root[data-design="thermal"] .tr-text { font-family: var(--th-mono); }
 

@@ -56,7 +56,7 @@ export default function PlayWindow({ initialId }: { initialId?: string }) {
 
   const View = (GAME_VIEWS as Record<string, React.ComponentType | undefined>)[active];
   return (
-    <section ref={win} className="win play-win front" aria-label="Play" onKeyDown={(e) => { if (e.key === "Escape") close(); }}>
+    <section ref={win} className="win play-win front" aria-label="Play" onKeyDown={(e) => { if (e.key === "Escape" && !(e.target as Element).closest(".artboard")) close(); }}>
       <header
         className="win-bar"
         onPointerDown={(e) => {

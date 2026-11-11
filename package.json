@@ -10,9 +10,11 @@
     "check:anchors": "node scripts/check-anchors.mjs",
     "brand": "node --experimental-strip-types --no-warnings scripts/brand/build.mts",
     "brand:concepts": "node --experimental-strip-types --no-warnings scripts/brand/concepts.mts",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node -e \"require('fs').cpSync('node_modules/@excalidraw/excalidraw/dist/prod/fonts','public/excalidraw/fonts',{recursive:true})\""
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "0.18.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "cobe": "2.0.1",

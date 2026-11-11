@@ -16,3 +16,6 @@ graphify-out/
 
 # local eval run outputs (results are summarised in docs/plans/v4-overhaul.md)
 evals/results/*.json
+
+# Excalidraw fonts, copied from node_modules by the postinstall script
+public/excalidraw/

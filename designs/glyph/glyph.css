@@ -153,13 +153,6 @@
 :root[data-design="glyph"] .play-body { background: #070707; background-image: radial-gradient(rgba(237, 237, 237, .07) 1px, transparent 1.2px); background-size: 12px 12px; }
 :root[data-design="glyph"] .play-win .btn { border-radius: 0; font: 600 11.5px/1 var(--gl-d); text-transform: uppercase; letter-spacing: .04em; }
 :root[data-design="glyph"] .play-win .label { font-family: var(--gl-d); color: var(--gl-dim); }
-:root[data-design="glyph"] .ab-tools > button, :root[data-design="glyph"] .ab-sizes button { border-radius: 0; font: 600 11px/1 var(--gl-d); text-transform: lowercase; }
-:root[data-design="glyph"] .ab-tools .ab-cue { font-style: normal; color: var(--gl-hue); }
-:root[data-design="glyph"] .ab-tools .ab-cue::before { content: "❯ "; }
-:root[data-design="glyph"] .ab-tools button[aria-pressed="true"] { background: var(--gl-hue); border-color: var(--gl-hue); color: #050505; }
-:root[data-design="glyph"] .ab-ink { border-radius: 0; }
-:root[data-design="glyph"] .ab-sizes i { border-radius: 0; }
-:root[data-design="glyph"] .ab-paper { border-radius: 0; box-shadow: 0 0 0 1px var(--gl-rule2); }
 :root[data-design="glyph"] .rec-pill, :root[data-design="glyph"] .rp-meta b { font-family: var(--gl-b); }
 :root[data-design="glyph"] .rec-hint { font: 500 11px/1.5 var(--gl-d); text-transform: uppercase; letter-spacing: .05em; color: var(--gl-dim); }
 :root[data-design="glyph"] .rec-hint::before { content: "# "; color: var(--gl-hue); }

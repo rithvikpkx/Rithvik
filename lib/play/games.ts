@@ -13,6 +13,6 @@ const GAME_ICONS: Record<string, string> = { typeracer: "keyboard", angle: "draf
 
 export const PLAY: PlayEntry[] = [
   { id: "records", name: "Records", desc: "Scratch a 1927 78", icon: "music" },
-  { id: "artboard", name: "Artboard", desc: "Draw something, mirrored if you like", icon: "palette" },
+  { id: "artboard", name: "Artboard", desc: "Sketch and diagram, then export", icon: "palette" },
   ...GAMES.map((g) => ({ id: g.id, name: g.name, desc: g.desc, icon: GAME_ICONS[g.id] })),
 ];

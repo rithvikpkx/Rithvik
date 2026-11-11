@@ -1,102 +1,150 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { Excalidraw, MainMenu, exportToBlob, exportToClipboard, exportToSvg, serializeAsJSON } from "@excalidraw/excalidraw";
+import type { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from "@excalidraw/excalidraw/types";
+import "@excalidraw/excalidraw/index.css";
+import { useDesign } from "../DesignProvider";
+import { useSite } from "../SiteProvider";
 import { Icon as Ic } from "../Glyph";
 
-type Stroke = { pts: [number, number][]; size: number; color: string; erase: boolean; mirror: boolean };
+const KEY = "rithvik-artboard";
 
-const INK = ["#111111", "#ff3b1f", "#2230ff", "#00b86b", "#ffb000", "#ff5cf0"];
-const SIZES: [number, string, string][] = [[3, "Fine pen", "4px"], [6, "Medium pen", "8px"], [14, "Thick pen", "14px"]];
-const PROMPTS = ["Draw a brain wave", "Draw the robotic arm", "Draw your dream internship", "Draw a QR code from memory", "Draw a snake eating its tail"];
-
-/** Strokes one smoothed stroke (midpoint quadratic curves); `flip` mirrors it across the vertical centre line of a `w`-wide board. */
-function path(g: CanvasRenderingContext2D, s: Stroke, w: number, flip: boolean) {
-  const pts = flip ? s.pts.map(([x, y]): [number, number] => [w - x, y]) : s.pts;
-  g.globalCompositeOperation = s.erase ? "destination-out" : "source-over";
-  g.strokeStyle = s.color; g.lineWidth = s.size; g.lineCap = g.lineJoin = "round";
-  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length - 1; i++) {
-    const m = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2];
-    g.quadraticCurveTo(pts[i][0], pts[i][1], m[0], m[1]);
-  }
-  const l = pts[pts.length - 1];
-  g.lineTo(l[0], l[1]); g.stroke();
+// Excalidraw builds its font faces on first render, from fonts the postinstall script copies to public/excalidraw/fonts.
+// It also appends an esm.sh fallback to every source, and Chrome reports a CSP violation for each blocked one even when
+// the self-hosted copy loads, so the fallback is dropped rather than allow-listed.
+if (typeof window !== "undefined" && !("EXCALIDRAW_ASSET_PATH" in window)) {
+  Object.assign(window, { EXCALIDRAW_ASSET_PATH: "/excalidraw/" });
+  const Native = window.FontFace;
+  window.FontFace = class extends Native {
+    constructor(family: string, src: string | BufferSource, d?: FontFaceDescriptors) {
+      super(family, typeof src === "string" ? src.split(/,\s*(?=url\()/).filter((s) => !s.includes("//esm.sh/")).join(", ") : src, d);
+    }
+  };
 }
 
-/** The Artboard toy: free drawing on a dotted sheet with smoothing, three pens, six inks, mirror symmetry, eraser, undo and clear. */
+/** The saved scene, or null when there is none (or storage is blocked). Excalidraw restores/validates it on load. */
+function loadScene(): ExcalidrawInitialDataState | null {
+  try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch { return null; }
+}
+
+/** Hands a blob to the browser as a download through a temporary object URL. */
+function download(blob: Blob, name: string) {
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** The Artboard toy: the Excalidraw editor, themed to the active look, saved locally, with an Export menu and a New action. */
 export default function Artboard({ hidden = false }: { hidden?: boolean }) {
-  const [size, setSize] = useState(6);
-  const [color, setColor] = useState(INK[0]);
-  const [erase, setErase] = useState(false);
-  const [mirror, setMirror] = useState(false);
-  const [cue, setCue] = useState(0);
-  const cv = useRef<HTMLCanvasElement>(null);
-  const strokes = useRef<Stroke[]>([]);
-  const cur = useRef<Stroke | null>(null);
-  const tool = useRef({ size, color, erase, mirror });
-  useEffect(() => { tool.current = { size, color, erase, mirror }; }, [size, color, erase, mirror]);
+  const { entries, current } = useDesign();
+  const { toast } = useSite();
+  const look = entries.find((e) => e.id === current);
+  const dark = !!(look && (look.kind === "design" ? look.meta.dark : look.dark));
+  const [api, setApi] = useState<ExcalidrawImperativeAPI | null>(null);
+  const [initial] = useState(loadScene);
+  const [panel, setPanel] = useState<"export" | "new" | null>(null);
+  const [opt, setOpt] = useState({ scale: 2, bg: true, dark, embed: false });
+  const save = useRef<(() => void) | null>(null);
+  const timer = useRef(0);
 
-  /** Repaints every stroke from scratch (cheap at this scale, and keeps eraser + mirror exact). */
-  const redraw = () => {
-    const c = cv.current, g = c?.getContext("2d");
-    if (!c || !g) return;
-    const r = c.getBoundingClientRect();
-    g.clearRect(0, 0, r.width, r.height);
-    for (const s of strokes.current) { path(g, s, r.width, false); if (s.mirror) path(g, s, r.width, true); }
-  };
-
-  // Keeps the backing store sharp (dpr, capped at 2) whenever the board resizes; a hidden board has width 0 and is skipped.
+  // Flushes a pending save when the window closes, and when the tab is hidden or unloaded.
   useEffect(() => {
-    const c = cv.current;
-    if (!c) return;
-    const fit = () => {
-      const r = c.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
-      if (!r.width) return;
-      c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
-      c.getContext("2d")!.setTransform(dpr, 0, 0, dpr, 0, 0);
-      redraw();
-    };
-    const ro = new ResizeObserver(fit);
-    ro.observe(c);
-    return () => ro.disconnect();
+    const flush = () => { clearTimeout(timer.current); save.current?.(); save.current = null; };
+    addEventListener("pagehide", flush);
+    return () => { removeEventListener("pagehide", flush); flush(); };
   }, []);
 
-  const at = (e: React.PointerEvent): [number, number] => { const r = cv.current!.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  /** Debounces a localStorage write of the scene; a quota error (big images) retries without the image files. */
+  const onChange: React.ComponentProps<typeof Excalidraw>["onChange"] = (elements, appState, files) => {
+    save.current = () => {
+      try { localStorage.setItem(KEY, serializeAsJSON(elements, appState, files, "local")); }
+      catch { try { localStorage.setItem(KEY, serializeAsJSON(elements, appState, {}, "local")); } catch {} }
+    };
+    clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => { save.current?.(); save.current = null; }, 600);
+  };
+
+  /** Runs one export with the panel's options; reports an empty board or a failure as a toast. */
+  const run = async (kind: "png" | "svg" | "copy" | "json") => {
+    if (!api) return;
+    const elements = api.getSceneElements(), files = api.getFiles();
+    if (!elements.length) return toast("Draw something first");
+    const appState = { ...api.getAppState(), exportBackground: opt.bg, exportWithDarkMode: opt.dark, exportEmbedScene: opt.embed };
+    const dims = (w: number, h: number) => ({ width: w * opt.scale, height: h * opt.scale, scale: opt.scale });
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+    try {
+      if (kind === "png") download(await exportToBlob({ elements, appState, files, mimeType: "image/png", getDimensions: dims }), `artboard-${stamp}.png`);
+      else if (kind === "svg") download(new Blob([(await exportToSvg({ elements, appState, files })).outerHTML], { type: "image/svg+xml" }), `artboard-${stamp}.svg`);
+      else if (kind === "json") download(new Blob([serializeAsJSON(elements, appState, files, "local")], { type: "application/json" }), `artboard-${stamp}.excalidraw`);
+      else { await exportToClipboard({ elements, appState, files, type: "png", getDimensions: dims }); toast("PNG copied"); }
+      setPanel(null);
+    } catch { toast(kind === "copy" ? "Clipboard blocked by the browser" : "Export failed"); }
+  };
+
+  const toggle = (k: "bg" | "dark" | "embed", label: string) => (
+    <label className="art-check"><input type="checkbox" checked={opt[k]} onChange={(e) => setOpt({ ...opt, [k]: e.target.checked })} />{label}</label>
+  );
+
+
+  /** Toggles a panel; the export panel starts from the look's light/dark. */
+  const show = (p: "export" | "new") => { if (p === "export") setOpt({ ...opt, dark }); setPanel(panel === p ? null : p); };
+  const esc = (e: React.KeyboardEvent) => { if (e.key === "Escape") setPanel(null); };
 
   return (
-    <div className="play-pane ab" data-pane="artboard" hidden={hidden}>
-      <div className="ab-tools" id="ab-tools">
-        <button type="button" className="ab-cue" onClick={() => setCue((cue + 1) % PROMPTS.length)}>{PROMPTS[cue]}</button>
-        <span className="ab-inks">
-          {INK.map((c, i) => (
-            <button key={c} type="button" className="ab-ink" style={{ "--ink": c } as React.CSSProperties} aria-label={`Ink ${i + 1}`} aria-pressed={!erase && color === c} onClick={() => { setColor(c); setErase(false); }} />
-          ))}
-        </span>
-        <span className="ab-sizes">
-          {SIZES.map(([n, label, d]) => (
-            <button key={n} type="button" aria-label={label} aria-pressed={size === n} onClick={() => setSize(n)}><i style={{ "--d": d } as React.CSSProperties} /></button>
-          ))}
-        </span>
-        <button type="button" aria-pressed={mirror} onClick={() => setMirror(!mirror)}>Mirror</button>
-        <button type="button" aria-pressed={erase} onClick={() => setErase(!erase)}>Eraser</button>
-        <button type="button" aria-label="Undo" onClick={() => { strokes.current.pop(); redraw(); }}><Ic name="rotate-ccw" /></button>
-        <button type="button" onClick={() => { strokes.current = []; redraw(); }}>Clear</button>
-      </div>
-      <div className="ab-paper">
-        <canvas
-          id="ab-canvas" ref={cv} aria-label="Drawing board"
-          onPointerDown={(e) => {
-            e.currentTarget.setPointerCapture(e.pointerId);
-            const s: Stroke = { pts: [at(e), at(e)], ...tool.current };
-            cur.current = s; strokes.current.push(s);
-            const r = e.currentTarget.getBoundingClientRect(), g = e.currentTarget.getContext("2d")!;
-            path(g, s, r.width, false); if (s.mirror) path(g, s, r.width, true);
-          }}
-          onPointerMove={(e) => { if (!cur.current) return; cur.current.pts.push(at(e)); redraw(); }}
-          onPointerUp={() => { cur.current = null; }}
-          onPointerCancel={() => { cur.current = null; }}
-        />
-        <i className="ab-axis" hidden={!mirror} />
-      </div>
+    <div
+      className="play-pane artboard" data-pane="artboard" hidden={hidden}
+      // The window is draggable, so Excalidraw's cached canvas offset goes stale; re-measure before the pointer lands.
+      onPointerEnter={() => api?.refresh()}
+      onPointerDownCapture={(e) => { if (panel && !(e.target as Element).closest(".art-pop, .art-top")) setPanel(null); }}
+    >
+      <Excalidraw
+        excalidrawAPI={setApi}
+        initialData={initial}
+        onChange={onChange}
+        theme={dark ? "dark" : "light"}
+        UIOptions={{ canvasActions: { toggleTheme: false } }}
+        // Phones reach these through the menu: in Excalidraw's mobile toolbar they push the tools off-screen.
+        renderTopRightUI={(isMobile) => isMobile ? null : (
+          <div className="art-top">
+            <button type="button" className="art-btn" aria-expanded={panel === "new"} onClick={() => show("new")}><Ic name="plus" />New</button>
+            <button type="button" className="art-btn art-primary" aria-expanded={panel === "export"} onClick={() => show("export")}><Ic name="download" />Export</button>
+          </div>
+        )}
+      >
+        <MainMenu>
+          <MainMenu.Item icon={<Ic name="download" />} onSelect={() => show("export")}>Export…</MainMenu.Item>
+          <MainMenu.Item icon={<Ic name="plus" />} onSelect={() => show("new")}>New drawing</MainMenu.Item>
+          <MainMenu.DefaultItems.LoadScene />
+          <MainMenu.DefaultItems.Help />
+          <MainMenu.DefaultItems.ChangeCanvasBackground />
+        </MainMenu>
+      </Excalidraw>
+      {panel === "new" && (
+        <div className="art-pop" role="dialog" aria-label="New drawing" onKeyDown={esc}>
+          <p>Clear the board? This can&apos;t be undone.</p>
+          <div className="art-row">
+            <button type="button" className="art-btn art-primary" onClick={() => { api?.resetScene(); try { localStorage.removeItem(KEY); } catch {} setPanel(null); }}>Clear</button>
+            <button type="button" className="art-btn" onClick={() => setPanel(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {panel === "export" && (
+        <div className="art-pop" role="dialog" aria-label="Export" onKeyDown={esc}>
+          <div className="art-row" role="radiogroup" aria-label="PNG scale">
+            <span className="art-k">Scale</span>
+            {[1, 2, 3].map((s) => <button key={s} type="button" role="radio" aria-checked={opt.scale === s} className="art-seg" onClick={() => setOpt({ ...opt, scale: s })}>{s}×</button>)}
+          </div>
+          {toggle("bg", "Background")}
+          {toggle("dark", "Dark mode")}
+          {toggle("embed", "Embed scene in SVG")}
+          <div className="art-grid">
+            <button type="button" className="art-btn art-primary" onClick={() => run("png")}>PNG</button>
+            <button type="button" className="art-btn art-primary" onClick={() => run("svg")}>SVG</button>
+            <button type="button" className="art-btn" onClick={() => run("copy")}><Ic name="copy" />Copy PNG</button>
+            <button type="button" className="art-btn" onClick={() => run("json")}>.excalidraw</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
