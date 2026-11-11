@@ -24,7 +24,7 @@ function layout(it: Item) {
   it.ctrl = buildCtrl(it.w, it.h, it.radii);
   it.x = new Float32Array(it.ctrl.length); it.v = new Float32Array(it.ctrl.length); it.tgt = new Float32Array(it.ctrl.length);
   const m = Math.min(it.w, it.h);
-  it.depth = clamp(m * 0.055, 8, 20); it.sigma = clamp(m * 0.32, 50, 120);
+  it.depth = clamp(m * 0.07, 10, 26); it.sigma = clamp(m * 0.32, 50, 120);
   it.dirty = false;
 }
 
