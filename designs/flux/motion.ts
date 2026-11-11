@@ -11,6 +11,7 @@ const GUSTS = 6; // u_g0..u_g5, reused round-robin
 const HOLD_MS = 200; // a press longer than this gathers the cloud instead of bursting it
 const STROKE = 0.04; // view units between the gusts a drag paints
 const SKIP = "a, button, input, textarea, select, label, summary, [contenteditable], .pt-node"; // real controls keep their clicks
+const TEXT = ".ly-hero-copy, .ly-contact-k, .ly-contact-h, .ly-contact-s, h2"; // copy stays selectable
 
 /** Flux's mount(): drives the particle shader. Each frame it places the cloud on its anchor (the hero portrait, or the
  *  Contact cloud once the hero is gone), feeds the pointer (live, plus an underdamped lagging copy each point follows
@@ -33,8 +34,22 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
     // page-space boxes, measured on layout changes only, so the frame loop never reads layout
     type Box = { x: number; y: number; w: number; h: number } | null;
     let boxes: Record<"photo" | "name" | "cloud" | "head", Box> = { photo: null, name: null, cloud: null, head: null };
-    const pageBox = (e: HTMLElement | null): Box => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height }; };
-    const measure = () => { boxes = { photo: pageBox(photo), name: pageBox(name), cloud: pageBox(cloud), head: pageBox(head) }; };
+    /** The smallest rect holding all of `rs` (null when empty). */
+    const union = (rs: DOMRect[]) => {
+      const ok = rs.filter((x) => x.width && x.height);
+      if (!ok.length) return null;
+      const l = Math.min(...ok.map((x) => x.left)), t = Math.min(...ok.map((x) => x.top));
+      return new DOMRect(l, t, Math.max(...ok.map((x) => x.right)) - l, Math.max(...ok.map((x) => x.bottom)) - t);
+    };
+    /** An element's page box; `text` = the box of its glyphs only (a block heading spans the whole column). */
+    const pageBox = (e: HTMLElement | null, text = false): Box => {
+      if (!e) return null;
+      let r = e.getBoundingClientRect();
+      // block parts span the column: union the words (or the text's own line boxes) instead
+      if (text) { const ws = e.querySelectorAll(".kn-w"), g = document.createRange(); g.selectNodeContents(e); r = union(ws.length ? Array.from(ws, (w) => w.getBoundingClientRect()) : Array.from(g.getClientRects())) ?? r; }
+      return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+    };
+    const measure = () => { boxes = { photo: pageBox(photo), name: pageBox(name, true), cloud: pageBox(cloud), head: pageBox(head, true) }; };
 
     const seen = new Set<string>();
     let raf = 0, last = 0, t0 = performance.now();
@@ -42,7 +57,7 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
     let q: Vec2 = [0, 0];
     const qv: Vec2 = [0, 0];
     let pres = 0, presV = 0, presT = 0, hold = 0, holdV = 0, holdT = 0, nk = 0, nkV = 0, nkT = 0, nkUntil = 0;
-    let wind = 0, lastY = scrollY, slot = 0;
+    let wind = 0, lastY = scrollY, slot = 0, measured = 0;
     let down: { x: number; y: number; t: number; last: Vec2; dragged: boolean; touch: boolean } | null = null, holdTimer = 0;
 
     /** The anchor box in view units: Contact's cloud when only Contact is on screen, otherwise the hero portrait. */
@@ -54,7 +69,7 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
       // the Contact cloud box is wide and short: ring the button cluster, not the whole box
       const r = c ? Math.min(a[2], a[3]) * 0.62 : a[2] * 0.5;
       const nb = n ? boxToView(n.x - scrollX, n.y - scrollY, n.w, n.h, W, H) : [0, 0, 0, 0];
-      return { a: [a[0], a[1], r, c ? 1 : 0] as UniformValue, n: [nb[0], nb[1], nb[2] * 0.5, nb[3] * 0.5] as UniformValue };
+      return { a: [a[0], a[1], r, c ? 1 : 0] as UniformValue, n: nb as UniformValue };
     };
     const place = () => { const { a, n } = anchor(); set("u_a", a); set("u_n", n); };
 
@@ -92,6 +107,7 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
       const e = ev as PointerEvent;
       if (calm() || !seen.size) return;
       const v = view(e), dt = Math.max(8, e.timeStamp - moved) / 1000;
+      if (e.timeStamp - measured > 1000) { measured = e.timeStamp; measure(); } // cheap insurance against late font swaps
       if (e.pointerType !== "touch") {
         const k = moved ? 0.35 : 0;
         pv = [pv[0] * (1 - k) + ((v[0] - p[0]) / dt) * k, pv[1] * (1 - k) + ((v[1] - p[1]) / dt) * k];
@@ -113,7 +129,8 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
 
     const press = (ev: Event) => {
       const e = ev as PointerEvent;
-      if (calm() || e.button > 0 || (e.target as Element).closest?.(SKIP)) return;
+      const tg = e.target as Element;
+      if (calm() || e.button > 0 || tg.closest?.(SKIP) || tg.closest?.(TEXT)) return;
       const v = view(e), touch = e.pointerType !== "mouse" && e.pointerType !== "pen";
       p = v;
       if (touch) { // a tap: a burst, and the name swarms briefly if it was the name
@@ -121,6 +138,7 @@ export function useFluxMotion(root: RefObject<HTMLElement | null>) {
         if (inName(v)) { nkT = 1; nkUntil = performance.now() + 1400; }
         wake(); return;
       }
+      e.preventDefault(); // a drag from empty space paints the cloud; it must not start a text selection
       down = { x: v[0], y: v[1], t: e.timeStamp, last: v, dragged: false, touch };
       holdTimer = window.setTimeout(() => { if (down && !down.dragged) { holdT = 1; wake(); } }, HOLD_MS);
       wake();

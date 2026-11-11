@@ -2,11 +2,12 @@
 import PhotoFx, { PHOTO_SRC } from "@/components/site/kinetic/PhotoFx";
 import "./fx.css";
 
-// luminance -> light: shadows to deep violet, mid-tones to the cloud's cyan, highlights to white
-const R = "0.02 0.22 0.42 0.78 1";
-const G = "0.02 0.14 0.7 0.92 1";
-const B = "0.06 0.55 0.95 1 1";
-const LUM = "0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0";
+// luminance (lifted, so skin reads bright) -> light: shadows to deep violet, mid-tones to the cloud's cyan, highlights to white
+const R = "0.06 0.45 0.75 0.95 1";
+const G = "0.05 0.42 0.88 1 1";
+const B = "0.15 0.8 1 1 1";
+// grey = luminance; alpha keys out the white studio backdrop (lum above ~.93), so only the figure is made of points
+const KEY = "0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 -1.276 -4.291 -0.433 0 5.6";
 
 /** Flux: the portrait comes apart into points of light. A fine screen of dots keeps the face; two coarser screens
  *  of the same image drift outward and fade, so the edges keep dissolving into the cloud. */
@@ -17,7 +18,8 @@ export default function FluxPortrait({ on }: { on: boolean }) {
   );
   return (
     <PhotoFx on={on} look="flux" label="point cloud" noPhoto filter={<>
-      <feColorMatrix type="matrix" values={LUM} />
+      <feColorMatrix type="matrix" values={KEY} />
+      <feComponentTransfer><feFuncR type="gamma" exponent=".45" /><feFuncG type="gamma" exponent=".45" /><feFuncB type="gamma" exponent=".45" /></feComponentTransfer>
       <feComponentTransfer><feFuncR type="table" tableValues={R} /><feFuncG type="table" tableValues={G} /><feFuncB type="table" tableValues={B} /></feComponentTransfer>
     </>}>
       <span className="fl-pfx-bg" />

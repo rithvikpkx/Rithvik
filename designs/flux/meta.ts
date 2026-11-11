@@ -60,34 +60,37 @@ void main(){
   vec2 A = u_a.xy; float R = max(u_a.z, .05);
   float wide = clamp(asp / 1.6, .3, 1.);
   vec3 P, col; float size, alpha, hard = 0.;
-  if (s.x < .46) {
-    // halo: a thick tilted disc spinning round the anchor, inner orbits faster
-    float u = s.y, rr = R * (1.1 + 1.15 * u * u + .05 * gs.x);
+  if (s.x < .4) {
+    // halo: a thick tilted disc spinning round the anchor (clear of the photo), inner orbits faster
+    float u = s.y, rr = R * (1.3 + 1.3 * u * u + .05 * gs.x);
     float a = s.z * 6.2832 + t * .2 / pow(rr / R, 1.5);
-    vec3 q = vec3(cos(a) * rr, gs.y * R * (.03 + .1 * u), sin(a) * rr);
+    vec3 q = vec3(cos(a) * rr, gs.y * R * (.03 + .12 * u), sin(a) * rr);
     q.yz = rot(1.12) * q.yz; q.xy = rot(-.42) * q.xy;
     q += flow(q * 3. / R + s.x * 9., t * .35) * R * .05 * (.3 + u);
     P = vec3(A, 0.) + q;
     col = mix(u_c1, u_c2, smoothstep(.05, .85, u));
-    size = 1.3 + 1.5 * s6 * s6 * s6; alpha = .5 - .26 * u;
-  } else if (s.x < .9) {
-    // nebula: three lobes, sheared by differential rotation and swept into filaments by the flow
-    float l = floor(s.y * 3.);
-    vec2 c = l < .5 ? vec2(-1.5 * wide, -.42) : l < 1.5 ? vec2(.1 * wide, -.7) : vec2(-.62 * wide, .6);
-    vec3 sg = l < .5 ? vec3(.62 * wide + .1, .2, .4) : l < 1.5 ? vec3(.55 * wide, .15, .3) : vec3(.42 * wide, .13, .3);
+    size = 1.6 + 2. * s6 * s6 * s6; alpha = .9 - .45 * u;
+  } else if (s.x < .92) {
+    // nebula: three lobes, sheared by differential rotation and swept into filaments by the flow; a share of the
+    // points are large and faint (haze), which gives the cloud its volume behind the sharp points
+    float haze = step(.84, s.x), l = floor(s.y * 3.);
+    vec2 c = l < .5 ? vec2(-1.45 * wide, -.4) : l < 1.5 ? vec2(.12 * wide, -.66) : vec2(-.6 * wide, .58);
+    vec3 sg = (l < .5 ? vec3(.5 * wide + .08, .16, .34) : l < 1.5 ? vec3(.44 * wide, .12, .26) : vec3(.34 * wide, .1, .26)) * (1. + haze * .3);
     vec3 o = gs * sg;
     o.xy = rot((l - 1.) * .45 + t * .03 / (.3 + length(o.xy))) * o.xy;
     P = vec3(A + c, -.25 - .3 * l) + o;
     P += flow(P * 1.6 + l * 7., t * .12) * .15;
-    P += flow(P * 3.4 + 3., t * .2) * .045;
+    P += flow(P * 3.4 + 3., t * .2) * .045 * (1. - haze);
     col = mix(u_c2, u_c1, clamp(.5 + o.x * .9 + (l - 1.) * .25, 0., 1.));
-    if (s6 > .965) col = u_c3; // embers
-    size = 1. + 1.3 * s5 * s5 + (s6 > .965 ? .8 : 0.); alpha = s6 > .965 ? .55 : .26;
+    float ember = step(.965, s6) * (1. - haze);
+    col = mix(col, u_c3, ember);
+    size = mix(1.3 + 2. * s5 * s5 + ember, 26. + 34. * s5, haze);
+    alpha = mix(.5 + ember * .3, .03, haze);
   } else {
     // dust: sparse motes out of focus, drifting up through the whole view
     P = vec3((s.y * 2. - 1.) * asp * 1.15, mod(s.z * 2.6 + t * .014 * (.5 + s6), 2.6) - 1.3, -2.4 + s.w * 3.2);
     col = mix(u_c1, u_c2, s4);
-    size = 2. + 7. * s6 * s6; alpha = .07; hard = 1.;
+    size = 2. + 7. * s6 * s6; alpha = .1; hard = 1.;
   }
   // camera: a slow sway plus parallax toward the lagging pointer, rotating about the anchor
   vec3 pc = P - vec3(A, 0.);
@@ -113,15 +116,15 @@ void main(){
   S = mix(S, m + dk * .16, H);
   S += gust(u_g0, S0, t) + gust(u_g1, S0, t) + gust(u_g2, S0, t) + gust(u_g3, S0, t) + gust(u_g4, S0, t) + gust(u_g5, S0, t);
   // the name: a share of the nebula swarms into the name's box, each point at its own delay
-  float sel = step(.46, s.x) * step(s.x, .9) * step(s5, .42);
+  float sel = step(.4, s.x) * step(s.x, .84) * step(s5, .42);
   float kk = clamp(u_k.x * 1.7 - s6 * .7, 0., 1.); kk = kk * kk * (3. - 2. * kk);
-  vec2 tgt = u_n.xy + clamp(gs.xy * .42, -1., 1.) * u_n.zw + flow(vec3(gs.xy * 4., s.x * 9.), t * .9).xy * .006;
+  vec2 tgt = u_n.xy + gs.xy * vec2(.4, .34) * u_n.zw + flow(vec3(gs.xy * 4., s.x * 9.), t * .9).xy * .006;
   S = mix(S, tgt, kk * sel * step(.001, u_n.z));
   // scroll wind: points lag behind the page a little, farther ones more
   S.y += clamp(u_k.y, -4., 4.) * .03 * (.4 + lag) * (2. - w);
   float e = length(S - S0) + kk * sel * .15; // displaced points heat up
   col = mix(col, mix(vec3(1.), u_c3, .45), clamp(e * 3.5, 0., .75));
-  float blur = abs(P.z) * .8; // depth of field: focus on the anchor plane
+  float blur = abs(P.z) * .8 * (1. - step(.84, s.x) * step(s.x, .92)); // depth of field round the anchor plane (haze is already soft)
   size = (size + blur * 2.6) * w * (1. + clamp(e * 2., 0., 1.));
   alpha *= (1. + clamp(e * 3., 0., 1.5)) / (1. + blur * blur * 1.6);
   alpha *= .35 + .65 * ik;
