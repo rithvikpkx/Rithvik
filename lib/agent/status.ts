@@ -66,7 +66,8 @@ export function usageLines(u: Usage, model: string | undefined, nowMs: number): 
 }
 
 export type StatusState =
-  | { kind: "idle"; turns: number; usage?: Usage }
+  /** `actions`: the panel has action buttons, so the line points at them (shift+tab from the prompt reaches them). */
+  | { kind: "idle"; turns: number; usage?: Usage; actions?: boolean }
   | { kind: "busy"; elapsedMs: number; verb: string }
   | { kind: "limited"; status: 429 | 503; retrySecs: number };
 
@@ -94,6 +95,7 @@ export function statusSegments(s: StatusState): StatusSeg[] {
   if (u?.limit !== undefined && u.remaining !== undefined) segs.push({ text: `${u.remaining}/${u.limit} left`, cls: "s-left", ...(u.remaining <= 5 ? { tone: "warn" as const } : {}) });
   if (u?.tokens) segs.push({ text: `${formatTokens(u.tokens)} tok`, cls: "s-tok" });
   if (u?.totalMs !== undefined) segs.push({ text: formatSecs(u.totalMs), cls: "s-time" });
+  if (s.actions) segs.push({ text: "shift+tab to actions", cls: "s-acts" });
   segs.push({ text: "? for shortcuts", cls: "s-hint" });
   return segs;
 }

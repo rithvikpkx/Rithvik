@@ -4,7 +4,7 @@ import { fixture } from "../content/fixture.ts";
 import { renderProfile, scrubPrivate } from "./profile.ts";
 import { cleanTimeZone, contextPrompt, nearestLandmark, sanitizeContext } from "./context.ts";
 import { cleanRewrite, rewriteMessages } from "./rewrite.ts";
-import { anchorFor, autoScrollTarget, citedNumbers } from "./highlight.ts";
+import { anchorFor, citedNumbers } from "./highlight.ts";
 import { screenCalls, toolDefs, validateToolCall, type Allowed } from "./tools.ts";
 
 const A: Allowed = {
@@ -76,7 +76,7 @@ test("tools: request_meeting runs meeting.ts's checks, strips URLs from notes, a
   assert.match(r.replies[0].content, /valid email.*call request_meeting again/);
   // the model is told it is only queued for confirmation
   const ok = await screenCalls([call("request_meeting", good, "m")], A);
-  assert.match(ok.replies[0].content, /Queued/);
+  assert.match(ok.replies[0].content, /Offered as a button/);
   // three actions in a step: the third is trimmed, meetings count against the same cap
   const cap = await screenCalls([call("open_resume", {}, "a"), call("request_meeting", good, "b"), call("start_game", { id: "typeracer" }, "c")], A);
   assert.deepEqual(cap.kept.map((k) => k.id), ["a", "b"]);
@@ -145,15 +145,7 @@ test("highlight: anchors come from retrieval metadata, validated against content
   assert.equal(anchorFor(undefined, { filename: "resume.pdf" }, ok), undefined);
 });
 
-test("highlight: auto-scroll picks the most relevant cited, existing anchor, and never fights the visitor", () => {
-  const sources = [{ n: 1 }, { n: 2, anchor: "project-a" }, { n: 3, anchor: "about" }, { n: 4, anchor: "project-gone" }];
-  const base = { answer: "He built A [3] and B [2] [4].", sources, exists: (id: string) => id !== "project-gone", full: false, covered: false, lastActivity: 0, now: 10_000 };
-  assert.equal(autoScrollTarget(base), "project-a"); // lowest n among cited
-  assert.equal(autoScrollTarget({ ...base, answer: "Only [1] and [4]." }), null); // no anchor / not in this design
-  assert.equal(autoScrollTarget({ ...base, full: true }), null);
-  assert.equal(autoScrollTarget({ ...base, covered: true }), null);
-  assert.equal(autoScrollTarget({ ...base, lastActivity: 8_000 }), null); // scrolled 2s ago
-  assert.equal(autoScrollTarget({ ...base, answer: "No citations." }), null);
+test("highlight: cited numbers are unique and in order", () => {
   assert.deepEqual(citedNumbers("[2] x [10] [2]"), [2, 10]);
 });
 

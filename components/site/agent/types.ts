@@ -16,10 +16,10 @@ export type Item =
   | { id: number; at?: number; kind: "suggest"; chips: string[] }
   /** A chart/table the model asked for: already re-validated on the client, drawn by components/site/charts. */
   | { id: number; at?: number; kind: "artifact"; spec: ArtifactSpec }
-  /** A permission confirmation for a side effect (the action itself is held by the hook until answered).
-   *  `tool` is set when the model requested it, so the row reads as a tool call. `detail` lists exactly what
-   *  will happen (the meeting card); `once` means the visitor must confirm every time (no "Always"). */
-  | { id: number; at?: number; kind: "ask"; question: string; state: "pending" | "yes" | "no" | "always" | "auto"; tool?: { name: string; args: string }; detail?: string[]; once?: boolean }
+  /** Buttons the agent offers under an answer. Nothing runs until one is clicked; the callbacks live in the hook,
+   *  keyed by each button's `id`. `clicked` feeds the export and a subtle "done" look. `detail` lists what a
+   *  send-style button will do (the meeting request). */
+  | { id: number; at?: number; kind: "actions"; buttons: ActionButton[]; detail?: string[] }
   /** Footnotes for the [n] markers the answer actually cited. */
   | { id: number; at?: number; kind: "sources"; items: { n: number; label: string; anchor?: string }[] }
   | { id: number; at?: number; kind: "note"; text: string; tone?: "warn" };
@@ -30,4 +30,5 @@ export type NewItem = Item extends infer T ? (T extends { id: number } ? Omit<T,
 /** A completed exchange: the only thing ever replayed to the server as history or exported. */
 export type Turn = { q: string; a: string; suggestions: string[]; at: number };
 
-export type Choice = "yes" | "no" | "always";
+/** One clickable offer. `key` names the target so duplicates collapse; `once` disables it after one click (a send). */
+export type ActionButton = { id: number; key: string; label: string; clicked: boolean; once?: boolean };

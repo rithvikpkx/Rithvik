@@ -9,6 +9,7 @@ test("idle status line shows only what is known, in order", () => {
   assert.deepEqual(statusSegments({ kind: "idle", turns: 3, usage: u }).map((s) => s.text), ["● ready", "3 turns", "41/60 left", "12.4k tok", "1.9s", "? for shortcuts"]);
   assert.deepEqual(statusSegments({ kind: "idle", turns: 0, usage: { tokens: 0 } }).map((s) => s.text), ["● ready", "0 turns", "? for shortcuts"]);
   assert.equal(statusSegments({ kind: "idle", turns: 1, usage: { tokens: 0, limit: 60, remaining: 3 } })[2].tone, "warn");
+  assert.deepEqual(statusSegments({ kind: "idle", turns: 1, actions: true }).map((s) => s.text), ["● ready", "1 turn", "shift+tab to actions", "? for shortcuts"]);
 });
 
 test("formatTokens abbreviates", () => {
