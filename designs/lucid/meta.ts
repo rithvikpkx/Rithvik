@@ -62,7 +62,7 @@ void main(){
   float asp = u_res.x / u_res.y, wide = step(1.05, asp), t = u_time;
   vec2 p = (fc - .5 * u_res) / u_res.y;
   // reading sections sit on a calmer field; Contact (the page's end) brightens again
-  float dim = mix(1., .46, smoothstep(.45, 1.1, u_sy)) + .42 * smoothstep(.8, .97, u_scroll);
+  float dim = mix(1., .6, smoothstep(.45, 1.1, u_sy)) + .42 * smoothstep(.8, .97, u_scroll);
   float act = step(.0015, length(u_mouse - .5)) * (1. - smoothstep(.35, .8, u_sy));
   vec2 m = (u_mouse - .5) * vec2(asp, 1.);
   // the light: the pointer, or a soft key light high on the left when there is none

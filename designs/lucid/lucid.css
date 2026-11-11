@@ -60,6 +60,9 @@
 :root[data-design="lucid"] :is(.ly-head, .agent-bar, .pt-node, .cl-node, .wk-hub) { -webkit-backdrop-filter: var(--lg-frost); backdrop-filter: var(--lg-frost); }
 :root[data-design="lucid"][data-lg="refract"] :is(.ly-head, .agent-bar) { backdrop-filter: var(--lg-f, blur(12px)) saturate(1.6) brightness(1.04); }
 :root[data-design="lucid"][data-lg="refract"] :is(.pt-node, .cl-node, .wk-hub) { backdrop-filter: var(--lg-f, blur(8px)) saturate(1.5) brightness(1.1); }
+/* the Work hub is a smoky dome over the art: the bend shows at its rim, the middle stays calm */
+:root[data-design="lucid"][data-lg="refract"] .wk-hub { backdrop-filter: var(--lg-f, blur(8px)) saturate(1.1) brightness(.8); }
+:root[data-design="lucid"] .wk-hub { --lg-fill: radial-gradient(circle at 36% 24%, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 34%), linear-gradient(180deg, rgba(10, 12, 32, .25), rgba(10, 12, 32, .55)); }
 /* hover bulges the lens (a stronger cut) and press squishes the drop, both on a spring */
 :root[data-design="lucid"] :is(.pt-node, .cl-node, .ly-btn, .ly-iam, .ab-go, .qz-go, .ab-send) { transition: scale 560ms var(--lg-spring), translate 0s, box-shadow 200ms ease, background-color 200ms ease; }
 @media (hover: hover) and (pointer: fine) {
