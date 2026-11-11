@@ -64,7 +64,7 @@ export function useGlyphMotion(rootRef: RefObject<HTMLElement | null>, toggleKey
       const ev = e as KeyboardEvent;
       if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.altKey) return;
       const a = document.activeElement as HTMLElement | null;
-      if (a && (/INPUT|TEXTAREA|SELECT/.test(a.tagName) || a.isContentEditable)) return;
+      if (a && (/INPUT|TEXTAREA|SELECT/.test(a.tagName) || a.isContentEditable || a.closest(".excalidraw"))) return; // the Artboard owns its keys
       if (html.classList.contains("locked") || document.getElementById("switcher")?.classList.contains("open")) return;
       const k = ev.key;
       if (k === "Escape") toggleKeys(false);

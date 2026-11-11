@@ -16,7 +16,8 @@ import "../agent/agent.css";
 
 /** True when a keystroke is going into a form field or editor, where global shortcuts must stay out of the way. */
 function isTyping(t: EventTarget | null): boolean {
-  return t instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable);
+  // The Artboard (Excalidraw) owns its keys: / and ? are its own shortcuts.
+  return t instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName) || t.isContentEditable || !!t.closest(".excalidraw"));
 }
 
 /** Narrow screens get a shorter placeholder: a wrapped one makes the prompt two lines tall. */

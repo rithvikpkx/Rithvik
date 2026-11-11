@@ -176,7 +176,7 @@ export default function DesignProvider({ initial, palettes, children }: { initia
     const onKey = (e: KeyboardEvent) => {
       if ((e.key !== "t" && e.key !== "T") || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
-      if (t?.isContentEditable || t?.closest("input, textarea, select")) return;
+      if (t?.isContentEditable || t?.closest("input, textarea, select, .excalidraw")) return; // T is the Artboard's text tool
       e.preventDefault();
       cycle(e.shiftKey ? -1 : 1);
     };
