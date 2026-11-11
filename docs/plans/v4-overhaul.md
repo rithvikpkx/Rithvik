@@ -1,10 +1,18 @@
 # rithvik.ai overhaul: handoff
 
-Status (2026-11-10): **Owner review round 2** — requirements + streams in `docs/plans/review-round-2.md`.
-Merged on `dev`: S1 shared layout/skins, S2 dashboards, S3 logo, S4 physical switcher, S5 agent TUI, S7 Play canvas,
-S8 Experience/Education, S9 kinetic name + portrait fx, S10 Questions/About/Contact/copy. Pending: S6 Work (merging dev);
-owner decisions on `supabase/r2_sections_copy_migration.sql` (not applied) and whether the agent may still state the
-email address; dead per-design CSS cleanup after S6.
+Status (2026-11-11, end of session): **Rounds 2–5 all merged on `dev`** (preview
+https://rithvik-git-dev-rithvikpkx-7614s-projects.vercel.app). Round notes: `docs/plans/review-round-2.md`; design-system
+guide: `docs/design-systems.md`. Looks: Classic + 21 designs (original nine + flux, sprawl, lucid, clay, lumen, ember,
+tide, stone, volt, grove, blueprint, corsa) + palettes, picked with the Meniscus picker. Features: shared layout +
+skins, light-pulse tethers, contact cloud, Claude Code-style agent with action buttons, Excalidraw Artboard, Deck
+player, Darkroom, cursor warp, dashboards, logo set.
+NEXT SESSION: (1) owner lists the remaining minor UI issues/bugs; fix them; (2) Step 4 verification on the preview:
+real-GPU smoothness (Stone, Volt, Lucid, Corsa heaviest), Safari/iOS (Lucid frost fallback, Corsa needs Safari 16+),
+Excalidraw hand-drawn font loads on Vercel (postinstall copies fonts), lite stills; (3) on "merge to main": `--no-ff`
+merge, then launch-day tasks: enable the `rithvik-uptime` pg_cron job, confirm Production env vars (CRON_SECRET,
+CALENDAR_ICS_URL, IP_HASH_SALT, TRACKING_OWNER_KEY, TRACKING_EXCLUDE_IPS, IPINFO_TOKEN, RESEND/CONTACT_*, OPENAI).
+Owner decisions on record: Corsa ships a CC BY (likely game-ripped) SP3 model in the public repo, risk accepted; CSP
+has `'wasm-unsafe-eval'` for it; the agent may state the owner's email; Claude/OpenAI looks use no logos.
 Earlier status (2026-11-09, end of session): **Steps 0–3 done + review round 1 merged on `dev`** (preview
 https://rithvik-git-dev-rithvikpkx-7614s-projects.vercel.app). NEXT SESSION: (1) collect the owner's results from the
 logged-in checklist (inline editing, admin bar, /admin, Share, meeting email, tracking on phone) and his queued
