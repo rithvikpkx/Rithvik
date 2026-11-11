@@ -413,7 +413,7 @@ export default function Switcher() {
         aria-label={`Look: ${tint.name}. Open the look picker`}
         aria-expanded={open}
         tabIndex={open ? -1 : 0}
-        onFocus={() => { s.current.wantFocus = true; }}
+        onFocus={() => { const st = s.current; if (st.open) els.current[st.sel]?.focus({ preventScroll: true }); else st.wantFocus = true; }} // focus moves to the current look once it opens
         onPointerDown={(e) => { if (e.pointerType !== "mouse") setOpen(true); }} // a tap opens; hover does it for a mouse
       />
     </div>
