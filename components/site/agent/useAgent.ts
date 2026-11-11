@@ -1,12 +1,12 @@
 "use client";
 import { speak, stopSpeaking } from "./speech";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
 import { parseArtifact } from "@/lib/agent/artifacts";
 import { collectContext } from "@/lib/agent/context";
-import { autoScrollTarget, citedNumbers } from "@/lib/agent/highlight";
-import { scrollAndHighlight } from "./highlight";
+import { citedNumbers } from "@/lib/agent/highlight";
+import { capOffers } from "@/lib/agent/offers";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from "@/lib/suggestion-protocol";
 import { GAMES } from "@/lib/play/games";
@@ -17,7 +17,7 @@ import { formatAge, usageLines, type Usage } from "@/lib/agent/status";
 import { buildTranscriptMarkdown, transcriptFilename } from "@/lib/transcript";
 import { runSlash } from "./slash";
 import { answerStarter } from "./starters";
-import type { Choice, Design, Item, NewItem, Turn } from "./types";
+import type { Design, Item, NewItem, Turn } from "./types";
 
 /** What the agent needs from the surrounding site. */
 export type Host = {
@@ -34,13 +34,12 @@ export type Host = {
   toast: (message: string) => void;
   /** Slug of the case sheet the visitor came from, for page context. */
   caseSlug?: string | null;
-  /** Live view state (read when an answer lands, not when it was asked). */
-  view?: () => { full: boolean; covered: boolean };
 };
 
 type Cooldown = { until: number; status: 429 | 503 };
 type Run = { ctl: AbortController; answered: boolean };
-type Ask = { question: string; key: string; go: () => void; tool?: { name: string; args: string }; detail?: string[]; once?: boolean };
+/** A proposed action waiting to become a button: nothing runs until the visitor clicks it. */
+type Offer = { key: string; label: string; go: () => void; detail?: string[]; once?: boolean };
 
 const SESSION_KEY = "rithvik-agent-session";
 /** The server-issued conversation id for this tab, or null (no storage, or no turn answered yet). */
@@ -55,7 +54,7 @@ const pascal = (s: string) => s.replace(/(^|_)(\w)/g, (_, __, c: string) => c.to
 const cited = (text: string, sources: Source[]) =>
   citedNumbers(text).map((n) => sources.find((s) => s.n === n)).filter((s): s is Source => !!s);
 
-/** The agent's state machine: transcript items, real turns, the /api/chat stream, confirmations. */
+/** The agent's state machine: transcript items, real turns, the /api/chat stream, action buttons. */
 export function useAgent(host: Host) {
   const [items, setItems] = useState<Item[]>([{ id: 0, kind: "banner" }]);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -69,23 +68,10 @@ export function useAgent(host: Host) {
   const seq = useRef(0);
   const run = useRef<Run | null>(null);
   const hIdx = useRef(-1);
-  const always = useRef(new Set<string>());
-  const asks = useRef(new Map<number, Ask>());
-  const queue = useRef<Ask[]>([]); // side effects waiting behind the one on screen, run strictly in order
+  const offers = useRef<Offer[]>([]); // this turn's proposals, turned into one row of buttons when the turn ends
+  const presses = useRef(new Map<number, () => void>()); // button id → its action (held here so rows stay plain data)
   const undos = useRef(new Map<number, () => void>());
   const selection = useRef(""); // last text the visitor selected on the page (not in the dock)
-  const activity = useRef(0); // last time the visitor scrolled or typed on the page
-
-  // Scrolling or typing outside the dock marks the visitor busy, so an answer won't yank the page.
-  useEffect(() => {
-    const mark = (e: Event) => {
-      if (e.type === "keydown" && e.target instanceof Element && e.target.closest(".agent")) return;
-      activity.current = Date.now();
-    };
-    const evs = ["wheel", "touchmove", "keydown"] as const;
-    evs.forEach((t) => window.addEventListener(t, mark, { passive: true }));
-    return () => evs.forEach((t) => window.removeEventListener(t, mark));
-  }, []);
 
   // Remember the page selection so "explain this" still has it after focus moves to the prompt.
   useEffect(() => {
@@ -109,37 +95,31 @@ export function useAgent(host: Host) {
   }, []);
   const patch = useCallback((id: number, f: (i: Item) => Item) => setItems((p) => p.map((i) => (i.id === id ? f(i) : i))), []);
 
-  /** Shows the next queued side effect once nothing is waiting; "Always" keys run without asking. */
-  const pump = useCallback(() => {
-    while (asks.current.size === 0 && queue.current.length) {
-      const a = queue.current.shift()!;
-      if (always.current.has(a.key)) {
-        add({ kind: "ask", question: a.question, state: "auto", tool: a.tool });
-        a.go();
-        continue;
-      }
-      asks.current.set(add({ kind: "ask", question: a.question, state: "pending", tool: a.tool, detail: a.detail, once: a.once }), a);
-    }
+  /** Records a proposed action; it becomes a button at the end of the turn and never runs by itself. */
+  const offer = useCallback((key: string, label: string, go: () => void, extra?: Pick<Offer, "detail" | "once">) => {
+    offers.current.push({ key, label, go, ...extra });
+  }, []);
+
+  /** Turns this turn's proposals (deduped, capped) into one row of buttons under the answer. */
+  const flushOffers = useCallback(() => {
+    const list = capOffers(offers.current);
+    offers.current = [];
+    if (!list.length) return;
+    const buttons = list.map((o) => {
+      const id = ++seq.current;
+      presses.current.set(id, o.go);
+      return { id, key: o.key, label: o.label, clicked: false, ...(o.once ? { once: true } : {}) };
+    });
+    add({ kind: "actions", buttons, detail: list.find((o) => o.detail)?.detail });
   }, [add]);
 
-  /** Queues a side effect behind a permission row. One row is pending at a time, in request order. */
-  const ask = useCallback((question: string, key: string, go: () => void, tool?: Ask["tool"], extra?: Pick<Ask, "detail" | "once">) => {
-    queue.current.push({ question, key, go, tool, ...extra });
-    pump();
-  }, [pump]);
-
-  /** Resolves a confirmation: Yes and Always run it, No drops it; then the next one shows. */
-  const answerAsk = useCallback((id: number, choice: Choice) => {
-    const a = asks.current.get(id);
-    if (!a || (a.once && choice === "always")) return; // a send is confirmed every time
-    asks.current.delete(id);
-    if (choice === "always") always.current.add(a.key);
-    patch(id, (i) => (i.kind === "ask" ? { ...i, state: choice } : i));
-    if (choice !== "no") a.go();
-    pump();
-  }, [patch, pump]);
-
-  const pending = useMemo(() => items.find((i): i is Extract<Item, { kind: "ask" }> => i.kind === "ask" && i.state === "pending") ?? null, [items]);
+  /** Runs a button's action. Buttons stay live (until /clear) so a visitor can come back to an older answer. */
+  const press = useCallback((rowId: number, buttonId: number) => {
+    const go = presses.current.get(buttonId);
+    if (!go) return;
+    patch(rowId, (i) => (i.kind === "actions" ? { ...i, buttons: i.buttons.map((b) => (b.id === buttonId ? { ...b, clicked: true } : b)) } : i));
+    go();
+  }, [patch]);
 
   const scroll = useCallback((ids: string[]) => {
     const el = ids.map((id) => document.getElementById(id)).find(Boolean);
@@ -147,30 +127,29 @@ export function useAgent(host: Host) {
     el?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }, []);
 
-  /** A scroll target as a confirmation phrase. */
+  /** A scroll target's display name for its button. */
   const sectionName = useCallback((target: string) => {
-    if (target.startsWith("project-")) return host.content.projects.find((p) => `project-${p.slug}` === target)?.title ?? "work";
-    if (target.startsWith("experience-")) return host.content.experience.find((r) => `experience-${r.slug}` === target)?.org ?? "experience";
-    return target === "top" ? "the top" : target;
+    if (target.startsWith("project-")) return host.content.projects.find((p) => `project-${p.slug}` === target)?.title ?? "Work";
+    if (target.startsWith("experience-")) return host.content.experience.find((r) => `experience-${r.slug}` === target)?.org ?? "Experience";
+    return target === "top" ? "the top" : target[0].toUpperCase() + target.slice(1);
   }, [host]);
 
   /** Opens the composer from the agent, tagged with this conversation so the email's owner-only context links to it. */
   const compose = useCallback((subject?: string, body?: string) => host.openComposer(subject, body, { agentSessionId: readSession() ?? undefined }), [host]);
 
-  /** Turns a fallback server action (a record name, never a URL the model wrote) into a confirmation row. */
-  const queueAction = useCallback((a: ChatAction) => {
-    if (a.type === "open_link") return ask(`Open "${a.label}" in a new tab?`, "link", () => window.open(a.url, "_blank", "noopener,noreferrer"));
-    if (a.type === "open_composer") return ask("Draft an email to Rithvik?", "compose", () => compose(""));
+  /** Turns a fallback server action (a record name, never a URL the model wrote) into an offer. */
+  const offerAction = useCallback((a: ChatAction) => {
+    if (a.type === "open_link") return offer(`link:${a.url}`, a.label.includes("↗") ? a.label : `${a.label} ↗`, () => window.open(a.url, "_blank", "noopener,noreferrer"));
+    if (a.type === "open_composer") return offer("compose", "Draft email", () => compose(""));
     const r = resolveTarget(a.target);
     if (r.kind === "case") {
       const title = host.content.projects.find((p) => p.slug === r.slug)?.title;
-      if (title) return ask(`Open project "${title}"?`, "open-project", () => host.openCase(r.slug));
+      if (title) return offer(`case:${r.slug}`, `↗ Open ${title}`, () => host.openCase(r.slug));
     }
-    const section = a.target.startsWith("experience") ? "experience" : a.target.startsWith("education") ? "education" : a.target.startsWith("project") ? "work" : "about";
-    ask(`Scroll to ${section}?`, "navigate", () => scroll(r.kind === "scroll" ? r.ids : ["work", "top"]));
-  }, [ask, compose, host, scroll]);
+    offer(`scroll:${a.target}`, `↓ Go to ${sectionName(a.target)}`, () => scroll(r.kind === "scroll" ? r.ids : ["work", "top"]));
+  }, [offer, compose, host, scroll, sectionName]);
 
-  /** Sends a meeting request the visitor just confirmed; the row shows the outcome. Only ever called from the confirmation. */
+  /** Sends a meeting request the visitor just clicked Send on; the row shows the outcome. Only ever called from that button. */
   const sendMeeting = useCallback(async (m: Record<string, string>) => {
     const rid = add({ kind: "tool", name: "Meeting", args: m.email });
     const done = (result: string) => patch(rid, (i) => (i.kind === "tool" ? { ...i, result } : i));
@@ -187,8 +166,8 @@ export function useAgent(host: Host) {
     }
   }, [add, patch]);
 
-  /** Runs a model tool call the server already validated; the client re-checks names against
-   *  content before acting. Side effects ask first; switch_design runs at once with Undo. */
+  /** Handles a model tool call the server already validated; the client re-checks names against content.
+   *  Side effects only become buttons here, so nothing happens until the visitor clicks. */
   const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>) => {
     const a = e.args ?? {};
     const tool = { name: pascal(e.name), args: Object.values(a).map((v) => clip(String(v), 40)).join(", ") };
@@ -203,41 +182,45 @@ export function useAgent(host: Host) {
         return;
       case "switch_design": {
         const d = host.design;
-        if (!d || !d.entries.some((x) => x.id === a.id)) { add({ kind: "tool", name: tool.name, args: tool.args, result: "Not available here" }); return; }
-        const prev = d.current;
-        d.setDesign(a.id);
-        add({ kind: "tool", name: tool.name, args: tool.args, result: `Applied ${a.id}` }, () => d.setDesign(prev));
+        const entry = d?.entries.find((x) => x.id === a.id);
+        if (!d || !entry) return;
+        const name = entry.kind === "design" ? entry.meta.name : entry.name;
+        offer(`design:${a.id}`, `Switch to ${name}`, () => {
+          const prev = d.current;
+          d.setDesign(a.id);
+          add({ kind: "tool", name: "SwitchDesign", args: a.id, result: `Applied ${name}` }, () => d.setDesign(prev));
+        });
         return;
       }
       case "open_project": {
         const p = host.content.projects.find((x) => x.slug === a.slug);
-        if (p) ask(`Open project "${p.title}"?`, "open-project", () => host.openCase(p.slug), tool);
+        if (p) offer(`case:${p.slug}`, `↗ Open ${p.title}`, () => host.openCase(p.slug));
         return;
       }
       case "show_section": {
         if (!/^[a-z0-9-]+$/.test(a.id ?? "")) return;
         const r = resolveTarget(a.id);
-        ask(`Scroll to ${sectionName(a.id)}?`, "navigate", () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)), tool);
+        offer(`scroll:${a.id}`, `↓ Go to ${sectionName(a.id)}`, () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)));
         return;
       }
       case "request_meeting": {
         if (!a.name || !a.email || !a.times) return;
         const detail = [`To: Rithvik`, `Name: ${a.name}`, `Email: ${a.email}`, a.company && `Company: ${a.company}`, a.role && `Role: ${a.role}`,
           `Times: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
-        ask("Send this to Rithvik?", "meeting", () => void sendMeeting(a), { name: "RequestMeeting", args: a.name }, { detail, once: true });
+        offer("meeting", "Send meeting request", () => void sendMeeting(a), { detail, once: true });
         return;
       }
-      case "open_resume": ask("Open the resume?", "resume", host.openResume, tool); return;
+      case "open_resume": offer("resume", "Open resume", host.openResume); return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
-        if (g) ask(`Start ${g.name}?`, "play", () => host.openPlay(g.id), tool);
+        if (g) offer(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));
         return;
       }
       case "draft_email":
-        ask(`Draft an email to Rithvik${a.subject ? `: "${clip(a.subject, 60)}"` : ""}?`, "compose", () => compose(a.subject ?? "", a.body ?? ""), { ...tool, args: clip(a.subject ?? "", 40) });
+        offer("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
         return;
     }
-  }, [add, ask, compose, host, scroll, sectionName, sendMeeting]);
+  }, [add, offer, compose, host, scroll, sectionName, sendMeeting]);
 
   const copy = useCallback((text: string, msg: string) => {
     navigator.clipboard?.writeText(text).then(() => host.toast(msg), () => {});
@@ -313,6 +296,7 @@ export function useAgent(host: Host) {
     const me: Run = { ctl: new AbortController(), answered: false };
     run.current = me;
     answerIds.current = [];
+    offers.current = [];
     setBusySince(Date.now());
     const gone = () => run.current !== me; // interrupted or cleared: stop touching the transcript
     const at = Date.now();
@@ -328,12 +312,6 @@ export function useAgent(host: Host) {
       settle(answerIds.current);
       const notes = cited(answer, sources);
       if (notes.length) add({ kind: "sources", items: notes });
-      // Once per answer: bring the most relevant cited site record into view, unless that would fight the visitor.
-      const target = autoScrollTarget({
-        answer, sources, exists: (id) => !!document.getElementById(id),
-        ...(host.view?.() ?? { full: false, covered: false }), lastActivity: activity.current, now: Date.now(),
-      });
-      if (target) scrollAndHighlight(target);
       setTurns((p) => [...p, { q, a: answer, suggestions: [], at }]);
       const totalMs = Date.now() - at;
       setUsage((p) => ({ ...p, totalMs }));
@@ -422,7 +400,8 @@ export function useAgent(host: Host) {
               setTurns((t) => t.map((x) => (x.at === at ? { ...x, suggestions: chips } : x)));
               add({ kind: "suggest", chips });
             }
-            normalizeActions(e.actions).forEach(queueAction);
+            normalizeActions(e.actions).forEach(offerAction);
+            flushOffers();
           }
         }
         seen = parts.length;
@@ -432,6 +411,7 @@ export function useAgent(host: Host) {
         return;
       }
       finish();
+      flushOffers(); // a stream that ended without a trailer still shows what the tools proposed
     } catch (e) {
       if (gone()) return;
       settle(answerIds.current);
@@ -442,14 +422,14 @@ export function useAgent(host: Host) {
         setBusySince(null);
       }
     }
-  }, [add, host, patch, queueAction, runTool, settle, turns]);
+  }, [add, host, patch, offerAction, flushOffers, runTool, settle, turns]);
 
   const clear = useCallback(() => {
     const r = run.current;
     run.current = null;
     r?.ctl.abort();
-    asks.current.clear();
-    queue.current = [];
+    offers.current = [];
+    presses.current.clear();
     undos.current.clear();
     setBusySince(null);
     setTurns([]);
@@ -476,7 +456,7 @@ export function useAgent(host: Host) {
     add({ kind: "user", text: q });
     if (isSlash) {
       runSlash(q, {
-        add, ask, clear, scroll, copy, turns, exportMd, usage: showUsage, history: next,
+        add, clear, scroll, copy, turns, exportMd, usage: showUsage, history: next,
         content: host.content, design: host.design, toggleFull: host.toggleFull, close: host.close,
         openCase: host.openCase, openResume: host.openResume, openComposer: compose,
         openPlay: host.openPlay, lite: host.lite, setLite: host.setLite, share, canShare: !!sessionId && turns.length > 0, download: downloadChat,
@@ -485,7 +465,7 @@ export function useAgent(host: Host) {
     // Starter chips answer instantly from content, with no /api/chat call.
     else if (!answerStarter(q, host.content, add, (a) => setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]))) void converse(q);
     return true;
-  }, [add, ask, clear, compose, converse, cooldown, copy, exportMd, downloadChat, history, host, interrupt, scroll, sessionId, share, showUsage, turns]);
+  }, [add, clear, compose, converse, cooldown, copy, exportMd, downloadChat, history, host, interrupt, scroll, sessionId, share, showUsage, turns]);
 
   /** ↑/↓ through prompt history; returns the text to put in the input, or null when there is none. */
   const recall = useCallback((dir: 1 | -1): string | null => {
@@ -503,5 +483,5 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, pendingId: pending?.id ?? null, pending, submit, interrupt, answerAsk, recall, undo, clear, copy };
+  return { items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }
