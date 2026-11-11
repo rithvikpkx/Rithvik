@@ -80,8 +80,11 @@ A deep design fills every one of these. Skipping one leaves a generic island in 
 ## Rules
 
 - **One WebGL context** per page, via `lib/shader/`. No extra canvases for effects. The single documented
-  exception is the Ferrari look, which may lazy-load three.js for its car model, only while that look is active,
-  and must tear it down completely on switch.
+  exception is the Ferrari look (**Corsa**, `designs/corsa/`), which lazy-loads three.js for its car model, only while
+  that look is active and not calm, and tears it down completely on switch (see `designs/corsa/scene.ts`: it has no
+  `meta.shader`, so the shared runtime never runs beside it, and `html.lite` shows a pre-rendered still instead).
+  A three.js look's model must stay texture-free or the CSP needs `blob:` in `connect-src` (GLTFLoader fetches
+  embedded images through blob URLs).
 - **No copied IP.** References inspire; they're never reproduced. No third-party logos, wordmarks, characters
   or game/film assets. Brand-inspired looks (e.g. Claude, OpenAI) use the brand's visual language (colour,
   type feel, motion, texture) without logos or wordmarks, and include a small "not affiliated" line in the footer
