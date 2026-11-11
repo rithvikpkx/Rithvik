@@ -118,8 +118,8 @@
 :root[data-design="lucid"] .wk-notch { border-right-color: var(--lg-ice); }
 :root[data-design="lucid"] .wk-list { border-top: 0; display: grid; gap: 8px; }
 :root[data-design="lucid"] .wk-list > li { border-bottom: 0; }
-:root[data-design="lucid"] .wk-item { padding: 16px 20px 16px 30px; border-radius: 22px; --lg-fill: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .015)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
-:root[data-design="lucid"] .wk-item[aria-current] { --lg-fill: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .04) 50%, rgba(143, 230, 255, .1)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 18px 36px -22px rgba(0, 0, 0, .8); }
+:root[data-design="lucid"] .wk-item { padding: 16px 20px 16px 30px; border-radius: 22px; --lg-fill: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .01)), rgba(8, 9, 28, .42); /* tinted, so titles hold over the brighter field on phones */ box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14); }
+:root[data-design="lucid"] .wk-item[aria-current] { --lg-fill: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .04) 50%, rgba(143, 230, 255, .1)), rgba(8, 9, 28, .34); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 18px 36px -22px rgba(0, 0, 0, .8); }
 :root[data-design="lucid"] .wk-item::before { left: 14px; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--lg-ice); box-shadow: 0 0 10px var(--lg-ice); transform: scale(0); }
 :root[data-design="lucid"] .wk-item[aria-current]::before { transform: scale(1); }
 
