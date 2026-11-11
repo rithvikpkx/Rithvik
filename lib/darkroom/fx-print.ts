@@ -1,4 +1,4 @@
-import { blurPlane, bilinear, clamp, hash, lumaPlane, newFrame, smooth, vnoise } from "./frame.ts";
+import { bilinear, blurPlane, clamp, hash, lumaPlane, newFrame, resize, smooth, vnoise } from "./frame.ts";
 import { type Effect, P } from "./types.ts";
 
 export const PAPER: [number, number, number] = [243, 239, 230];
@@ -22,7 +22,7 @@ export function screen(ink: Float32Array, w: number, h: number, size: number, an
       const ux = (i + 0.5) * size, uy = (j + 0.5) * size, ix = ux * c - uy * s + dx, iy = ux * s + uy * c + dy;
       const a = sample(soft, w, h, ix, iy);
       if (a <= 0.004) continue;
-      const r = Math.sqrt(a) * size * 0.72, d = Math.hypot(u - i - 0.5, v - j - 0.5) * size;
+      const r = Math.sqrt(a) * size * 0.64, d = Math.hypot(u - i - 0.5, v - j - 0.5) * size;
       const cov = clamp(r - d + 0.5);
       if (cov > best) best = cov;
     }
@@ -39,7 +39,10 @@ const halftone: Effect = {
     const { w, h } = src, pl = lumaPlane(src), ink = new Float32Array(pl.length);
     for (let i = 0; i < pl.length; i++) ink[i] = 1 - pl[i];
     const cov = screen(ink, w, h, p.size * env.k, (p.angle * Math.PI) / 180), out = newFrame(w, h);
-    for (let i = 0, o = 0; i < cov.length; i++, o += 4) for (let c = 0; c < 3; c++) out.data[o + c] = PAPER[c] + (INK[c] - PAPER[c]) * cov[i], out.data[o + 3] = 255;
+    for (let i = 0, o = 0; i < cov.length; i++, o += 4) {
+      for (let c = 0; c < 3; c++) out.data[o + c] = PAPER[c] + (INK[c] - PAPER[c]) * cov[i];
+      out.data[o + 3] = 255;
+    }
     return out;
   },
 };
@@ -74,9 +77,8 @@ const pointillism: Effect = {
   params: [P("dot", "Dab size", 3, 14, 1, 6), P("density", "Density", 0.6, 3, 0.1, 1.6), P("seed", "Seed", 0, 99, 1, 11)],
   apply(src, p, env) {
     const { w, h } = src, r0 = p.dot * env.k, out = newFrame(w, h), data = out.data;
-    for (let i = 0; i < data.length; i += 4) { // underpainting: a warm, dark wash so gaps read as canvas
-      data[i] = 28; data[i + 1] = 24; data[i + 2] = 22; data[i + 3] = 255;
-    }
+    const wash = resize(resize(src, 24, 24), w, h); // underpainting: a blurred, slightly deepened copy so gaps read as canvas
+    for (let i = 0; i < data.length; i += 4) { data[i] = wash.data[i] * 0.86; data[i + 1] = wash.data[i + 1] * 0.86; data[i + 2] = wash.data[i + 2] * 0.86; data[i + 3] = 255; }
     const count = Math.round((p.density * w * h) / (Math.PI * r0 * r0 * 0.55));
     for (let n = 0; n < count; n++) {
       const x = hash(n, 1, p.seed) * w, y = hash(n, 2, p.seed) * h, r = r0 * (0.55 + hash(n, 3, p.seed) * 0.9);

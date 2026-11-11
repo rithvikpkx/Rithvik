@@ -31,7 +31,7 @@ const vhs: Effect = {
   id: "vhs", name: "VHS", family: "glitch", tags: ["glitch", "analog", "color", "noise", "retro", "motion", "tape"],
   desc: "A well-worn tape: smeared chroma, tracking bands, head-switch wobble and snow.",
   animated: true,
-  params: [P("bleed", "Chroma bleed", 0, 14, 0.5, 6), P("track", "Tracking", 0, 1, 0.05, 0.55), P("snow", "Snow", 0, 1, 0.05, 0.35)],
+  params: [P("bleed", "Chroma bleed", 0, 14, 0.5, 9), P("track", "Tracking", 0, 1, 0.05, 0.6), P("snow", "Snow", 0, 1, 0.05, 0.5)],
   apply(src, p, env) {
     const { w, h } = src, k = env.k, t = env.t, f = Math.floor(t * 15), out = newFrame(w, h);
     // split into luma (kept sharp) and chroma planes, then smear chroma sideways like a weak colour-under signal
@@ -67,18 +67,18 @@ const matrix: Effect = {
   id: "matrix", name: "Matrix Rain", family: "glitch", tags: ["glitch", "digital", "text", "mono", "scifi", "motion", "terminal"],
   desc: "Falling green code that only lights up where the portrait is bright.",
   animated: true,
-  params: [P("cell", "Cell size", 8, 20, 1, 12), P("trail", "Trail", 0.2, 1, 0.05, 0.6), P("hue", "Hue", 0, 360, 1, 135)],
+  params: [P("cell", "Cell size", 8, 20, 1, 12), P("hue", "Hue", 0, 360, 1, 135), P("lit", "Lit by", 0, 1, 1, 1, ["Light", "Shadow"])],
   apply(src, p, env) {
     const cw = Math.max(5, Math.round(p.cell * env.k)), ch = Math.round(cw * 1.5), atlas = env.atlas(KANA, cw, ch), { w, h } = src, cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
-    const small = resize(src, cols, rows), out = newFrame(w, h), t = env.t, trailLen = 6 + p.trail * rows * 0.7, tint = hsl(p.hue, 0.9, 0.55), bright = hsl(p.hue, 0.7, 0.9);
+    const small = resize(src, cols, rows), out = newFrame(w, h), t = env.t, trailLen = 6 + 0.6 * rows * 0.7, tint = hsl(p.hue, 0.9, 0.55), bright = hsl(p.hue, 0.7, 0.9);
     for (let cy = 0; cy < rows; cy++) for (let cx = 0; cx < cols; cx++) {
       const speed = 5 + hash(cx, 1, 2) * 9, head = (t * speed + hash(cx, 2, 3) * (rows + trailLen)) % (rows + trailLen), age = head - cy; // rows since the head passed this cell
-      const rain = age >= 0 && age < trailLen ? 1 - age / trailLen : 0, L = lumaAt(small.data, (cy * cols + cx) * 4);
+      const rain = age >= 0 && age < trailLen ? 1 - age / trailLen : 0, L0 = lumaAt(small.data, (cy * cols + cx) * 4), L = p.lit === 1 ? 1 - L0 : L0;
       const lit = Math.min(1, rain * (0.25 + 1.1 * L) + 0.12 * L), isHead = age >= 0 && age < 1.2 ? 1 : 0;
       const g = Math.floor(hash(cx, cy, 5 + Math.floor(t * 6 * (0.3 + hash(cx, cy, 6)))) * atlas.n);
       for (let y = 0; y < ch; y++) { const py = cy * ch + y; if (py >= h) break; for (let x = 0; x < cw; x++) {
         const px = cx * cw + x; if (px >= w) break;
-        const a = (atlas.mask[g * cw * ch + y * cw + x] / 255) * lit, o = (py * w + px) * 4, base = 7 + L * 14;
+        const a = (atlas.mask[g * cw * ch + y * cw + x] / 255) * lit, o = (py * w + px) * 4, base = 7 + L0 * 18;
         for (let c = 0; c < 3; c++) out.data[o + c] = base + ((isHead ? bright[c] : tint[c]) - base) * a;
         out.data[o + 3] = 255;
       } }
@@ -104,7 +104,7 @@ const glitch: Effect = {
         const sx = ((x - dx) % w + w) % w, o = (y * w + x) * 4, so = (y * w + sx) * 4;
         if (mode < 0.2) { out.data[o] = copy[so]; out.data[o + 1] = copy[so + 1]; out.data[o + 2] = copy[so + 2]; } // plain shift
         else if (mode < 0.4) { out.data[o] = copy[so + 1]; out.data[o + 1] = copy[so + 2]; out.data[o + 2] = copy[so]; } // channels rotated
-        else if (mode < 0.6) { const v = 255 - lumaAt(copy, so) * 255; out.data[o] = v; out.data[o + 1] = v * 0.3; out.data[o + 2] = 255 - v * 0.2; } // inverted magenta wash
+        else if (mode < 0.6) { out.data[o] = 255 - copy[so + 2]; out.data[o + 1] = 255 - copy[so]; out.data[o + 2] = 255 - copy[so + 1]; } // inverted, channels cycled
         else { out.data[o] = copy[so]; out.data[o + 1] = copy[so + 1]; out.data[o + 2] = copy[so + 2]; }
       }
     }
@@ -121,7 +121,7 @@ const glitch: Effect = {
 const chroma: Effect = {
   id: "chroma", name: "Chromatic Aberration", family: "glitch", tags: ["glitch", "lens", "color", "optical", "analog", "smooth"],
   desc: "A cheap lens: red and blue fringes drift apart toward the edges of the frame.",
-  params: [P("amount", "Amount", 0, 30, 1, 11), P("mode", "Mode", 0, 1, 1, 0, ["Radial", "Sideways"])],
+  params: [P("amount", "Amount", 0, 30, 1, 16), P("mode", "Mode", 0, 1, 1, 0, ["Radial", "Sideways"])],
   apply(src, p, env) {
     const { w, h } = src, out = newFrame(w, h), amt = p.amount * env.k, cx = w / 2, cy = h / 2, maxR = Math.hypot(cx, cy);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {

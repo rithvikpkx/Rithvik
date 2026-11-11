@@ -2,18 +2,20 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PLAY } from "@/lib/play/games";
 import { copiesFor, onScreen, place, velocity, wrap } from "@/lib/play/field";
+import DarkroomPreview from "./DarkroomPreview";
 import "./playfield.css";
 
 /** One toy placed on the tile of the plane (world px). `k` is the PLAY id. Two staggered rows of three: row two sits half a column over. */
 type Spot = { k: string; x: number; y: number; w: number; h: number; r?: number };
-const TW = 1200, TH = 880, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
+const TW = 1560, TH = 880, PAD = 360; // PAD > the largest spot plus its label, so copies only wrap out of sight
 const SPOTS: Spot[] = [
   { k: "records", x: 50, y: 95, w: 300, h: 225 },
   { k: "artboard", x: 475, y: 90, w: 250, h: 230, r: -4 },
   { k: "typeracer", x: 840, y: 115, w: 320, h: 150, r: 4 },
+  { k: "darkroom", x: 1240, y: 80, w: 240, h: 240, r: 3 },
   { k: "center", x: 285, y: 530, w: 230, h: 230, r: 2 },
-  { k: "angle", x: 685, y: 535, w: 230, h: 210 },
-  { k: "dots", x: 1125, y: 505, w: 150, h: 270, r: 7 },
+  { k: "angle", x: 805, y: 535, w: 230, h: 210 },
+  { k: "dots", x: 1365, y: 505, w: 150, h: 270, r: 7 },
 ];
 const TOYS = new Map(PLAY.map((p) => [p.id, p]));
 const LABEL_H = 44; // the name tag under a toy counts towards its on-screen box
@@ -296,6 +298,7 @@ function Preview({ k }: { k: string }) {
         <span className="pf-cross" /><span className="pf-target" /><span className="pf-box" />
       </span>
     );
+    case "darkroom": return <DarkroomPreview />;
     default: return null;
   }
 }

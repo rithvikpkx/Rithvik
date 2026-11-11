@@ -162,7 +162,7 @@ const mosaic: Effect = {
       const gx = Math.min(n - 1, (x / cs) | 0), gy = Math.min(rows - 1, (y / cs) | 0), si = (gy * n + gx) * 4, o = (y * src.w + x) * 4;
       let u = ((x / cs) - gx) * 2 - 1, v = ((y / cs) - gy) * 2 - 1;
       const tone = p.pal === 1 ? 1 - lumaAt(small.data, si) : lumaAt(small.data, si), hr = hash(gx, gy, p.seed), rot = Math.floor(hash(gx, gy, p.seed + 31) * 4);
-      let idx = Math.floor(clamp(tone * 1.05 - 0.02) * (SHAPES.length - 0.01));
+      let idx = Math.floor(clamp(Math.pow(tone, 1.5) * 1.05 - 0.02) * (SHAPES.length - 0.01));
       if (hash(gx, gy, p.seed + 57) < 0.55) idx = clamp(idx + Math.floor(hash(gx, gy, p.seed + 91) * 5) - 2, 0, SHAPES.length - 1);
       for (let r = 0; r < rot; r++) { const t = u; u = -v; v = t; }
       const cov = SHAPES[idx](u, v, aa), ink = p.pal === 2 ? ([Math.min(255, small.data[si] * 1.15 + 14), Math.min(255, small.data[si + 1] * 1.15 + 14), Math.min(255, small.data[si + 2] * 1.15 + 14)] as RGB) : inks[Math.floor((hr * 0.6 + tone * 0.4) * inks.length) % inks.length];

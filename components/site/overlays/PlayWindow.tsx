@@ -9,6 +9,7 @@ import "../play/play.css";
 // Each toy is its own chunk, so Web Audio and canvas code only load when its tab first opens.
 const Records = dynamic(() => import("../play/Records"), { ssr: false });
 const Artboard = dynamic(() => import("../play/Artboard"), { ssr: false });
+const Darkroom = dynamic(() => import("../play/Darkroom"), { ssr: false });
 const GAME_VIEWS = {
   typeracer: dynamic(() => import("../play/TypeRacer"), { ssr: false }),
   angle: dynamic(() => import("../play/Angle"), { ssr: false }),
@@ -87,6 +88,7 @@ export default function PlayWindow({ initialId }: { initialId?: string }) {
       <div className="play-body" id="play-panel" role="tabpanel" aria-labelledby={`play-tab-${active}`}>
         {active === "records" && <div className="play-pane" data-pane="records"><Records /></div>}
         {artSeen && <Artboard hidden={active !== "artboard"} />}
+        {active === "darkroom" && <div className="play-pane" data-pane="darkroom"><Darkroom /></div>}
         {View && <div className="play-pane" data-pane="game"><div className="gf-body"><View /></div></div>}
       </div>
     </section>

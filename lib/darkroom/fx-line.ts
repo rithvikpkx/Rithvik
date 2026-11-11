@@ -107,7 +107,7 @@ const noisefield: Effect = {
   id: "noisefield", name: "Noise Field", family: "line", tags: ["noise", "organic", "color", "smooth", "flow", "motion"],
   desc: "The portrait caught in a drifting current: pixels dragged along a noise flow field.",
   animated: true,
-  params: [P("scale", "Scale", 1, 12, 0.5, 4), P("push", "Push", 0, 90, 1, 28), P("grain", "Streaks", 0, 1, 0.05, 0.5)],
+  params: [P("scale", "Scale", 1, 12, 0.5, 4), P("push", "Push", 0, 90, 1, 16), P("grain", "Streaks", 0, 1, 0.05, 0.5)],
   apply(src, p, env) {
     const { w, h } = src, out = newFrame(w, h), sc = p.scale / w, push = p.push * env.k, t = env.t * 0.25;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
