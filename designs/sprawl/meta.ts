@@ -17,8 +17,8 @@ vec3 city(vec2 uv, float s, float t, float asp){
   if (uv.y < H) { // wet asphalt: the city mirrored into the street, stretched and rippled
     float d = H - uv.y;
     wet = 1.;
-    uv.y = H + d * 1.7 + .012 * snoise(vec2(uv.x * 46., d * 9. - t * .5));
-    uv.x += .003 * sin(d * 140. + t * 1.7);
+    uv.y = H + d * 1.7 + .006 * snoise(vec2(uv.x * 30., d * 7. - t * .4));
+    uv.x += .0015 * sin(d * 90. + t * 1.3);
   }
   vec2 p = vec2(uv.x * asp, uv.y);
   vec2 par = (u_mouse - .5) * .015;
@@ -36,25 +36,25 @@ vec3 city(vec2 uv, float s, float t, float asp){
     col += mix(u_c1, vec3(.8, .85, 1.), .5) * .07 * exp(-across * across / (.0004 + along * .004)) * step(0., along) * exp(-along * 1.2);
   }
   // three rows of towers, far to near: wider, taller and darker as they come forward
-  float b = mix(.018, .002, s); // edge softness: fogged glass blurs the skyline
+  float b = mix(.03, .002, s); // edge softness: fogged glass blurs the skyline
   for (int i = 0; i < 3; i++) {
     float fi = float(i);
     float w = mix(.045, .13, fi * .5);
     float x = p.x + par.x * (fi + 1.) * 3. + fi * 7.31;
     float id = floor(x / w), f = fract(x / w);
     float r = hash21(vec2(id, fi));
-    float top = H + mix(.12, .3, fi * .5) + r * mix(.2, .48, fi * .5);
+    float top = H + mix(.08, .2, fi * .5) + r * r * mix(.16, .42, fi * .5);
     float gap = .07 + .1 * hash21(vec2(id, fi + 9.));
     float m = (1. - smoothstep(top - b, top + b, uv.y)) * smoothstep(gap - b * 3., gap + b * 3., f) * (1. - smoothstep(1. - gap - b * 3., 1. - gap + b * 3., f));
     vec3 tc = mix(vec3(.1, .055, .17), vec3(.016, .012, .032), fi * .5);
     // windows: a grid of soft cells, most dark, a few lit warm or cold, one in a while blinking
     vec2 wc = vec2((f - gap) / (1. - 2. * gap) * mix(5., 9., fi * .5), uv.y * mix(70., 46., fi * .5));
     vec2 wi = floor(wc), wf = fract(wc) - .5;
-    float lit = step(.78 - .08 * fi, hash21(wi + id * 13.1 + fi * 3.7)) * step(uv.y, top - .015);
+    float lit = step(.86 - .04 * fi, hash21(wi + id * 13.1 + fi * 3.7)) * step(uv.y, top - .015);
     lit *= step(.04, fract(hash21(wi + id) * 91. + t * .07 * hash21(wi.yx + id)));
-    float cell = (1. - smoothstep(.18, .42 + .1 * (1. - s), abs(wf.x))) * (1. - smoothstep(.2, .42 + .1 * (1. - s), abs(wf.y)));
+    float cell = mix(.32, (1. - smoothstep(.16, .36, abs(wf.x))) * (1. - smoothstep(.18, .38, abs(wf.y))), s); // fogged: a soft wash
     vec3 wcol = mix(vec3(1., .72, .38), vec3(.55, .85, 1.), step(.6, hash21(wi * 1.3 + id)));
-    tc += wcol * lit * cell * mix(.35, .75, fi * .5);
+    tc += wcol * lit * cell * mix(.22, .7, fi * .5);
     // a vertical neon sign on some towers, buzzing now and then
     float sh = hash21(vec2(id + 4.2, fi * 2.1));
     float sx = gap + .12, sy0 = top - .26, sy1 = top - .05;
@@ -72,7 +72,7 @@ vec3 city(vec2 uv, float s, float t, float asp){
   col += vec3(1., .25, .3) * step(.5, fract(t * 1.3)) * .9 * exp(-length(p - fly) * 260.);
   col += vec3(.9) * .7 * exp(-length(p - fly - vec2(.012, 0.)) * 300.);
   // the street: darker, wet, with vertical streaks pulled out of every light
-  if (wet > .5) col *= (.42 + .25 * snoise(vec2(uv.x * 90., uv.y * 4.))) ;
+  if (wet > .5) col *= .38 + .2 * snoise(vec2(uv.x * 70., uv.y * 3.));
   return col;
 }
 
@@ -82,8 +82,8 @@ vec3 bokeh(vec2 p, float t, float c, float seed){
   float h = hash21(id + seed);
   vec2 o = (vec2(hash21(id + seed + 3.), hash21(id + seed + 5.)) - .5) * .32;
   float r = .12 + .14 * hash21(id + seed + 9.), d = length(q - o);
-  float disc = (1. - smoothstep(r - .03, r, d)) * (.55 + .45 * smoothstep(r - .07, r - .01, d));
-  return neon(fract(h * 5.7)) * disc * step(.62, h) * (.35 + .65 * hash21(id + seed + 11.));
+  float disc = (1. - smoothstep(r - .06, r, d)) * (.65 + .35 * smoothstep(r - .08, r - .02, d));
+  return neon(fract(h * 5.7)) * disc * step(.8, h) * (.3 + .7 * hash21(id + seed + 11.)) * (1. - smoothstep(.35, .95, p.y));
 }
 
 // one layer of drops sliding down the glass: xy = refraction offset, z = lens mask, w = the clear trail behind it
@@ -95,12 +95,12 @@ vec4 drops(vec2 p, float t, float n){
   float y = .9 - 1.8 * ph * ph * (3. - 2. * ph);
   float x = (h2 - .5) * .6 + .05 * sin(y * 7. + h * 20.);
   vec2 dv = (dd - vec2(x, y)) * vec2(1., 1.3);
-  float lens = (1. - smoothstep(.07, .11, length(dv))) * step(.35, h2);
+  float lens = (1. - smoothstep(.1, .13, length(dv))) * step(.3, h2);
   float tr = (1. - smoothstep(.025, .06, abs(dd.x - x))) * smoothstep(y, y + .06, dd.y) * (1. - smoothstep(y + .1, 1., dd.y)) * step(.35, h2);
   // beads left behind in the trail
   float by = (fract(dd.y * 4. + h) - .5) * .25;
   float bead = (1. - smoothstep(.018, .03, length(vec2(dd.x - x, by)))) * tr;
-  vec2 off = -dv * lens * 2.2 - vec2(dd.x - x, by) * bead * 3.;
+  vec2 off = -dv * lens * 6. - vec2(dd.x - x, by) * bead * 8.;
   return vec4(off, max(lens, bead), tr);
 }
 
@@ -127,17 +127,18 @@ void main(){
   float lens = max(max(d1.z, d2.z), sm) * keep;
   float clear = max(max(lens, max(d1.w, d2.w) * .75), wipe);
 
-  vec3 col = city(uv + off * .055, clear, t, asp);
+  vec3 col = city(uv + off * .09, clear, t, asp);
   col += (bokeh(p + off * .3, t, .16, 0.) + bokeh(p + off * .3, t * 1.3, .27, 17.) * .8) * (1. - clear) * .55;
   // fogged glass scatters the city into a soft lilac veil
   col = mix(col, vec3(.08, .05, .13) + col * .55, .55 * (1. - clear));
   // each drop lights up like a lens, brightest along its lower rim
-  col *= 1. + lens * .5;
-  col += lens * smoothstep(0., .1, -off.y) * vec3(.08, .1, .14);
+  col *= 1. + lens * .7;
+  col += lens * smoothstep(.1, .5, off.y) * vec3(.1, .12, .18); // the lower rim catches the street light
+  col *= 1. - lens * smoothstep(.3, .7, -off.y) * .5; // the upper rim reads dark
   col += tear * vec3(.25, -.05, .2) * .6; // the tear splits colour
 
   // keep the copy column calm and dark on wide screens, then sink into the page at the hero's foot
-  float calm = wide > .5 ? mix(.42, 1., smoothstep(.3, .62, uv.x)) : mix(.5, 1., smoothstep(.62, .32, uv.y));
+  float calm = wide > .5 ? mix(.3, 1., smoothstep(.3, .66, uv.x)) : mix(.5, 1., smoothstep(.62, .32, uv.y));
   col *= calm;
   col = mix(vec3(.027, .024, .058), col, smoothstep(.0, .2, uv.y) * mix(1., .6, smoothstep(0., .12, u_scroll)));
   col += (hash21(fc + fract(t * 7.3) * 91.) - .5) * .022; // film grain
