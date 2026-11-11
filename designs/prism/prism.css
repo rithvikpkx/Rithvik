@@ -228,4 +228,3 @@
 :root[data-design="prism"] .pr-dark .ly-contact-h { margin-top: 22px; max-width: none; font: 600 clamp(2.2rem, 4.4cqw, 3.6rem)/.95 var(--pr-sans); font-stretch: 76%; letter-spacing: -.04em; color: #FFFFFF; }
 :root[data-design="prism"] .pr-dark .ly-contact-s { color: rgba(255, 255, 255, .72); }
 :root[data-design="prism"] .pr-dark .ly-btn { border-color: rgba(255, 255, 255, .45); color: #FFFFFF; background: transparent; }
-:root[data-design="prism"] .pr-dark .ly-btn.solid { background: #FFFFFF; color: var(--pr-ink); }

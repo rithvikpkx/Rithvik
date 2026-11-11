@@ -88,9 +88,8 @@ html.lite .ly-hero-copy > * { animation: none; }
 
 /* play: components/site/play/playfield.css */
 
-/* ---------- footer: the same cluster, then one quiet line ---------- */
+/* ---------- footer: one quiet line ---------- */
 .ly-foot { position: relative; z-index: 1; display: grid; justify-items: center; gap: 40px; padding: clamp(120px, 14vw, 200px) var(--ly-gutter) calc(96px + env(safe-area-inset-bottom, 0px)); color: var(--ui-fg); }
-.ly-foot-pt { width: 280px; max-width: 72vw; }
 .ly-foot-mini { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; font: 400 12px/1.4 var(--ui-font); color: var(--ui-muted); }
 .ly-foot-mini .ly-mk { width: 16px; height: 16px; color: var(--ui-fg); }
 .ly-foot-who { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-fg); }
