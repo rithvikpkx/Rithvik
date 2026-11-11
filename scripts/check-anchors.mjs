@@ -2,9 +2,10 @@
 // The static section anchors (top, work, ...) come from the shared layout, which renders every section in
 // lib/designs/skin.ts SECTIONS; the per-item anchors (project-<slug>, experience-<slug>) come from whichever
 // body a design uses: its own override in designs/<id>/index.tsx or the shared default. Exits 1 on a gap.
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 
-const DESIGNS = ["classic", "nimbus", "stipple", "glyph", "prism", "mercury", "thermal", "starlight", "tracker", "foil"];
+// every folder under designs/ with an index.tsx is a look, so new designs are checked without editing this list
+const DESIGNS = readdirSync("designs", { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(`designs/${e.name}/index.tsx`)).map((e) => e.name).sort();
 const STATIC = ["top", "work", "experience", "about", "play", "questions", "contact"];
 const layout = readFileSync("components/site/layout/SiteLayout.tsx", "utf8");
 const skin = readFileSync("lib/designs/skin.ts", "utf8");

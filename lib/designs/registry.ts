@@ -1,8 +1,9 @@
 import type { DesignMeta } from "./types";
+import { MORE_DESIGNS } from "./more.ts";
 
 // Metadata and shaders copied from each docs/mockups/v7/themes/<id>.js V6.theme({...}) call.
 // Order = dial / `T` order. Each `load` is its own lazy chunk (the design's markup + CSS).
-export const DESIGNS: DesignMeta[] = [
+const BASE_DESIGNS: DesignMeta[] = [
   {
     id: "nimbus", name: "Nimbus", mood: "pixel clouds, your sky", dark: false,
     keywords: ["nimbus","cloud","clouds","sky","pixel","pixels","blue","weather","airy","light","sunny","playful"],
@@ -841,6 +842,9 @@ void main(){
     load: () => import("@/designs/foil"),
   },
 ];
+
+/** Every design in switcher order: the original nine, then the ones registered in ./more.ts (one line each). */
+export const DESIGNS: DesignMeta[] = [...BASE_DESIGNS, ...MORE_DESIGNS];
 
 /** Palettes all render through this one layout, coloured by the palette's tokens. */
 export const CLASSIC_ID = "classic";

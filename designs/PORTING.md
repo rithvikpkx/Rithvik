@@ -22,7 +22,7 @@ overrides at all.
 - `designs/<id>/<id>.css`: imported by `index.tsx`, every rule scoped `:root[data-design="<id>"]`.
 - `designs/<id>/motion.ts` (optional): one effect hook on the root ref, full cleanup (a switch unmounts it).
 - Pure helpers in their own `.ts` with a `node:test` next to them. Assets in `public/v7/<id>/`.
-- Register it in `lib/designs/registry.ts` (`DESIGNS`: id, name, swatch, fonts, shader, `load`).
+- Register it: `designs/<id>/meta.ts` (DesignMeta) plus one import + entry in `lib/designs/more.ts`. The full how-to and quality bar: `docs/design-systems.md`.
 
 ## The Skin contract (`lib/designs/skin.ts`)
 ```ts
