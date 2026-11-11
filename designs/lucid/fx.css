@@ -1,0 +1,27 @@
+/* Lucid name + portrait effects. */
+/* glass letters: a bright top edge, a nearly clear body, a cool caustic at the foot, a hairline rim; a highlight that
+   follows the pointer and grows with the letter's energy; the letter swells like a lens and wobbles back */
+[data-kn="lucid"] .kn-g {
+  color: transparent; -webkit-text-fill-color: transparent;
+  background:
+    radial-gradient(.7em .45em at calc(50% + var(--px) * 34%) calc(26% + var(--py) * 30%), rgba(255, 255, 255, calc(.12 + var(--k) * .7)), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, .96) 0%, rgba(255, 255, 255, .62) 16%, rgba(226, 238, 255, .2) 44%, rgba(160, 214, 255, .26) 72%, rgba(255, 255, 255, .78) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-stroke: .012em rgba(255, 255, 255, .55);
+  transform: translate3d(var(--x), var(--y), 0) scale(calc(1 + var(--k) * .1), calc(1 + var(--k) * .06)) rotate(calc(var(--px) * var(--k) * -4deg));
+  transform-origin: 50% 80%;
+}
+/* the whole name throws split colour fringes and a soft shadow on the world behind it */
+[data-kn="lucid"] { filter: drop-shadow(-.018em 0 0 rgba(255, 92, 140, .5)) drop-shadow(.018em 0 0 rgba(70, 210, 255, .5)) drop-shadow(0 .08em .1em rgba(2, 3, 12, .55)); }
+:root [data-kn="lucid"] .kn-part:not(:has(.kn-g)) { color: #F2F5FF; } /* edit mode: plain text */
+
+/* the droplet over the photo grows from its centre */
+[data-pfx="lucid"] { --pfx-off: circle(0% at 50% 46%); --pfx-on: circle(72% at 50% 46%); --pfx-t: 700ms; --pfx-cap-bg: rgba(10, 12, 32, .55); --pfx-cap-fg: #F2F5FF; }
+[data-pfx="lucid"] .pfx-scan { display: none; }
+[data-pfx="lucid"] .pfx-img { transform: scale(1.06); } /* the rim's pulled-in edge stays outside the frame */
+/* a dark meniscus at the edge, then a thin bright rim just inside it */
+.lx-pfx-rim { border-radius: 50%; background: radial-gradient(closest-side, transparent 72%, rgba(170, 220, 255, .22) 86%, rgba(255, 255, 255, .55) 93%, rgba(6, 8, 26, .55) 97%, rgba(6, 8, 26, .8)); }
+/* sky caught on the dome, and a caustic pooled at the bottom where the light comes through */
+.lx-pfx-hi { background: radial-gradient(60% 34% at 40% 16%, rgba(255, 255, 255, .55), rgba(255, 255, 255, 0) 70%), radial-gradient(46% 18% at 56% 90%, rgba(143, 230, 255, .4), rgba(143, 230, 255, 0) 70%); mix-blend-mode: screen; }
+.lx-pfx-glint { inset: 13% auto auto 27%; width: 9%; height: 5%; border-radius: 50%; background: #fff; filter: blur(1px); opacity: .9; rotate: -28deg; animation: lx-glint 6s ease-in-out infinite; }
+@keyframes lx-glint { 0%, 80%, 100% { opacity: .9; } 88% { opacity: .35; } }
