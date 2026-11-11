@@ -32,14 +32,14 @@ html.lite [data-kn="corsa"] .kn-g::before, html.lite [data-kn="corsa"] .kn-g::af
   repeating-linear-gradient(-45deg, rgb(255 255 255 / .06) 0 1.5px, transparent 1.5px 3px);
   mix-blend-mode: multiply; }
 /* the G-meter: rings with a dot that drifts like cornering load */
-.co-pfx-g { inset: auto auto 22% 8%; width: 22%; aspect-ratio: 1; border-radius: 50%;
+.co-pfx-g { inset: auto auto 24% 14%; width: 20%; aspect-ratio: 1; border-radius: 50%;
   background: radial-gradient(circle, transparent 31%, rgb(244 241 234 / .55) 32% 33.5%, transparent 34.5% 64%, rgb(244 241 234 / .55) 65% 66.5%, transparent 67.5%),
     linear-gradient(rgb(244 241 234 / .35), rgb(244 241 234 / .35)) center / 1px 100% no-repeat, linear-gradient(rgb(244 241 234 / .35), rgb(244 241 234 / .35)) center / 100% 1px no-repeat;
   filter: drop-shadow(0 0 2px rgb(0 0 0 / .7)); }
 .co-pfx-g i { position: absolute; left: 50%; top: 50%; width: 14%; aspect-ratio: 1; margin: -7% 0 0 -7%; border-radius: 50%; background: #FFD23A; box-shadow: 0 0 8px #FFD23A; animation: co-pfx-load 3.2s ease-in-out infinite; }
 @keyframes co-pfx-load { 25% { translate: 160% 40%; } 55% { translate: -120% -60%; } 80% { translate: 40% 110%; } }
 /* rev lights across the top of the frame: green, red, blue, running up and down */
-.co-pfx-revs { inset: 6% 18% auto; height: 7px; display: flex; gap: 4%; justify-content: center; }
+.co-pfx-revs { inset: 13% 30% auto; height: 6px; display: flex; gap: 4%; justify-content: center; }
 .co-pfx-revs i { position: relative; inset: auto; flex: 1; border-radius: 2px; background: var(--c, #2FD158); opacity: .2; animation: co-pfx-rev 1.6s cubic-bezier(.5, 0, .5, 1) infinite; animation-delay: calc(var(--i) * 70ms); box-shadow: 0 0 6px var(--c, #2FD158); }
 .co-pfx-revs i:nth-child(n + 5) { --c: #FF2A14; }
 .co-pfx-revs i:nth-child(n + 9) { --c: #3E7BFF; }

@@ -13,7 +13,7 @@ const B = "0.035 0.02 0.03 0.1 0.52 0.86";
  *  (a dot drifting inside its rings) and a rev-light strip across the top of the frame. */
 export default function CorsaPortrait({ on }: { on: boolean }) {
   return (
-    <PhotoFx on={on} look="corsa" label="Onboard · cam 2 · 1.4 g" filter={<>
+    <PhotoFx on={on} look="corsa" label="Onboard · cam 2" filter={<>
       <feColorMatrix type="matrix" values={LUM} />
       <feComponentTransfer><feFuncR type="linear" slope="1.25" intercept="-0.1" /><feFuncG type="linear" slope="1.25" intercept="-0.1" /><feFuncB type="linear" slope="1.25" intercept="-0.1" /></feComponentTransfer>
       <feComponentTransfer><feFuncR type="table" tableValues={R} /><feFuncG type="table" tableValues={G} /><feFuncB type="table" tableValues={B} /></feComponentTransfer>
