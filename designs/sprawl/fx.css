@@ -25,7 +25,7 @@ html.lite [data-kn="sprawl"] .kn-l::after { display: none; }
 .sp-pfx-band { inset: auto 0; top: 0; height: 22%; background: linear-gradient(transparent, rgba(5, 217, 232, .22) 70%, rgba(220, 253, 255, .5) 98%, transparent); mix-blend-mode: screen; animation: sp-pfx-roll 2.8s linear infinite; }
 @keyframes sp-pfx-roll { from { transform: translateY(-100%); } to { transform: translateY(560%); } }
 /* face lock: chamfered corner brackets on the face, a crosshair breathing in the middle */
-.sp-pfx-lock { inset: auto; left: 33%; top: 24%; width: 34%; height: 36%; color: #FF2A6D; filter: drop-shadow(0 0 3px rgba(255, 42, 109, .8));
+.sp-pfx-lock { inset: auto; left: 34%; top: 28%; width: 32%; height: 36%; color: #FF2A6D; filter: drop-shadow(0 0 3px rgba(255, 42, 109, .8));
   background: linear-gradient(currentColor, currentColor) 0 0 / 14px 2px, linear-gradient(currentColor, currentColor) 0 0 / 2px 14px,
     linear-gradient(currentColor, currentColor) 100% 0 / 14px 2px, linear-gradient(currentColor, currentColor) 100% 0 / 2px 14px,
     linear-gradient(currentColor, currentColor) 0 100% / 14px 2px, linear-gradient(currentColor, currentColor) 0 100% / 2px 14px,
@@ -34,6 +34,6 @@ html.lite [data-kn="sprawl"] .kn-l::after { display: none; }
 @keyframes sp-pfx-lock { from { scale: 1.5; opacity: 0; } }
 .sp-pfx-lock i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; translate: -50% -50%; border: 1.5px solid currentColor; border-radius: 50%; animation: sp-pfx-breathe 1.8s ease-in-out infinite; }
 @keyframes sp-pfx-breathe { 50% { scale: 1.6; opacity: .5; } }
-.sp-pfx-data { inset: 8% auto auto 6%; display: grid; gap: 4px; font: 600 8.5px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; color: #9EF6FF; text-shadow: 0 0 6px rgba(5, 217, 232, .8); }
+.sp-pfx-data { inset: 6% auto auto 5%; display: grid; gap: 4px; padding: 6px 7px; background: rgba(4, 3, 12, .62); font: 600 8.5px/1 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .12em; color: #9EF6FF; text-shadow: 0 0 6px rgba(5, 217, 232, .8); }
 .sp-pfx-data b { font-weight: 600; }
 .sp-pfx-data b:nth-child(2) { color: #FF8AB0; text-shadow: 0 0 6px rgba(255, 42, 109, .8); }

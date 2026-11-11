@@ -33,7 +33,7 @@ vec3 city(vec2 uv, float s, float t, float asp){
     float a = .35 * sin(t * (.11 + fk * .05) + fk * 2.4) + (fk - .5) * .5;
     vec2 dir = vec2(sin(a), cos(a)), q = p - o;
     float along = dot(q, dir), across = abs(dot(q, vec2(dir.y, -dir.x)));
-    col += mix(u_c1, vec3(.8, .85, 1.), .5) * .07 * exp(-across * across / (.0004 + along * .004)) * step(0., along) * exp(-along * 1.2);
+    col += mix(u_c1, vec3(.8, .85, 1.), .5) * .07 * exp(-across * across / (.0004 + max(along, 0.) * .004)) * step(0., along) * exp(-along * 1.2); // max(): behind the lamp the width would go negative (NaN)
   }
   // three rows of towers, far to near: wider, taller and darker as they come forward
   float b = mix(.03, .002, s); // edge softness: fogged glass blurs the skyline
@@ -130,7 +130,8 @@ void main(){
   vec3 col = city(uv + off * .09, clear, t, asp);
   col += (bokeh(p + off * .3, t, .16, 0.) + bokeh(p + off * .3, t * 1.3, .27, 17.) * .8) * (1. - clear) * .55;
   // fogged glass scatters the city into a soft lilac veil
-  col = mix(col, vec3(.08, .05, .13) + col * .55, .55 * (1. - clear));
+  col = mix(col, vec3(.08, .05, .13) + col * .5, .68 * (1. - clear));
+  col *= 1. + wipe * .35; // wiped glass: the city comes through crisp and bright
   // each drop lights up like a lens, brightest along its lower rim
   col *= 1. + lens * .7;
   col += lens * smoothstep(.1, .5, off.y) * vec3(.1, .12, .18); // the lower rim catches the street light

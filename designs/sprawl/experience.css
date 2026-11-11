@@ -3,7 +3,7 @@
 :root[data-design="sprawl"] .ly-xp { --xp-w: 12px; }
 :root[data-design="sprawl"] .ly-st-role { font: 700 clamp(1.5rem, 2.3vw, 2rem)/1.05 var(--sp-d); letter-spacing: .01em; text-transform: uppercase; }
 :root[data-design="sprawl"] .ly-st-node { border-radius: 4px; background: linear-gradient(160deg, #1A1530, #0C0A18 70%); color: var(--sp-mut); font: 600 12px/1 var(--sp-m); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 0 1px var(--sp-line2), 0 12px 24px -12px #000; }
-:root[data-design="sprawl"] .ly-st[data-lit] .ly-st-node { color: #FFE1EC; background: radial-gradient(circle at 50% 50%, rgba(255, 42, 109, .28), #120C1C 72%); text-shadow: 0 0 6px var(--sp-mag);
+:root[data-design="sprawl"] .ly-st[data-lit] .ly-st-node { color: #FFE1EC; background: radial-gradient(circle at 50% 50%, #3A0F25, #120C1C 72%); text-shadow: 0 0 6px var(--sp-mag);
   box-shadow: inset 0 0 0 1.5px var(--sp-mag), inset 0 0 14px rgba(255, 42, 109, .4), 0 0 18px -2px rgba(255, 42, 109, .6), 0 12px 24px -12px #000; }
 :root[data-design="sprawl"] .ly-st-pts li::before { width: 8px; height: 2px; top: .7em; background: var(--sp-cyan); box-shadow: 0 0 6px var(--sp-cyan); }
 
@@ -34,7 +34,10 @@
 :root[data-design="sprawl"] .sx-plate .pp-r { fill: #2E2614; }
 :root[data-design="sprawl"] .sx-plate .pp-f { fill: #4A3A18; }
 /* the gas: only the ring band, burning gold, its glow the sign's light */
-:root[data-design="sprawl"] .sx-gas :is(.pp-o, .pp-c, .pp-f) { fill: none; }
+/* the ring path fills the whole letter; the face drawn over it leaves just the band lit */
+:root[data-design="sprawl"] .sx-gas .pp-o { fill: none; }
+:root[data-design="sprawl"] .sx-gas .pp-c { fill: #05040A; }
+:root[data-design="sprawl"] .sx-gas .pp-f { fill: #3E3014; }
 :root[data-design="sprawl"] .sx-gas .pp-r { fill: #FFE7B8; animation: sx-hum 6s steps(1) infinite; }
 /* a fast swing makes the tube buzz dimmer */
 :root[data-design="sprawl"] .sx-gas { opacity: calc(1 - var(--pv) * .45); filter: drop-shadow(0 0 1.5px #FFC867) drop-shadow(0 0 7px #FFA63A) drop-shadow(0 0 20px rgba(255, 140, 40, .6)); }
@@ -42,7 +45,8 @@
 /* its reflection in the puddle below: flipped, softened, fading out */
 :root[data-design="sprawl"] .sx-refl { top: 77%; transform: scaleY(-1) scaleX(1.02); opacity: .3; filter: blur(2.5px);
   -webkit-mask: linear-gradient(to top, #000, transparent 75%); mask: linear-gradient(to top, #000, transparent 75%); animation: sx-ripple 3.6s ease-in-out infinite alternate; }
-:root[data-design="sprawl"] .sx-refl :is(.pp-o, .pp-c) { fill: none; }
+:root[data-design="sprawl"] .sx-refl .pp-o { fill: none; }
+:root[data-design="sprawl"] .sx-refl .pp-c { fill: #05040A; }
 :root[data-design="sprawl"] .sx-refl .pp-r { fill: #FFB547; }
 :root[data-design="sprawl"] .sx-refl .pp-f { fill: #5A4418; }
 @keyframes sx-ripple { to { transform: scaleY(-1) scaleX(1.05) skewX(1.5deg); } }
