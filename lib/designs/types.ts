@@ -9,6 +9,10 @@ export type ShaderSpec = {
   colors: [string, string, string, string]; // → u_c0..u_c3
   scale: number; // 0.35–0.6 of CSS px × DPR (runtime adapts below this)
   host?: string; // CSS selector of the element hosting the canvas; omit = fixed full-screen
+  /** Optional particle pass, drawn over the background with additive blending in the same context. Each point gets
+   *  `attribute vec4 a_seed` (four fixed randoms); `vertex` writes gl_Position/gl_PointSize, `fragment` the colour.
+   *  Both get the shared head. Up to `count` points; the runtime draws fewer on small screens or slow frames. */
+  points?: { count: number; vertex: string; fragment: string };
 };
 
 /** Props every design (and Classic) receives. */
