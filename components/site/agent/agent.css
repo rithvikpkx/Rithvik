@@ -194,6 +194,9 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 [data-design="blueprint"] .agent { --agent-prompt: "⊕"; --agent-dot: "△"; --agent-dot-live: "▲"; --agent-caret: #FFB09A; --agent-res: "└"; } /* crosshair prompt, revision deltas */
 [data-design="flux"] .agent { --agent-dot: "∴"; --agent-dot-live: "∵"; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 35%, transparent); }
 [data-design="sprawl"] .agent { --agent-prompt: "»"; --agent-dot: "▪"; --agent-dot-live: "▫"; --agent-caret: #FF2A6D; --agent-scan: .09; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 40%, transparent); }
+[data-design="lucid"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-glow: 0 0 10px color-mix(in srgb, var(--a-accent) 30%, transparent); }
+[data-design="clay"] .agent { --agent-prompt: ">"; --agent-dot: "●"; --agent-dot-live: "○"; --agent-caret: #B5542F; }
+[data-design="lumen"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-caret: #FFFFFF; --agent-glow: 0 0 10px rgba(110, 139, 255, .35); }
 
 @media (prefers-reduced-motion: reduce) {
   .agent::before, .agent-panel, .ab-send, .agent-bar, .t-acts, .t-chip, .t-key { transition: none; }
