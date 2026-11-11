@@ -1,0 +1,12 @@
+sp3.glb and sp3-still-*.webp (the Corsa look, designs/corsa/)
+
+Based on "Daytona SP3" by supercarmodels
+  https://sketchfab.com/3d-models/daytona-sp3-29ba4beba44f461a8234143fd092d24a
+  licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+  (copy obtained from github.com/Johnviti/3D-Animation, which ships the model with this licence)
+
+Changes: every badge, logo, wordmark, the seat-belt patch, caliper print, dashboard logo, wheel caps and the
+licence plate were removed; all textures were dropped; the mesh was welded, simplified (827k -> 440k triangles),
+given new creased normals, and meshopt-compressed. The stills are renders of this modified model.
+
+Not affiliated with or endorsed by Ferrari S.p.A.
