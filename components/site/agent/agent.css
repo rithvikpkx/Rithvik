@@ -191,6 +191,8 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 [data-design="tracker"] .agent { --agent-prompt: "$"; --agent-dot: "▸"; --agent-scan: .08; }
 [data-design="starlight"] .agent { --agent-dot: "✦"; --agent-dot-live: "✧"; }
 [data-design="mercury"] .agent, [data-design="foil"] .agent { --agent-dot: "◆"; --agent-dot-live: "◇"; }
+[data-design="clay"] .agent { --agent-prompt: ">"; --agent-dot: "●"; --agent-dot-live: "○"; --agent-caret: #B5542F; }
+[data-design="lumen"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-caret: #FFFFFF; --agent-glow: 0 0 10px rgba(110, 139, 255, .35); }
 
 @media (prefers-reduced-motion: reduce) {
   .agent::before, .agent-panel, .ab-send, .agent-bar, .t-acts, .t-chip, .t-key { transition: none; }
