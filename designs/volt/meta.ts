@@ -6,7 +6,7 @@ import { EL_GLSL } from "../elemental/glsl.ts";
 // brighter plasma), a press calls a bolt down onto that spot.
 export const META: DesignMeta = {
   id: "volt", name: "Volt", mood: "a storm that answers", dark: true,
-  keywords: ["volt","lightning","storm","thunder","electric","electricity","plasma","spark","sparks","tesla","energy","elemental","ninja","cyan","neon"],
+  keywords: ["volt","lightning","storm","thunder","electric","electricity","plasma","spark","sparks","tesla","energy","elemental","ninja","cyan"],
   swatch: ["#070818","#EAF0FF","#7DF9FF","#A98BFF"],
   cardFont: "\"Saira\", \"Arial Narrow\", sans-serif",
   fonts: "family=Saira:ital,wdth,wght@0,62.5..125,300..900;1,62.5..125,300..900&family=Share+Tech+Mono",
@@ -38,9 +38,9 @@ void main(){
   // the sky bolt: falls from the cloud base at a new place each strike, forking once
   float bx = (.15 + .7 * hash21(vec2(ci, 9.))) * asp;
   vec2 top = vec2(bx, 1.05), bot = vec2(bx + (hash21(vec2(ci, 4.)) - .5) * .5, -.05);
-  float d = elBolt(p, top, bot, ci, 3.1, .5);
+  float d = elBolt(p, top, bot, ci, 3.1, .3);
   vec2 fk = mix(top, bot, .45 + .1 * hash21(vec2(ci, 6.)));
-  d = min(d, elBolt(p, fk, fk + vec2((hash21(vec2(ci, 7.)) - .5) * .7, -.42), ci, 8.3, .6) + .002);
+  d = min(d, elBolt(p, fk, fk + vec2((hash21(vec2(ci, 7.)) - .5) * .7, -.42), ci, 8.3, .4) + .002);
   col += boltGlow(d, px * 1.3, min(1., flash * 1.4));
 
   // the charged node by the portrait, and the arcs it throws at the pointer: they snap to new shapes 14 times a second
@@ -48,9 +48,9 @@ void main(){
   float reach = length(m - node);
   float arcOn = act * smoothstep(1.15, .25, reach) * (.55 + .45 * ch);
   float fl = floor(t * 14.);
-  float a1 = elBolt(p, node, m, fl, 1.7, .35);
-  float a2 = elBolt(p, node, m + vec2(.05, -.04), fl + 3., 5.3, .45) + .0015;
-  float a3 = ch > .25 ? elBolt(p, node, m + vec2(-.06, .05), fl + 7., 9.1, .55) + .002 : 1.;
+  float a1 = elBolt(p, node, m, fl, 1.7, .22);
+  float a2 = elBolt(p, node, m + vec2(.05, -.04), fl + 3., 5.3, .3) + .0015;
+  float a3 = ch > .25 ? elBolt(p, node, m + vec2(-.06, .05), fl + 7., 9.1, .36) + .002 : 1.;
   float ad = min(a1, min(a2, a3));
   float jit = step(.18, hash21(vec2(fl, 1.)));  // now and then the arc drops out for a frame, like a real one
   col += boltGlow(ad, px * 1.1, arcOn * jit);
@@ -63,7 +63,7 @@ void main(){
   // a called strike: a bolt from the sky onto the pressed spot, a shock ring and a flash
   vec2 bc = vec2(u_burst.x * asp, u_burst.y);
   float sa = u_burst.z;
-  float sb = elBolt(p, vec2(bc.x + .1, 1.08), bc, floor(sa * 18.), 4.4, .45);
+  float sb = elBolt(p, vec2(bc.x + .1, 1.08), bc, floor(sa * 18.), 4.4, .28);
   col += boltGlow(sb, px * 1.6, exp(-sa * 4.) * step(sa, 3.));
   col += u_c2 * elRing(p, bc, sa, 1.1, .03) * .9 + vec3(.6, .8, 1.) * exp(-sa * 10.) * .25 * step(sa, 3.);
 

@@ -6,23 +6,19 @@ import { EL_GLSL } from "../elemental/glsl.ts";
 // strengthens the current, a press drops a stone in.
 export const META: DesignMeta = {
   id: "tide", name: "Tide", mood: "clear water, moving", dark: true,
-  keywords: ["tide","water","wave","waves","ocean","sea","river","current","caustics","ripple","flow","elemental","ninja","blue","teal","aqua"],
+  keywords: ["tide","water","wave","waves","ocean","sea","river","current","ripple","flow","elemental","ninja","teal","aqua"],
   swatch: ["#04131D","#E6FAFF","#2FD4E6","#1A6FB0"],
   cardFont: "\"DM Serif Display\", Georgia, serif",
   fonts: "family=DM+Serif+Display:ital@0;1&family=Manrope:wght@400..700&family=DM+Mono:wght@400;500",
   shader: {
     colors: ["#031019","#0A3A52","#46E3F0","#E9FDFF"], scale: 0.5, host: "#td-gl",
     source: EL_GLSL + `
-// caustics: an iterated-trig net of bright filaments (cheap, no noise), sharpened into lines of focused light
+// caustics: the bright web where light focuses through the waves. Two drifting voronoi edge networks, sharpened
+// into thin filaments and brightest where they cross (the classic pool-floor pattern)
 float caust(vec2 p, float t){
-  vec2 i = p; float c = 1.;
-  for (int n = 0; n < 4; n++) {
-    float tt = t * (1. - 3.5 / float(n + 1));
-    i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
-    c += 1. / length(vec2(p.x / (sin(i.x + tt) / .006), p.y / (cos(i.y + tt) / .006)));
-  }
-  c = 1.17 - pow(c / 4., 1.4);
-  return clamp(pow(abs(c), 7.), 0., 1.);
+  float a = 1. - smoothstep(0., .06, elVoro(p, t).y);
+  float b = 1. - smoothstep(0., .045, elVoro(p * 1.6 + 3.1, t * 1.3 + 2.).y);
+  return a * .75 + b * .45 + a * b * 1.4;
 }
 void main(){
   vec2 fc = gl_FragCoord.xy, uv = fc / u_res;
@@ -48,16 +44,15 @@ void main(){
 
   // the floor: deep blue, rippled sand bands catching the light, darker where the water is deep
   float sand = .5 + .5 * sin((q.x * 1.6 + q.y * 7. + fbm(q * 2.) * 1.6) * 3.);
-  float depth = mix(.55 + .45 * fbm(q * .8), .35, deep);
+  float depth = mix(.72 + .28 * fbm(q * .8), .4, deep);
   vec3 col = mix(u_c0, u_c1, depth * (.55 + .2 * sand) * (1. - .4 * deep));
 
-  // caustics, sampled per channel a little apart so their filaments fringe like real refraction
-  vec2 cp = q * mix(4.2, 3.4, deep) + vec2(-250.);
-  float ct = t * (.32 + .25 * ch) * mix(1., .6, deep) + 40.;
-  vec2 k = vec2(.035, .015) + bend * 2.;
-  vec3 cv = vec3(caust(cp + k, ct), caust(cp, ct), caust(cp - k, ct));
-  float lit = mix(.85, .5, deep) * (.55 + .45 * smoothstep(-.4, .5, swell.x));
-  col += (u_c2 * cv.g + vec3(.2, .7, 1.) * (cv.b - cv.g) * .6 + vec3(.4, 1., .9) * (cv.r - cv.g) * .4) * lit;
+  // caustics, warped by the swell so the cells breathe, and bent further where the surface is stirred
+  vec2 cp = q * mix(5.2, 4.2, deep) + swell * .9 + bend * 3.;
+  float ct = t * (.55 + .5 * ch) * mix(1., .6, deep);
+  float cg = caust(cp, ct);
+  float lit = mix(.8, .45, deep) * (.6 + .4 * smoothstep(-.4, .5, swell.x));
+  col += mix(u_c2, u_c3, smoothstep(1., 2.2, cg)) * cg * lit * .45;
 
   // light shafts slanting down from the surface, swaying with the swell
   float shaft = pow(.5 + .5 * sin(p.x * 7. - p.y * 2.6 + swell.y * 3. + t * .12), 9.) * smoothstep(.1, 1., uv.y);

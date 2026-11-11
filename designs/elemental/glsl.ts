@@ -45,6 +45,9 @@ float elMotes(vec2 p, float t, float sc, vec2 dir, float sz, float dens){
   return smoothstep(sz, 0., length(f - o)) * tw;
 }
 
+// straight-segment noise (-.5 to .5): linear between random knots, so a bolt is a polyline of sharp kinks, not a wave
+float elZig(float x, float s){ float i = floor(x); return mix(hash21(vec2(i, s)), hash21(vec2(i + 1., s)), fract(x)) - .5; }
+
 // a jagged bolt from a to b, pinned at both ends; returns the distance to it. flick steps the shape (a new strike)
 float elBolt(vec2 p, vec2 a, vec2 b, float flick, float seed, float amp){
   vec2 ba = b - a; float L = length(ba);
@@ -52,7 +55,7 @@ float elBolt(vec2 p, vec2 a, vec2 b, float flick, float seed, float amp){
   vec2 pa = p - a;
   float h = clamp(dot(pa, d) / max(L, 1e-4), 0., 1.);
   float s = seed + flick * 7.13;
-  float off = (vnoise(vec2(h * 5., s)) - .5) + .5 * (vnoise(vec2(h * 13., s + 3.)) - .5) + .25 * (vnoise(vec2(h * 31., s + 9.)) - .5);
+  float off = elZig(h * 7., s) + .55 * elZig(h * 19., s + 3.) + .3 * elZig(h * 47., s + 9.);
   off *= amp * L * sin(3.14159 * h);
   float along = dot(pa, d), perp = dot(pa, nrm) - off;
   float outside = max(-along, along - L);

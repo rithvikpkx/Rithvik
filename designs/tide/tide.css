@@ -14,7 +14,7 @@
   --el-scrim: linear-gradient(90deg, rgba(3, 14, 22, .7), rgba(3, 14, 22, .3) 42%, transparent 64%);
   --el-tex: radial-gradient(80% 50% at 15% 0%, rgba(70, 227, 240, .05), transparent), linear-gradient(transparent 70%, rgba(26, 111, 176, .05));
   /* a web of focused light (turbulence ridges), tiled: the P and the portrait slide it over themselves */
-  --td-caus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='c' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='.022' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .8 0 0 0 0 1 0 0 0 0 1 -11 0 0 0 1.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
+  --td-caus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='c' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='.016' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .8 0 0 0 0 1 0 0 0 0 1 -34 0 0 0 2.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E");
   /* portrait: a sea-glass rim; cables are glass tubes with water light running through */
   --pt-photo-bg: #082233; --pt-shadow: 0 0 70px -16px rgba(60, 220, 240, .4), 0 40px 80px -40px #000;
   --pt-node-bg: rgba(8, 34, 51, .92); --pt-node-fg: var(--el-fg); --pt-node-line: rgba(140, 230, 255, .4); --pt-node-r: 50%;

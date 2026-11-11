@@ -5,7 +5,7 @@ import { EL_GLSL } from "../elemental/glsl.ts";
 // rising; the pointer is a burning palm, its speed stokes the fire, a press throws a ring of flame.
 export const META: DesignMeta = {
   id: "ember", name: "Ember", mood: "the forge, alight", dark: true,
-  keywords: ["ember","fire","flame","flames","forge","blaze","burn","heat","lava","inferno","elemental","ninja","red","orange"],
+  keywords: ["ember","fire","flame","flames","forge","blaze","burn","lava","inferno","elemental","ninja","red","orange"],
   swatch: ["#0E0807","#F6E7DA","#FF6A1A","#FFC447"],
   cardFont: "\"Big Shoulders Display\", Impact, sans-serif",
   fonts: "family=Big+Shoulders+Display:wght@600..900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600",

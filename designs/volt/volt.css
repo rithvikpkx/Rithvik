@@ -59,11 +59,12 @@
 :root[data-design="volt"] :is(.vx-sil, .vx-face, .vx-ring, .vx-halo) { inset: 6%; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
 :root[data-design="volt"] .vx-halo { background: #7DF9FF; filter: blur(24px); opacity: .32; animation: vt-tube 3.1s steps(1) infinite; }
 :root[data-design="volt"] .vx-sil { background: linear-gradient(170deg, #2A2F5C, #0C0E25 55%, #05061A); filter: drop-shadow(0 14px 12px #000); }
-/* the face: plasma swirling inside dark glass */
-:root[data-design="volt"] .vx-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); overflow: hidden; background: #11143A; }
-:root[data-design="volt"] .vx-face::before { content: ""; position: absolute; left: calc(25% + var(--px) * 20%); top: 50%; width: 60%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
-  background: conic-gradient(from 0deg, #A98BFF, #7DF9FF 20%, #11143A 35%, #A98BFF 50%, #FFFFFF 58%, #11143A 70%, #7DF9FF 85%, #A98BFF); filter: blur(10px); animation: vx-swirl 2.6s linear infinite; }
-:root[data-design="volt"] .vx-face::after { content: ""; position: absolute; left: calc(70% + var(--px) * 20%); top: 45%; width: 45%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: conic-gradient(from 90deg, #7DF9FF, #11143A 30%, #A98BFF 60%, #FFFFFF 70%, #7DF9FF); filter: blur(9px); animation: vx-swirl 3.4s linear infinite reverse; }
+/* the face: dark glass with a plasma globe inside, its filaments reaching from a core that leans toward the pointer */
+:root[data-design="volt"] .vx-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); overflow: hidden; background: radial-gradient(60% 120% at calc(50% + var(--px) * 30%) 50%, #2B2F7A, #0C0E25 75%); }
+:root[data-design="volt"] .vx-face::before, :root[data-design="volt"] .vx-face::after { content: ""; position: absolute; left: calc(50% + var(--px) * 30%); top: 50%; width: 130%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, #000 4%, rgba(0, 0, 0, .8) 22%, transparent 48%); mask: radial-gradient(circle, #000 4%, rgba(0, 0, 0, .8) 22%, transparent 48%); filter: drop-shadow(0 0 3px #7DF9FF); }
+:root[data-design="volt"] .vx-face::before { background: radial-gradient(circle, #FFFFFF 0 1.5%, rgba(125, 249, 255, .9) 3%, transparent 9%), repeating-conic-gradient(from 0deg, transparent 0 11deg, rgba(125, 249, 255, .95) 11.6deg, transparent 12.6deg 29deg); animation: vx-swirl 11s linear infinite, vt-tube 2.3s steps(1) infinite; }
+:root[data-design="volt"] .vx-face::after { background: repeating-conic-gradient(from 17deg, transparent 0 19deg, rgba(200, 180, 255, .9) 19.5deg, transparent 20.5deg 41deg); animation: vx-swirl 7s linear infinite reverse; }
 @keyframes vx-swirl { to { rotate: 1turn; } }
 /* the bevel ring: a live filament */
 :root[data-design="volt"] .vx-ring { -webkit-mask-image: var(--p-ring); mask-image: var(--p-ring); background: linear-gradient(90deg, #A98BFF, #7DF9FF 30%, #FFFFFF 50%, #7DF9FF 70%, #A98BFF) 0 0 / 200% 100%; filter: drop-shadow(0 0 4px #7DF9FF); animation: vx-flow 1.4s linear infinite; }
@@ -72,9 +73,9 @@
 :root[data-design="volt"] .vx-arcs { left: 50%; top: 50%; width: 46%; height: auto; aspect-ratio: 88 / 80; translate: 0 -50%; transform-origin: 4.5% 50%; overflow: visible;
   rotate: atan2(var(--py), var(--px)); scale: calc(.45 + max(var(--px), calc(var(--px) * -1)) * .45 + max(var(--py), calc(var(--py) * -1)) * .45);
   fill: none; stroke: #FFFFFF; stroke-width: 1.6; stroke-linejoin: bevel; filter: drop-shadow(0 0 3px #7DF9FF) drop-shadow(0 0 8px #A98BFF); }
-:root[data-design="volt"] .vx-arcs path { opacity: 0; animation: vx-arc 900ms steps(1) infinite; }
+:root[data-design="volt"] .vx-arcs path { opacity: .55; animation: vx-arc 900ms steps(1) infinite; }
 :root[data-design="volt"] .vx-arcs path:nth-child(2) { animation-duration: 1.3s; animation-delay: -.4s; } :root[data-design="volt"] .vx-arcs path:nth-child(3) { animation-duration: 700ms; animation-delay: -.2s; }
-@keyframes vx-arc { 0% { opacity: 1; } 12% { opacity: 0; } 20% { opacity: .9; } 28% { opacity: 0; } 60% { opacity: 1; } 66% { opacity: 0; } }
+@keyframes vx-arc { 0% { opacity: 1; } 12% { opacity: .15; } 20% { opacity: .9; } 28% { opacity: 0; } 60% { opacity: 1; } 66% { opacity: .3; } }
 
 /* ───────── contact: the charged cell ───────── */
 :root[data-design="volt"] .vt-cell { position: relative; padding: clamp(22px, 3vw, 40px); }

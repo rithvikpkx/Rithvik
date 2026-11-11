@@ -13,17 +13,19 @@ export const META: DesignMeta = {
   shader: {
     colors: ["#120E0B","#5A4632","#B9875A","#F1D8A6"], scale: 0.45, host: "#sn-gl",
     source: EL_GLSL + `
-// the rock's height: strata bands folded by slow noise, chipped by fine noise, cut by a crack network
+// the rock's height: thin strata ledges folded by slow noise, chipped by fine noise, and here and there cut by a
+// crack network (a warped voronoi, shifted per layer so cracks stop at the bedding planes)
 // fold = the slow bend of the layers, computed once per pixel by the caller (it barely changes across a pixel)
-float rock(vec2 p, float fold, out float band, out float crack){
-  float y = p.y * 5.2 + fold * 2.4 + .35 * sin(p.x * 1.3);
-  band = fract(y);
-  float layer = floor(y);
-  float h = smoothstep(0., .1, band) * smoothstep(1., .82, band) * (.6 + .4 * hash21(vec2(layer, 1.3)));
-  h += .22 * (vnoise(p * 14. + layer * 3.7) * .65 + vnoise(p * 31. + layer) * .35);
-  vec3 v = elVoro(p * vec2(3.4, 2.6) + layer * .3, 0.);
-  crack = 1. - smoothstep(.0, .045, v.y);
-  return h - .55 * crack;
+float rock(vec2 p, float fold, out float layer, out float crack){
+  float y = p.y * 8.5 + fold * 3. + .4 * sin(p.x * 1.3);
+  layer = floor(y);
+  float band = fract(y), hl = hash21(vec2(layer, 1.3));
+  float h = smoothstep(0., .16, band) * (1. - .55 * smoothstep(.5, 1., band)) * (.45 + .55 * hl);
+  h += .2 * (vnoise(p * 16. + layer * 3.7) * .65 + vnoise(p * 37. + layer) * .35);
+  vec2 cq = p * vec2(8., 6.) + vec2(vnoise(p * 3.) - .5, vnoise(p * 3. + 7.) - .5) * .7 + vec2(layer * .37, 0.);
+  float cm = smoothstep(.5, .8, vnoise(p * 2.2 + layer * .5));
+  crack = (1. - smoothstep(0., .035, elVoro(cq, 0.).y)) * cm;
+  return h - .5 * crack;
 }
 void main(){
   vec2 fc = gl_FragCoord.xy, uv = fc / u_res;
@@ -40,24 +42,24 @@ void main(){
   vec2 shake = vec2(sin(t * 61.), cos(t * 53.)) * .0035 * ch + normalize(p - bc + 1e-4) * shock * .012;
   vec2 q = p + shake + vec2(0., low * .7);
 
-  float band, crack, b2, c2, b3, c3;
+  float layer, crack, l2, c2, l3, c3;
   float fold = fbm(q * vec2(.45, .9) + 3.1) * .9;
-  float h = rock(q, fold, band, crack);
+  float h = rock(q, fold, layer, crack);
   float e = 2.5 / u_res.y;
-  float hx = rock(q + vec2(e, 0.), fold, b2, c2), hy = rock(q + vec2(0., e), fold, b3, c3);
-  vec3 n = normalize(vec3((h - hx) / e * .012, (h - hy) / e * .012, 1.));
+  float hx = rock(q + vec2(e, 0.), fold, l2, c2), hy = rock(q + vec2(0., e), fold, l3, c3);
+  vec3 n = normalize(vec3((h - hx) / e * .03, (h - hy) / e * .03, 1.));
 
   // two lights: a dim cold sky from above, and the visitor's lantern raking across from the pointer
   vec3 L1 = normalize(vec3(-.3, .8, .55));
-  vec2 dm = m - q; float r = length(dm);
+  vec2 lp = act > .5 ? m : vec2(asp * .72, .78); // no pointer yet: the lantern hangs by the portrait
+  vec2 dm = lp - q; float r = length(dm);
   vec3 L2 = normalize(vec3(dm, .28));
-  float lantern = act * exp(-r * r * 2.6) * (1.1 + .5 * ch);
+  float lantern = exp(-r * r * 2.6) * (act > .5 ? 1.1 + .5 * ch : .75);
   float dif = max(dot(n, L1), 0.) * .38 + max(dot(n, L2), 0.) * lantern * 1.4;
 
-  // the strata's colours: basalt, clay, ochre sandstone, pale limestone, chosen per layer
-  float layer = floor(q.y * 5.2 + fold * 2.4 + .35 * sin(q.x * 1.3));
+  // the strata's colours: basalt, red clay, ochre sandstone, grey shale, pale limestone, chosen per layer
   float pick = hash21(vec2(layer, 7.7));
-  vec3 base = pick < .3 ? u_c1 * .7 : pick < .55 ? u_c1 : pick < .8 ? u_c2 * .85 : mix(u_c2, u_c3, .45);
+  vec3 base = pick < .22 ? u_c1 * .55 : pick < .42 ? vec3(.45, .26, .17) : pick < .62 ? u_c2 * .9 : pick < .84 ? vec3(.33, .33, .28) : mix(u_c2, u_c3, .35);
   base *= .75 + .25 * fbm(q * 9. + layer);
   vec3 col = base * (.16 + dif) + u_c3 * pow(max(dot(reflect(-L2, n), vec3(0., 0., 1.)), 0.), 14.) * lantern * .25;
   col *= 1. - .75 * crack; // the cracks are deep and dark
