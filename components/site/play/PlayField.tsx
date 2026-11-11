@@ -255,11 +255,9 @@ function Preview({ k }: { k: string }) {
   switch (k) {
     case "records": return (
       <span className="pf-shape">
-        <span className="pf-well" />
-        <span className="pf-disc"><span className="pf-lab"><i /></span></span>
-        <span className="pf-sheen" />
-        <span className="pf-arm" />
-        <span className="pf-btn"><i /></span>
+        <span className="pf-disc">{PF_DOTS.map(([x, y], i) => <i key={i} style={{ left: `${x}%`, top: `${y}%` }} />)}</span>
+        <span className="pf-scr">{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <i key={i} style={{ animationDelay: `${(i * 137) % 900}ms` }} />)}</span>
+        <span className="pf-knobs"><i /><i /><i /></span>
       </span>
     );
     case "artboard": return (
@@ -299,6 +297,13 @@ function Preview({ k }: { k: string }) {
     default: return null;
   }
 }
+
+// Deck preview: beat dots on three rings of the disc ([x%, y%]).
+const PF_DOTS: [number, number][] = [
+  [50, 8], [73, 14], [88, 33], [90, 58], [78, 80], [55, 91], [30, 86], [13, 68], [10, 42], [24, 20],
+  [50, 22], [68, 32], [75, 52], [66, 70], [47, 77], [30, 68], [26, 48], [35, 31],
+  [50, 36], [62, 50], [48, 63], [37, 50],
+];
 
 // Count the Dots: three flashes of 5, 8 and 6 dots, scattered inside the capsule ([x%, y%, flash]).
 const DOTS: [number, number, number][] = [
