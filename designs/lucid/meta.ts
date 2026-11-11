@@ -34,6 +34,9 @@ vec3 world(vec2 p, float t, float asp, float dim){
   // the caustic web takes the colour of the light it crosses, so the glass has lines to bend
   c += (c * 1.6 + .08) * caustic(q * .9 + 3., t * .18) * .55;
   c *= 1. - .4 * smoothstep(.28, .5, p.y); // a darker sky under the header bar
+  // on a phone the copy stacks over the field: calm the colour behind it while the hero is up
+  float nar = (1. - smoothstep(.7, 1.1, asp)) * (1. - smoothstep(.4, 1., u_sy));
+  c *= 1. - nar * (.25 + .4 * smoothstep(-.2, .15, p.y));
   return c * dim;
 }
 

@@ -20,7 +20,6 @@ const CUT: [string, { frost: number; split: number }][] = [
   [".wk-hub", { frost: 0, split: 6 }],
   ["*", { frost: 0.4, split: 4 }],
 ];
-const LINKS: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2]]; // ContactCloud's filament
 
 /** The mockup's mount(), split by concern: lens filters cut per element size and shared (backdrop refraction on
  *  Chromium), the pointer light sliding across every glass rim in view, the liquid droplet under the nav, the goo
@@ -136,13 +135,11 @@ export function useLucidMotion(root: RefObject<HTMLElement | null>) {
       g.setAttribute("filter", "url(#lg-goo-f)");
       const nodes = Array.from(cl.querySelectorAll<HTMLElement>(".cl-node"));
       const blobs = nodes.map(() => g.appendChild(document.createElementNS(NS, "circle")));
-      const strands = LINKS.map(() => g.appendChild(document.createElementNS(NS, "line")));
       goo.append(g); cl.prepend(goo);
       const draw = () => {
         const s = nodes[0]?.offsetWidth ?? 0, half = s / 2;
         const c = nodes.map((n) => { const [x, y] = n.style.translate.split(" ").map(parseFloat); return [(x || 0) + half, (y || 0) + half]; });
-        blobs.forEach((b, i) => { b.setAttribute("cx", c[i][0].toFixed(1)); b.setAttribute("cy", c[i][1].toFixed(1)); b.setAttribute("r", (half * 1.04).toFixed(1)); });
-        strands.forEach((l, i) => { const [a, b] = LINKS[i]; l.setAttribute("x1", c[a][0].toFixed(1)); l.setAttribute("y1", c[a][1].toFixed(1)); l.setAttribute("x2", c[b][0].toFixed(1)); l.setAttribute("y2", c[b][1].toFixed(1)); });
+        blobs.forEach((b, i) => { b.setAttribute("cx", c[i][0].toFixed(1)); b.setAttribute("cy", c[i][1].toFixed(1)); b.setAttribute("r", (half * 1.08).toFixed(1)); });
       };
       const tick = () => { graf = 0; draw(); if (gvis && !calm()) graf = requestAnimationFrame(tick); };
       const gio = new IntersectionObserver(([en]) => { gvis = !!en?.isIntersecting; cancelAnimationFrame(graf); graf = 0; if (gvis) graf = requestAnimationFrame(tick); });

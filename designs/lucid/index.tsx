@@ -45,7 +45,7 @@ export default function Lucid({ content }: DesignProps) {
       <svg className="lg-defs" width="0" height="0" aria-hidden="true" focusable="false">
         {/* the contact membrane: blurred, thresholded into one liquid body, then a faint fill and a lit rim */}
         <filter id="lg-goo-f" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b" />
+          <feGaussianBlur in="SourceGraphic" stdDeviation="13" result="b" />
           <feColorMatrix in="b" values="0 0 0 0 .86  0 0 0 0 .94  0 0 0 0 1  0 0 0 22 -9" result="g" />
           <feMorphology in="g" operator="erode" radius="1.6" result="e" />
           <feComposite in="g" in2="e" operator="out" result="rim" />
