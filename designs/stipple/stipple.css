@@ -307,10 +307,6 @@
 :root[data-design="stipple"] .play-body { background: radial-gradient(circle, rgba(23, 17, 14, .1) .8px, transparent 1.1px) 0 0 / 6px 6px, var(--st-paper); }
 :root[data-design="stipple"] .play-win .btn { border-radius: 2px; background: var(--st-ink); color: var(--st-paper); font: 600 11px/1 var(--st-mono); letter-spacing: .1em; text-transform: uppercase; box-shadow: 4px 4px 0 var(--st-verm); }
 :root[data-design="stipple"] .play-win .label { font-family: var(--st-mono); font-size: 10px; letter-spacing: .14em; }
-:root[data-design="stipple"] .ab-tools > button, :root[data-design="stipple"] .ab-sizes button { border-radius: 2px; border-color: var(--st-ink); font: 600 10px/1 var(--st-mono); letter-spacing: .08em; text-transform: uppercase; }
-:root[data-design="stipple"] .ab-tools button[aria-pressed="true"] { background: var(--st-ink); color: var(--st-paper); }
-:root[data-design="stipple"] .ab-paper { border-radius: 2px; background-color: #FDEBDD; background-image: radial-gradient(rgba(23, 17, 14, .16) 1px, transparent 1.2px); box-shadow: inset 0 0 0 1px var(--st-ink); }
-:root[data-design="stipple"] .ab-ink { border-radius: 2px; }
 :root[data-design="stipple"] .rec-hint { font-style: italic; font-size: 18px; color: var(--st-ink-2); }
 :root[data-design="stipple"] .g-title { font: 400 34px/1.05 var(--st-serif); }
 :root[data-design="stipple"] .g-help { font-style: italic; font-size: 18px; }

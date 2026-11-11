@@ -195,8 +195,6 @@
 :root[data-design="prism"] .play-tabs button[aria-selected="true"] { background: var(--pr-ink); color: #FFFFFF; }
 :root[data-design="prism"] .play-win .btn { background: var(--pr-ink); color: #FFFFFF; }
 :root[data-design="prism"] .play-win .g-title { font: 600 1.6rem/1.1 var(--pr-sans); font-stretch: 82%; letter-spacing: -.02em; }
-:root[data-design="prism"] .play-win .ab-tools button[aria-pressed="true"] { background: var(--pr-ink); color: #FFFFFF; }
-:root[data-design="prism"] .play-win .ab-paper { background-color: #FFFFFF; }
 @media (hover: hover) and (pointer: fine) { :root[data-design="prism"] .play-tabs button:not([aria-selected="true"]):hover { background: var(--pr-mist); color: var(--pr-ink); } }
 
 /* ───────── questions (the mockup has no FAQ; same hairline-and-spectrum language as the rest) ───────── */

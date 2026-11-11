@@ -185,9 +185,6 @@
 :root[data-design="tracker"] .play-body { background: #F7F7F4; background-image: radial-gradient(rgba(12, 13, 15, .08) 1px, transparent 1.3px); background-size: 16px 16px; }
 :root[data-design="tracker"] .play-win .btn { border-radius: 2px; background: var(--tk-ink); color: #fff; }
 :root[data-design="tracker"] .play-win .label { font-family: var(--tk-mono); }
-:root[data-design="tracker"] .ab-tools > button, :root[data-design="tracker"] .ab-sizes button { border-radius: 2px; }
-:root[data-design="tracker"] .ab-tools button[aria-pressed="true"] { background: var(--tk-ink); color: #fff; }
-:root[data-design="tracker"] .ab-paper { border-radius: 2px; }
 :root[data-design="tracker"] .tr-text, :root[data-design="tracker"] .g-canvas-box, :root[data-design="tracker"] .cd-box { border-radius: 2px; background: #fff; border: 1px solid var(--tk-line2); }
 :root[data-design="tracker"] .cd-div { border-radius: 2px; }
 :root[data-design="tracker"] .rc-bar, :root[data-design="tracker"] .rc-bar i { border-radius: 0; }

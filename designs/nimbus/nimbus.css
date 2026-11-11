@@ -308,9 +308,6 @@
 :root[data-design="nimbus"] .play-win .btn.ghost { background: var(--nb-mist); color: var(--nb-ink); }
 :root[data-design="nimbus"] .play-body { background: linear-gradient(#FFFFFF, var(--nb-mist)); }
 :root[data-design="nimbus"] .rl-mark { color: var(--nb-sky); }
-:root[data-design="nimbus"] .ab-paper { background-color: #FFFFFF; background-image: radial-gradient(rgba(10, 155, 255, .22) 1.2px, transparent 1.4px); }
-:root[data-design="nimbus"] .ab-tools button[aria-pressed="true"] { background: var(--nb-ink); color: #FFFFFF; }
-:root[data-design="nimbus"] .ab-tools > button, :root[data-design="nimbus"] .ab-sizes button { border-color: var(--nb-pale); }
 :root[data-design="nimbus"] .g-title { font: italic 400 1.8rem/1.1 var(--nb-serif); }
 :root[data-design="nimbus"] .g-canvas-box, :root[data-design="nimbus"] .cd-box { background: #FFFFFF; border-color: var(--nb-pale); }
 :root[data-design="nimbus"] .cd-div { background: var(--nb-sky); color: #FFFFFF; }
