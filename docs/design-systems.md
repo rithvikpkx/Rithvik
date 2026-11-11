@@ -70,7 +70,7 @@ A deep design fills every one of these. Skipping one leaves a generic island in 
    material and effects, never its shape.
 9. **About**: tile surfaces, clocks, the stack playground chips and counters via tokens.
 10. **Play** (`--pf-*` tokens): the field surface and the six toys in the world's materials.
-11. **Questions**: the flip cards and the ask card via tokens.
+11. **Questions**: the flip cards and the ask card via tokens. The flip cards and the About tiles share the cursor warp (`components/site/fx/warp/`): their edges bow away from the pointer. Tune it per look with `--warp` on `:root[data-design="<id>"]` (0 = off, 1 = default, ~2 = pronounced); a card's corner radius is read from CSS, so keep `border-radius` on the warping element.
 12. **Contact** (`ContactFrame`, `contactLead`, cloud tokens): a themed frame and one short themed line.
 13. **Agent dock** (`components/site/agent/agent.css`, keyed `[data-design="<id>"]`): prompt glyph, dot,
     caret, optional scanlines/glow.

@@ -1,34 +1,20 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import type { SectionProps } from "@/lib/designs/skin";
 import { Icon } from "@/components/site/Glyph";
 import { useSite } from "@/components/site/SiteProvider";
+import { useWarp } from "@/components/site/fx/warp/useWarp";
 import "./questions.css";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-const calm = () => document.documentElement.classList.contains("lite") || matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** Tilts a card toward the pointer (mouse only, skipped in performance mode); the CSS spring settles it back on leave. */
-function useTilt() {
-  const ref = useRef<HTMLLIElement>(null);
-  const move = (e: PointerEvent<HTMLLIElement>) => {
-    const el = ref.current;
-    if (!el || e.pointerType !== "mouse" || calm()) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--ry", `${(((e.clientX - r.left) / r.width) * 2 - 1) * 7}deg`);
-    el.style.setProperty("--rx", `${-(((e.clientY - r.top) / r.height) * 2 - 1) * 6}deg`);
-  };
-  const leave = () => { ref.current?.style.removeProperty("--ry"); ref.current?.style.removeProperty("--rx"); };
-  return { ref, onPointerMove: move, onPointerLeave: leave };
-}
-
 /** One recruiter question as a card that flips over to its answer in place. */
 function Tile({ i, q, a }: { i: number; q: string; a: string }) {
   const [flipped, setFlipped] = useState(false);
-  const tilt = useTilt();
+  const ref = useRef<HTMLLIElement>(null);
+  useWarp(ref); // the card bows away from the cursor; a click (the flip) pauses it so the 3D turn is never clipped
   const id = `qz-a-${i}`;
   return (
-    <li className="qz-tile" style={{ "--i": i } as CSSProperties} data-flipped={flipped || undefined} {...tilt}>
+    <li className="qz-tile" style={{ "--i": i } as CSSProperties} data-flipped={flipped || undefined} ref={ref}>
       <div className="qz-card">
         <button type="button" className="qz-face qz-front" aria-expanded={flipped} aria-controls={id} onClick={() => setFlipped(true)} inert={flipped}>
           <span className="qz-n">{pad(i + 1)}</span>
@@ -50,14 +36,15 @@ function AskTile({ i }: { i: number }) {
   const { openAgent } = useSite();
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
-  const tilt = useTilt();
+  const ref = useRef<HTMLLIElement>(null);
+  useWarp(ref);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const send = () => {
     const q = text.trim();
-    if (!q || sent || !tilt.ref.current) return;
-    openAgent(q, { originRect: tilt.ref.current.getBoundingClientRect() });
+    if (!q || sent || !ref.current) return;
+    openAgent(q, { originRect: ref.current.getBoundingClientRect() });
     setText(""); setSent(true);
     timer.current = setTimeout(() => setSent(false), 2600); // long enough to watch the question leave
   };
@@ -65,7 +52,7 @@ function AskTile({ i }: { i: number }) {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
   };
   return (
-    <li className="qz-tile qz-ask" style={{ "--i": i } as CSSProperties} data-sent={sent || undefined} {...tilt}>
+    <li className="qz-tile qz-ask" style={{ "--i": i } as CSSProperties} data-sent={sent || undefined} ref={ref}>
       <div className="qz-card">
         <form className="qz-face qz-front" onSubmit={(e) => { e.preventDefault(); send(); }}>
           <span className="qz-n">{pad(i + 1)}</span>

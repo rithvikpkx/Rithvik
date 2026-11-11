@@ -1,19 +1,5 @@
 :root { --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-drawer: cubic-bezier(.32, .72, 0, 1); }
-body { background: #0f1115; color: #e8eaf0; font: 14px/1.5 system-ui, sans-serif; }
+body { background: #f4efe6; color: #2a2620; font: 14px/1.5 system-ui, sans-serif; }
 .lab-page { padding: 28px 20px 320px; max-width: 980px; }
 .lab-page h1 { font-size: 20px; margin: 0 0 6px; }
 .lab-page p { opacity: .65; margin: 0 0 24px; }
-.lab-row { display: flex; gap: 28px; flex-wrap: wrap; }
-figure { margin: 0; }
-figcaption { margin-top: 8px; opacity: .8; } figcaption b { margin-right: 8px; }
-.lab-stage { position: relative; width: 420px; height: 260px; border-radius: 20px; background: #171a21; box-shadow: inset 0 0 0 1px #ffffff14; overflow: hidden; touch-action: none; user-select: none; }
-.lab-thread { height: 170px; cursor: grab; }
-.lab-thread svg { position: absolute; inset: 0; } .lab-thread path { stroke: #ffffff40; }
-.lab-bead { position: absolute; left: 0; top: 0; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; box-shadow: inset 0 0 0 4px #ffffff30, 0 8px 14px -6px #000a; }
-.lab-gate { position: absolute; left: 186px; top: 36px; width: 48px; height: 100px; border-radius: 24px; box-shadow: 0 0 0 1.5px #ffffff50; pointer-events: none; }
-.lab-liquid { cursor: default; }
-.lab-goo { position: absolute; inset: 0; filter: url(#goo); }
-.lab-goo > i { position: absolute; border-radius: 50%; }
-.lab-core, .lab-tail { left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; }
-.lab-core { cursor: grab; }
-.lab-eye { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px; border-radius: 50%; pointer-events: none; }
