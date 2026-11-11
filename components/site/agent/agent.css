@@ -193,6 +193,9 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 [data-design="mercury"] .agent, [data-design="foil"] .agent { --agent-dot: "◆"; --agent-dot-live: "◇"; }
 [data-design="flux"] .agent { --agent-dot: "∴"; --agent-dot-live: "∵"; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 35%, transparent); }
 [data-design="sprawl"] .agent { --agent-prompt: "»"; --agent-dot: "▪"; --agent-dot-live: "▫"; --agent-caret: #FF2A6D; --agent-scan: .09; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 40%, transparent); }
+[data-design="lucid"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-glow: 0 0 10px color-mix(in srgb, var(--a-accent) 30%, transparent); }
+[data-design="clay"] .agent { --agent-prompt: ">"; --agent-dot: "●"; --agent-dot-live: "○"; --agent-caret: #B5542F; }
+[data-design="lumen"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-caret: #FFFFFF; --agent-glow: 0 0 10px rgba(110, 139, 255, .35); }
 [data-design="ember"] .agent { --agent-prompt: "›"; --agent-dot: "✶"; --agent-dot-live: "✷"; --agent-glow: 0 0 6px rgba(255, 110, 20, .45); }
 [data-design="tide"] .agent { --agent-prompt: "≈"; --agent-dot: "●"; --agent-dot-live: "○"; }
 [data-design="stone"] .agent { --agent-prompt: "▲"; --agent-dot: "■"; --agent-dot-live: "□"; }
