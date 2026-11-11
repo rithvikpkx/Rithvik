@@ -13,4 +13,4 @@ import { META as blueprint } from "../../designs/blueprint/meta.ts";
 
 /** Designs added after the original nine. Each lives entirely in designs/<id>/ (its metadata and shader in
  *  designs/<id>/meta.ts); registering it is one import and one entry here. See docs/design-systems.md. */
-export const MORE_DESIGNS: DesignMeta[] = [ember, tide, stone, volt, grove, blueprint];
+export const MORE_DESIGNS: DesignMeta[] = [flux, sprawl, lucid, clay, lumen, ember, tide, stone, volt, grove, blueprint];

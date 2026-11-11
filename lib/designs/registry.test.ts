@@ -33,3 +33,10 @@ test("isDarkColor", () => {
 test("boot script parses", () => {
   assert.doesNotThrow(() => new Function(BOOT_SCRIPT));
 });
+
+test("every design folder with a meta.ts is registered (merges must not drop a look)", async () => {
+  const { readdirSync, existsSync } = await import("node:fs");
+  const folders = readdirSync("designs", { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(`designs/${e.name}/meta.ts`)).map((e) => e.name);
+  const ids = new Set(DESIGNS.map((d) => d.id));
+  for (const f of folders) assert.ok(ids.has(f), `designs/${f} is not in lib/designs/more.ts`);
+});
