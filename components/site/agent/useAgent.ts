@@ -6,7 +6,7 @@ import { resolveTarget } from "@/lib/agent/targets";
 import { parseArtifact } from "@/lib/agent/artifacts";
 import { collectContext } from "@/lib/agent/context";
 import { citedNumbers } from "@/lib/agent/highlight";
-import { capOffers } from "@/lib/agent/offers";
+import { capOffers, MAX_OFFERS } from "@/lib/agent/offers";
 import { normalizeActions, type ChatAction } from "@/lib/chat-actions";
 import { normalizeSuggestions, parseFrames, type AgentEvent, type Source } from "@/lib/suggestion-protocol";
 import { GAMES } from "@/lib/play/games";
@@ -70,6 +70,7 @@ export function useAgent(host: Host) {
   const hIdx = useRef(-1);
   const offers = useRef<Offer[]>([]); // this turn's proposals, turned into one row of buttons when the turn ends
   const presses = useRef(new Map<number, () => void>()); // button id → its action (held here so rows stay plain data)
+  const shown = useRef<{ row: number | null; keys: string[] }>({ row: null, keys: [] }); // this turn's button row, so the late fallback offers join it
   const undos = useRef(new Map<number, () => void>());
   const selection = useRef(""); // last text the visitor selected on the page (not in the dock)
 
@@ -100,18 +101,23 @@ export function useAgent(host: Host) {
     offers.current.push({ key, label, go, ...extra });
   }, []);
 
-  /** Turns this turn's proposals (deduped, capped) into one row of buttons under the answer. */
+  /** Shows the pending proposals as buttons under the answer: a new row, or appended to this turn's row when the
+   *  fallback actions arrive after the tool ones. Deduped by target and capped across the whole turn. */
   const flushOffers = useCallback(() => {
-    const list = capOffers(offers.current);
+    const t = shown.current;
+    const fresh = capOffers(offers.current.filter((o) => !t.keys.includes(o.key)), MAX_OFFERS - t.keys.length);
     offers.current = [];
-    if (!list.length) return;
-    const buttons = list.map((o) => {
+    if (!fresh.length) return;
+    const buttons = fresh.map((o) => {
       const id = ++seq.current;
       presses.current.set(id, o.go);
       return { id, key: o.key, label: o.label, clicked: false, ...(o.once ? { once: true } : {}) };
     });
-    add({ kind: "actions", buttons, detail: list.find((o) => o.detail)?.detail });
-  }, [add]);
+    t.keys.push(...fresh.map((o) => o.key));
+    const detail = fresh.find((o) => o.detail)?.detail;
+    if (t.row === null) t.row = add({ kind: "actions", buttons, detail });
+    else patch(t.row, (i) => (i.kind === "actions" ? { ...i, buttons: [...i.buttons, ...buttons], detail: i.detail ?? detail } : i));
+  }, [add, patch]);
 
   /** Runs a button's action. Buttons stay live (until /clear) so a visitor can come back to an older answer. */
   const press = useCallback((rowId: number, buttonId: number) => {
@@ -297,6 +303,7 @@ export function useAgent(host: Host) {
     run.current = me;
     answerIds.current = [];
     offers.current = [];
+    shown.current = { row: null, keys: [] };
     setBusySince(Date.now());
     const gone = () => run.current !== me; // interrupted or cleared: stop touching the transcript
     const at = Date.now();
@@ -312,6 +319,7 @@ export function useAgent(host: Host) {
       settle(answerIds.current);
       const notes = cited(answer, sources);
       if (notes.length) add({ kind: "sources", items: notes });
+      flushOffers(); // the tools' proposals appear with the answer, not after the slower suggestions
       setTurns((p) => [...p, { q, a: answer, suggestions: [], at }]);
       const totalMs = Date.now() - at;
       setUsage((p) => ({ ...p, totalMs }));
@@ -395,13 +403,13 @@ export function useAgent(host: Host) {
           else if (e.t === "trailer") {
             const used = Number(e.usage?.total_tokens);
             if (used > 0) setUsage((p) => ({ ...p, tokens: p.tokens + used, lastTokens: used }));
+            normalizeActions(e.actions).forEach(offerAction);
+            flushOffers(); // fallback buttons join the row (or start it), ahead of the follow-up chips
             const chips = normalizeSuggestions(e.suggestions);
             if (chips.length) {
               setTurns((t) => t.map((x) => (x.at === at ? { ...x, suggestions: chips } : x)));
               add({ kind: "suggest", chips });
             }
-            normalizeActions(e.actions).forEach(offerAction);
-            flushOffers();
           }
         }
         seen = parts.length;
@@ -411,7 +419,6 @@ export function useAgent(host: Host) {
         return;
       }
       finish();
-      flushOffers(); // a stream that ended without a trailer still shows what the tools proposed
     } catch (e) {
       if (gone()) return;
       settle(answerIds.current);

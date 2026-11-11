@@ -76,7 +76,7 @@ test("tools: request_meeting runs meeting.ts's checks, strips URLs from notes, a
   assert.match(r.replies[0].content, /valid email.*call request_meeting again/);
   // the model is told it is only queued for confirmation
   const ok = await screenCalls([call("request_meeting", good, "m")], A);
-  assert.match(ok.replies[0].content, /Queued/);
+  assert.match(ok.replies[0].content, /Offered as a button/);
   // three actions in a step: the third is trimmed, meetings count against the same cap
   const cap = await screenCalls([call("open_resume", {}, "a"), call("request_meeting", good, "b"), call("start_game", { id: "typeracer" }, "c")], A);
   assert.deepEqual(cap.kept.map((k) => k.id), ["a", "b"]);
