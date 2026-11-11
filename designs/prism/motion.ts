@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, type RefObject } from "react";
-import { kick } from "@/lib/shader/runtime";
+import { kick, setUniform } from "@/lib/shader/runtime";
+import { PHOTO, VIEW } from "@/components/site/tether/sim";
+
+/** The photo fills this share of the prism's incircle, leaving an even rim of glass all round. */
+const FILL = 0.85;
 
 /** Calm = reduced motion or performance mode (`html.lite`); read live so toggling takes effect at once. */
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
@@ -26,6 +30,27 @@ export function usePrismMotion(root: RefObject<HTMLElement | null>) {
       if (lit.size) { cancelAnimationFrame(kr); kr = requestAnimationFrame(kick); }
     });
     $$(".ly-hero").forEach((s) => litIO.observe(s));
+
+    // the prism is drawn around the hero portrait: its centroid (the incircle's centre) sits on the photo's centre and
+    // its size follows the photo, so it fits at any viewport and keeps pace with the page as the hero scrolls away
+    const fig = $<HTMLElement>(".ly-hero .pt");
+    let par = 0, tries = 0;
+    const place = () => {
+      par = 0;
+      if (!fig) return;
+      const r = fig.getBoundingClientRect(), vh = innerHeight;
+      if (!r.width || r.bottom < -200 || r.top > vh + 200) return;
+      const photoR = (r.width * PHOTO.r) / VIEW.w;
+      const cx = r.left + (r.width * PHOTO.cx) / VIEW.w, cy = r.top + (r.height * PHOTO.cy) / VIEW.h;
+      const ok = setUniform("u_pc", [cx / innerWidth, 1 - cy / vh]) && setUniform("u_pr", photoR / (FILL / Math.sqrt(3)) / vh);
+      if (!ok && tries++ < 60) par = requestAnimationFrame(place); // the canvas mounts a beat after this effect
+    };
+    const queue = () => { if (!par) par = requestAnimationFrame(place); };
+    on(window, "scroll", queue, { passive: true });
+    on(window, "resize", queue);
+    const figRO = fig ? new ResizeObserver(queue) : null;
+    if (fig) figRO?.observe(fig);
+    queue();
 
     // chromatic aberration along the scroll: visible headings split vertically with scroll speed, then settle
     const heads = new Set<HTMLElement>();
@@ -63,6 +88,6 @@ export function usePrismMotion(root: RefObject<HTMLElement | null>) {
       on(play, "pointerleave", () => { ap = [0.5, 0.5]; if (!araf) araf = requestAnimationFrame(anaStep); });
     }
 
-    return () => { offs.forEach((f) => f()); litIO.disconnect(); hIO.disconnect(); cancelAnimationFrame(craf); cancelAnimationFrame(araf); cancelAnimationFrame(kr); };
+    return () => { offs.forEach((f) => f()); litIO.disconnect(); hIO.disconnect(); cancelAnimationFrame(craf); cancelAnimationFrame(araf); cancelAnimationFrame(kr); cancelAnimationFrame(par); figRO?.disconnect(); };
   }, [root]);
 }
