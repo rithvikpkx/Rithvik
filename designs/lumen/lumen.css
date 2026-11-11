@@ -98,6 +98,9 @@
 
 /* questions: black cards with a hairline; the answer side is lit by the mesh */
 :root[data-design="lumen"] .qz-face { background: linear-gradient(180deg, #111113, #0A0A0B); border-color: var(--lm-line2); box-shadow: 0 24px 50px -30px #000; }
+/* the shared cursor warp clips the tile while it bends: the drop shadow fades out instead of being cut */
+:root[data-design="lumen"] .qz-tile { --warp-line: var(--lm-line2); }
+:root[data-design="lumen"] .qz-tile[data-warp] .qz-face { box-shadow: 0 24px 50px -30px transparent; }
 :root[data-design="lumen"] .qz-back { background: radial-gradient(90% 70% at 10% 110%, rgba(47, 91, 255, .55), transparent 70%), radial-gradient(70% 60% at 95% 105%, rgba(255, 106, 61, .4), transparent 70%), radial-gradient(60% 50% at 60% 120%, rgba(154, 92, 255, .45), transparent 70%), #0B0B0C; border-color: rgba(255, 255, 255, .22); }
 :root[data-design="lumen"] .qz-q { letter-spacing: -.035em; }
 :root[data-design="lumen"] .qz-ask .qz-front { border-color: rgba(255, 255, 255, .34); }

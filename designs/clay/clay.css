@@ -118,7 +118,10 @@
 :root[data-design="clay"] .qz-face { border-color: rgba(20, 20, 19, .2);
   background: linear-gradient(90deg, transparent 22px, rgba(181, 84, 47, .45) 22px 23.5px, transparent 23.5px) 0 0 / 100% 100% no-repeat,
     repeating-linear-gradient(180deg, transparent 0 27px, rgba(106, 155, 204, .28) 27px 28px) 0 52px / 100% 100% no-repeat, var(--cy-paper);
-  padding-left: 38px; box-shadow: 4px 5px 0 rgba(20, 20, 19, .85); }
+  padding-left: 38px; box-shadow: 4px 5px 0 rgba(20, 20, 19, .85); transition: box-shadow 160ms ease; }
+/* the shared cursor warp clips the tile to its bent outline: the cut shadow lifts off while it bends, the edge is inked */
+:root[data-design="clay"] .qz-tile { --warp-line: var(--cy-ink); }
+:root[data-design="clay"] .qz-tile[data-warp] .qz-face { box-shadow: 0 0 0 rgba(20, 20, 19, 0); }
 :root[data-design="clay"] .qz-back { background: var(--cy-tooth), #F6DDCF; border-color: rgba(181, 84, 47, .45); }
 :root[data-design="clay"] .qz-q { font-family: var(--cy-serif); font-weight: 450; }
 :root[data-design="clay"] .qz-a { font: 400 16.5px/1.5 var(--cy-serif); }
