@@ -29,7 +29,9 @@ export function useBlueprintMotion(root: RefObject<HTMLElement | null>) {
     const plot = new IntersectionObserver((en) => en.forEach((e) => {
       if (e.isIntersecting) { (e.target as HTMLElement).dataset.drawn = ""; plot.unobserve(e.target); }
     }), { threshold: 0.25 });
-    el.querySelectorAll(".bp-draw").forEach((d) => plot.observe(d));
+    el.querySelectorAll(".stage > section:not(#top) .bp-draw").forEach((d) => plot.observe(d));
+    // the hero is on screen at load, so its marks plot at once (an element hidden by its own clip never "intersects")
+    let hRaf = requestAnimationFrame(() => { hRaf = requestAnimationFrame(() => el.querySelectorAll<HTMLElement>(".bp-hero .bp-draw").forEach((d) => { d.dataset.drawn = ""; })); });
 
     // the paper travels with the drawing; stop asking if the shader is missing (no WebGL)
     let gl = true, sRaf = 0;
@@ -54,8 +56,8 @@ export function useBlueprintMotion(root: RefObject<HTMLElement | null>) {
       const photo = hero.querySelector<HTMLElement>(".pt-photo");
       if (lead && photo) {
         const p = photo.getBoundingClientRect();
-        lead.style.setProperty("--x", `${(p.left - h.left + p.width * 0.06).toFixed(1)}px`);
-        lead.style.setProperty("--y", `${(p.top - h.top + p.height * 0.08).toFixed(1)}px`);
+        lead.style.setProperty("--x", `${(p.left - h.left - 3).toFixed(1)}px`); // the arrow lands on the photo's left edge
+        lead.style.setProperty("--y", `${(p.top - h.top + p.height * 0.22).toFixed(1)}px`);
       }
       el.querySelectorAll<HTMLElement>(".wk-disc").forEach((d) => { d.dataset.dia = mm(d.getBoundingClientRect().width); });
     };
@@ -101,7 +103,7 @@ export function useBlueprintMotion(root: RefObject<HTMLElement | null>) {
 
     return () => {
       offs.forEach((f) => f()); plot.disconnect(); ro.disconnect(); clearTimeout(late);
-      cancelAnimationFrame(sRaf); cancelAnimationFrame(cRaf);
+      cancelAnimationFrame(sRaf); cancelAnimationFrame(cRaf); cancelAnimationFrame(hRaf);
       el.removeAttribute("data-bp-armed");
     };
   }, [root, setUniform]);

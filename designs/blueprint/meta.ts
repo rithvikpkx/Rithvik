@@ -30,7 +30,7 @@ void main(){
   // fold creases (one vertical, one every panel down) and the sheet's curl at both edges, lit as a height field
   float fy = (fract(py) - .5) * 1.45;
   float ex = uv.x, cl = smoothstep(.05, 0., ex) - smoothstep(.95, 1., ex);
-  vec2 slope = vec2(fold(px, .05) * .006 + cl * .5, -fold(fy, .045) * .006);
+  vec2 slope = vec2(fold(px, .05) * .006 + cl * .28, -fold(fy, .045) * .006);
   vec3 n = normalize(vec3(-slope, 1.));
   // the drafting lamp: a broad pool high on the sheet that leans toward the pointer
   vec2 lp = vec2(mix(.7, u_mouse.x, .38) * asp, mix(.9, u_mouse.y, .32));
@@ -42,8 +42,8 @@ void main(){
   // worn creases: the emulsion cracks along a fold and shows a paler line
   c = mix(c, u_c3, (exp(-px * px * 9e4) + exp(-fy * fy * 9e4)) * .05);
   // cotton fibres and tooth
-  float fib = vnoise(pg * vec2(7., 120.)) * .55 + vnoise(pg * vec2(110., 6.) + 7.) * .45;
-  c += (fib - .5) * .05 * vec3(.75, .88, 1.);
+  float fib = vnoise(pg * vec2(16., 120.)) * .5 + vnoise(pg * vec2(120., 16.) + 7.) * .5;
+  c += (fib - .5) * .036 * vec3(.75, .88, 1.);
   c = mix(c, u_c3, smoothstep(.8, .97, vnoise(pg * vec2(3., 70.) + 11.)) * .035);
   c += (hash21(fc) - .5) * .018;
   // light falloff toward the corners of the lamp's reach

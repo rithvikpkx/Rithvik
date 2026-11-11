@@ -45,10 +45,10 @@
 :root[data-design="blueprint"] .bp[data-bp-armed] :is(.bp-draw:not([data-drawn]) .bp-ul path, .bp-lead:not([data-drawn]) path:first-child) { stroke-dashoffset: 1; transition: none; }
 :root[data-design="blueprint"] :is(.bp-zone, .bp-dim) { transform-origin: left; transition: transform 1.2s cubic-bezier(.6, 0, .2, 1); }
 :root[data-design="blueprint"] .bp[data-bp-armed] :is(.bp-draw:not([data-drawn]) .bp-zone, .bp-dim.bp-draw:not([data-drawn])) { transform: scaleX(0); transition: none; }
-:root[data-design="blueprint"] :is(.bp-tb, .bp-set, .bp-h2, .bp-rev-row, .bp-lead-t, .bp-lead-a, .bp-dim-v) { clip-path: inset(-20% -2% -20% 0); transition: clip-path 900ms steps(14) .5s; }
+:root[data-design="blueprint"] :is(.bp-tb, .bp-set, .bp-h2, .bp-rev-hd, .bp-rev-old, .bp-lead-t, .bp-dim-v) { clip-path: inset(-20% -2% -20% 0); transition: clip-path 900ms steps(14) .5s; }
 :root[data-design="blueprint"] .bp-h2 { transition-delay: .1s; }
 :root[data-design="blueprint"] .bp-rev-row:nth-child(2) { transition-delay: .25s; } :root[data-design="blueprint"] .bp-rev-row:nth-child(3) { transition-delay: .45s; } :root[data-design="blueprint"] .bp-rev-row:nth-child(4) { transition-delay: .7s; }
-:root[data-design="blueprint"] .bp[data-bp-armed] :is(.bp-draw:not([data-drawn]) :is(.bp-tb, .bp-h2, .bp-rev-row, .bp-lead-t, .bp-lead-a, .bp-dim-v), .bp-set.bp-draw:not([data-drawn])) { clip-path: inset(-20% 100% -20% 0); transition: none; }
+:root[data-design="blueprint"] .bp[data-bp-armed] :is(.bp-draw:not([data-drawn]) :is(.bp-tb, .bp-h2, .bp-rev-hd, .bp-rev-old, .bp-lead-t, .bp-dim-v), .bp-set.bp-draw:not([data-drawn])) { clip-path: inset(-20% 100% -20% 0); transition: none; }
 :root[data-design="blueprint"] .bp-bub { transition: scale 700ms cubic-bezier(.34, 1.56, .64, 1), opacity 300ms ease; }
 :root[data-design="blueprint"] .bp[data-bp-armed] .bp-ttl:not([data-drawn]) .bp-bub { scale: .3; opacity: 0; transition: none; }
 
@@ -76,8 +76,9 @@
 :root[data-design="blueprint"] .bp-lead { position: absolute; left: calc(var(--x, -999px) - 168px); top: calc(var(--y, -999px) - 64px); width: 168px; height: 64px; }
 :root[data-design="blueprint"] .bp-lead:not([style]) { display: none; }
 :root[data-design="blueprint"] .bp-lead svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-:root[data-design="blueprint"] .bp-lead path:first-child { fill: none; stroke: var(--bp-ink2); stroke-width: 1; vector-effect: non-scaling-stroke; }
-:root[data-design="blueprint"] .bp-lead-a { fill: var(--bp-ink); }
+:root[data-design="blueprint"] .bp-lead path:first-child { fill: none; stroke: var(--bp-ink2); stroke-width: 1; }
+:root[data-design="blueprint"] .bp-lead-a { fill: var(--bp-ink); transition: opacity 200ms ease 1.2s; }
+:root[data-design="blueprint"] .bp[data-bp-armed] .bp-lead:not([data-drawn]) .bp-lead-a { opacity: 0; transition: none; }
 :root[data-design="blueprint"] .bp-lead-t { position: absolute; left: 0; bottom: 38px; display: grid; gap: 4px; font-size: 9.5px; letter-spacing: .12em; }
 :root[data-design="blueprint"] .bp-lead-t b { font: 400 19px/1 var(--bp-hand); letter-spacing: .02em; text-transform: none; color: var(--bp-ink); }
 /* the set's title block, bottom right, where it sits on every real sheet */
@@ -141,7 +142,7 @@
 :root[data-design="blueprint"] .bp-bub i { align-self: start; padding-top: 6px; font-style: normal; font-size: 9px; letter-spacing: .06em; color: var(--bp-ink2); }
 :root[data-design="blueprint"] .bp-h2 { margin: 0; font: 600 clamp(2.7rem, 6.4vw, 5.6rem)/.9 var(--bp-cond); letter-spacing: .01em; text-transform: uppercase; color: #F2F7FF; }
 :root[data-design="blueprint"] .bp-ul { grid-column: 2; width: 100%; height: 8px; margin-top: 10px; overflow: visible; }
-:root[data-design="blueprint"] .bp-ul path { fill: none; stroke: var(--bp-ink); vector-effect: non-scaling-stroke; }
+:root[data-design="blueprint"] .bp-ul path { fill: none; stroke: var(--bp-ink); }
 :root[data-design="blueprint"] .bp-ul path:first-child { stroke-width: 2.5px; }
 :root[data-design="blueprint"] .bp-ul path + path { stroke-width: 1px; stroke: var(--bp-ink2); }
 

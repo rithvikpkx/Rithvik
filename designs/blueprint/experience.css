@@ -50,9 +50,9 @@
 :root[data-design="blueprint"] .bx-band path { fill: rgba(127, 196, 255, .32); }
 :root[data-design="blueprint"] .bx-face path { fill: #EAF3FF; stroke: #fff; }
 /* balloons: numbered callouts drawn on each plate, fading as the parts close up */
-:root[data-design="blueprint"] .bx-bal { position: absolute; left: 103%; top: calc(var(--n) * 22% - 14%); display: flex; align-items: center; gap: 4px; font: 500 8.5px/1 var(--bp-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--bp-ink2); white-space: nowrap; opacity: var(--ex); transition: opacity 600ms ease; }
+:root[data-design="blueprint"] .bx-bal { position: absolute; left: 103%; top: calc(var(--n) * 22% - 14%); display: flex; align-items: center; gap: 4px; font: 500 10px/1 var(--bp-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--bp-ink); white-space: nowrap; opacity: var(--ex); transition: opacity 600ms ease; }
 :root[data-design="blueprint"] .bx-bal::before { content: ""; position: absolute; right: 100%; top: 50%; width: 14px; height: 1px; margin-right: 1px; background: var(--bp-ink3); }
-:root[data-design="blueprint"] .bx-bal b { display: grid; place-items: center; width: 15px; height: 15px; border: 1px solid var(--bp-ink2); border-radius: 50%; font-size: 8.5px; color: var(--bp-ink); }
+:root[data-design="blueprint"] .bx-bal b { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--bp-ink); border-radius: 50%; font-size: 10px; color: var(--bp-ink); }
 /* projector lines: dashed, standing up from the plate through the same three points of every part */
 :root[data-design="blueprint"] .bx-z { position: absolute; left: var(--zx); top: var(--zy); width: 0; height: calc(var(--ex) * 90px + 6px); border-left: 1px dashed var(--bp-ink2);
-  transform-origin: 0 0; transform: rotateX(-90deg); opacity: calc(var(--ex) * .9); transition: height 1100ms var(--xp-spring), opacity 600ms ease; }
+  transform-origin: 0 0; transform: rotateX(90deg); opacity: calc(var(--ex) * .9); transition: height 1100ms var(--xp-spring), opacity 600ms ease; }
