@@ -1,145 +1,160 @@
 "use client";
-import Mark from "../mark/Mark";
 import { useEffect, useRef, useState } from "react";
 import { useSite } from "../SiteProvider";
-import { Deck } from "./deck";
+import { Deck, DEFAULTS, type DeckParams, type Layer } from "./deck";
+import { createScope, type Scope } from "./scope";
+import Knob from "./Knob";
 import { Icon as Ic } from "../Glyph";
+import { fmtTime, semitones, speedRate, toneFilter, toneLabel } from "@/lib/play/deckmap";
 import "./records.css";
 
-const fmt = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+// Dots on four concentric rings (angle from the top, clockwise), nudged by a fixed hash so the rows read as hand-placed beats.
+const RINGS = [{ r: 39, n: 22 }, { r: 32, n: 17 }, { r: 25, n: 13 }, { r: 18, n: 8 }];
+const DOTS = RINGS.flatMap(({ r, n }, k) => Array.from({ length: n }, (_, i) => {
+  const h = Math.sin((i + 1) * 12.9898 + k * 78.233) * 43758.5453;
+  return { r, th: ((i + (h - Math.floor(h) - 0.5) * 0.35) / n) * 360 + k * 17 };
+}));
+const LAYERS: [Layer, string][] = [["orig", "Original"], ["lofi", "Lo-fi"], ["rev", "Reverse"]];
+const SEEK_FROM = 0.9; // the outer 10% of the disc's radius is the seek ring
 
-/** The Records toy: a physical turntable. Click the record or the lit button to play and pause (the tonearm swings on and lifts off);
- *  drag the record to scratch. */
+/** The Play deck: "Chili Pepper" (1927, public domain) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
+ *  Delay (echo) knobs, a Volume slider and layer switches. Audio lives in ./deck.ts; this component is the instrument's face. */
 export default function Records() {
   const { toast } = useSite();
   const [on, setOn] = useState(false);
-  const [scratching, setScratching] = useState(false);
+  const [p, setP] = useState<DeckParams>(DEFAULTS);
   const deck = useRef<Deck | null>(null);
-  const wrap = useRef<HTMLDivElement>(null);
-  const tt = useRef<HTMLDivElement>(null);
-  const disc = useRef<HTMLDivElement>(null);
   const spin = useRef<HTMLDivElement>(null);
-  const gloss = useRef<HTMLElement>(null);
-  const sheen = useRef<HTMLElement>(null);
-  const pos = useRef<HTMLSpanElement>(null);
-  const dur = useRef<HTMLSpanElement>(null);
-  const prog = useRef<HTMLElement>(null);
-  // a press on the record becomes a scratch only after it moves; a still press is a click (play/pause)
-  const press = useRef<{ x: number; y: number; scratch: boolean } | null>(null);
+  const dots = useRef<(SVGCircleElement | null)[]>([]);
+  const ring = useRef<SVGCircleElement>(null);
+  const handle = useRef<SVGGElement>(null);
+  const seekEl = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const clock = useRef<HTMLSpanElement>(null);
+  const scope = useRef<Scope | null>(null);
+  const seeking = useRef(false);
 
   // One deck per mount; destroy() stops the audio and closes the context when the tab closes.
   useEffect(() => {
+    const sc = createScope(canvas.current!);
+    scope.current = sc;
+    const hit: boolean[] = [];
+    let sec = -1;
     const d = new Deck({
-      spin: (a) => { if (spin.current) spin.current.style.transform = `rotate(${a.toFixed(2)}deg)`; },
-      time: (p, total) => {
-        const pr = p / total;
-        if (pos.current) pos.current.textContent = fmt(p);
-        if (dur.current) dur.current.textContent = fmt(total);
-        if (prog.current) prog.current.style.transform = `scaleX(${pr.toFixed(4)})`;
-        wrap.current?.style.setProperty("--prog", pr.toFixed(3));
+      frame: (f) => {
+        if (spin.current) spin.current.style.transform = `rotate(${f.angle.toFixed(2)}deg)`;
+        // a dot lights as it passes under the fixed pointer at the top, then fades
+        DOTS.forEach((dt, i) => {
+          const a = ((dt.th + f.angle + 180) % 360 + 360) % 360 - 180, h = Math.abs(a) < 4.5;
+          if (h !== !!hit[i]) { hit[i] = h; dots.current[i]?.toggleAttribute("data-hit", h); }
+        });
+        const fr = f.pos / f.dur;
+        ring.current?.style.setProperty("stroke-dasharray", `${fr.toFixed(4)} 1`);
+        handle.current?.setAttribute("transform", `rotate(${(fr * 360).toFixed(2)})`);
+        if (Math.floor(f.pos) !== sec) {
+          sec = Math.floor(f.pos);
+          if (clock.current) clock.current.textContent = `${fmtTime(f.pos)} / ${fmtTime(f.dur)}`;
+          seekEl.current?.setAttribute("aria-valuenow", String(Math.round(fr * 100)));
+          seekEl.current?.setAttribute("aria-valuetext", `${fmtTime(f.pos)} of ${fmtTime(f.dur)}`);
+        }
+        return sc.draw(f.analyser);
       },
-      state: (isOn, isScratching) => { setOn(isOn); setScratching(isScratching); },
+      state: setOn,
       fail: () => toast("Audio could not load here. The deck still spins."),
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     deck.current = d;
-    return () => { d.destroy(); deck.current = null; };
+    d.kick(); // paint the idle screen once
+    const ro = new ResizeObserver(() => { sc.resize(); d.kick(); });
+    ro.observe(canvas.current!);
+    return () => { ro.disconnect(); d.destroy(); deck.current = null; scope.current = null; };
   }, [toast]);
 
-  /** Pointer angle around the disc centre, in degrees. */
-  const angleAt = (e: React.PointerEvent) => {
-    const r = disc.current!.getBoundingClientRect();
-    return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
+  /** Updates one knob or slider: React state for the readouts, the deck for the sound. */
+  const set = (k: "sound" | "speed" | "delay" | "volume") => (v: number) => { setP((q) => ({ ...q, [k]: v })); deck.current?.set(k, v); };
+  const flip = (l: Layer) => { const v = !p.layers[l]; setP((q) => ({ ...q, layers: { ...q.layers, [l]: v } })); deck.current?.setLayer(l, v); };
+
+  /** Seeks to the pointer's angle around the disc (0 at the top, clockwise), when it is on the outer ring. */
+  const seekAt = (e: React.PointerEvent, start: boolean) => {
+    const r = seekEl.current!.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    if (start && Math.hypot(dx, dy) < (r.width / 2) * SEEK_FROM) return;
+    if (start) { seeking.current = true; seekEl.current!.setPointerCapture(e.pointerId); }
+    if (seeking.current) deck.current?.seek((((Math.atan2(dx, -dy) / (2 * Math.PI)) % 1) + 1) % 1);
   };
 
-  /** Slides the studio highlight and the vinyl's fixed sheen with the pointer (transform-only, so it stays on the compositor). */
-  const light = (e: React.PointerEvent) => {
-    const r = tt.current!.getBoundingClientRect(), nx = (e.clientX - r.left) / r.width - 0.5, ny = (e.clientY - r.top) / r.height - 0.5;
-    if (gloss.current) gloss.current.style.transform = `translate3d(${(nx * 12).toFixed(2)}%,${(ny * 12).toFixed(2)}%,0)`;
-    if (sheen.current) sheen.current.style.transform = `rotate(${(nx * 34 + ny * 14).toFixed(1)}deg)`;
-  };
+  const rate = speedRate(p.speed), st = semitones(rate);
+  const lp = toneFilter(p.sound).lp, hp = toneFilter(p.sound).hp;
+  const soundText = lp < 20000 ? `Low-pass ${lp >= 1000 ? (lp / 1000).toFixed(1) + " kilohertz" : Math.round(lp) + " hertz"}` : hp > 20 ? `High-pass ${hp >= 1000 ? (hp / 1000).toFixed(1) + " kilohertz" : Math.round(hp) + " hertz"}` : "Flat";
 
   return (
-    <div className={`records${on ? " is-on" : ""}${scratching ? " is-scratching" : ""}`} id="records" ref={wrap}>
-      <div className="tt-box">
-        <div className="tt" ref={tt} onPointerMove={light}>
-          <span className="tt-shine" aria-hidden="true"><i className="tt-gloss" ref={gloss} /></span>
-          <div className="tt-deck">
-            <i className="tt-well" aria-hidden="true" />
-            <i className="tt-rim" aria-hidden="true" />
-            <div className="tt-spin" ref={spin} aria-hidden="true">
-              <i className="tt-strobe" /><i className="tt-mat" /><i className="tt-vinyl" />
-              <div className="rec-label"><span className="rl-mark"><Mark label="" /></span><span className="rl-title">Chili Pepper</span><span className="rl-sub">Fred Longshaw · 1927</span><span className="rl-side">Side A · 78</span></div>
-            </div>
-            <div
-              className="tt-disc" id="rec-disc" ref={disc} role="button" tabIndex={0} aria-pressed={on}
-              aria-label="Record, Chili Pepper by Fred Longshaw. Click to play or pause, drag to scratch, arrow keys nudge"
-              onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); press.current = { x: e.clientX, y: e.clientY, scratch: false }; }}
-              onPointerMove={(e) => {
-                const p = press.current;
-                if (!p) return;
-                if (!p.scratch) {
-                  if (Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) return;
-                  p.scratch = true;
-                  deck.current?.grab(angleAt(e));
-                }
-                deck.current?.move(angleAt(e));
-              }}
-              onPointerUp={() => { const p = press.current; press.current = null; if (p?.scratch) deck.current?.release(); else if (p) deck.current?.toggle(); }}
-              onPointerCancel={() => { const p = press.current; press.current = null; if (p?.scratch) deck.current?.release(); }}
-              onKeyDown={(e) => {
-                if (e.key === " " || e.key === "Enter") { e.preventDefault(); deck.current?.toggle(); return; }
-                const dir = ({ ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 } as Record<string, 1 | -1>)[e.key];
-                if (!dir) return;
-                e.preventDefault();
-                deck.current?.nudge(dir);
-              }}
-            >
-              <i className="tt-sheen" ref={sheen} aria-hidden="true" />
-              <i className="tt-spindle" aria-hidden="true" />
-            </div>
-          </div>
-
-          <i className="tt-rest" aria-hidden="true" />
-          <i className="tt-pedestal" aria-hidden="true" />
-          <div className="tt-arm" aria-hidden="true">
-            <svg viewBox="-70 -40 420 80">
-              <defs>
-                <linearGradient id="tt-tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset=".3" stopColor="#d7d9de" /><stop offset=".62" stopColor="#8f929a" /><stop offset="1" stopColor="#5b5e66" /></linearGradient>
-                <linearGradient id="tt-cw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4a4b52" /><stop offset=".35" stopColor="#2d2e33" /><stop offset="1" stopColor="#141417" /></linearGradient>
-                <linearGradient id="tt-head" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3d3e44" /><stop offset="1" stopColor="#17171a" /></linearGradient>
-                <radialGradient id="tt-cap" cx=".35" cy=".3" r=".85"><stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#b9bcc3" /><stop offset="1" stopColor="#5d6068" /></radialGradient>
-                <filter id="tt-blur" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3.2" /></filter>
-              </defs>
-              {/* cast shadow: tight while the stylus is down, wide and soft while the arm is lifted and parked */}
-              <g className="tt-arm-shadow" filter="url(#tt-blur)" fill="#000">
-                <rect x="-62" y="-17" width="50" height="34" rx="9" /><rect x="-14" y="-3.5" width="320" height="7" rx="3.5" /><rect x="294" y="-11" width="48" height="22" rx="5" />
-              </g>
-              <rect x="-62" y="-17" width="50" height="34" rx="9" fill="url(#tt-cw)" />
-              <path d="M-48 -17v34M-38 -17v34M-28 -17v34" stroke="#000" strokeOpacity=".35" strokeWidth="1" />
-              <rect x="-62" y="-17" width="50" height="34" rx="9" fill="none" stroke="#fff" strokeOpacity=".14" />
-              <rect x="-14" y="-3.5" width="320" height="7" rx="3.5" fill="url(#tt-tube)" />
-              <rect x="294" y="-11" width="48" height="22" rx="5" fill="url(#tt-head)" stroke="#fff" strokeOpacity=".16" />
-              <rect x="304" y="-8" width="28" height="16" rx="3" fill="#0d0d0f" /><rect x="304" y="5" width="28" height="3" rx="1.5" fill="#c9a25b" />
-              <path d="M326 11c6 4 10 9 8 16" fill="none" stroke="url(#tt-tube)" strokeWidth="3" strokeLinecap="round" />
-              <circle r="15" fill="url(#tt-cap)" /><circle r="5" fill="#46484f" />
+    <div className={`deck${on ? " is-on" : ""}`} id="records">
+      <div className="dk-grid">
+        <div className="dk-disc">
+          <div className="dk-spin" ref={spin} aria-hidden="true">
+            <svg viewBox="-50 -50 100 100">
+              <circle className="dk-vinyl" r="46" />
+              {RINGS.map(({ r }) => <circle key={r} className="dk-groove" r={r} />)}
+              {DOTS.map((d, i) => <circle key={i} ref={(n) => { dots.current[i] = n; }} className="dk-dot" cx={d.r * Math.sin((d.th * Math.PI) / 180)} cy={-d.r * Math.cos((d.th * Math.PI) / 180)} r="1.25" />)}
             </svg>
           </div>
+          <svg className="dk-prog" viewBox="-50 -50 100 100" aria-hidden="true">
+            <circle className="dk-plate" r="48.6" />
+            <circle ref={ring} className="dk-done" r="48.6" pathLength={1} strokeDasharray="0 1" transform="rotate(-90)" />
+            <g ref={handle}><rect className="dk-pointer" x="-1.6" y="-50" width="3.2" height="7" rx="1.6" /></g>
+          </svg>
+          <div
+            ref={seekEl} className="dk-seek" role="slider" tabIndex={0} aria-label="Position" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0} aria-valuetext="0:00"
+            onPointerDown={(e) => seekAt(e, true)}
+            onPointerMove={(e) => seekAt(e, false)}
+            onPointerUp={() => { seeking.current = false; }}
+            onPointerCancel={() => { seeking.current = false; }}
+            onKeyDown={(e) => {
+              const d = ({ ArrowRight: 5, ArrowUp: 5, ArrowLeft: -5, ArrowDown: -5 } as Record<string, number>)[e.key];
+              if (d === undefined) return;
+              e.preventDefault();
+              deck.current?.seekBy(d);
+            }}
+          />
+          <button className="dk-play" type="button" onClick={() => deck.current?.toggle()}>
+            <Ic name={on ? "pause" : "play"} className="ic" />
+            <span>{on ? "Pause" : "Play"}</span>
+          </button>
+        </div>
 
-          <div className="tt-panel">
-            <div className="tt-read">
-              <span className="tt-time"><span ref={pos}>0:00</span><span ref={dur}>1:12</span></span>
-              <span className="tt-bar" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); deck.current?.seek((e.clientX - r.left) / r.width); }}><i ref={prog} /></span>
+        <div className="dk-rack">
+          <div className="dk-top">
+            <div className="dk-bezel">
+              <div className="dk-screen">
+                <canvas ref={canvas} aria-hidden="true" />
+                <span className="dk-tone" aria-hidden="true">Sound {toneLabel(p.sound)}</span>
+                <div className="dk-read" aria-hidden="true">
+                  <span>{rate.toFixed(2)}x {st >= 0 ? "+" : "−"}{Math.abs(st).toFixed(1)}st</span>
+                  <span ref={clock}>0:00 / 1:12</span>
+                  <span>Delay {Math.round(p.delay * 100)}</span>
+                </div>
+              </div>
             </div>
-            <button className="tt-btn" type="button" aria-pressed={on} aria-label={on ? "Pause" : "Play"} onClick={() => deck.current?.toggle()}>
-              <span className="tt-cap">
-                <Ic name="play" className="ic ic-play" /><Ic name="pause" className="ic ic-pause" />
-                <span className="tt-btn-t">{on ? "Stop" : "Start"}</span>
-              </span>
-            </button>
+            <ul className="dk-layers" aria-label="Layers">
+              {LAYERS.map(([l, name], i) => (
+                <li key={l}>
+                  <button type="button" role="switch" aria-checked={p.layers[l]} onClick={() => flip(l)}>
+                    <i className="dk-sw" aria-hidden="true" /><span>{i + 1}. {name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
+          <div className="dk-knobs">
+            <Knob label="Sound" value={p.sound} onChange={set("sound")} bipolar text={soundText} />
+            <Knob label="Speed" value={p.speed} onChange={set("speed")} bipolar text={`${rate.toFixed(2)} times speed, ${st >= 0 ? "up" : "down"} ${Math.abs(st).toFixed(1)} semitones`} />
+            <Knob label="Delay" value={p.delay} onChange={set("delay")} def={0} text={p.delay === 0 ? "Off" : `${Math.round(p.delay * 100)} percent`} />
+          </div>
+          <label className="dk-vol" style={{ ["--v" as string]: `${p.volume * 100}%` }}>
+            <input type="range" min={0} max={1} step={0.01} value={p.volume} aria-label="Volume" onChange={(e) => set("volume")(+e.target.value)} />
+            <span aria-hidden="true">Volume</span>
+          </label>
+          <p className="dk-hint">Chili Pepper, Fred Longshaw, 1927. Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
         </div>
       </div>
-      <p className="rec-hint">Click the record or press start. Drag the record to scratch.</p>
     </div>
   );
 }

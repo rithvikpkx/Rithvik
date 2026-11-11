@@ -53,3 +53,25 @@ test("slow detector needs consecutive slow windows", () => {
   assert.equal(d.push(20), false);
   assert.equal(d.push(25), true);
 });
+
+test("pointSeeds is deterministic and in [0,1)", async () => {
+  const { pointSeeds } = await import("./helpers.ts");
+  const a = pointSeeds(500), b = pointSeeds(500);
+  assert.equal(a.length, 2000);
+  assert.deepEqual(a, b);
+  assert.ok(a.every((v) => v >= 0 && v < 1));
+  const mean = a.reduce((s, v) => s + v, 0) / a.length;
+  assert.ok(Math.abs(mean - 0.5) < 0.03);
+  assert.notDeepEqual(pointSeeds(4, 2), pointSeeds(4, 1));
+});
+
+test("pointBudget: full on a laptop, fewer on a phone and on slow frames, floored", async () => {
+  const { pointBudget } = await import("./helpers.ts");
+  assert.equal(pointBudget(60000, 1440 * 900, 0.6, 0.6), 60000);
+  assert.equal(pointBudget(60000, 2560 * 1440, 0.6, 0.6), 60000); // capped at the budget
+  const phone = pointBudget(60000, 390 * 844, 0.6, 0.6);
+  assert.ok(phone > 25000 && phone < 35000, String(phone));
+  assert.ok(pointBudget(60000, 1440 * 900, 0.48, 0.6) < 40000);
+  assert.equal(pointBudget(60000, 1440 * 900, 0.01, 0.6), 15000);
+  assert.equal(pointBudget(60000, 0, 0.01, 0.6), 3750);
+});
