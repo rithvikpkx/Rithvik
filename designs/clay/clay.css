@@ -1,0 +1,195 @@
+/* Clay: warm cream paper, clay and slate ink, after Claude's visual language (no logos or marks). Serif for voice,
+   grotesque for interface, mono for detail. Surfaces are paper with a little tooth; objects are cut paper casting a
+   hard, offset ink shadow; accents are drawn by hand. Tokens first, then the shared layout themed, then chrome. */
+:root[data-design="clay"] {
+  --cy-paper: #FAF9F5; --cy-oat: #F0EEE6; --cy-oat2: #E8E4D8; --cy-ink: #141413; --cy-ink2: #3D3929; --cy-mut: #5E5D59;
+  --cy-clay: #D97757; --cy-clay-ink: #B5542F; --cy-kraft: #D4A27F; --cy-olive: #788C5D; --cy-sky: #6A9BCC; --cy-fig: #C46686;
+  --cy-serif: "Newsreader", "Iowan Old Style", Georgia, serif; --cy-sans: "Schibsted Grotesk", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --cy-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* paper tooth: a tiled fractal-noise grain in warm brown, multiplied by its low alpha */
+  --cy-tooth: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .22 0 0 0 0 .12 .2 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --cy-cut: 3px 3px 0 var(--cy-ink); /* the cut-paper shadow */
+  /* chrome */
+  --ui-bg: var(--cy-paper); --ui-fg: var(--cy-ink); --ui-muted: var(--cy-mut); --ui-accent: var(--cy-clay-ink); --ui-accent-fg: #FFFFFF;
+  --ui-line: rgba(20, 20, 19, .16); --ui-field: rgba(20, 20, 19, .05); --ui-font: var(--cy-sans); --ui-mono: var(--cy-mono);
+  --ui-r: 14px; --ui-blur: none;
+  --ui-shadow: 0 0 0 1px rgba(20, 20, 19, .1), 0 1px 0 rgba(255, 255, 255, .7) inset, 0 22px 48px -24px rgba(70, 45, 20, .38);
+  --agent-text-font: var(--cy-sans); --agent-r: 16px;
+  /* portrait: a hand-cut circle on an ivory mat, casting a cut-paper shadow */
+  --pt-ring: var(--cy-paper); --pt-ring-w: 7px; --pt-photo-bg: var(--cy-oat); --pt-photo-r: 48% 52% 50% 50% / 51% 48% 52% 49%;
+  --pt-shadow: 7px 8px 0 1px var(--cy-ink);
+  --pt-node-bg: var(--cy-paper); --pt-node-fg: var(--cy-ink); --pt-node-line: var(--cy-ink); --pt-node-r: 50%; --pt-node-size: 12.5%;
+  /* cable: slate ink thread with a clay pulse (white light would vanish on cream) */
+  --pt-sheath: var(--cy-ink2); --pt-sheath-w: 3.6px; --pt-body: .5; --pt-edge: rgba(46, 43, 37, .55); --pt-edge-w: 1px; --pt-sheen: rgba(255, 255, 255, .65);
+  --pt-core: var(--cy-clay-ink); --pt-glow: var(--cy-clay); --pt-head: #8F3F22; --pt-halo: .16;
+  --pt-pulse-a: #F0B597; --pt-pulse-m: var(--cy-clay); --pt-pulse-b: #8F3F22;
+  /* knowledge graph */
+  --kg-edge: rgba(20, 20, 19, .16); --kg-edge-lit: var(--cy-clay-ink); --kg-label: var(--cy-ink2); --kg-font: var(--cy-mono);
+  --kg-me: var(--cy-clay-ink); --kg-field: var(--cy-olive); --kg-project: var(--cy-clay); --kg-role: var(--cy-sky); --kg-school: var(--cy-kraft); --kg-place: var(--cy-fig);
+  --kg-skill: rgba(20, 20, 19, .4); --kg-card-bg: var(--cy-paper); --kg-card-fg: var(--cy-ink);
+  /* the shared layout */
+  --ly-head-bg: rgba(250, 249, 245, .88); --ly-line: rgba(20, 20, 19, .12); --ly-soft: var(--cy-oat); --ly-display: var(--cy-serif);
+  --ly-name-font: var(--cy-serif); --ly-name-weight: 500; --ly-name-track: -.03em; --ly-head-font: var(--cy-sans);
+  --qz-r: 4px; --qz-tail: 4px;
+  scrollbar-color: #CFC9BA var(--cy-paper);
+}
+:root[data-design="clay"] body { background: var(--cy-paper); color: var(--cy-ink); }
+:root[data-design="clay"] ::selection { background: #F2C7B2; color: var(--cy-ink); }
+:root[data-design="clay"] :focus-visible { outline: 2px solid var(--cy-clay-ink); outline-offset: 3px; }
+
+/* ───────── base: the whole page is the same stock as the hero ───────── */
+:root[data-design="clay"] .cy { font: 400 16.5px/1.6 var(--cy-sans); color: var(--cy-ink); background: var(--cy-tooth), var(--cy-paper); }
+:root[data-design="clay"] .cy a { color: inherit; }
+
+/* ───────── header ───────── */
+:root[data-design="clay"] .ly-head { font-size: 14px; }
+:root[data-design="clay"] .ly-brand-n { font: 500 17px/1 var(--cy-serif); letter-spacing: -.01em; }
+:root[data-design="clay"] .ly-brand .ly-mk { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ly-nav a { position: relative; border-radius: 6px; color: var(--cy-mut); }
+:root[data-design="clay"] .ly-nav a:hover { color: var(--cy-ink); }
+/* the current section is underlined by hand, drawn in from the left */
+:root[data-design="clay"] .ly-nav a::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 1px; height: 7px; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5.6Q16 2.4 30 4.6T58 3.2' fill='none' stroke='%23B5542F' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  clip-path: inset(0 100% 0 0); transition: clip-path 420ms cubic-bezier(.65, 0, .35, 1); }
+:root[data-design="clay"] .ly-nav a[aria-current="true"] { background: none; color: var(--cy-ink); }
+:root[data-design="clay"] .ly-nav a[aria-current="true"]::after { clip-path: inset(0 0 0 0); }
+/* "I am Rithvik": a cut-paper tab that lifts off the page */
+:root[data-design="clay"] .ly-iam { height: 34px; border-radius: 9px; border: 1.5px solid var(--cy-ink); background: var(--cy-paper); box-shadow: 2px 2px 0 var(--cy-ink); transition: transform 160ms ease, box-shadow 160ms ease; }
+:root[data-design="clay"] .ly-iam .iam-ic { color: var(--cy-clay-ink); }
+@media (hover: hover) and (pointer: fine) { :root[data-design="clay"] .ly-iam:hover { background: var(--cy-paper); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--cy-ink); } }
+:root[data-design="clay"] .ly-iam:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--cy-ink); }
+
+/* ───────── hero: the paper sheet (shader host) ───────── */
+:root[data-design="clay"] .cy-paper { position: absolute; inset: 0; z-index: -2; background: var(--cy-paper); }
+:root[data-design="clay"] .cy-paper canvas { display: block; }
+/* the sheet's foot dissolves into the page stock */
+:root[data-design="clay"] .ly-hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 140px; z-index: -1; pointer-events: none; background: linear-gradient(rgba(250, 249, 245, 0), var(--cy-paper)); }
+:root[data-design="clay"] .ly-name { color: var(--cy-ink); font-variation-settings: "opsz" 60; }
+:root[data-design="clay"] .ly-last { font-style: italic; font-weight: 400; letter-spacing: -.035em; color: var(--cy-ink2); }
+:root[data-design="clay"] .ly-status { font: 500 13px/1.4 var(--cy-mono); letter-spacing: .02em; color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ly-status::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 10px 1px 0; border-radius: 50%; background: var(--cy-clay); box-shadow: 0 0 0 3px rgba(217, 119, 87, .22); }
+:root[data-design="clay"] .ly-line { color: var(--cy-ink2); font: 400 clamp(1.1rem, 1.45vw, 1.3rem)/1.5 var(--cy-serif); }
+:root[data-design="clay"] .pt-node { border-width: 1.5px; box-shadow: 2px 2px 0 var(--cy-ink); }
+:root[data-design="clay"] .pt-node::after { border: 1px solid var(--cy-ink); border-radius: 6px; background: var(--cy-paper); color: var(--cy-ink); font: 500 11.5px/1.2 var(--cy-mono); box-shadow: 2px 2px 0 var(--cy-ink); }
+@media (hover: hover) and (pointer: fine) { :root[data-design="clay"] .pt-node:hover { background: var(--cy-clay); color: var(--cy-ink); } }
+
+/* ───────── sections ───────── */
+:root[data-design="clay"] .cy-sec { position: relative; }
+:root[data-design="clay"] .cy-h2 { font: 400 clamp(2.75rem, 6vw, 5.6rem)/.95 var(--cy-serif); letter-spacing: -.035em; font-variation-settings: "opsz" 72; }
+/* the ink rule above each title draws itself as it scrolls in (Chrome's scroll timeline; elsewhere it is simply drawn) */
+:root[data-design="clay"] .cy-rule { display: block; width: clamp(140px, 16vw, 220px); height: auto; margin-bottom: 18px; overflow: visible; }
+:root[data-design="clay"] .cy-rule path { fill: none; stroke: var(--cy-ink); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+:root[data-design="clay"] .cy-blot { fill: var(--cy-clay); }
+@supports (animation-timeline: view()) {
+  :root:not(.lite)[data-design="clay"] .cy-rule path { animation: cl-draw linear both; animation-timeline: view(); animation-range: entry 0% cover 30%; }
+  :root:not(.lite)[data-design="clay"] .cy-blot { animation: cy-blot linear both; animation-timeline: view(); animation-range: entry 0% cover 12%; }
+}
+@keyframes cl-draw { from { stroke-dashoffset: 1; } }
+@keyframes cy-blot { from { r: 0; } }
+@media (prefers-reduced-motion: reduce) { :root[data-design="clay"] .cy-rule :is(path, circle) { animation: none !important; } }
+
+/* work: the disc sits on a cut-paper plate; titles turn clay when current */
+:root[data-design="clay"] .wk-disc { filter: drop-shadow(5px 6px 0 rgba(20, 20, 19, .9)); }
+:root[data-design="clay"] .wk-facet { filter: saturate(.8); }
+:root[data-design="clay"] .wk-hub { background: var(--cy-paper); box-shadow: inset 0 0 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .wk-notch { border-right-color: var(--cy-clay-ink); }
+:root[data-design="clay"] .wk-list { border-top-color: rgba(20, 20, 19, .2); }
+:root[data-design="clay"] .wk-list > li { border-bottom: 1px dashed rgba(20, 20, 19, .22); }
+:root[data-design="clay"] .wk-t { font-family: var(--cy-serif); font-weight: 450; font-size: clamp(1.3rem, 2vw, 1.7rem); }
+:root[data-design="clay"] .wk-item[aria-current] .wk-t { color: var(--cy-ink); }
+:root[data-design="clay"] .wk-item::before { height: 2.5px; border-radius: 2px; background: var(--cy-clay); }
+@media (hover: hover) and (pointer: fine) { :root[data-design="clay"] .wk-item:hover .wk-t { color: var(--cy-clay-ink); } }
+
+/* about: tiles are oat card stock */
+:root[data-design="clay"] .ab-tile, :root[data-design="clay"] .ab-play { border-radius: 16px; background: var(--cy-tooth), var(--cy-oat); box-shadow: inset 0 0 0 1px rgba(20, 20, 19, .1), 0 1px 0 #fff; }
+:root[data-design="clay"] .ab-now.wide { background: var(--cy-tooth), #F4E4D9; }
+:root[data-design="clay"] .ab-v, :root[data-design="clay"] .ab-big { font-family: var(--cy-serif); font-weight: 450; }
+:root[data-design="clay"] .ab-big { color: var(--cy-ink); }
+:root[data-design="clay"] .ab-place[data-key="now"] .ab-clock { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ab-seg { background: var(--cy-paper); }
+:root[data-design="clay"] .ab-seg button[aria-pressed="true"] { background: var(--cy-ink); color: var(--cy-paper); }
+:root[data-design="clay"] .ab-chip { background: var(--cy-paper); box-shadow: 0 0 0 1.5px var(--cy-ink), 2px 2px 0 1.5px var(--cy-ink); border-radius: 12px; }
+:root[data-design="clay"] .ab-play[data-mode="text"] .ab-chip { border-radius: 8px; }
+:root[data-design="clay"] .ab-play[data-loose] .ab-chip[data-held] { box-shadow: 0 0 0 1.5px var(--cy-ink), 5px 6px 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .ab-go { background: var(--cy-paper); box-shadow: 0 0 0 1.5px var(--cy-ink), 2px 2px 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .ab-play[data-mode="logos"] .ab-chip::after { background: var(--cy-ink); color: var(--cy-paper); }
+
+/* questions: index cards, ruled in faint blue with a clay margin line */
+:root[data-design="clay"] .qz-face { border-color: rgba(20, 20, 19, .2);
+  background: linear-gradient(90deg, transparent 22px, rgba(181, 84, 47, .45) 22px 23.5px, transparent 23.5px) 0 0 / 100% 100% no-repeat,
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(106, 155, 204, .28) 27px 28px) 0 52px / 100% 100% no-repeat, var(--cy-paper);
+  padding-left: 38px; box-shadow: 4px 5px 0 rgba(20, 20, 19, .85); }
+:root[data-design="clay"] .qz-back { background: var(--cy-tooth), #F6DDCF; border-color: rgba(181, 84, 47, .45); }
+:root[data-design="clay"] .qz-q { font-family: var(--cy-serif); font-weight: 450; }
+:root[data-design="clay"] .qz-a { font: 400 16.5px/1.5 var(--cy-serif); }
+:root[data-design="clay"] .qz-ask .qz-front { border-color: var(--cy-clay-ink); }
+:root[data-design="clay"] .qz-input { font: 400 18px/1.45 var(--cy-serif); }
+:root[data-design="clay"] .qz-go { background: var(--cy-clay-ink); color: #fff; box-shadow: 2px 2px 0 var(--cy-ink); }
+
+/* contact: a ruled letter, a touch askew */
+:root[data-design="clay"] .cy-letter { position: relative; max-width: 980px; padding: clamp(28px, 4vw, 56px) clamp(22px, 4vw, 60px) clamp(16px, 2vw, 28px);
+  border: 1.5px solid var(--cy-ink); border-radius: 6px; rotate: -.5deg; box-shadow: 8px 9px 0 var(--cy-ink);
+  background: repeating-linear-gradient(180deg, transparent 0 35px, rgba(106, 155, 204, .2) 35px 36px) 0 24px / 100% 100% no-repeat, var(--cy-tooth), var(--cy-paper); }
+:root[data-design="clay"] .ly-contact-k { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ly-contact-h { font: 400 clamp(2rem, 4vw, 3.6rem)/1.04 var(--cy-serif); letter-spacing: -.03em; }
+:root[data-design="clay"] .ly-contact-s { font-family: var(--cy-serif); color: var(--cy-ink2); }
+:root[data-design="clay"] .ly .cl-node { border-width: 1.5px; box-shadow: 3px 3px 0 var(--cy-ink); font-family: var(--cy-sans); }
+:root[data-design="clay"] .ly .cl::before { background: radial-gradient(closest-side, rgba(217, 119, 87, .18), transparent); }
+@media (hover: hover) and (pointer: fine) { :root[data-design="clay"] .ly .cl-node:hover { background: var(--cy-clay); border-color: var(--cy-ink); box-shadow: 5px 5px 0 var(--cy-ink); }
+  :root[data-design="clay"] .ly .cl a.cl-node:hover, :root[data-design="clay"] .ly .cl button.cl-node:hover { color: var(--cy-ink); } }
+
+/* footer: the one quiet line, plus the disclaimer this look owes */
+:root[data-design="clay"] .ly-foot-mini { font-family: var(--cy-sans); }
+:root[data-design="clay"] .ly-foot-who { font: 500 14px/1 var(--cy-serif); }
+:root[data-design="clay"] .ly-foot-mini::after { content: "Not affiliated with Anthropic"; flex-basis: 100%; text-align: center; font: 400 11px/1.4 var(--cy-mono); color: var(--cy-mut); }
+
+/* ───────── chrome: agent, windows, sheet, toast ───────── */
+:root[data-design="clay"] .agent-bar { padding-left: 18px; border: 1.5px solid var(--cy-ink); box-shadow: 4px 4px 0 var(--cy-ink); }
+:root[data-design="clay"] .agent[data-open="true"] .agent-bar { box-shadow: none; }
+:root[data-design="clay"] .agent-bar:focus-within { border-color: var(--cy-ink); }
+:root[data-design="clay"] .ab-prompt { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ab-input { font: 400 17px/1.4 var(--cy-serif); caret-color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ab-input:focus-visible { outline: 0; }
+:root[data-design="clay"] .ab-send { border-radius: 10px; background: var(--cy-clay-ink); color: #fff; }
+:root[data-design="clay"] .ab-send.busy { background: var(--cy-ink); }
+:root[data-design="clay"] .agent-title { font: 500 16px/1 var(--cy-serif); }
+:root[data-design="clay"] .at-mark { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .t-body { font: 400 16.5px/1.55 var(--cy-serif); }
+:root[data-design="clay"] .t-chip, :root[data-design="clay"] .t-key { border-radius: 8px; }
+:root[data-design="clay"] .t-key.primary { background: var(--cy-clay-ink); border-color: var(--cy-clay-ink); color: #fff; }
+:root[data-design="clay"] .agent-status { background: var(--cy-oat); }
+:root[data-design="clay"] .win { border: 1.5px solid var(--cy-ink); box-shadow: 8px 9px 0 var(--cy-ink); }
+:root[data-design="clay"] .win-bar { background: var(--cy-oat); }
+:root[data-design="clay"] .win-title { font: 500 15px/1 var(--cy-serif); }
+:root[data-design="clay"] .ui-btn { border-radius: 9px; }
+:root[data-design="clay"] .ui-btn.primary { background: var(--cy-clay-ink); color: #fff; border-color: var(--cy-clay-ink); }
+:root[data-design="clay"] input.field, :root[data-design="clay"] textarea.field { border-radius: 9px; background: #fff; }
+:root[data-design="clay"] textarea.field { font: 400 16.5px/1.5 var(--cy-serif); }
+:root[data-design="clay"] .sheet-scrim { background: rgba(61, 57, 41, .35); }
+:root[data-design="clay"] .sheet-body { background: var(--cy-tooth), var(--cy-paper); border-radius: 18px 18px 0 0; box-shadow: 0 -1.5px 0 var(--cy-ink); }
+:root[data-design="clay"] .case h1 { font: 400 clamp(2.4rem, 5.6vw, 4.2rem)/1.02 var(--cy-serif); letter-spacing: -.03em; }
+:root[data-design="clay"] .case h2 { font: italic 400 1.5rem/1.3 var(--cy-serif); }
+:root[data-design="clay"] .case-kind { font: 500 12px/1 var(--cy-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cy-clay-ink); }
+:root[data-design="clay"] .case .chip { border-radius: 6px; background: var(--cy-oat); }
+:root[data-design="clay"] .toast { border: 1.5px solid var(--cy-ink); box-shadow: 3px 3px 0 var(--cy-ink); }
+:root[data-design="clay"] .play-win { --font-d: var(--cy-serif); --chip-bg: var(--cy-oat); --rec-pill-bg: var(--cy-oat); --rec-label: var(--cy-clay); --rec-label-ink: var(--cy-ink); }
+:root[data-design="clay"] .play-body { background: var(--cy-tooth), var(--cy-paper); }
+:root[data-design="clay"] .g-title { font: 400 1.9rem/1.1 var(--cy-serif); }
+:root[data-design="clay"] .sw-ic[aria-pressed="true"] { box-shadow: 2px 2px 0 var(--cy-ink); }
+
+/* ───────── Play field: paper, cut shapes in clay / olive / sky ───────── */
+:root[data-design="clay"] .pf-wrap {
+  --pf-bg: var(--cy-tooth), var(--cy-oat); --pf-fog: var(--cy-oat); --pf-grid: rgba(20, 20, 19, .14); --pf-face: var(--cy-paper); --pf-edge: var(--cy-ink2);
+  --pf-a: var(--cy-clay); --pf-b: var(--cy-olive); --pf-c: var(--cy-sky); --pf-ink: var(--cy-ink); --pf-line: rgba(20, 20, 19, .2); --pf-tag: var(--cy-paper);
+  --pf-label: conic-gradient(var(--cy-clay), var(--cy-kraft), var(--cy-clay), #C96442, var(--cy-clay)); --pf-r: 18px;
+  --pf-shadow: 5px 6px 0 rgba(20, 20, 19, .85); --pf-font: var(--cy-mono);
+}
+
+/* ───────── responsive ───────── */
+@media (max-width: 860px) {
+  :root[data-design="clay"] .ly-nav a::after { left: 4px; right: 4px; }
+  :root[data-design="clay"] .cy-letter { rotate: 0deg; box-shadow: 5px 6px 0 var(--cy-ink); }
+}
+
+/* ───────── performance mode: a designed still ───────── */
+:root[data-design="clay"].lite .ly-nav a::after, :root[data-design="clay"].lite .ly-iam { transition: none; }
