@@ -10,7 +10,7 @@ Handoff checklist; each slice is committed and pushed to `dev` on its own.
 - [x] F. Theme-switch nudge on the main site (subtle)
 - [x] Share links include voice turns (/api/voice/log, tagged "voice transcript")
 - [x] Status bar: ready · N/M left · resets in Xm · tokens · ? for shortcuts
-- [ ] G. More creative chat-bar controls (voice mode / dictation / read-aloud / settings)
+- [x] G. More creative chat-bar controls (voice mode / dictation / read-aloud / settings)
 - [ ] H. "RAG Cursor" mode: a labelled cursor that visibly clicks/types its actions
 - [ ] I. Feature roadmap with cost-benefit (for the owner)
 

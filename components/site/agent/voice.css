@@ -53,7 +53,6 @@
 .vo-rate b { color: var(--a-fg); font-weight: 500; }
 .vo-rate input { grid-column: 1 / -1; width: 100%; accent-color: var(--a-accent); }
 .vo-try { justify-self: start; }
-.vo-spk[aria-pressed="false"]::after { content: ""; position: absolute; width: 18px; height: 1.6px; background: currentColor; border-radius: 1px; transform: rotate(-45deg); }
 .vo-spk[data-speaking="true"] { background: color-mix(in srgb, var(--a-accent) 16%, transparent); }
 .vo-status { font: 400 12px/1 var(--a-mono); color: var(--a-muted); max-width: 11em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vo-status:empty { display: none; }
@@ -61,3 +60,29 @@
 @media (max-width: 560px) { .vo-status { max-width: 6.5em; } }
 @media (prefers-reduced-motion: reduce) { .vo-btn, .vo-orb, .vo-eq i { transition: none; } .vo-orb, .vo-orb i, .vo-eq i { animation: none !important; } }
 html.lite .vo-orb, html.lite .vo-orb i, html.lite .vo-eq i { animation: none !important; }
+
+/* ---------- the voice capsule: voice mode (a seed of the orb), dictation, read-aloud and settings in one glass pill ---------- */
+.vo-cap { display: inline-flex; align-items: center; gap: 1px; padding: 3px; border-radius: 999px; flex: none;
+  background: color-mix(in srgb, var(--a-fg) 5%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-fg) 10%, transparent), inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent); }
+.vo-cap .vo-btn { width: 32px; height: 32px; }
+.vo-cap .vo-btn:hover { background: color-mix(in srgb, var(--a-fg) 8%, transparent); }
+.vo-cap .vo-btn .ic { width: 16px; height: 16px; }
+/* the seed: a tiny living orb that previews voice mode */
+.vo-seed { position: relative; width: 18px; height: 18px; border-radius: 50%; display: block;
+  background: radial-gradient(circle at 34% 30%, #fff 0 10%, transparent 42%), conic-gradient(from 0deg, var(--a-accent), color-mix(in srgb, var(--a-accent) 40%, #9b7bff), color-mix(in srgb, var(--a-accent) 50%, #5ad1ff), var(--a-accent));
+  box-shadow: 0 0 10px -2px color-mix(in srgb, var(--a-accent) 70%, transparent); animation: vo-spin 7s linear infinite, vo-seed 3s ease-in-out infinite; transition: scale 260ms var(--a-spring); }
+@keyframes vo-seed { 50% { border-radius: 44% 56% 54% 46% / 54% 44% 56% 46%; } }
+.vo-live:hover .vo-seed { scale: 1.18; box-shadow: 0 0 16px 0 color-mix(in srgb, var(--a-accent) 70%, transparent); }
+/* read-aloud on: a small lit pip instead of a slash */
+.vo-spk[aria-pressed="true"]::before { content: ""; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--a-accent); box-shadow: 0 0 6px var(--a-accent); }
+.vo-spk[aria-pressed="false"] { opacity: .6; }
+/* tooltips that glide up from the capsule */
+.vo-cap .vo-btn[data-tip]::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 10px); left: 50%; translate: -50% 4px; padding: 5px 9px; border-radius: 7px; white-space: nowrap; pointer-events: none;
+  background: var(--a-fg); color: var(--a-bg); font: 500 11.5px/1 var(--a-mono); opacity: 0; transition: opacity 140ms ease, translate 220ms var(--a-spring); width: auto; height: auto; transform: none; }
+@media (hover: hover) and (pointer: fine) { .vo-cap .vo-btn[data-tip]:hover::after { opacity: 1; translate: -50% 0; } }
+.vo-cap .vo-btn[aria-expanded="true"]::after { opacity: 0 !important; }
+@media (prefers-reduced-motion: reduce) { .vo-seed { animation: none; } }
+html.lite .vo-seed { animation: none; }
+/* the shortcut chip steps aside while you type */
+.agent-bar:has(.ab-input:not(:placeholder-shown)) .ab-kbd { opacity: 0; width: 0; padding: 0; border-width: 0; margin: 0; overflow: hidden; }
+.ab-kbd { transition: opacity 160ms ease; }

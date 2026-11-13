@@ -112,13 +112,14 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
       ) : (
         <span className="vo-status" role="status" aria-live="polite" data-state={lv.message ? "error" : state}>{lv.message || message}</span>
       )}
+      <span className="vo-cap">
       <button type="button" className="vo-btn vo-live" aria-pressed={on} onClick={toggleLive} disabled={lv.phase === "connecting"}
-        aria-label={on ? "End voice mode" : "Voice mode"} title={on ? "End voice mode (Esc)" : "Voice mode: talk with RAG"}>
-        {on ? <Icon name="x" /> : <Icon name="activity" />}
+        aria-label={on ? "End voice mode" : "Voice mode"} data-tip={on ? "End voice (Esc)" : "Talk with RAG"}>
+        {on ? <Icon name="x" /> : <i className="vo-seed" aria-hidden="true" />}
       </button>
       {!on && (
         <button type="button" className="vo-btn vo-mic" data-state={state} ref={(el) => { meterRef.current = el; }}
-          aria-label={state === "listening" ? "Stop recording" : "Hold to talk"} title="Hold to dictate (or hold Space in an empty prompt)"
+          aria-label={state === "listening" ? "Stop recording" : "Hold to talk"} data-tip="Hold to dictate"
           disabled={state === "transcribing"}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
@@ -138,12 +139,12 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
         </button>
       )}
       <button type="button" className="vo-btn vo-spk" aria-pressed={sp.on} data-speaking={sp.speaking}
-        aria-label="Read replies aloud" title={sp.speaking ? "Stop speaking" : sp.on ? "Replies read aloud" : "Replies not read aloud"}
+        aria-label="Read replies aloud" data-tip={sp.speaking ? "Stop speaking" : sp.on ? "Read aloud: on" : "Read aloud: off"}
         onClick={() => setSpeaker(sp.speaking ? false : !sp.on)}>
         <Icon name="volume-2" />
       </button>
       <span className="vo-setw" ref={pop}>
-        <button type="button" className="vo-btn vo-set" aria-expanded={open} aria-haspopup="dialog" aria-label="Voice settings" title="Voice settings" onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="vo-btn vo-set" aria-expanded={open} aria-haspopup="dialog" aria-label="Voice settings" data-tip="Voice settings" onClick={() => setOpen((v) => !v)}>
           <svg className="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
             <path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" />
           </svg>
@@ -169,6 +170,7 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
             <button type="button" className="vo-try" onClick={() => (sp.speaking ? stopSpeaking() : void speak(PREVIEW, true))}>{sp.speaking ? "Stop" : "Preview"}</button>
           </span>
         )}
+      </span>
       </span>
     </>
   );
