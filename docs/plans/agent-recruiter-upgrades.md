@@ -6,7 +6,7 @@ Handoff checklist; each slice is committed and pushed to `dev` on its own.
 - [x] B. Floating windows: several open at once (chat, email, resume, case, play), movable + resizable; chat has a detach button; agent tools to open/move/resize windows
 - [x] C. Recruiter mode (`/recruiter`): photo, GitHub/LinkedIn/Email, resume rendered inline, email form open, core content expanded, RAG open, light/dark toggle, "back to the full site" footer; hero button; agent tool `recruiter_mode`
 - [x] D. Visitor memory (+ job posting): remember name/email/company/role per visitor (cookie visitor id), greet returning visitors by name; agent asks gently for an introduction (honest that it's passed to Rithvik)
-- [ ] E. Code-grounded answers: tool that reads Rithvik's public GitHub repos (README + files) through the GitHub API
+- [x] E. Code-grounded answers: tool that reads Rithvik's public GitHub repos (README + files) through the GitHub API
 - [ ] F. Theme-switch nudge on the main site (subtle)
 - [x] Share links include voice turns (/api/voice/log, tagged "voice transcript")
 - [x] Status bar: ready · N/M left · resets in Xm · tokens · ? for shortcuts

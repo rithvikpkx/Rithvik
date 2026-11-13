@@ -186,6 +186,9 @@ export function useAgent(host: Host) {
       if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
     };
     switch (e.name) {
+      case "read_code":
+        add({ kind: "tool", name: "ReadCode", args: [a.repo, a.path].filter(Boolean).join(", ") || "repos", result: e.result ?? "read" });
+        return;
       case "remember_visitor": // saved on the server; the row keeps it visible that the agent noted it
         add({ kind: "tool", name: "Noted", args: Object.keys(a).join(", "), result: e.result ?? "Noted for Rithvik" });
         return;

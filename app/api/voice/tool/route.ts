@@ -1,6 +1,6 @@
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
-import { allowedFor } from "@/lib/agent/allowed";
+import { allowedFor, codeReader } from "@/lib/agent/allowed";
 import { screenCalls } from "@/lib/agent/tools";
 import { cleanTimeZone } from "@/lib/agent/context";
 import { getPalettes } from "@/lib/designs/server";
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const [content, palettes] = await Promise.all([getContent(), getPalettes()]);
   const visitorId = isOwner(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
   const { kept, replies } = await screenCalls([{ id: "live", name: body.name, arguments: args }], allowedFor(content, palettes), new Date(), cleanTimeZone(body.timeZone),
-    visitorId ? { remember: (f) => rememberVisitor(visitorId, f) } : {});
+    { ...codeReader(content), ...(visitorId ? { remember: (f: Record<string, string>) => rememberVisitor(visitorId, f) } : {}) });
   const call = kept[0] ?? null;
   // in voice mode the visitor asked out loud, so screen actions happen at once (a meeting request still waits for a click)
   const reply = call && SIDE_EFFECTS.has(call.name) ? "Done: it is on the visitor's screen now." : (replies[0]?.content ?? "Rejected.");

@@ -10,7 +10,7 @@ import { loadActionLinks } from "@/lib/action-links";
 import { rateLimit, clientKey, rateHeaders, CHAT_RATE_LIMIT } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
-import { allowedFor } from "@/lib/agent/allowed";
+import { allowedFor, codeReader } from "@/lib/agent/allowed";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { cleanTimeZone, contextPrompt, sanitizeContext } from "@/lib/agent/context";
@@ -127,6 +127,7 @@ TOOLS
 - Several requests in one message ("show me X, then help me email him") → call the tools in that order. draft_email: write the subject and body in the visitor's voice, specific to what they asked; never include links.
 - MEETINGS: when a visitor wants to schedule a call or interview with Rithvik, gather conversationally (one or two questions at a time) their name, email, company, role, preferred times and any notes. Check each proposed time with check_availability FIRST (in an earlier step, never in the same step as request_meeting); if one is busy or outside hours, offer suggest_times instead. Call request_meeting once you have name, email and at least one verified time; never invent or guess any of these. Write each time in full the way the calendar tool does ("Tue Nov 10, 10:00 AM PT"), never as an ISO string. It only prepares a request: the visitor gets a "Send meeting request" button that lists the details, and nothing is sent until they click it. Say "I've prepared a request for you to review", never that it was sent. If a call is rejected, ask the visitor for the fix.
 - ARTIFACTS: call render_artifact only when a small visual clearly beats prose and every number or date is in the Profile or Records: a timeline of his roles or projects, a comparison across projects, his skills grouped by area, a few headline stats. Counts you can read off the Profile (how many projects, roles per year) are fine; never estimate, rank by feel or invent values ("skill level" scores are invented, so use a table or timeline instead). When the visitor asks for a visual, infographic, summary graphic or anything "cool"/"rich", use type html and design something genuinely striking (layout, hierarchy, accent colour, a little motion) rather than a plain table. Plain questions, one-fact answers and anything off-topic get text. Never put a link in artifact data, and markup only inside an html artifact. After it renders, add at most one sentence of takeaway and do not restate the data.
+- CODE: for how a project works (architecture, stack, a function, how something is implemented), call read_code: the repo first (README + file list), then at most one or two relevant files. Explain from what you read and name the file; never invent code. If a project has no repo, say so.
 - RECRUITERS: when the visitor says they recruit or are hiring, offer open_recruiter_mode once (a minimal page with everything open).
 - Tool names must come from the enums. Side-effect tools only add a button under your answer that the visitor may click or ignore, so say what you've offered ("there's a button to open …") rather than claiming it already happened.
 
@@ -184,7 +185,7 @@ export async function POST(req: Request) {
 	const visitorTz = cleanTimeZone(body.timeZone);
 	// what this visitor told the agent before (never for the owner or an eval), and where new facts get saved
 	const visitorId = isOwner(req) || isEval(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
-	const toolCtx: ToolCtx = visitorId ? { remember: (f) => rememberVisitor(visitorId, f) } : {};
+	let toolCtx: ToolCtx = visitorId ? { remember: (f) => rememberVisitor(visitorId, f) } : {};
 	const [content, palettes, calendar, sessionId, known] = await Promise.all([
 		getContent(),
 		getPalettes(),
@@ -194,6 +195,7 @@ export async function POST(req: Request) {
 		knownVisitor(visitorId),
 	]);
 	const allowed: Allowed = allowedFor(content, palettes);
+	toolCtx = { ...toolCtx, ...codeReader(content) };
 	const page = sanitizeContext(body.context, {
 		looks: allowed.looks.map((l) => l.id),
 		sections: [...SECTION_IDS, ...allowed.projects.map((p) => `project-${p.slug}`), ...allowed.roles.map((r) => `experience-${r}`)],
@@ -344,7 +346,9 @@ export async function POST(req: Request) {
 				let calledTools = false; // any tool call, even a rejected one, makes the answer uncacheable
 				for (let step = 0; step < MAX_STEPS; step++) {
 					// the rules + profile are an identical prefix on every turn, so they are billed at the cached rate
-					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, cacheKey: "rag-answer", signal });
+					// the last step gets no tools, so a turn spent reading code or calendars still ends in an answer
+					const last = step === MAX_STEPS - 1;
+					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, noTools: last, cacheKey: "rag-answer", signal });
 					let stepText = "";
 					let calls: { id: string; name: string; arguments: string }[] = [];
 					for await (const ev of stream) {

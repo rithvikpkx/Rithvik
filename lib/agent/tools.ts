@@ -10,7 +10,7 @@ import { ARTIFACT_TYPES, MAX_COLS, MAX_HTML, MAX_POINTS, MAX_ROWS, MAX_SERIES, M
 /** Whole-page sections every design carries (plus project-<slug> / experience-<slug>). */
 export const SECTION_IDS = ["top", "work", "experience", "about", "play", "questions", "contact"];
 /** At most this many model steps (completion → tools → completion …) per turn. */
-export const MAX_STEPS = 3;
+export const MAX_STEPS = 4; // the last one answers (no tools)
 /** At most this many side-effect tools per step; extras are dropped. */
 export const MAX_SIDE_EFFECTS = 2;
 /** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
@@ -35,6 +35,7 @@ export type Allowed = {
   games: { id: string; name: string }[];
   looks: { id: string; name: string }[]; // design ids + palette slugs
   places: { key: string; city: string; tz: string }[];
+  repos?: string[]; // GitHub repos linked from project pages (read_code)
 };
 
 /** `artifact` is set only for render_artifact: the rebuilt spec the route sends as an `artifact` frame (no tool row). */
@@ -59,6 +60,10 @@ export function toolDefs(a: Allowed): ToolDef[] {
       subject: { type: "string", description: "Short subject line" },
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
+    fn("read_code", `Read Rithvik's public GitHub code to answer how a project works: its architecture, stack, structure or a specific function. With a repo and no path you get its README and file list; with a path, that file. With no repo, a list of his public repos. Read the README first, then at most one or two files that matter. Cite what you read ("in BoilerFrame's app.py…"); never invent code.`, {
+      ...(a.repos?.length ? { repo: enumOf(a.repos, "Repository (from his project pages)") } : {}),
+      path: { type: "string", description: "A file path inside the repo, from its file list (optional)" },
+    }),
     fn("remember_visitor", "Save what the visitor has told you about themselves so Rithvik can follow up and you can greet them by name next time. Call it as soon as they share any of: their name, email, company, role, what kind of visitor they are, or a job posting (a link or its text). Only what they actually said; never guess.", {
       name: { type: "string", description: "Their name, as they gave it" },
       email: { type: "string", description: "Their email, exactly as they gave it" },
@@ -166,6 +171,13 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
         || (v.startsWith("experience-") && a.roles.some((r) => `experience-${r}` === v));
       return ok ? { id, name: call.name, args: { id: v } } : null;
     }
+    case "read_code": {
+      const repo = typeof raw.repo === "string" ? raw.repo.trim() : "";
+      const path = typeof raw.path === "string" ? raw.path.trim().replace(/^\/+/, "") : "";
+      if (repo && !a.repos?.includes(repo)) return null;
+      if (path && (!repo || !/^[\w.\-/ ]{1,200}$/.test(path) || path.includes(".."))) return null;
+      return { id, name: call.name, args: { ...(repo ? { repo } : {}), ...(path ? { path } : {}) } };
+    }
     case "remember_visitor": {
       const f: Record<string, string> = {};
       for (const k of ["name", "email", "company", "role"]) { const v = plain(raw[k], 120); if (v) f[k] = v; }
@@ -226,7 +238,10 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
  *  zone and overrides whatever the model passed). Returns the kept calls and, for every call (kept or not), the
  *  tool message the model sees next step. */
 /** Server-side effects a tool may need: saving what the visitor told the agent (absent for the owner and evals). */
-export type ToolCtx = { remember?: (facts: Record<string, string>) => Promise<boolean> };
+export type ToolCtx = {
+  remember?: (facts: Record<string, string>) => Promise<boolean>;
+  readCode?: (repo?: string, path?: string) => Promise<{ text: string; summary: string }>;
+};
 
 export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string, ctx: ToolCtx = {}): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
   const kept: ValidCall[] = [];
@@ -253,6 +268,13 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
       const out = await runCalendarTool(v.name, { ...JSON.parse(c.arguments || "{}"), ...(visitorTz ? { visitorTz } : {}) }, now.getTime());
       kept.push({ ...v, result: out.summary });
       replies.push({ id: c.id, content: JSON.stringify(out.result) });
+      continue;
+    }
+    if (v.name === "read_code") {
+      if (++lookups > MAX_CALENDAR) { replies.push({ id: c.id, content: "Rejected: too many lookups this step." }); continue; }
+      const out = ctx.readCode ? await ctx.readCode(v.args.repo, v.args.path) : { text: "Code reading is unavailable here.", summary: "unavailable" };
+      kept.push({ ...v, result: out.summary });
+      replies.push({ id: c.id, content: out.text });
       continue;
     }
     if (v.name === "remember_visitor") {
