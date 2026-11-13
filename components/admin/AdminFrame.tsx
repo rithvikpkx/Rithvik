@@ -1,4 +1,4 @@
-/** The dashboard chrome (one theme, no look switching): the ouroboros and a mono path, the three views, the period
+/** The dashboard chrome (one theme, no look switching): the ouroboros and a mono path, the four views, the period
  *  detents (plain links: no JS), and the live clock that refreshes the page's data. Works inside any root layout. */
 import Link from "next/link";
 import "./admin.css";
@@ -9,8 +9,8 @@ import { PERIODS } from "@/lib/analytics/shape";
 import type { Period } from "@/lib/analytics/types";
 import { Live } from "./live";
 
-export type Tab = "overview" | "visitors" | "chats";
-const TABS: [Tab, string, string][] = [["overview", "overview", ""], ["visitors", "visitors", "/visitors"], ["chats", "chats", "/chats"]];
+export type Tab = "overview" | "visitors" | "chats" | "music";
+const TABS: [Tab, string, string][] = [["overview", "overview", ""], ["visitors", "visitors", "/visitors"], ["chats", "chats", "/chats"], ["music", "music", "/music"]];
 
 export default function AdminFrame({ tab, base = "/admin", period, live = true, children }: {
   tab: Tab; base?: string; period?: Period; live?: boolean; children: ReactNode;

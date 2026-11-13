@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useSite } from "../SiteProvider";
-import { Deck, DEFAULTS, TRACKS, type DeckParams, type Layer } from "./deck";
+import { Deck, DEFAULTS, type DeckParams, type Layer } from "./deck";
 import { createScope, type Scope } from "./scope";
 import Knob from "./Knob";
 import { Icon as Ic } from "../Glyph";
@@ -17,11 +17,14 @@ const DOTS = RINGS.flatMap(({ r, n }, k) => Array.from({ length: n }, (_, i) => 
 const LAYERS: [Layer, string][] = [["orig", "Original"], ["lofi", "Lo-fi"], ["rev", "Reverse"]];
 const SEEK_FROM = 0.9; // the outer 10% of the disc's radius is the seek ring
 
-/** The Play deck: a crate of two tracks (TRACKS) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
+type Song = { id: string; title: string; artist: string | null; url: string };
+
+/** The Play deck: the owner's record crate (uploaded on /admin/music, read from /api/songs) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
  *  Delay (echo) knobs, a Volume slider and layer switches. Audio lives in ./deck.ts; this component is the instrument's face. */
 export default function Records() {
   const { toast } = useSite();
   const [on, setOn] = useState(false);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [track, setTrack] = useState(0);
   const [p, setP] = useState<DeckParams>(DEFAULTS);
   const deck = useRef<Deck | null>(null);
@@ -61,9 +64,14 @@ export default function Records() {
         return sc.draw(f.analyser);
       },
       state: setOn,
-      fail: () => toast("Audio could not load here. The deck still spins."),
+      fail: () => toast("No record could load here. The deck still spins."),
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     deck.current = d;
+    fetch("/api/songs").then((r) => r.json()).then((list: Song[]) => {
+      if (!Array.isArray(list) || !deck.current) return;
+      setSongs(list);
+      if (list[0]) void d.setTrack(list[0].url);
+    }).catch(() => { /* no crate: the deck spins silently */ });
     d.kick(); // paint the idle screen once
     const ro = new ResizeObserver(() => { sc.resize(); d.kick(); });
     ro.observe(canvas.current!);
@@ -153,15 +161,15 @@ export default function Records() {
             <input type="range" min={0} max={1} step={0.01} value={p.volume} aria-label="Volume" onChange={(e) => set("volume")(+e.target.value)} />
             <span aria-hidden="true">Volume</span>
           </label>
-          <div className="dk-crate" role="radiogroup" aria-label="Record">
-            {TRACKS.map((t, i) => (
-              <button key={t.src} type="button" role="radio" aria-checked={track === i} onClick={() => { setTrack(i); deck.current?.setTrack(i); }}>
+          {songs.length > 1 && <div className="dk-crate" role="radiogroup" aria-label="Record">
+            {songs.map((t, i) => (
+              <button key={t.id} type="button" role="radio" aria-checked={track === i} onClick={() => { setTrack(i); void deck.current?.setTrack(t.url); }}>
                 <i className="dk-sleeve" aria-hidden="true"><i /></i>
-                <span><b>{t.title}</b><small>{t.artist}</small></span>
+                <span><b>{t.title}</b>{t.artist && <small>{t.artist}</small>}</span>
               </button>
             ))}
-          </div>
-          <p className="dk-hint">Pick a record from the crate. Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
+          </div>}
+          <p className="dk-hint">{songs[track] ? `${songs[track].title}${songs[track].artist ? `, ${songs[track].artist}` : ""}. ` : ""}Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
         </div>
       </div>
     </div>

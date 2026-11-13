@@ -539,3 +539,16 @@ li:hover > .d-trash, .d-trash:focus-within { opacity: 1; }
 .d-trash button { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel-2); color: var(--muted); cursor: pointer; }
 .d-trash button:hover, .d-trash button:focus-visible { color: var(--red); border-color: var(--red); outline: none; }
 @media (hover: none) { .d-trash { opacity: 1; } }
+
+/* music: the upload form and the song list (each row renames in place; the trash can deletes) */
+.d-upload, .d-song { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.d-upload input, .d-song input { flex: 1 1 160px; min-width: 0; padding: 7px 9px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel-2); color: var(--fg); font: 400 13px/1.3 var(--sans); }
+.d-upload input[type="file"] { flex-basis: 100%; padding: 6px; font-family: var(--mono); font-size: 12px; }
+.d-upload button, .d-song button { padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 6px; background: transparent; color: var(--fg); font: 500 12px/1 var(--mono); cursor: pointer; }
+.d-upload button:hover:not(:disabled), .d-song button:hover { border-color: var(--pink); color: var(--pink); }
+.d-upload button:disabled { opacity: .5; cursor: default; }
+.d-upmsg { color: var(--muted); font: 400 12px/1.3 var(--mono); }
+.d-songs { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.d-songs > li { padding: 10px 46px 10px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.d-song audio { flex-basis: 100%; height: 32px; }
+.d-songs .d-trash { opacity: 1; }

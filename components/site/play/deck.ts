@@ -1,13 +1,8 @@
-/** The Play deck's audio engine: the picked track (TRACKS) through a small Web Audio graph (layers, tone filter, echo, volume, analyser)
+/** The Play deck's audio engine: the picked record from the crate (/api/songs) through a small Web Audio graph (layers, tone filter, echo, volume, analyser)
  *  plus the disc's spin physics. DOM-free; the Records component supplies the paint hook. */
 import { clamp01, delayParams, speedRate, toneFilter, volumeGain } from "@/lib/play/deckmap";
 
 const BASE_DEG = 120; // disc degrees per second at 1x
-/** The crate. The owner supplies the audio files in public/v7/music/. */
-export const TRACKS = [
-  { title: "Adventure of a Lifetime", artist: "Coldplay", src: "/v7/music/adventure-of-a-lifetime.mp3" },
-  { title: "What You Know", artist: "Two Door Cinema Club", src: "/v7/music/what-you-know.mp3" },
-];
 const ECHO_S = 0.34; // fixed echo time; the Delay knob sets how much returns
 
 export type Layer = "orig" | "lofi" | "rev";
@@ -40,7 +35,7 @@ export class Deck {
   private srcs: AudioBufferSourceNode[] = [];
   private fades: GainNode[] = [];
   private loading: Promise<void> | null = null;
-  private src = TRACKS[0].src;
+  private src = ""; // set by setTrack once the crate has loaded
   private angle = 0;
   private vel = 0;
   private pos = 0;
@@ -106,6 +101,7 @@ export class Deck {
     if (this.loading) return this.loading;
     const src = this.src;
     this.loading = (async () => {
+      if (!src) throw new Error("no record");
       if (!this.ctx) {
         const Ctor: AC = window.AudioContext || (window as unknown as { webkitAudioContext: AC }).webkitAudioContext;
         this.ctx = new Ctor();
@@ -123,9 +119,8 @@ export class Deck {
     return this.loading;
   }
 
-  /** Swaps to TRACKS[i] from the top, keeping play/pause; a paused deck decodes it on the next play. */
-  async setTrack(i: number) {
-    const src = TRACKS[i]?.src;
+  /** Swaps to the record at `src` from the top, keeping play/pause; a paused deck decodes it on the next play. */
+  async setTrack(src: string) {
     if (!src || src === this.src) return;
     this.stopMain(false);
     this.src = src; this.buf = null; this.rev = null; this.loading = null; this.pos = 0;
