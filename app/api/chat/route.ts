@@ -10,8 +10,7 @@ import { loadActionLinks } from "@/lib/action-links";
 import { rateLimit, clientKey, rateHeaders, CHAT_RATE_LIMIT } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
-import { DESIGNS } from "@/lib/designs/registry";
-import { GAMES } from "@/lib/play/games";
+import { allowedFor } from "@/lib/agent/allowed";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { cleanTimeZone, contextPrompt, sanitizeContext } from "@/lib/agent/context";
@@ -186,13 +185,7 @@ export async function POST(req: Request) {
 		// Eval runs never reach the conversation log or the public metrics.
 		isEval(req) ? Promise.resolve(null) : startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
 	]);
-	const allowed: Allowed = {
-		projects: content.projects.map((p) => ({ slug: p.slug, title: p.title })),
-		roles: content.experience.map((r) => r.slug),
-		games: GAMES.map((g) => ({ id: g.id, name: g.name })),
-		looks: [...DESIGNS.map((d) => ({ id: d.id, name: d.name })), ...palettes.map((t) => ({ id: t.slug, name: t.name }))],
-		places: content.places.map((p) => ({ key: p.key, city: p.city, tz: p.tz })),
-	};
+	const allowed: Allowed = allowedFor(content, palettes);
 	const page = sanitizeContext(body.context, {
 		looks: allowed.looks.map((l) => l.id),
 		sections: [...SECTION_IDS, ...allowed.projects.map((p) => `project-${p.slug}`), ...allowed.roles.map((r) => `experience-${r}`)],

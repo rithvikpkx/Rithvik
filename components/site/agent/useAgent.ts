@@ -173,10 +173,16 @@ export function useAgent(host: Host) {
   }, [add, patch]);
 
   /** Handles a model tool call the server already validated; the client re-checks names against content.
-   *  Side effects only become buttons here, so nothing happens until the visitor clicks. */
-  const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>) => {
+   *  Typed chat: side effects only become buttons, so nothing happens until the visitor clicks. Voice mode (`now`):
+   *  the visitor asked out loud, so they happen at once with a tool row, except a meeting request, which still waits. */
+  const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>, now = false) => {
     const a = e.args ?? {};
     const tool = { name: pascal(e.name), args: Object.values(a).map((v) => clip(String(v), 40)).join(", ") };
+    const act: typeof offer = (key, label, go, extra) => {
+      if (!now || extra?.once) return offer(key, label, go, extra);
+      go();
+      if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
+    };
     switch (e.name) {
       case "local_time":
         add({ kind: "tool", name: tool.name, args: tool.args, result: e.result ?? "time unavailable" });
@@ -191,7 +197,7 @@ export function useAgent(host: Host) {
         const entry = d?.entries.find((x) => x.id === a.id);
         if (!d || !entry) return;
         const name = entry.kind === "design" ? entry.meta.name : entry.name;
-        offer(`design:${a.id}`, `Switch to ${name}`, () => {
+        act(`design:${a.id}`, `Switch to ${name}`, () => {
           const prev = d.current;
           d.setDesign(a.id);
           add({ kind: "tool", name: "SwitchDesign", args: a.id, result: `Applied ${name}` }, () => d.setDesign(prev));
@@ -200,30 +206,30 @@ export function useAgent(host: Host) {
       }
       case "open_project": {
         const p = host.content.projects.find((x) => x.slug === a.slug);
-        if (p) offer(`case:${p.slug}`, `↗ Open ${p.title}`, () => host.openCase(p.slug));
+        if (p) act(`case:${p.slug}`, `↗ Open ${p.title}`, () => host.openCase(p.slug));
         return;
       }
       case "show_section": {
         if (!/^[a-z0-9-]+$/.test(a.id ?? "")) return;
         const r = resolveTarget(a.id);
-        offer(`scroll:${a.id}`, `↓ Go to ${sectionName(a.id)}`, () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)));
+        act(`scroll:${a.id}`, `↓ Go to ${sectionName(a.id)}`, () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)));
         return;
       }
       case "request_meeting": {
         if (!a.name || !a.email || !a.times) return;
         const detail = [`To: Rithvik`, `Name: ${a.name}`, `Email: ${a.email}`, a.company && `Company: ${a.company}`, a.role && `Role: ${a.role}`,
           `Times: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
-        offer("meeting", "Send meeting request", () => void sendMeeting(a), { detail, once: true });
+        act("meeting", "Send meeting request", () => void sendMeeting(a), { detail, once: true });
         return;
       }
-      case "open_resume": offer("resume", "Open resume", host.openResume); return;
+      case "open_resume": act("resume", "Open resume", host.openResume); return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
-        if (g) offer(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));
+        if (g) act(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));
         return;
       }
       case "draft_email":
-        offer("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
+        act("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
         return;
     }
   }, [add, offer, compose, host, scroll, sectionName, sendMeeting]);
@@ -518,5 +524,26 @@ export function useAgent(host: Host) {
     liveRow.current = { who, id, text };
   }, [add, patch, liveTurnEnd]);
 
-  return { liveText, liveTurnEnd, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
+  /** Voice mode: one tool call from the live model. The server validates it (the same gate as typed chat); then it
+   *  runs here at once and the result text goes back to the model. */
+  const liveTool = useCallback(async (name: string, args: string): Promise<string> => {
+    let j: { call?: { id: string; name: string; args: Record<string, string>; result?: string; artifact?: unknown } | null; reply?: string } = {};
+    try {
+      const res = await fetch("/api/voice/tool", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, arguments: args, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
+      j = await res.json();
+    } catch { return "Rejected: the action could not run."; }
+    const c = j.call;
+    if (c) {
+      liveTurnEnd(); // what the voice says next lands under the action, not above it
+      if (c.artifact) { const p = parseArtifact(c.artifact); if (p.ok) add({ kind: "artifact", spec: p.spec }); }
+      else runTool({ t: "tool", id: c.id, name: c.name, args: c.args, result: c.result }, true);
+      flushOffers();
+    }
+    return j.reply ?? "Rejected.";
+  }, [add, runTool, flushOffers, liveTurnEnd]);
+
+  return { liveText, liveTurnEnd, liveTool, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }

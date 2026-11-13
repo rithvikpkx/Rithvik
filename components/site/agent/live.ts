@@ -1,13 +1,19 @@
 import { useSyncExternalStore } from "react";
 
-/** Voice mode: one GPT-Live session over WebRTC (mic up, voice down, events on the "oai-events" data channel), as a
+/** Voice mode: one live voice session over WebRTC (mic up, voice down, events on the "oai-events" data channel), as a
  *  module-level store like ./speech. /api/voice/live trades the browser's offer for OpenAI's answer, so the key never
  *  reaches the page. Transcripts go to the handler the agent registers; levels feed the orb. Sessions are billed by
  *  the minute, so one ends itself after MAX_MS, or IDLE_MS with nobody talking. */
 
 export type Phase = "off" | "connecting" | "ready" | "listening" | "thinking" | "speaking" | "error";
 export type LiveSnap = { phase: Phase; message: string };
-export type LiveHandlers = { transcript: (who: "user" | "agent", delta: string) => void; turnEnd: () => void };
+export type LiveHandlers = {
+  transcript: (who: "user" | "agent", delta: string) => void;
+  turnEnd: () => void;
+  /** Runs one tool call on the page (validated by the server first) and resolves to the result text for the model. */
+  tool: (name: string, args: string) => Promise<string>;
+};
+export type LivePrefs = { voice: string; style: string; rate: number };
 
 const MAX_MS = 10 * 60_000;
 const IDLE_MS = 2 * 60_000;
@@ -43,9 +49,26 @@ function touch() {
   s.idle = setTimeout(() => stopLive("Voice mode ended after a quiet stretch."), IDLE_MS);
 }
 
-/** One event from the data channel. Event names follow the GPT-Live docs; payload fields are read defensively. */
+type Item = { type?: string; call_id?: string; name?: string; arguments?: string };
+type Inner = { type?: string; item?: Item };
+const answered = new Set<string>(); // a call can surface in more than one event shape; answer it once
+
+/** Runs a tool call from the backend and hands the result back so the voice can carry on. */
+async function onCall(h: LiveHandlers, it: Item) {
+  if (!it.call_id || !it.name || answered.has(it.call_id)) return;
+  answered.add(it.call_id);
+  if (s) s.thinking = true;
+  let output: string;
+  try { output = await h.tool(it.name, it.arguments ?? "{}"); } catch { output = "Rejected: the action failed."; }
+  const dc = s?.dc;
+  if (!dc || dc.readyState !== "open") return;
+  dc.send(JSON.stringify({ type: "response.item.create", item: { type: "function_call_output", call_id: it.call_id, output } }));
+  dc.send(JSON.stringify({ type: "response.create" }));
+}
+
+/** One event from the data channel. Payload fields are read defensively. */
 function onEvent(h: LiveHandlers, raw: string) {
-  let e: { type?: string; delta?: string; text?: string; transcript?: string; event?: { type?: string }; error?: { message?: string } };
+  let e: { type?: string; delta?: string; text?: string; transcript?: string; event?: Inner; response_event?: Inner; data?: Inner; item?: Item; error?: { message?: string } };
   try { e = JSON.parse(raw); } catch { return; }
   const text = e.delta ?? e.text ?? e.transcript ?? "";
   switch (e.type) {
@@ -60,7 +83,13 @@ function onEvent(h: LiveHandlers, raw: string) {
       if (text) h.transcript("agent", text);
       touch();
       break;
-    case "response.event": if (s) s.thinking = true; break; // the backend is working on an answer
+    case "response.event": { // the backend at work; a finished function call is ours to run
+      if (s) s.thinking = true;
+      const inner = e.event ?? e.response_event ?? e.data;
+      if (inner?.type === "response.output_item.done" && inner.item?.type === "function_call") void onCall(h, inner.item);
+      break;
+    }
+    case "response.output_item.done": if (e.item?.type === "function_call") void onCall(h, e.item); break;
     case "session.closed": stopLive(); break;
     case "error": case "session.error": console.warn("[live]", e.error?.message ?? raw.slice(0, 200)); break;
   }
@@ -74,7 +103,7 @@ export function livePhase(): Phase {
 }
 
 /** Starts a voice session (call from a click: it asks for the mic). Resolves once connected or failed. */
-export async function startLive(h: LiveHandlers) {
+export async function startLive(h: LiveHandlers, prefs: LivePrefs) {
   if (s || snap.phase === "connecting") return;
   const mine = ++gen;
   set({ phase: "connecting", message: "Connecting…" });
@@ -103,7 +132,7 @@ export async function startLive(h: LiveHandlers) {
       const t = setTimeout(done, 4000);
       pc!.addEventListener("icegatheringstatechange", () => { if (pc!.iceGatheringState === "complete") { clearTimeout(t); done(); } });
     });
-    const res = await fetch("/api/voice/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sdp: pc.localDescription?.sdp }) });
+    const res = await fetch("/api/voice/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sdp: pc.localDescription?.sdp, ...prefs }) });
     const data = (await res.json().catch(() => ({}))) as { sdp?: string; error?: string };
     if (!res.ok || !data.sdp) throw new Error(data.error ?? "Voice mode could not start.");
     if (mine !== gen) throw new Error("");

@@ -7,13 +7,13 @@ import { liveLevels, livePhase, startLive, stopLive, useLive, type LiveHandlers,
 import { useVoice } from "./useVoice";
 import "./voice.css";
 
-const STYLE_NAMES: Record<StyleId, string> = { natural: "Natural", upbeat: "Upbeat", radio: "Radio host", hush: "Hushed" };
+const STYLE_NAMES: Record<StyleId, string> = { natural: "Natural", upbeat: "Upbeat", calm: "Calm" };
 const PREVIEW = "Hi, I'm RAG, Rithvik's agent. Ask me anything about his work.";
 const PHASE_TEXT: Record<Phase, string> = { off: "", connecting: "Connecting…", ready: "Go ahead, I'm listening", listening: "Listening…", thinking: "Thinking…", speaking: "Speaking…", error: "" };
 
-/** Voice controls for the agent bar:
- *  - voice mode: a live, full-duplex conversation with GPT-Live (./live), transcripts flowing into the log through
- *    `live`, with a reactive orb (it swells with the visitor's voice and the agent's, swirls while thinking);
+/** Voice controls for the agent bar. One voice system: the visitor's voice, style and speed picks drive both modes.
+ *  - voice mode: a live, full-duplex conversation (./live) that can use the site's tools, transcripts flowing into the
+ *    log through `live`, with a reactive orb (it swells with the visitor's voice and the agent's, swirls while thinking);
  *  - the mic: hold-to-talk dictation into the prompt (tap on touch; hold Space in the empty prompt);
  *  - the speaker: read typed answers aloud, with a picker for voice, style and speed. */
 export default function Voice({ onTranscript, live }: { onTranscript: (text: string) => void; live: LiveHandlers }) {
@@ -68,7 +68,10 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
   const toggleLive = () => {
     if (on) { stopLive(); handlers.current.turnEnd(); return; }
     stopSpeaking(); stop(true);
-    void startLive({ transcript: (w, d) => handlers.current.transcript(w, d), turnEnd: () => handlers.current.turnEnd() });
+    void startLive(
+      { transcript: (w, d) => handlers.current.transcript(w, d), turnEnd: () => handlers.current.turnEnd(), tool: (n, a) => handlers.current.tool(n, a) },
+      { voice: sp.voice, style: sp.style, rate: sp.rate },
+    );
   };
 
   // Space-hold in the empty prompt; Esc ends voice mode / silences speech / cancels recording before the dock's own Esc.
@@ -110,7 +113,7 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
         <span className="vo-status" role="status" aria-live="polite" data-state={lv.message ? "error" : state}>{lv.message || message}</span>
       )}
       <button type="button" className="vo-btn vo-live" aria-pressed={on} onClick={toggleLive} disabled={lv.phase === "connecting"}
-        aria-label={on ? "End voice mode" : "Voice mode"} title={on ? "End voice mode (Esc)" : "Voice mode: a live conversation with RAG"}>
+        aria-label={on ? "End voice mode" : "Voice mode"} title={on ? "End voice mode (Esc)" : "Voice mode: talk with RAG"}>
         {on ? <Icon name="x" /> : <Icon name="activity" />}
       </button>
       {!on && (
@@ -140,14 +143,14 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
         <Icon name="volume-2" />
       </button>
       <span className="vo-setw" ref={pop}>
-        <button type="button" className="vo-btn vo-set" aria-expanded={open} aria-haspopup="dialog" aria-label="Voice settings" title="Voice, style and speed" onClick={() => setOpen((v) => !v)}>
+        <button type="button" className="vo-btn vo-set" aria-expanded={open} aria-haspopup="dialog" aria-label="Voice settings" title="Voice settings" onClick={() => setOpen((v) => !v)}>
           <svg className="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
             <path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" />
           </svg>
         </button>
         {open && (
           <span className="vo-pop" role="dialog" aria-label="Voice settings">
-            <span className="vo-k">Read-aloud voice</span>
+            <span className="vo-k">Voice</span>
             <span className="vo-chips" role="radiogroup" aria-label="Voice">
               {VOICES.map((v) => (
                 <button key={v.id} type="button" role="radio" aria-checked={sp.voice === v.id} title={v.note} onClick={() => setVoicePrefs({ voice: v.id })}>{v.id}</button>
@@ -164,7 +167,6 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
               <input type="range" min={RATE_MIN} max={RATE_MAX} step={0.05} value={sp.rate} onChange={(e) => setVoicePrefs({ rate: +e.target.value })} />
             </label>
             <button type="button" className="vo-try" onClick={() => (sp.speaking ? stopSpeaking() : void speak(PREVIEW, true))}>{sp.speaking ? "Stop" : "Preview"}</button>
-            <span className="vo-note">Voice mode talks with GPT-Live&apos;s own voice; these settings are for replies read aloud.</span>
           </span>
         )}
       </span>

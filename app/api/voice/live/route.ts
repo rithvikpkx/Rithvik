@@ -1,20 +1,27 @@
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
-import { LIVE_INSTRUCTIONS, liveBackendInstructions } from "@/lib/agent/live-prompt";
+import { liveBackendInstructions, liveInstructions } from "@/lib/agent/live-prompt";
+import { allowedFor } from "@/lib/agent/allowed";
+import { toolDefs } from "@/lib/agent/tools";
+import { calendarPromptContext } from "@/lib/calendar/tools";
+import { getPalettes } from "@/lib/designs/server";
 import { CHAT_MODEL } from "@/lib/openai";
+import { STYLES, clampRate, paceOf, pickStyle, pickVoice } from "@/lib/voice";
 
 const PER_KEY = 6;      // voice sessions per IP (IPv6: per /64) per hour: each is billed by the minute
 const GLOBAL = 120;     // all visitors per hour
 const MAX_SDP = 20_000; // a browser offer is ~3-6 KB
 const BACKEND = process.env.VOICE_LIVE_BACKEND_MODEL || CHAT_MODEL;
 
-/** POST { sdp } -> { sdp }: starts a GPT-Live voice session for the browser's WebRTC offer and returns OpenAI's answer.
- *  The API key stays here; the grounding (the published profile) rides in the backend model's instructions. */
+/** POST { sdp, voice?, style?, rate? } -> { sdp }: starts a voice-mode session for the browser's WebRTC offer and returns
+ *  the answer. The API key stays here. The backend model gets the published profile, the grounding rules and the site's
+ *  tools (the same definitions as /api/chat); the browser runs each call through /api/voice/tool. Voice and style are
+ *  allow-listed ids; the speed slider becomes a spoken-pace instruction. */
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) return Response.json({ error: "Voice is not configured." }, { status: 503 });
-  let sdp: unknown;
-  try { ({ sdp } = (await req.json()) as { sdp?: unknown }); } catch { return Response.json({ error: "Invalid request." }, { status: 400 }); }
+  let sdp: unknown, voice: unknown, style: unknown, rate: unknown;
+  try { ({ sdp, voice, style, rate } = (await req.json()) as { sdp?: unknown; voice?: unknown; style?: unknown; rate?: unknown }); } catch { return Response.json({ error: "Invalid request." }, { status: 400 }); }
   if (typeof sdp !== "string" || !sdp.startsWith("v=0") || sdp.length > MAX_SDP) return Response.json({ error: "Invalid offer." }, { status: 400 });
 
   const limited = await rateLimit("live", clientKey(req), PER_KEY, GLOBAL);
@@ -23,7 +30,10 @@ export async function POST(req: Request) {
       { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } });
   }
 
-  const profile = scrubPrivate(renderProfile(await getContent()));
+  const [content, palettes, calendar] = await Promise.all([getContent(), getPalettes(), calendarPromptContext()]);
+  const profile = scrubPrivate(renderProfile(content));
+  // Responses-style function tools; strict off, since several parameters are optional
+  const tools = toolDefs(allowedFor(content, palettes)).map((t) => ({ type: "function", name: t.function.name, description: t.function.description, parameters: t.function.parameters, strict: false }));
   let res: Response;
   try {
     res = await fetch("https://api.openai.com/v1/live/sessions", {
@@ -32,8 +42,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         session: {
           model: "gpt-live-1",
-          instructions: LIVE_INSTRUCTIONS,
-          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile) } },
+          instructions: liveInstructions(STYLES[pickStyle(style)], paceOf(clampRate(rate))),
+          audio: { output: { voice: pickVoice(voice) } },
+          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile, calendar), tools, tool_choice: "auto" } },
         },
         transport: { type: "webrtc", sdp },
       }),

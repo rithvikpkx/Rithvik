@@ -223,7 +223,7 @@ export default function AgentDock() {
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />
         <kbd className="ab-kbd" aria-hidden="true">⌘K</kbd>
-        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} live={{ transcript: (w, d) => { openAgent(); agent.liveText(w, d); }, turnEnd: agent.liveTurnEnd }} />
+        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} live={{ transcript: (w, d) => { openAgent(); agent.liveText(w, d); }, turnEnd: agent.liveTurnEnd, tool: agent.liveTool }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
       {open && <StatusLine actions={items.some((i) => i.kind === "actions")} turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
