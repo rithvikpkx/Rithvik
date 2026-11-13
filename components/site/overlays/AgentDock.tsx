@@ -13,6 +13,8 @@ import Transcript, { type RowHandlers } from "../agent/Transcript";
 import { useAgent } from "../agent/useAgent";
 import { scrollAndHighlight } from "../agent/highlight";
 import Voice from "../agent/Voice";
+import { setCursorMode, useCursorMode } from "../agent/cursor";
+import "../agent/cursor.css";
 import "../agent/agent.css";
 
 /** True when a keystroke is going into a form field or editor, where global shortcuts must stay out of the way. */
@@ -36,6 +38,7 @@ export default function AgentDock() {
   useEffect(() => { setAdminMode(admin); return () => setAdminMode(false); }, [admin]);
   const narrow = useSyncExternalStore(subscribeNarrow, () => matchMedia(NARROW).matches, () => false);
   const [full, setFull] = useState(false);
+  const cursorMode = useCursorMode();
   const [detached, setDetached] = useState(false); // a floating, movable, resizable chat window instead of the dock
   const dock = useRef<HTMLDivElement>(null);
   // closing also docks a floating chat again (dropping its spot and size)
@@ -224,6 +227,10 @@ export default function AgentDock() {
           }}>
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-actions">
+              <button type="button" className="ag-btn ag-cursor" aria-pressed={cursorMode} aria-label="Cursor mode: RAG acts out its actions with its own cursor"
+                title={cursorMode ? "Cursor mode on: RAG clicks and types on the page itself" : "Cursor mode: watch RAG click and type on the page"} onClick={() => setCursorMode(!cursorMode)}>
+                <Icon name="mouse-pointer-2" /><span>Cursor</span>
+              </button>
               <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
               <button type="button" className="ag-btn" aria-label="Download chat as Markdown" title="Download chat" disabled={!agent.canExport} onClick={agent.downloadChat}><Icon name="download" /></button>
               <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>

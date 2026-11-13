@@ -1,5 +1,6 @@
 "use client";
 import { speak, stopSpeaking } from "./speech";
+import { cursorOn, perform } from "./cursor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
@@ -180,9 +181,11 @@ export function useAgent(host: Host) {
   const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>, now = false) => {
     const a = e.args ?? {};
     const tool = { name: pascal(e.name), args: Object.values(a).map((v) => clip(String(v), 40)).join(", ") };
+    // cursor mode is the visitor's go-ahead too: the RAG cursor acts the action out on the page, then it runs
+    const cursor = cursorOn();
     const act: typeof offer = (key, label, go, extra) => {
-      if (!now || extra?.once) return offer(key, label, go, extra);
-      go();
+      if (!(now || cursor) || extra?.once) return offer(key, label, go, extra);
+      if (cursor) perform(e.name, a, go); else go();
       if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
     };
     switch (e.name) {
@@ -245,6 +248,11 @@ export function useAgent(host: Host) {
         return;
       }
       case "draft_email":
+        if (cursor) { // the cursor opens an empty draft and types it in front of the visitor
+          perform(e.name, a, () => {}, { open: () => compose("", ""), subject: a.subject ?? "", body: a.body ?? "" });
+          add({ kind: "tool", name: tool.name, args: tool.args, result: "Typing it into the email window" });
+          return;
+        }
         act("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
         return;
     }
