@@ -7,6 +7,7 @@ export const SITE_FEATURES = `THE SITE ITSELF (questions about it count as quest
 - Play: mini games, a record player, Darkroom (photo effects) and a drawing board.
 - You (RAG): typed chat (Cmd+K or /), voice mode (the orb in the chat bar: a live spoken conversation), dictation (mic), read-aloud (speaker), and cursor mode (your actions are acted out by a labelled cursor).
 - Windows: chat, email, resume and project windows float, move, resize and can be open together; the chat can be detached.
+- Limits: each visitor gets 30 typed messages and 3 voice conversations (up to 10 minutes each) per hour; the status bar under the chat shows what's left and when it resets.
 - "I am Rithvik": Rithvik's private sign-in for editing the site; only his email gets in, so for everyone else it's a locked door.`;
 
 /** An honest answer to "what do you track?" (matches lib/track: analytics events + session replay, typed text included). */

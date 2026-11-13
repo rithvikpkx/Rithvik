@@ -1,4 +1,5 @@
-import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { agentLimit } from "@/lib/agent-limit";
+import { clientKey } from "@/lib/rate-limit";
 import { MAX_SPEAK_CHARS, STYLES, pickStyle, pickVoice, speakable } from "@/lib/voice";
 
 const PER_KEY = 20;      // spoken replies per IP (IPv6: per /64) per hour
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   const input = speakable(text);
   if (!input) return Response.json({ error: "Nothing to speak." }, { status: 400 });
 
-  const limited = await rateLimit("tts", clientKey(req), PER_KEY, GLOBAL);
+  const limited = await agentLimit(req, "tts", clientKey(req), PER_KEY, GLOBAL);
   if (!limited.ok) {
     return Response.json({ error: limited.status === 429 ? "Too many voice requests. Try again later." : "Voice is unavailable right now." },
       { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } });

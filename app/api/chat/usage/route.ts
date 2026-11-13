@@ -1,8 +1,12 @@
-import { CHAT_RATE_LIMIT, clientKey, peekRateLimit, rateHeaders } from "@/lib/rate-limit";
+import { clientKey, peekRateLimit, rateHeaders } from "@/lib/rate-limit";
+import { CHAT_PER_KEY, LIVE_PER_KEY, adminRequest } from "@/lib/agent-limit";
 
-/** The visitor's current chat window (per IP key), read without spending a request. Feeds /usage in the agent. */
+/** The visitor's current windows (per IP key), read without spending a request: typed chat and voice mode. Feeds
+ *  /usage and the status bar. The signed-in admin has no limits (`admin: true`, no windows). */
 export async function GET(req: Request) {
-  const info = await peekRateLimit("chat", clientKey(req), CHAT_RATE_LIMIT);
+  if (await adminRequest(req)) return Response.json({ admin: true }, { headers: { "Cache-Control": "no-store" } });
+  const key = clientKey(req);
+  const [info, voice] = await Promise.all([peekRateLimit("chat", key, CHAT_PER_KEY), peekRateLimit("live", key, LIVE_PER_KEY)]);
   if (!info) return Response.json({ error: "Usage unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
-  return Response.json(info, { headers: { "Cache-Control": "no-store", ...rateHeaders(info) } });
+  return Response.json({ ...info, voice }, { headers: { "Cache-Control": "no-store", ...rateHeaders(info) } });
 }

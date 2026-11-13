@@ -1,4 +1,5 @@
-import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { agentLimit } from "@/lib/agent-limit";
+import { clientKey } from "@/lib/rate-limit";
 import { durationOk, MAX_AUDIO_BYTES, sniffAudio, stripPromptEcho } from "@/lib/voice";
 
 const PER_KEY = 30;      // transcriptions per IP (IPv6: per /64) per hour
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
   const len = Number(req.headers.get("content-length"));
   if (len > MAX_AUDIO_BYTES + 4096) return Response.json({ error: "Recording is too large." }, { status: 413 });
 
-  const limited = await rateLimit("voice", clientKey(req), PER_KEY, GLOBAL);
+  const limited = await agentLimit(req, "voice", clientKey(req), PER_KEY, GLOBAL);
   if (!limited.ok) {
     return Response.json({ error: limited.status === 429 ? "Too many voice requests. Try again later." : "Voice is unavailable right now." },
       { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } });

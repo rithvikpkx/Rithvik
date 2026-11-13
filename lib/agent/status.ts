@@ -33,6 +33,10 @@ export type Usage = {
   cache?: string;
   /** The last answer was replayed from the response cache. */
   cached?: boolean;
+  /** Voice mode's hourly window (conversations), from /api/chat/usage. */
+  voice?: { limit: number; remaining: number; reset?: number };
+  /** The signed-in admin: no limits at all. */
+  admin?: boolean;
 };
 
 /** "980" under a thousand, else "1.2k" / "12.4k" / "123k". */
@@ -89,9 +93,15 @@ export function statusSegments(s: StatusState): StatusSeg[] {
   const u = s.usage;
   const segs: StatusSeg[] = [{ text: "● ready" }];
   if (u?.cached) segs.push({ text: "● cached", cls: "s-cached" });
-  if (u?.limit !== undefined && u.remaining !== undefined) {
+  if (u?.admin) segs.push({ text: "no limits (admin)", cls: "s-left" });
+  else if (u?.limit !== undefined && u.remaining !== undefined) {
     segs.push({ text: `${u.remaining}/${u.limit} left`, cls: "s-left", ...(u.remaining <= 5 ? { tone: "warn" as const } : {}) });
     if (u.reset && s.now && u.reset * 1000 > s.now) segs.push({ text: `resets in ${formatRetry((u.reset * 1000 - s.now) / 1000)}`, cls: "s-reset" });
+  }
+  if (u?.voice && !u.admin) {
+    const v = u.voice, out = v.remaining <= 0;
+    const when = v.reset && s.now && v.reset * 1000 > s.now ? ` · resets in ${formatRetry((v.reset * 1000 - s.now) / 1000)}` : "";
+    segs.push({ text: `voice ${v.remaining}/${v.limit}${out ? when : ""}`, cls: "s-voice", ...(out ? { tone: "warn" as const } : {}) });
   }
   if (u?.tokens) segs.push({ text: `${formatTokens(u.tokens)} tok`, cls: "s-tok" });
   segs.push({ text: "? for shortcuts", cls: "s-hint" });

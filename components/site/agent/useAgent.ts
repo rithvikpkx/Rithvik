@@ -1,6 +1,7 @@
 "use client";
 import { speak, stopSpeaking } from "./speech";
 import { cursorOn, perform } from "./cursor";
+import { RESUME_KEY, liveActive, liveQuiet } from "./live";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
@@ -58,9 +59,30 @@ const cited = (text: string, sources: Source[]) =>
   citedNumbers(text).map((n) => sources.find((s) => s.n === n)).filter((s): s is Source => !!s);
 
 /** The agent's state machine: transcript items, real turns, the /api/chat stream, action buttons. */
+const LOG_KEY = "rithvik-agent-log";
+/** A full load on purpose: recruiter mode is its own root layout (the conversation is carried in sessionStorage). */
+// eslint-disable-next-line @next/next/no-location-assign-relative-destination -- crosses root layouts
+const toRecruiter = () => location.assign("/recruiter");
+
+/** The tab's saved conversation, minus action rows (their buttons can't survive a reload) and with streaming stopped. */
+function restoreLog(): { items: Item[]; turns: Turn[] } | null {
+  try {
+    const j = JSON.parse(sessionStorage.getItem(LOG_KEY) || "null") as { items?: Item[]; turns?: Turn[] } | null;
+    if (!j?.items?.length) return null;
+    const items = j.items.filter((i) => i.kind !== "actions").map((i) => (i.kind === "answer" ? { ...i, streaming: false } : i));
+    return { items, turns: j.turns ?? [] };
+  } catch { return null; }
+}
+/** Saves the conversation for this tab (last 80 rows; storage can be full or blocked, which only loses the carry-over). */
+function saveLog(items: Item[], turns: Turn[]) {
+  try { sessionStorage.setItem(LOG_KEY, JSON.stringify({ items: items.slice(-80), turns: turns.slice(-20) })); } catch { /* not carried over */ }
+}
+
 export function useAgent(host: Host) {
-  const [items, setItems] = useState<Item[]>([{ id: 0, kind: "banner" }]);
-  const [turns, setTurns] = useState<Turn[]>([]);
+  // The conversation survives page loads in this tab (recruiter mode is a full load): restored from sessionStorage.
+  const [saved] = useState(restoreLog);
+  const [items, setItems] = useState<Item[]>(() => saved?.items ?? [{ id: 0, kind: "banner" }]);
+  const [turns, setTurns] = useState<Turn[]>(() => saved?.turns ?? []);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [cooldown, setCooldown] = useState<Cooldown | null>(null);
   const [usage, setUsage] = useState<Usage>({ tokens: 0 }); // rate-limit headers, trailer tokens and timings
@@ -68,7 +90,12 @@ export function useAgent(host: Host) {
   // Lazy init (not an effect): the dock only mounts client-side, so localStorage is there.
   const [history, setHistory] = useState<string[]>(() => loadHistory(typeof localStorage === "undefined" ? undefined : localStorage));
 
-  const seq = useRef(0);
+  const seq = useRef(saved ? Math.max(0, ...saved.items.map((i) => i.id)) : 0);
+  // Keep the saved copy current (a beat after changes settle, so a streaming answer isn't written per token).
+  useEffect(() => {
+    const t = setTimeout(() => saveLog(items, turns), 400);
+    return () => clearTimeout(t);
+  }, [items, turns]);
   const run = useRef<Run | null>(null);
   const hIdx = useRef(-1);
   const offers = useRef<Offer[]>([]); // this turn's proposals, turned into one row of buttons when the turn ends
@@ -238,9 +265,12 @@ export function useAgent(host: Host) {
       }
       case "open_resume": act("resume", "Open resume", host.openResume); return;
       case "open_recruiter_mode":
-        // a full load on purpose: recruiter mode is its own root layout
-        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        if (location.pathname !== "/recruiter") act("recruiter", "Open recruiter mode", () => { location.href = "/recruiter"; });
+        if (location.pathname !== "/recruiter") act("recruiter", "Open recruiter mode", () => {
+          // mid-conversation by voice: let it finish the sentence, and have the next page resume the session
+          if (!liveActive()) { toRecruiter(); return; }
+          try { sessionStorage.setItem(RESUME_KEY, "1"); } catch { /* voice won't resume */ }
+          void liveQuiet().then(toRecruiter);
+        });
         return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
@@ -295,6 +325,17 @@ export function useAgent(host: Host) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000); // after the click has been handled
   }, [exportMd]);
+
+  /** Reads this visitor's windows (typed chat and voice mode, or "admin: no limits") into the status bar, quietly. */
+  const refreshUsage = useCallback(async () => {
+    try {
+      const r = await fetch("/api/chat/usage", { cache: "no-store" });
+      if (!r.ok) return;
+      const j = (await r.json()) as { admin?: boolean; limit?: number; remaining?: number; reset?: number | null; voice?: { limit: number; remaining: number; reset: number | null } | null };
+      setUsage((p) => (j.admin ? { ...p, admin: true }
+        : { ...p, limit: j.limit, remaining: j.remaining, reset: j.reset ?? undefined, voice: j.voice ? { limit: j.voice.limit, remaining: j.voice.remaining, reset: j.voice.reset ?? undefined } : p.voice }));
+    } catch { /* the status bar keeps what it had */ }
+  }, []);
 
   /** The /usage row: this visitor's hourly window (a free read, it never counts as a turn), tokens and timings. */
   const showUsage = useCallback(async () => {
@@ -374,6 +415,7 @@ export function useAgent(host: Host) {
       const num = (h: string) => { const v = res.headers.get(h); return v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined; };
       const limit = num("X-RateLimit-Limit"), remaining = num("X-RateLimit-Remaining");
       if (limit !== undefined && remaining !== undefined) setUsage((p) => ({ ...p, limit, remaining, reset: num("X-RateLimit-Reset") }));
+      if (res.headers.get("X-Agent-Admin")) setUsage((p) => ({ ...p, admin: true }));
       const cache = res.headers.get("x-vercel-cache") ?? res.headers.get("x-cache") ?? undefined; // only when the host sends one
       const sid = res.headers.get("X-Agent-Session");
       if (sid && sid !== readSession()) { writeSession(sid); setSessionId(sid); }
@@ -576,5 +618,5 @@ export function useAgent(host: Host) {
     return j.reply ?? "Rejected.";
   }, [add, runTool, flushOffers]);
 
-  return { liveText, liveTurnEnd, liveTool, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
+  return { refreshUsage, liveText, liveTurnEnd, liveTool, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }

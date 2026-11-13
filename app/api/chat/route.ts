@@ -7,7 +7,7 @@ import { frame, type AgentEvent, type SearchHit, type Source } from "@/lib/sugge
 import { TEMPERATURE_KEY, TEMP_DEFAULT, clampTemperature } from "@/lib/rag-settings";
 import { deriveActions, isDeclineAnswer } from "@/lib/chat-actions";
 import { loadActionLinks } from "@/lib/action-links";
-import { rateLimit, clientKey, rateHeaders, CHAT_RATE_LIMIT } from "@/lib/rate-limit";
+import { clientKey, rateHeaders } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
 import { allowedFor, codeReader } from "@/lib/agent/allowed";
@@ -21,6 +21,7 @@ import { logRequest, logTurn, startSession } from "@/lib/agent/log";
 import { cacheable, normalizeQuestion, replayChunks, storableParts } from "@/lib/agent/cache";
 import { currentHash, lookupCache, recordHit, storeCache } from "@/lib/agent/cache-db";
 import { isOwner } from "@/lib/track/owner";
+import { CHAT_PER_KEY, agentLimit } from "@/lib/agent-limit";
 import { knownVisitor, rememberVisitor } from "@/lib/track/store";
 import { visitorIdFromCookie } from "@/lib/track/schema";
 import type { TurnRow } from "@/lib/agent/obs";
@@ -50,7 +51,7 @@ const MAX_HISTORY_MESSAGES = 5; // last 5 turns, matches the client slice
 const MAX_HISTORY_CHARS = 2000; // per-turn cap; history is client-supplied, so it needs its own bound
 const PRIMARY_MATCHES = 5; // the profile already carries every primary record; these are for citing + actions
 const SECONDARY_MATCHES = 6; // uploaded docs (and the resume) are only reachable through retrieval
-const RATE_LIMIT = CHAT_RATE_LIMIT; // chat turns per key (IP; IPv6 /64) per hour
+const RATE_LIMIT = CHAT_PER_KEY; // chat turns per key (IP; IPv6 /64) per hour
 const RATE_LIMIT_GLOBAL = 600; // all callers per hour; caps OpenAI spend if many IPs are used
 const CANNED_NO_CONTEXT_REPLY =
 	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
@@ -180,7 +181,7 @@ export async function POST(req: Request) {
 
 	// Rate limit BEFORE spending anything on OpenAI — this endpoint is public. The hit is recorded
 	// atomically before the work, so bursts and failed turns both count.
-	const limited = await rateLimit("chat", clientKey(req), RATE_LIMIT, RATE_LIMIT_GLOBAL);
+	const limited = await agentLimit(req, "chat", clientKey(req), RATE_LIMIT, RATE_LIMIT_GLOBAL); // none for the signed-in admin
 	if (!limited.ok) {
 		after(() => logRequest({ status: limited.status, errorKind: "rate_limited" }));
 		const text = limited.status === 429
@@ -422,5 +423,5 @@ export async function POST(req: Request) {
 		},
 	});
 
-	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...rateHeaders(limited.info), ...(sessionId ? { "X-Agent-Session": sessionId } : {}) } });
+	return new Response(readable, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", ...rateHeaders(limited.info), ...(limited.admin ? { "X-Agent-Admin": "1" } : {}), ...(sessionId ? { "X-Agent-Session": sessionId } : {}) } });
 }

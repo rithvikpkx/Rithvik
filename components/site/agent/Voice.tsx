@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "../Glyph";
 import { RATE_MAX, RATE_MIN, STYLES, VOICES, type StyleId } from "@/lib/voice";
 import { setSpeaker, setVoicePrefs, speak, stopSpeaking, useSpeaker } from "./speech";
-import { liveLevels, livePhase, startLive, stopLive, useLive, type LiveHandlers, type Phase } from "./live";
+import { RESUME_KEY, liveLevels, livePhase, startLive, stopLive, unmuteLive, useLive, type LiveHandlers, type Phase } from "./live";
 import { useVoice } from "./useVoice";
 import "./voice.css";
 
@@ -64,15 +64,27 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
     return () => document.removeEventListener("pointerdown", off);
   }, [open]);
 
-  /** Starts or ends voice mode (this click is the gesture the mic and audio need). */
-  const toggleLive = () => {
-    if (on) { stopLive(); handlers.current.turnEnd(); return; }
+  /** Starts voice mode with the conversation so far, so it continues rather than starting over. */
+  const begin = () => {
     stopSpeaking(); stop(true);
     void startLive(
       { transcript: (w, d) => handlers.current.transcript(w, d), turnEnd: () => handlers.current.turnEnd(), tool: (n, a) => handlers.current.tool(n, a) },
-      { voice: sp.voice, style: sp.style, rate: sp.rate },
-    );
+      { voice: sp.voice, style: sp.style, rate: sp.rate, history: handlers.current.history?.() },
+    ).then(() => handlers.current.refreshUsage?.());
   };
+  /** Starts or ends voice mode (this click is the gesture the mic and audio need). */
+  const toggleLive = () => {
+    if (on) { stopLive(); handlers.current.turnEnd(); return; }
+    begin();
+  };
+  // Voice mode was on when the page changed (e.g. into recruiter mode): pick the conversation back up.
+  const beginRef = useRef(begin);
+  useEffect(() => { beginRef.current = begin; });
+  useEffect(() => {
+    let resume = false;
+    try { resume = sessionStorage.getItem(RESUME_KEY) === "1"; sessionStorage.removeItem(RESUME_KEY); } catch { /* no carry-over */ }
+    if (resume) beginRef.current();
+  }, []);
 
   // Space-hold in the empty prompt; Esc ends voice mode / silences speech / cancels recording before the dock's own Esc.
   useEffect(() => {
@@ -105,9 +117,11 @@ export default function Voice({ onTranscript, live }: { onTranscript: (text: str
     <>
       {on ? (
         <span className="vo-stage" aria-live="polite">
-          <span className="vo-orb" ref={orb} aria-hidden="true"><i /><i /><i /></span>
+          <span className="vo-orb" ref={orb} aria-hidden="true" onClick={unmuteLive}><i /><i /><i /></span>
           <span className="vo-eq" aria-hidden="true">{[0, 1, 2, 3, 4].map((k) => <i key={k} style={{ ["--k" as string]: k }} />)}</span>
-          <span className="vo-phase" ref={label}>{PHASE_TEXT[lv.phase]}</span>
+          {lv.muted
+            ? <button type="button" className="vo-unmute" onClick={unmuteLive}>Tap to hear RAG</button>
+            : <span className="vo-phase" ref={label}>{PHASE_TEXT[lv.phase]}</span>}
         </span>
       ) : (
         <span className="vo-status" role="status" aria-live="polite" data-state={lv.message ? "error" : state}>{lv.message || message}</span>

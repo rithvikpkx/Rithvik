@@ -96,6 +96,9 @@ export default function AgentDock() {
   }, [content, design, caseSlug, site, close]);
   const agent = useAgent(host);
   const { items, busySince } = agent;
+  // the status bar shows this visitor's windows (chat, voice) as soon as the panel opens
+  const refreshUsage = agent.refreshUsage;
+  useEffect(() => { if (open) void refreshUsage(); }, [open, refreshUsage]);
   const busy = busySince !== null;
 
   // Handlers read the latest agent/state through a ref, so the row callbacks (and memoised rows) stay stable.
@@ -277,7 +280,8 @@ export default function AgentDock() {
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />
         <kbd className="ab-kbd" aria-hidden="true">⌘K</kbd>
-        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} live={{ transcript: (w, d) => { openAgent(); agent.liveText(w, d); }, turnEnd: agent.liveTurnEnd, tool: agent.liveTool }} />
+        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} live={{ transcript: (w, d) => { openAgent(); agent.liveText(w, d); }, turnEnd: agent.liveTurnEnd, tool: agent.liveTool,
+            history: () => agent.turns.slice(-6).map((t) => `Visitor: ${t.q}\nRAG: ${t.a}`).join("\n"), refreshUsage: agent.refreshUsage }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
       {open && <StatusLine usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}

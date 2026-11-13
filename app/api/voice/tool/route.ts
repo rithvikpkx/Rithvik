@@ -1,4 +1,5 @@
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { agentLimit } from "@/lib/agent-limit";
+import { clientKey } from "@/lib/rate-limit";
 import { getContent } from "@/lib/content";
 import { allowedFor, codeReader } from "@/lib/agent/allowed";
 import { screenCalls } from "@/lib/agent/tools";
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   if (typeof body.name !== "string" || body.name.length > 64) return Response.json({ error: "Invalid request." }, { status: 400 });
   const args = typeof body.arguments === "string" ? body.arguments.slice(0, 40_000) : "{}";
 
-  const limited = await rateLimit("live-tool", clientKey(req), PER_KEY, GLOBAL);
+  const limited = await agentLimit(req, "live-tool", clientKey(req), PER_KEY, GLOBAL);
   if (!limited.ok) return Response.json({ call: null, reply: "Rejected: too many actions right now." }, { status: limited.status });
 
   const [content, palettes] = await Promise.all([getContent(), getPalettes()]);

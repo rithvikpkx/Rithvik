@@ -6,14 +6,20 @@ import { useSyncExternalStore } from "react";
  *  the minute, so one ends itself after MAX_MS, or IDLE_MS with nobody talking. */
 
 export type Phase = "off" | "connecting" | "ready" | "listening" | "thinking" | "speaking" | "error";
-export type LiveSnap = { phase: Phase; message: string };
+export type LiveSnap = { phase: Phase; message: string; muted?: boolean };
 export type LiveHandlers = {
   transcript: (who: "user" | "agent", delta: string) => void;
   turnEnd: () => void;
   /** Runs one tool call on the page (validated by the server first) and resolves to the result text for the model. */
   tool: (name: string, args: string) => Promise<string>;
+  /** The conversation so far as plain text, so a new session (or one resumed after a page load) continues it. */
+  history?: () => string;
+  /** Called once a start attempt settles, so the status bar can show the voice window. */
+  refreshUsage?: () => void;
 };
-export type LivePrefs = { voice: string; style: string; rate: number };
+export type LivePrefs = { voice: string; style: string; rate: number; history?: string };
+/** sessionStorage flag: voice mode was on when the page navigated (recruiter mode), so the next page resumes it. */
+export const RESUME_KEY = "rithvik-live-resume";
 
 const MAX_MS = 10 * 60_000;
 const IDLE_MS = 2 * 60_000;
@@ -121,6 +127,8 @@ export async function startLive(h: LiveHandlers, prefs: LivePrefs) {
     pc.ontrack = (ev) => {
       const stream = ev.streams[0] ?? new MediaStream([ev.track]);
       audio.srcObject = stream;
+      // after a page load (resumed session) the browser may block sound until a tap: say so, and the orb unmutes
+      audio.play().catch(() => set({ muted: true }));
       ac.createMediaStreamSource(stream).connect(outA); // listen only; playback stays on the <audio> element
     };
     mic.getAudioTracks().forEach((t) => pc!.addTrack(t, mic!));
@@ -165,8 +173,25 @@ export function stopLive(message = "") {
     void x.ac.close().catch(() => {});
     setTimeout(() => x.pc.close(), 300); // give session.close a moment to leave
   }
-  set({ phase: "off", message });
+  set({ phase: "off", message, muted: false });
   if (message) setTimeout(() => { if (snap.phase === "off") set({ message: "" }); }, 5000);
+}
+
+/** True while a session is connecting or live. */
+export const liveActive = () => !!s || snap.phase === "connecting";
+
+/** Resolves once the voice has been quiet for a moment (or after 8 s), e.g. before navigating away mid-answer. */
+export async function liveQuiet() {
+  let quiet = 0;
+  for (let t = 0; t < 8000 && quiet < 700; t += 100) { await new Promise((r) => setTimeout(r, 100)); quiet = livePhase() === "speaking" ? 0 : quiet + 100; }
+}
+
+/** Starts sound the browser held back (autoplay after a page load); call from a tap. */
+export function unmuteLive() {
+  if (!s) return;
+  void s.audio.play().catch(() => {});
+  void s.ac.resume().catch(() => {});
+  set({ muted: false });
 }
 
 /** Voice-mode state for the UI. */

@@ -1,4 +1,5 @@
-import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { agentLimit } from "@/lib/agent-limit";
+import { clientKey } from "@/lib/rate-limit";
 import { logTurn, startSession } from "@/lib/agent/log";
 import type { TurnRow } from "@/lib/agent/obs";
 
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   const user = typeof b.user === "string" ? b.user.trim().slice(0, MAX) : "";
   const agent = typeof b.agent === "string" ? b.agent.trim().slice(0, MAX) : "";
   if (!user && !agent) return Response.json({ error: "Nothing to log." }, { status: 400 });
-  const limited = await rateLimit("voice-log", clientKey(req), 120, 3000);
+  const limited = await agentLimit(req, "voice-log", clientKey(req), 120, 3000);
   if (!limited.ok) return Response.json({ error: "Too many requests." }, { status: limited.status });
 
   const sessionId = await startSession(req, typeof b.sessionId === "string" ? b.sessionId : null);

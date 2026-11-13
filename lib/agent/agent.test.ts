@@ -10,6 +10,8 @@ test("idle status line shows only what is known, in order", () => {
   assert.deepEqual(statusSegments({ kind: "idle", usage: { ...u, reset: 1_000_000 + 23 * 60 }, now: 1_000_000_000 }).map((s) => s.text), ["● ready", "41/60 left", "resets in 23m", "12.4k tok", "? for shortcuts"]);
   assert.deepEqual(statusSegments({ kind: "idle", usage: { tokens: 0 } }).map((s) => s.text), ["● ready", "? for shortcuts"]);
   assert.equal(statusSegments({ kind: "idle", usage: { tokens: 0, limit: 60, remaining: 3 } })[1].tone, "warn");
+  assert.deepEqual(statusSegments({ kind: "idle", usage: { tokens: 0, voice: { limit: 3, remaining: 0, reset: 1_000_000 + 42 * 60 } }, now: 1_000_000_000 }).map((s) => s.text), ["● ready", "voice 0/3 · resets in 42m", "? for shortcuts"]);
+  assert.deepEqual(statusSegments({ kind: "idle", usage: { tokens: 0, admin: true, voice: { limit: 3, remaining: 0 } } }).map((s) => s.text), ["● ready", "no limits (admin)", "? for shortcuts"]);
 });
 
 test("formatTokens abbreviates", () => {
