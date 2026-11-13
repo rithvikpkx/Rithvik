@@ -27,7 +27,7 @@ import { MAX_STEPS, SECTION_IDS, screenCalls, toolDefs, type Allowed } from "@/l
 // Models come from env (CHAT_MODEL / AUX_MODEL, see lib/openai.ts). Temperature is read per
 // request (runtime-editable, `rag.temperature`); it governs phrasing variety, NOT how much the
 // model may extrapolate — that is the GROUNDING RULES below. Reasoning models ignore it.
-const CHAT_MAX_TOKENS = 700;
+const CHAT_MAX_TOKENS = 3000; // room for an html visual (a tool call's arguments count); text answers stay short by instruction
 const REWRITE_MAX_TOKENS = 200;
 
 /** Reads the operator-set temperature, clamped. Never throws: a settings read
@@ -125,7 +125,7 @@ TOOLS
 - AVAILABILITY: use check_availability for "is he free at …" and suggest_times for "when can we talk" — they run at once, so report what they return in a sentence. Share only free or busy and the times; never say or guess what he is doing, who with, or why a slot is busy, even if asked. Show times in his zone${visitorTz ? ` and the visitor's (${visitorTz})` : ""}.
 - Several requests in one message ("show me X, then help me email him") → call the tools in that order. draft_email: write the subject and body in the visitor's voice, specific to what they asked; never include links.
 - MEETINGS: when a visitor wants to schedule a call or interview with Rithvik, gather conversationally (one or two questions at a time) their name, email, company, role, preferred times and any notes. Check each proposed time with check_availability FIRST (in an earlier step, never in the same step as request_meeting); if one is busy or outside hours, offer suggest_times instead. Call request_meeting once you have name, email and at least one verified time; never invent or guess any of these. Write each time in full the way the calendar tool does ("Tue Nov 10, 10:00 AM PT"), never as an ISO string. It only prepares a request: the visitor gets a "Send meeting request" button that lists the details, and nothing is sent until they click it. Say "I've prepared a request for you to review", never that it was sent. If a call is rejected, ask the visitor for the fix.
-- ARTIFACTS: call render_artifact only when a small visual clearly beats prose and every number or date is in the Profile or Records: a timeline of his roles or projects, a comparison across projects, his skills grouped by area, a few headline stats. Counts you can read off the Profile (how many projects, roles per year) are fine; never estimate, rank by feel or invent values ("skill level" scores are invented, so use a table or timeline instead). Plain questions, one-fact answers and anything off-topic get text. Never put a link or markup in artifact data. After it renders, add at most one sentence of takeaway and do not restate the data.
+- ARTIFACTS: call render_artifact only when a small visual clearly beats prose and every number or date is in the Profile or Records: a timeline of his roles or projects, a comparison across projects, his skills grouped by area, a few headline stats. Counts you can read off the Profile (how many projects, roles per year) are fine; never estimate, rank by feel or invent values ("skill level" scores are invented, so use a table or timeline instead). When the visitor asks for a visual, infographic, summary graphic or anything "cool"/"rich", use type html and design something genuinely striking (layout, hierarchy, accent colour, a little motion) rather than a plain table. Plain questions, one-fact answers and anything off-topic get text. Never put a link in artifact data, and markup only inside an html artifact. After it renders, add at most one sentence of takeaway and do not restate the data.
 - Tool names must come from the enums. Side-effect tools only add a button under your answer that the visitor may click or ignore, so say what you've offered ("there's a button to open …") rather than claiming it already happened.
 
 HOW TO ANSWER
@@ -333,7 +333,7 @@ export async function POST(req: Request) {
 				const messages: ChatMessage[] = [
 					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz) },
 					...history,
-					{ role: "user", content: standalone === message ? message : `${message}\n\n(Standalone form: ${standalone})` },
+					{ role: "user", content: message }, // the visitor's own words; the rewrite only steers retrieval
 				];
 
 				// 3. Up to MAX_STEPS completions: each may stream text and call tools; validated
