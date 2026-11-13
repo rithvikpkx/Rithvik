@@ -7,6 +7,9 @@ import { toolDefs } from "@/lib/agent/tools";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { getPalettes } from "@/lib/designs/server";
 import { CHAT_MODEL } from "@/lib/openai";
+import { isOwner } from "@/lib/track/owner";
+import { knownVisitor } from "@/lib/track/store";
+import { visitorIdFromCookie } from "@/lib/track/schema";
 import { STYLES, clampRate, paceOf, pickStyle, pickVoice } from "@/lib/voice";
 
 const PER_KEY = 3;      // voice sessions per IP (IPv6: per /64) per hour: each is billed by the minute
@@ -30,7 +33,8 @@ export async function POST(req: Request) {
       { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } });
   }
 
-  const [content, palettes, calendar] = await Promise.all([getContent(), getPalettes(), calendarPromptContext()]);
+  const visitorId = isOwner(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
+  const [content, palettes, calendar, known] = await Promise.all([getContent(), getPalettes(), calendarPromptContext(), knownVisitor(visitorId)]);
   const profile = scrubPrivate(renderProfile(content));
   // Responses-style function tools; strict off, since several parameters are optional
   const tools = toolDefs(allowedFor(content, palettes)).map((t) => ({ type: "function", name: t.function.name, description: t.function.description, parameters: t.function.parameters, strict: false }));
@@ -42,9 +46,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         session: {
           model: "gpt-live-1",
-          instructions: liveInstructions(STYLES[pickStyle(style)], paceOf(clampRate(rate))),
+          instructions: liveInstructions(STYLES[pickStyle(style)], paceOf(clampRate(rate))) + (known ? `\n${known}` : ""),
           audio: { output: { voice: pickVoice(voice) } },
-          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile, calendar), tools, tool_choice: "auto" } },
+          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile, calendar) + (known ? `\n\nVisitor:\n${known}` : ""), tools, tool_choice: "auto" } },
         },
         transport: { type: "webrtc", sdp },
       }),

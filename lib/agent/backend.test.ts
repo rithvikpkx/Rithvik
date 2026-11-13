@@ -94,7 +94,7 @@ test("tools: definitions carry enums from content", () => {
   const defs = toolDefs(A);
   const op = defs.find((d) => d.function.name === "open_project")!;
   assert.deepEqual((op.function.parameters as { properties: { slug: { enum: string[] } } }).properties.slug.enum, ["boilerframe", "qrify"]);
-  assert.equal(defs.length, 13); // + render_artifact, arrange_window, open_recruiter_mode
+  assert.equal(defs.length, 14); // + render_artifact, arrange_window, open_recruiter_mode, remember_visitor
 });
 
 test("profile: renders every project and role with slugs, no graduation date", () => {

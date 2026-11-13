@@ -59,6 +59,14 @@ export function toolDefs(a: Allowed): ToolDef[] {
       subject: { type: "string", description: "Short subject line" },
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
+    fn("remember_visitor", "Save what the visitor has told you about themselves so Rithvik can follow up and you can greet them by name next time. Call it as soon as they share any of: their name, email, company, role, what kind of visitor they are, or a job posting (a link or its text). Only what they actually said; never guess.", {
+      name: { type: "string", description: "Their name, as they gave it" },
+      email: { type: "string", description: "Their email, exactly as they gave it" },
+      company: { type: "string", description: "Their company or school" },
+      role: { type: "string", description: "Their job title or the role they're hiring for" },
+      kind: enumOf(["recruiter", "engineer", "student", "founder", "other"], "What kind of visitor they said they are"),
+      job: { type: "string", description: "A job posting they shared: its link or its text" },
+    }),
     fn("open_recruiter_mode", "Switch to recruiter mode: a minimal, content-first page with the resume, experience, projects and an email form all open. Offer it when the visitor says they are a recruiter, hiring manager or hiring, or asks for just the essentials.", {}),
     fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
       window: enumOf([...WINDOWS], "Which window"),
@@ -158,6 +166,14 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
         || (v.startsWith("experience-") && a.roles.some((r) => `experience-${r}` === v));
       return ok ? { id, name: call.name, args: { id: v } } : null;
     }
+    case "remember_visitor": {
+      const f: Record<string, string> = {};
+      for (const k of ["name", "email", "company", "role"]) { const v = plain(raw[k], 120); if (v) f[k] = v; }
+      const kind = s("kind"); if (["recruiter", "engineer", "student", "founder", "other"].includes(kind)) f.kind = kind;
+      const job = typeof raw.job === "string" ? raw.job.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 2000) : ""; // a posting link is fine here: it is stored, never shown as a link
+      if (job) f.job = job;
+      return Object.keys(f).length ? { id, name: call.name, args: f } : null;
+    }
     case "open_resume":
     case "open_recruiter_mode":
       return { id, name: call.name, args: {} };
@@ -209,7 +225,10 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
 /** Validates a step's calls in order, caps side effects, and runs calendar lookups (`visitorTz` is the server-checked
  *  zone and overrides whatever the model passed). Returns the kept calls and, for every call (kept or not), the
  *  tool message the model sees next step. */
-export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
+/** Server-side effects a tool may need: saving what the visitor told the agent (absent for the owner and evals). */
+export type ToolCtx = { remember?: (facts: Record<string, string>) => Promise<boolean> };
+
+export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string, ctx: ToolCtx = {}): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
   const kept: ValidCall[] = [];
   const replies: { id: string; content: string }[] = [];
   let effects = 0;
@@ -234,6 +253,12 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
       const out = await runCalendarTool(v.name, { ...JSON.parse(c.arguments || "{}"), ...(visitorTz ? { visitorTz } : {}) }, now.getTime());
       kept.push({ ...v, result: out.summary });
       replies.push({ id: c.id, content: JSON.stringify(out.result) });
+      continue;
+    }
+    if (v.name === "remember_visitor") {
+      const ok = ctx.remember ? await ctx.remember(v.args) : false;
+      kept.push({ ...v, result: ok ? "Noted for Rithvik" : "Not saved" });
+      replies.push({ id: c.id, content: ok ? "Saved. Thank them briefly (Rithvik will see it); don't repeat it back in full." : "Could not save; carry on without mentioning it." });
       continue;
     }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }

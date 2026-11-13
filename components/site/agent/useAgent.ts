@@ -186,6 +186,9 @@ export function useAgent(host: Host) {
       if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
     };
     switch (e.name) {
+      case "remember_visitor": // saved on the server; the row keeps it visible that the agent noted it
+        add({ kind: "tool", name: "Noted", args: Object.keys(a).join(", "), result: e.result ?? "Noted for Rithvik" });
+        return;
       case "arrange_window": // window layout only: no navigation or data, so it applies at once in typed chat too
         add({ kind: "tool", name: tool.name, args: tool.args, result: host.arrange?.(a) ?? "Not available here" });
         return;
@@ -229,6 +232,8 @@ export function useAgent(host: Host) {
       }
       case "open_resume": act("resume", "Open resume", host.openResume); return;
       case "open_recruiter_mode":
+        // a full load on purpose: recruiter mode is its own root layout
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         if (location.pathname !== "/recruiter") act("recruiter", "Open recruiter mode", () => { location.href = "/recruiter"; });
         return;
       case "start_game": {

@@ -79,7 +79,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
             {rows.map((v, i) => {
               const a = activity[v.id];
               const who = whoLabel(v);
-              const sub = [v.email && v.email !== who ? v.email : null, (v.company_given || v.company) !== who ? v.company_given || v.company : null, v.ip_type].filter(Boolean).join(" · ");
+              const sub = [v.email && v.email !== who ? v.email : null, (v.company_given || v.company) !== who ? v.company_given || v.company : null, v.visitor_kind, v.ip_type].filter(Boolean).join(" · ");
               return (
                 <li key={v.id}>
                   <a className="d-row d-visrow" data-row href={`${base}/visitors/${v.id}`} style={{ ["--i" as string]: i } as CSSProperties}>
@@ -174,7 +174,7 @@ export function VisitorInspector({ v, visits, chats, messages, base, now, replay
 }) {
   const who = whoLabel(v);
   const groups: [string, [string, string | null | undefined][]][] = [
-    ["who", [["name", v.name], ["email", v.email], ["company (told)", v.company_given], ["identified", v.identified_at ? stamp(v.identified_at) : null]]],
+    ["who", [["name", v.name], ["email", v.email], ["company (told)", v.company_given], ["role", v.role], ["they are", v.visitor_kind], ["job posting", v.job_posting], ["identified", v.identified_at ? stamp(v.identified_at) : null]]],
     ["network", [["company (network)", v.company], ["owner", v.org], ["type", v.ip_type], ["asn", v.asn]]],
     ["device", [["device", v.device], ["browser", v.browser], ["os", v.os], ["screen", v.screen], ["languages", v.languages]]],
     ["origin", [["place", place(v) === "—" ? null : place(v)], ["country", v.country ? countryName(v.country) : null], ["timezone", v.timezone], ["first from", v.first_referrer],

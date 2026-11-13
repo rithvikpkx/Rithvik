@@ -18,10 +18,12 @@ import { logRequest, logTurn, startSession } from "@/lib/agent/log";
 import { cacheable, normalizeQuestion, replayChunks, storableParts } from "@/lib/agent/cache";
 import { currentHash, lookupCache, recordHit, storeCache } from "@/lib/agent/cache-db";
 import { isOwner } from "@/lib/track/owner";
+import { knownVisitor, rememberVisitor } from "@/lib/track/store";
+import { visitorIdFromCookie } from "@/lib/track/schema";
 import type { TurnRow } from "@/lib/agent/obs";
 import { cleanRewrite, rewriteMessages } from "@/lib/agent/rewrite";
 import { anchorFor } from "@/lib/agent/highlight";
-import { MAX_STEPS, SECTION_IDS, screenCalls, toolDefs, type Allowed } from "@/lib/agent/tools";
+import { MAX_STEPS, SECTION_IDS, screenCalls, toolDefs, type Allowed, type ToolCtx } from "@/lib/agent/tools";
 
 // Models come from env (CHAT_MODEL / AUX_MODEL, see lib/openai.ts). Temperature is read per
 // request (runtime-editable, `rag.temperature`); it governs phrasing variety, NOT how much the
@@ -98,7 +100,7 @@ function modelFor(req: Request): string {
 	return isEval(req) && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
 }
 
-function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string): string {
+function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = ""): string {
 	return `You are RAG — short for "Rithvik Augmented Generation" — the agent embedded in Rithvik Praveen Kumar's portfolio at rithvik.ai. You help visitors, recruiters and collaborators learn about Rithvik, and you can act on the page with tools.
 
 CRITICAL — GROUNDING RULES (read this before anything else)
@@ -129,13 +131,14 @@ TOOLS
 - Tool names must come from the enums. Side-effect tools only add a button under your answer that the visitor may click or ignore, so say what you've offered ("there's a button to open …") rather than claiming it already happened.
 
 HOW TO ANSWER
+- CLOSE WITH A QUESTION ABOUT THEM: you help Rithvik follow up with the people who visit. Until you know the visitor's name and why they're here (see the Visitor section; if there is none, you know nothing), finish every answer with ONE short, friendly question about them, never about the content. Across the conversation, in roughly this order: their name; whether they're recruiting, an engineer, a student or browsing; their company and role; if they're hiring, the job posting (a link or the description) so Rithvik can see the fit; their email if they'd like him to reach out. Never repeat a question they skipped or declined, and never make an answer depend on it. When they share any of it, call remember_visitor and mention that Rithvik will see it.
 - Concise: 2–4 sentences unless more is genuinely useful. Recruiters: highlight strengths naturally, grounded, no embellishment.
 - CITE: end every sentence that states a fact also found in a numbered Record with that record's number in brackets, e.g. "…on AWS Rekognition [2]." Use the lowest matching number; at most two per sentence. Facts found only in the Profile get no number. Never invent a number.
 - Markdown: **bold** sparingly (≤3), bullets for 3+ items, \`backticks\` for technologies, [text](url) only for URLs that appear below. No headings, no code fences, never describe your formatting.
 
 ## Profile (published on the site — always current)
 ${profile}
-${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}\n` : ""}${page ? `\n${page}\n` : ""}\n## Calendar\n${calendar}${visitorTz ? `\nVisitor's timezone: ${visitorTz}.` : ""}\n`;
+${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}\n` : ""}${page ? `\n${page}\n` : ""}\n## Calendar\n${calendar}${visitorTz ? `\nVisitor's timezone: ${visitorTz}.` : ""}${known ? `\n\n## Visitor\n${known}` : ""}\n`;
 }
 
 export async function POST(req: Request) {
@@ -179,12 +182,16 @@ export async function POST(req: Request) {
 	const db = adminClient();
 	const firstDesign = (body.context as { design?: unknown } | null | undefined)?.design;
 	const visitorTz = cleanTimeZone(body.timeZone);
-	const [content, palettes, calendar, sessionId] = await Promise.all([
+	// what this visitor told the agent before (never for the owner or an eval), and where new facts get saved
+	const visitorId = isOwner(req) || isEval(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
+	const toolCtx: ToolCtx = visitorId ? { remember: (f) => rememberVisitor(visitorId, f) } : {};
+	const [content, palettes, calendar, sessionId, known] = await Promise.all([
 		getContent(),
 		getPalettes(),
 		calendarPromptContext(),
 		// Eval runs never reach the conversation log or the public metrics.
 		isEval(req) ? Promise.resolve(null) : startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
+		knownVisitor(visitorId),
 	]);
 	const allowed: Allowed = allowedFor(content, palettes);
 	const page = sanitizeContext(body.context, {
@@ -325,7 +332,7 @@ export async function POST(req: Request) {
 				const recordsText = records.map((r, i) => `[${i + 1}] (${labelOf(r)}) ${scrubPrivate(r.content)}`).join("\n\n");
 				const contextBlock = `${profile}\n\n${recordsText}`;
 				const messages: ChatMessage[] = [
-					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz) },
+					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known) },
 					...history,
 					{ role: "user", content: message }, // the visitor's own words; the rewrite only steers retrieval
 				];
@@ -351,7 +358,7 @@ export async function POST(req: Request) {
 					answerText += stepText;
 					if (calls.length) calledTools = true;
 					if (!calls.length) break; // tools stay allowed beside a partial decline ("off-topic… also open his resume")
-					const { kept, replies } = await screenCalls(calls, allowed, new Date(), visitorTz);
+					const { kept, replies } = await screenCalls(calls, allowed, new Date(), visitorTz, toolCtx);
 					for (const k of kept) {
 						// an artifact is data for a chart, not a tool row; the log keeps its type and title only
 						if (k.artifact) emit({ t: "artifact", id: k.id, spec: k.artifact });

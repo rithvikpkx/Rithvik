@@ -125,3 +125,46 @@ export async function purgeVisitor(visitorId: string): Promise<void> {
     console.error("[track] purgeVisitor failed:", e instanceof Error ? e.message : e);
   }
 }
+
+export type VisitorFacts = { name?: string; email?: string; company?: string; role?: string; kind?: string; job?: string };
+const KINDS = ["recruiter", "engineer", "student", "founder", "other"];
+
+/** Saves what a visitor told the agent about themselves (only the fields given; a valid email also marks them
+ *  identified). Returns whether a visitor row was updated. Never throws. */
+export async function rememberVisitor(visitorId: string | null, f: VisitorFacts): Promise<boolean> {
+  if (!visitorId) return false;
+  const email = f.email ? cleanEmail(f.email) : null;
+  const patch: Record<string, string> = {};
+  if (clip(f.name, 120)) patch.name = clip(f.name, 120)!;
+  if (email) patch.email = email;
+  if (clip(f.company, 120)) patch.company_given = clip(f.company, 120)!;
+  if (clip(f.role, 120)) patch.role = clip(f.role, 120)!;
+  if (f.kind && KINDS.includes(f.kind)) patch.visitor_kind = f.kind;
+  if (clip(f.job, 2000)) patch.job_posting = clip(f.job, 2000)!;
+  if (!Object.keys(patch).length) return false;
+  try {
+    const db = adminClient();
+    const { data: v } = await db.from("visitors").select("identified_at").eq("id", visitorId).maybeSingle();
+    if (!v) return false;
+    const { error } = await db.from("visitors").update({ ...patch, ...(email && !v.identified_at ? { identified_at: new Date().toISOString() } : {}) }).eq("id", visitorId);
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error("[track] rememberVisitor failed:", e instanceof Error ? e.message : e);
+    return false;
+  }
+}
+
+/** What a returning visitor has told the agent before, as one prompt line ("" when nothing is known). */
+export async function knownVisitor(visitorId: string | null): Promise<string> {
+  if (!visitorId) return "";
+  try {
+    const { data: v } = await adminClient().from("visitors").select("name,email,company_given,role,visitor_kind,job_posting,visits").eq("id", visitorId).maybeSingle();
+    if (!v) return "";
+    const bits = [v.name && `name ${v.name}`, v.company_given && `company ${v.company_given}`, v.role && `role ${v.role}`, v.visitor_kind && `they said they are a ${v.visitor_kind}`,
+      v.email && "has shared an email", v.job_posting && "has shared a job posting"].filter(Boolean);
+    return bits.length ? `Known visitor (from what they told you before; visit ${v.visits ?? 1}): ${bits.join(", ")}. Greet them by name when it fits, don't ask again for what you already know.` : "";
+  } catch {
+    return "";
+  }
+}
