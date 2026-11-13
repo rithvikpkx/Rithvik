@@ -239,6 +239,8 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
  *  tool message the model sees next step. */
 /** Server-side effects a tool may need: saving what the visitor told the agent (absent for the owner and evals). */
 export type ToolCtx = {
+  /** Screen actions run at once (voice mode, cursor mode) rather than becoming buttons; the replies say so. */
+  immediate?: boolean;
   remember?: (facts: Record<string, string>) => Promise<boolean>;
   readCode?: (repo?: string, path?: string) => Promise<{ text: string; summary: string }>;
 };
@@ -285,7 +287,9 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
     }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }
     kept.push(v);
-    replies.push({ id: c.id, content: v.result ?? "Offered as a button the visitor may click. Do not claim it already happened." });
+    // say what really happened: window layout always applies at once; other screen actions do in voice/cursor mode
+    const acted = v.name === "arrange_window" || (ctx.immediate && v.name !== "request_meeting");
+    replies.push({ id: c.id, content: v.result ?? (acted ? "Done: it happened on the visitor's screen just now. Say what you did; never mention a button." : "Offered as a button the visitor may click. Do not claim it already happened.") });
   }
   return { kept, replies };
 }

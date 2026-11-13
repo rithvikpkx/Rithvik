@@ -12,6 +12,7 @@ import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
 import { allowedFor, codeReader } from "@/lib/agent/allowed";
 import { looksPrompt } from "@/lib/designs/about";
+import { SITE_ADVOCACY, SITE_FEATURES, SITE_PRIVACY } from "@/lib/agent/site-facts";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { cleanTimeZone, contextPrompt, sanitizeContext } from "@/lib/agent/context";
@@ -101,7 +102,7 @@ function modelFor(req: Request): string {
 	return isEval(req) && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
 }
 
-function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = "", looks = ""): string {
+function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = "", looks = "", cursor = false): string {
 	return `You are RAG — short for "Rithvik Augmented Generation" — the agent embedded in Rithvik Praveen Kumar's portfolio at rithvik.ai. You help visitors, recruiters and collaborators learn about Rithvik, and you can act on the page with tools.
 
 CRITICAL — GROUNDING RULES (read this before anything else)
@@ -133,6 +134,12 @@ TOOLS
 - RECRUITERS: when the visitor says they recruit or are hiring, offer open_recruiter_mode once (a minimal page with everything open).
 - Tool names must come from the enums. Side-effect tools only add a button under your answer that the visitor may click or ignore, so say what you've offered ("there's a button to open …") rather than claiming it already happened.
 
+${SITE_FEATURES}
+
+${SITE_PRIVACY}
+
+${SITE_ADVOCACY}
+
 HOW TO ANSWER
 - CLOSE WITH A QUESTION ABOUT THEM: you help Rithvik follow up with the people who visit. Until you know the visitor's name and why they're here (see the Visitor section; if there is none, you know nothing), finish every answer with ONE short, friendly question about them, never about the content. Across the conversation, in roughly this order: their name; whether they're recruiting, an engineer, a student or browsing; their company and role; if they're hiring, the job posting (a link or the description) so Rithvik can see the fit; their email if they'd like him to reach out. Never repeat a question they skipped or declined, and never make an answer depend on it. When they share any of it, call remember_visitor and mention that Rithvik will see it.
 - Concise: 2–4 sentences unless more is genuinely useful. Recruiters: highlight strengths naturally, grounded, no embellishment.
@@ -144,11 +151,11 @@ ${looks}
 
 ## Profile (published on the site — always current)
 ${profile}
-${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}\n` : ""}${page ? `\n${page}\n` : ""}\n## Calendar\n${calendar}${visitorTz ? `\nVisitor's timezone: ${visitorTz}.` : ""}${known ? `\n\n## Visitor\n${known}` : ""}\n`;
+${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}\n` : ""}${page ? `\n${page}\n` : ""}\n## Calendar\n${calendar}${visitorTz ? `\nVisitor's timezone: ${visitorTz}.` : ""}${known ? `\n\n## Visitor\n${known}` : ""}${cursor ? "\n\nCursor mode is ON: screen actions (opening, scrolling, switching, drafting) happen at once, acted out by your on-screen cursor; say what you did, never mention buttons. A meeting request still waits for their click." : ""}\n`;
 }
 
 export async function POST(req: Request) {
-	let body: { message?: unknown; messages?: unknown; offered?: unknown; context?: unknown; sessionId?: unknown; timeZone?: unknown };
+	let body: { message?: unknown; messages?: unknown; offered?: unknown; context?: unknown; sessionId?: unknown; timeZone?: unknown; cursor?: unknown };
 	try {
 		body = (await req.json()) as typeof body;
 	} catch {
@@ -190,7 +197,8 @@ export async function POST(req: Request) {
 	const visitorTz = cleanTimeZone(body.timeZone);
 	// what this visitor told the agent before (never for the owner or an eval), and where new facts get saved
 	const visitorId = isOwner(req) || isEval(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
-	let toolCtx: ToolCtx = visitorId ? { remember: (f) => rememberVisitor(visitorId, f) } : {};
+	const cursorMode = body.cursor === true; // the visitor turned on cursor mode: actions play out on the page at once
+	let toolCtx: ToolCtx = { immediate: cursorMode, ...(visitorId ? { remember: (f: Record<string, string>) => rememberVisitor(visitorId, f) } : {}) };
 	const [content, palettes, calendar, sessionId, known] = await Promise.all([
 		getContent(),
 		getPalettes(),
@@ -339,7 +347,7 @@ export async function POST(req: Request) {
 				const recordsText = records.map((r, i) => `[${i + 1}] (${labelOf(r)}) ${scrubPrivate(r.content)}`).join("\n\n");
 				const contextBlock = `${profile}\n\n${recordsText}`;
 				const messages: ChatMessage[] = [
-					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known, looksPrompt(allowed.looks)) },
+					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known, looksPrompt(allowed.looks), cursorMode) },
 					...history,
 					{ role: "user", content: message }, // the visitor's own words; the rewrite only steers retrieval
 				];

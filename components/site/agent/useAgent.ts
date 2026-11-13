@@ -367,6 +367,7 @@ export function useAgent(host: Host) {
           context,
           sessionId: readSession() ?? undefined,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          cursor: cursorOn(), // actions will play out at once, so the model shouldn't talk about buttons
         }),
       });
       if (gone()) return;
@@ -568,13 +569,12 @@ export function useAgent(host: Host) {
     const c = j.call;
     liveTools.current.push({ name, result: j.reply ?? "" });
     if (c) {
-      liveTurnEnd(); // what the voice says next lands under the action, not above it
       if (c.artifact) { const p = parseArtifact(c.artifact); if (p.ok) add({ kind: "artifact", spec: p.spec }); }
       else runTool({ t: "tool", id: c.id, name: c.name, args: c.args, result: c.result }, true);
       flushOffers();
     }
     return j.reply ?? "Rejected.";
-  }, [add, runTool, flushOffers, liveTurnEnd]);
+  }, [add, runTool, flushOffers]);
 
   return { liveText, liveTurnEnd, liveTool, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }

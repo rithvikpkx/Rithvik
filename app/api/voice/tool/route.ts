@@ -10,7 +10,6 @@ import { visitorIdFromCookie } from "@/lib/track/schema";
 
 const PER_KEY = 120; // tool calls per IP per hour (a voice conversation makes a handful)
 const GLOBAL = 3000;
-const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "open_recruiter_mode"]);
 
 /** POST { name, arguments, timeZone? } -> { call, reply }: validates one voice-mode tool call through the same gate as
  *  /api/chat (names checked against published content, arguments rebuilt, calendar tools run here) and returns the
@@ -27,9 +26,7 @@ export async function POST(req: Request) {
   const [content, palettes] = await Promise.all([getContent(), getPalettes()]);
   const visitorId = isOwner(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
   const { kept, replies } = await screenCalls([{ id: "live", name: body.name, arguments: args }], allowedFor(content, palettes), new Date(), cleanTimeZone(body.timeZone),
-    { ...codeReader(content), ...(visitorId ? { remember: (f: Record<string, string>) => rememberVisitor(visitorId, f) } : {}) });
-  const call = kept[0] ?? null;
+    { immediate: true, ...codeReader(content), ...(visitorId ? { remember: (f: Record<string, string>) => rememberVisitor(visitorId, f) } : {}) });
   // in voice mode the visitor asked out loud, so screen actions happen at once (a meeting request still waits for a click)
-  const reply = call && SIDE_EFFECTS.has(call.name) ? "Done: it is on the visitor's screen now." : (replies[0]?.content ?? "Rejected.");
-  return Response.json({ call, reply }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ call: kept[0] ?? null, reply: replies[0]?.content ?? "Rejected." }, { headers: { "Cache-Control": "no-store" } });
 }
