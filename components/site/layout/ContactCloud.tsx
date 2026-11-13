@@ -10,7 +10,7 @@ const REF: Box = { w: 1000, h: 320, size: 80 }; // server render: homes as perce
 const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.contains("lite");
 
 /** GitHub, LinkedIn, Email and Resume as four big buttons floating in a loose cluster: they orbit one another on a
- *  soft spring, never overlap, and lean away from the pointer; a faint filament joins them. One rAF, only while
+ *  soft spring, never overlap, and lean toward the pointer; a faint filament joins them. One rAF, only while
  *  the cloud is on screen; `html.lite` / reduced motion draw the neat still arrangement. Restyle with the --pt-node-*
  *  tokens (`--cl-size` sets the button size). The buttons stay real links and buttons in a fixed tab order. */
 export default function ContactCloud() {
