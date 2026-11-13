@@ -32,7 +32,11 @@
 }
 button.qz-face { cursor: pointer; }
 /* while the card is bent the drop shadow (clipped at the box) fades out rather than popping */
-.qz-face { transition: box-shadow 200ms ease; }
+.qz-face { transition: box-shadow 200ms ease, visibility 0s 140ms; }
+/* the hidden side is also made invisible as the card passes edge-on: glass faces (Lucid) are see-through and some
+   engines ignore backface-visibility on them, which showed the question mirrored over the answer */
+.qz-back, .qz-tile[data-flipped] .qz-front { visibility: hidden; }
+.qz-tile[data-flipped] .qz-back { visibility: visible; }
 .qz-tile[data-warp] .qz-face { box-shadow: 0 1px 0 transparent, 0 16px 32px -22px transparent; }
 .qz-back { transform: rotateY(180deg); background: color-mix(in srgb, var(--ui-accent) 15%, var(--ui-bg)); border-color: color-mix(in srgb, var(--ui-accent) 38%, var(--ly-line)); }
 .qz-n { font: 500 12px/1 var(--ui-mono); letter-spacing: .08em; color: var(--ui-muted); }
