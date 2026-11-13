@@ -8,6 +8,7 @@ import { toolDefs } from "@/lib/agent/tools";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { getPalettes } from "@/lib/designs/server";
 import { CHAT_MODEL } from "@/lib/openai";
+import { getResumeText } from "@/lib/resume/sync";
 import { isOwner } from "@/lib/track/owner";
 import { knownVisitor } from "@/lib/track/store";
 import { visitorIdFromCookie } from "@/lib/track/schema";
@@ -35,8 +36,8 @@ export async function POST(req: Request) {
   }
 
   const visitorId = isOwner(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
-  const [content, palettes, calendar, known] = await Promise.all([getContent(), getPalettes(), calendarPromptContext(), knownVisitor(visitorId)]);
-  const profile = scrubPrivate(renderProfile(content));
+  const [content, palettes, calendar, known, resume] = await Promise.all([getContent(), getPalettes(), calendarPromptContext(), knownVisitor(visitorId), getResumeText()]);
+  const profile = scrubPrivate(renderProfile(content)) + (resume ? `\n\nResume (live, synced from Google Docs; the most current source):\n${scrubPrivate(resume)}` : "");
   // Responses-style function tools; strict off, since several parameters are optional
   const allowed = allowedFor(content, palettes);
   const tools = toolDefs(allowed).map((t) => ({ type: "function", name: t.function.name, description: t.function.description, parameters: t.function.parameters, strict: false }));

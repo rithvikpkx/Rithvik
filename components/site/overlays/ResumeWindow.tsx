@@ -27,7 +27,7 @@ function ResumeAdmin({ pinned, onChanged }: { pinned: boolean; onChanged: () => 
     setStatus("Working...");
     const r = await op();
     setStatus(r.status === "error" ? r.reason : r.status === "skipped" ? `Skipped: ${r.reason}`
-      : (r.status === "updated" ? "Updated" : "Already up to date") + (r.embedError ? ` (agent text not refreshed: ${r.embedError})` : ""));
+      : (r.status === "updated" ? "Updated" : "Already up to date"));
     onChanged();
   });
   return (

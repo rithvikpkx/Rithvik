@@ -12,6 +12,7 @@ import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
 import { allowedFor, codeReader } from "@/lib/agent/allowed";
 import { looksPrompt } from "@/lib/designs/about";
+import { getResumeText } from "@/lib/resume/sync";
 import { SITE_ADVOCACY, SITE_FEATURES, SITE_PRIVACY } from "@/lib/agent/site-facts";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
@@ -102,13 +103,13 @@ function modelFor(req: Request): string {
 	return isEval(req) && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
 }
 
-function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = "", looks = "", cursor = false): string {
+function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = "", looks = "", cursor = false, resume = ""): string {
 	return `You are RAG — short for "Rithvik Augmented Generation" — the agent embedded in Rithvik Praveen Kumar's portfolio at rithvik.ai. You help visitors, recruiters and collaborators learn about Rithvik, and you can act on the page with tools.
 
 CRITICAL — GROUNDING RULES (read this before anything else)
 
 TIER 1 — Hard facts (verbatim only)
-Names, schools, employers, job titles, dates, locations, technologies, links, handles and numbers MUST appear in the Profile or Records below. Never invent, guess, or infer these from training data or plausibility. If the exact fact is not there, you do not know it — say so plainly.
+Names, schools, employers, job titles, dates, locations, technologies, links, handles and numbers MUST appear in the Profile, Resume or Records below. Never invent, guess, or infer these from training data or plausibility. If the exact fact is not there, you do not know it — say so plainly.
 
 TIER 2 — Interpretation (allowed when grounded)
 You MAY synthesize themes, characterize strengths, values and working style when clearly supported, connect grounded facts into a reasonable observation, and give a partial answer (what is known, plus what isn't). Never introduce a project, skill, employer or trait that isn't below.
@@ -151,6 +152,7 @@ ${looks}
 
 ## Profile (published on the site — always current)
 ${profile}
+${resume ? `\n## Resume (his live resume, synced from Google Docs: the most current source for dates, roles, skills and awards)\n${resume}\n` : ""}
 ${records ? `\n## Records (retrieved for this question; cite as [n])\n${records}\n` : ""}${page ? `\n${page}\n` : ""}\n## Calendar\n${calendar}${visitorTz ? `\nVisitor's timezone: ${visitorTz}.` : ""}${known ? `\n\n## Visitor\n${known}` : ""}${cursor ? "\n\nCursor mode is ON: screen actions (opening, scrolling, switching, drafting) happen at once, acted out by your on-screen cursor; say what you did, never mention buttons. A meeting request still waits for their click." : ""}\n`;
 }
 
@@ -199,13 +201,14 @@ export async function POST(req: Request) {
 	const visitorId = isOwner(req) || isEval(req) ? null : visitorIdFromCookie(req.headers.get("cookie"));
 	const cursorMode = body.cursor === true; // the visitor turned on cursor mode: actions play out on the page at once
 	let toolCtx: ToolCtx = { immediate: cursorMode, ...(visitorId ? { remember: (f: Record<string, string>) => rememberVisitor(visitorId, f) } : {}) };
-	const [content, palettes, calendar, sessionId, known] = await Promise.all([
+	const [content, palettes, calendar, sessionId, known, resume] = await Promise.all([
 		getContent(),
 		getPalettes(),
 		calendarPromptContext(),
 		// Eval runs never reach the conversation log or the public metrics.
 		isEval(req) ? Promise.resolve(null) : startSession(req, typeof body.sessionId === "string" ? body.sessionId : null, { firstDesign: typeof firstDesign === "string" ? firstDesign : undefined }),
 		knownVisitor(visitorId),
+		getResumeText().then(scrubPrivate),
 	]);
 	const allowed: Allowed = allowedFor(content, palettes);
 	toolCtx = { ...toolCtx, ...codeReader(content) };
@@ -347,7 +350,7 @@ export async function POST(req: Request) {
 				const recordsText = records.map((r, i) => `[${i + 1}] (${labelOf(r)}) ${scrubPrivate(r.content)}`).join("\n\n");
 				const contextBlock = `${profile}\n\n${recordsText}`;
 				const messages: ChatMessage[] = [
-					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known, looksPrompt(allowed.looks), cursorMode) },
+					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known, looksPrompt(allowed.looks), cursorMode, resume) },
 					...history,
 					{ role: "user", content: message }, // the visitor's own words; the rewrite only steers retrieval
 				];
