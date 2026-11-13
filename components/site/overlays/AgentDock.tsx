@@ -1,4 +1,5 @@
 "use client";
+import { place, raise, windowEl, type Size, type Spot } from "../windows/stack";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { matchCommands, NO_ARG } from "@/lib/agent/commands";
 import { EditModeContext } from "@/components/EditModeProvider";
@@ -28,13 +29,17 @@ const subscribeNarrow = (cb: () => void) => { const m = matchMedia(NARROW); m.ad
  *  is open; the panel expands when overlay.kind === "agent" (the bar itself is always there). */
 export default function AgentDock() {
   const site = useSite();
-  const { overlay, content, openAgent, close } = site;
+  const { overlay, content, openAgent } = site;
   const design = useContext(DesignContext); // null in the lab harness: /theme then says so instead of throwing
-  const open = overlay?.kind === "agent";
+  const open = !!site.layers.agent;
   const admin = useContext(EditModeContext)?.isEditing ?? false; // null in the lab harness
   useEffect(() => { setAdminMode(admin); return () => setAdminMode(false); }, [admin]);
   const narrow = useSyncExternalStore(subscribeNarrow, () => matchMedia(NARROW).matches, () => false);
   const [full, setFull] = useState(false);
+  const [detached, setDetached] = useState(false); // a floating, movable, resizable chat window instead of the dock
+  const dock = useRef<HTMLDivElement>(null);
+  // closing also docks a floating chat again (dropping its spot and size)
+  const close = useCallback(() => { dock.current?.removeAttribute("style"); setDetached(false); site.close("agent"); }, [site]);
   const [input, setInput] = useState("");
   const [palIdx, setPalIdx] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -42,10 +47,9 @@ export default function AgentDock() {
   const recalled = useRef<string | null>(null); // the history entry currently in the input, so repeated up-arrows keep walking
 
   // openAgent(question) prefills the prompt; derived during render so no effect has to set state.
-  // Also remembers the case sheet the agent was summoned over, for page context (one overlay at a time).
   // With a rect the question flies in from there instead (Handoff), and is sent once it lands.
   const [seen, setSeen] = useState(overlay);
-  const [caseSlug, setCaseSlug] = useState<string | null>(null);
+  const caseSlug = site.layers.case?.slug ?? null; // the case sheet open under the agent, for page context
   const [fly, setFly] = useState<{ id: number; q: string; from: DOMRect } | null>(null);
   if (overlay !== seen) {
     setSeen(overlay);
@@ -55,8 +59,6 @@ export default function AgentDock() {
       else setInput(q);
     }
     if (overlay?.kind !== "agent") setFly(null);
-    if (overlay?.kind === "case") setCaseSlug(overlay.slug);
-    else if (overlay?.kind !== "agent") setCaseSlug(null);
   }
 
   // Overlays restore focus to whatever had it when they close; if that is this input, its onFocus
@@ -67,6 +69,25 @@ export default function AgentDock() {
       content, design, caseSlug,
       openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay), lite: site.lite, setLite: site.setLite,
       close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
+      arrange: (a: Record<string, string>) => {
+        const name = a.window, kind = ({ chat: "agent", email: "composer", resume: "resume", play: "play" } as const)[name as "chat"];
+        if (!kind) return "Unknown window";
+        if (a.action === "close") { if (name === "chat") close(); else site.close(kind); return `Closed ${name}`; }
+        if (a.action === "open" && !site.layers[kind]) {
+          inputRef.current?.blur();
+          if (name === "email") site.openComposer(); else if (name === "resume") site.openResume(); else if (name === "play") site.openPlay();
+        }
+        if (name === "chat" && (a.spot || a.size)) { setDetached(true); setFull(false); } // placing the chat floats it
+        // a window opened just now mounts over the next frames
+        let tries = 0;
+        const go = () => {
+          const el = name === "chat" ? dock.current : windowEl(name);
+          if (!el) { if (++tries < 30) requestAnimationFrame(go); return; }
+          if (a.spot || a.size) place(el, a.spot as Spot | undefined, a.size as Size | undefined); else raise(el);
+        };
+        requestAnimationFrame(go);
+        return `${a.action === "open" ? "Opened" : a.action === "front" ? "Brought forward" : "Moved"} ${name}${a.spot ? ` to the ${a.spot}` : ""}${a.size ? `, ${a.size}` : ""}`;
+      },
     };
   }, [content, design, caseSlug, site, close]);
   const agent = useAgent(host);
@@ -184,15 +205,41 @@ export default function AgentDock() {
   };
 
   return (
-    <div className="agent" data-open={open} data-full={open && full}>
+    <div className="agent" ref={dock} data-win="chat" data-open={open} data-full={open && full && !detached} data-detached={open && detached}
+      onPointerDownCapture={(e) => { if (detached) raise(e.currentTarget); }}>
       {open && (
         <section className="agent-panel" aria-label="RAG, Rithvik's agent">
-          <header className="agent-head">
+          <header className="agent-head" onPointerDown={(e) => {
+            // a detached chat is dragged by its header (buttons stay clickable)
+            const el = dock.current;
+            if (!detached || !el || (e.target as Element).closest("button")) return;
+            const dx = e.clientX - el.offsetLeft, dy = e.clientY - el.offsetTop, bar = e.currentTarget;
+            bar.setPointerCapture(e.pointerId);
+            const move = (ev: PointerEvent) => {
+              el.style.left = `${Math.max(80 - el.offsetWidth, Math.min(innerWidth - 80, ev.clientX - dx))}px`;
+              el.style.top = `${Math.max(8, Math.min(innerHeight - 48, ev.clientY - dy))}px`;
+            };
+            const up = () => { bar.removeEventListener("pointermove", move); bar.removeEventListener("pointerup", up); bar.removeEventListener("pointercancel", up); };
+            bar.addEventListener("pointermove", move); bar.addEventListener("pointerup", up); bar.addEventListener("pointercancel", up);
+          }}>
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-actions">
               <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
               <button type="button" className="ag-btn" aria-label="Download chat as Markdown" title="Download chat" disabled={!agent.canExport} onClick={agent.downloadChat}><Icon name="download" /></button>
               <button type="button" className="ag-btn" aria-label="Share this conversation" title={agent.canShare ? "Copy a share link" : "Ask something first"} disabled={!agent.canShare} onClick={() => void agent.share()}><Icon name="share-2" /></button>
+              {!narrow && (
+                <button type="button" className="ag-btn" aria-pressed={detached} aria-label={detached ? "Dock the chat" : "Detach the chat into a window"} title={detached ? "Dock" : "Detach"}
+                  onClick={() => {
+                    const el = dock.current;
+                    if (detached) { el?.removeAttribute("style"); setDetached(false); return; }
+                    setDetached(true); setFull(false);
+                    requestAnimationFrame(() => { if (el) place(el, "right", "medium"); }); // after the detached styles apply
+                  }}>
+                  <svg className="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {detached ? <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 15h18" /></> : <><rect x="3" y="4" width="18" height="16" rx="2" /><rect x="12" y="11" width="7" height="6" rx="1" /></>}
+                  </svg>
+                </button>
+              )}
               <button type="button" className="ag-btn" aria-label="Full screen (Cmd+Enter)" title="Full screen" onClick={host.toggleFull}><Icon name={full ? "minimize-2" : "maximize-2"} /></button>
               <button type="button" className="ag-btn" aria-label="Close (Esc)" title="Close" onClick={close}><Icon name="chevron-down" /></button>
             </span>
@@ -226,7 +273,7 @@ export default function AgentDock() {
         <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} live={{ transcript: (w, d) => { openAgent(); agent.liveText(w, d); }, turnEnd: agent.liveTurnEnd, tool: agent.liveTool }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
-      {open && <StatusLine actions={items.some((i) => i.kind === "actions")} turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
+      {open && <StatusLine usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}
       {fly && open && <Handoff key={fly.id} question={fly.q} from={fly.from} target={flyTarget} onLand={() => land(fly.q)} onDone={() => setFly(null)} />}
     </div>
   );

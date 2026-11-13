@@ -50,7 +50,8 @@ function ResumeAdmin({ pinned, onChanged }: { pinned: boolean; onChanged: () => 
 
 /** The resume window: the synced PDF (Google Doc is master) when one exists, else a paper-style summary built from site content. */
 export default function ResumeWindow() {
-  const { content: c, close } = useSite();
+  const { content: c, close: closeLayer } = useSite();
+  const close = () => closeLayer("resume");
   const { isEditing } = useEditMode();
   const [meta, reload] = useResumeMeta();
   const file = `${c.name.replace(/\s+/g, "-")}-Resume.pdf`;
@@ -66,7 +67,7 @@ export default function ResumeWindow() {
   const when = meta?.syncedAt && new Date(meta.syncedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   return (
     <Window
-      title={file} icon="file-text" label="Resume" className="resume-win" onClose={close}
+      title={file} icon="file-text" label="Resume" name="resume" className="resume-win" onClose={close}
       actions={pdfUrl && <a className="ui-btn" href={pdfUrl} download={file}>Download</a>}
     >
       {loading && <ResumeSkeleton />}

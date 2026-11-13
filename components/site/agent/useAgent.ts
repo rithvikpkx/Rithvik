@@ -34,6 +34,8 @@ export type Host = {
   toast: (message: string) => void;
   /** Slug of the case sheet the visitor came from, for page context. */
   caseSlug?: string | null;
+  /** Opens/closes/moves/resizes a floating window (validated args); returns what happened, for the tool row. */
+  arrange?: (a: Record<string, string>) => string;
 };
 
 type Cooldown = { until: number; status: 429 | 503 };
@@ -184,6 +186,9 @@ export function useAgent(host: Host) {
       if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
     };
     switch (e.name) {
+      case "arrange_window": // window layout only: no navigation or data, so it applies at once in typed chat too
+        add({ kind: "tool", name: tool.name, args: tool.args, result: host.arrange?.(a) ?? "Not available here" });
+        return;
       case "local_time":
         add({ kind: "tool", name: tool.name, args: tool.args, result: e.result ?? "time unavailable" });
         return;
@@ -499,6 +504,7 @@ export function useAgent(host: Host) {
   // ---- voice mode (GPT-Live): its transcripts land in the log as ordinary question and answer rows ----
   const liveRow = useRef<{ who: "user" | "agent"; id: number; text: string } | null>(null);
   const liveQ = useRef("");
+  const liveTools = useRef<{ name: string; result: string }[]>([]); // actions taken this voice turn, for the log
   /** Closes the open live row: an answer stops streaming and joins the history as a turn. */
   const liveTurnEnd = useCallback(() => {
     const cur = liveRow.current;
@@ -506,8 +512,13 @@ export function useAgent(host: Host) {
     if (!cur) return;
     if (cur.who === "user") { liveQ.current = cur.text; return; }
     patch(cur.id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i));
-    const q = liveQ.current, a = cur.text;
+    const q = liveQ.current, a = cur.text, tools = liveTools.current;
+    liveQ.current = ""; liveTools.current = [];
     setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]);
+    // into the server log too, so the dashboard and share links include voice turns
+    void fetch("/api/voice/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: readSession(), user: q, agent: a, tools }) })
+      .then((r) => r.json()).then((j: { sessionId?: string }) => { if (j.sessionId && j.sessionId !== readSession()) { writeSession(j.sessionId); setSessionId(j.sessionId); } })
+      .catch(() => { /* the log is best-effort */ });
   }, [patch]);
   /** Appends live transcript text, opening a new row whenever the speaker changes. */
   const liveText = useCallback((who: "user" | "agent", delta: string) => {
@@ -536,6 +547,7 @@ export function useAgent(host: Host) {
       j = await res.json();
     } catch { return "Rejected: the action could not run."; }
     const c = j.call;
+    liveTools.current.push({ name, result: j.reply ?? "" });
     if (c) {
       liveTurnEnd(); // what the voice says next lands under the action, not above it
       if (c.artifact) { const p = parseArtifact(c.artifact); if (p.ok) add({ kind: "artifact", spec: p.spec }); }

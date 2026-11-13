@@ -4,6 +4,8 @@
 .win { position: fixed; z-index: 92; left: 0; top: 0; display: flex; flex-direction: column; background: var(--ui-bg, #0f0f12); color: var(--ui-fg, #f4f4f5); border: var(--bw, 1px) solid var(--ui-line, rgba(255,255,255,.14)); border-radius: var(--ui-r, 14px); box-shadow: var(--ui-shadow, 0 1px 2px rgba(0,0,0,.3),0 18px 48px rgba(0,0,0,.35)); overflow: hidden; font-family: var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); transition: opacity 200ms ease, scale 260ms var(--ease-out, cubic-bezier(.23,1,.32,1)); -webkit-backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); }
 @starting-style { .win:not([hidden]) { opacity: 0; scale: .97; } }
 .win.front { z-index: 93; }
+/* resizable from the bottom-right corner (desktop); a window keeps a usable minimum and never outgrows the screen */
+@media (min-width: 641px) { .win { resize: both; min-width: 300px; min-height: 220px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); } }
 .win-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--ui-line, rgba(255,255,255,.14)); cursor: grab; user-select: none; touch-action: none; }
 .win-bar:active { cursor: grabbing; }
 .win-title { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); color: var(--ui-muted, #a1a1aa); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

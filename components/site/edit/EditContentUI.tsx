@@ -403,7 +403,7 @@ export default function EditContentUI({ api, onClose }: { api: EditApi; onClose:
   } : ({} as never);
 
   return (
-    <Window title="Edit content" icon="file-text" label="Edit content" className="edit-win" onClose={close} initialFocus='[role="tab"][aria-selected="true"]'>
+    <Window title="Edit content" icon="file-text" label="Edit content" name="edit" className="edit-win" onClose={close} initialFocus='[role="tab"][aria-selected="true"]'>
       <div className="ew-tabs" role="tablist" aria-label="Sections" onKeyDown={(e) => {
         const i = TABS.indexOf(tab), d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
         if (d) { const t = TABS[(i + d + TABS.length) % TABS.length]; setTab(t); document.getElementById(`ew-tab-${TABS.indexOf(t)}`)?.focus(); }

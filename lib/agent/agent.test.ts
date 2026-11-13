@@ -6,10 +6,10 @@ import { formatRetry, formatTokens, spinFrame, statusSegments, usageLines } from
 
 test("idle status line shows only what is known, in order", () => {
   const u = { tokens: 12431, limit: 60, remaining: 41, totalMs: 1900 };
-  assert.deepEqual(statusSegments({ kind: "idle", turns: 3, usage: u }).map((s) => s.text), ["● ready", "3 turns", "41/60 left", "12.4k tok", "1.9s", "? for shortcuts"]);
-  assert.deepEqual(statusSegments({ kind: "idle", turns: 0, usage: { tokens: 0 } }).map((s) => s.text), ["● ready", "0 turns", "? for shortcuts"]);
-  assert.equal(statusSegments({ kind: "idle", turns: 1, usage: { tokens: 0, limit: 60, remaining: 3 } })[2].tone, "warn");
-  assert.deepEqual(statusSegments({ kind: "idle", turns: 1, actions: true }).map((s) => s.text), ["● ready", "1 turn", "shift+tab to actions", "? for shortcuts"]);
+  assert.deepEqual(statusSegments({ kind: "idle", usage: u }).map((s) => s.text), ["● ready", "41/60 left", "12.4k tok", "? for shortcuts"]);
+  assert.deepEqual(statusSegments({ kind: "idle", usage: { ...u, reset: 1_000_000 + 23 * 60 }, now: 1_000_000_000 }).map((s) => s.text), ["● ready", "41/60 left", "resets in 23m", "12.4k tok", "? for shortcuts"]);
+  assert.deepEqual(statusSegments({ kind: "idle", usage: { tokens: 0 } }).map((s) => s.text), ["● ready", "? for shortcuts"]);
+  assert.equal(statusSegments({ kind: "idle", usage: { tokens: 0, limit: 60, remaining: 3 } })[1].tone, "warn");
 });
 
 test("formatTokens abbreviates", () => {
@@ -103,8 +103,7 @@ test("formatRetry and status segments", () => {
   assert.equal(formatRetry(42), "42s");
   assert.equal(formatRetry(61), "2m");
   assert.equal(formatRetry(3600), "60m");
-  assert.deepEqual(statusSegments({ kind: "idle", turns: 1 }).map((s) => s.text), ["● ready", "1 turn", "? for shortcuts"]);
-  assert.equal(statusSegments({ kind: "idle", turns: 3 })[1].text, "3 turns");
+  assert.deepEqual(statusSegments({ kind: "idle" }).map((s) => s.text), ["● ready", "? for shortcuts"]);
   assert.equal(statusSegments({ kind: "limited", status: 429, retrySecs: 600 })[0].text, "⚠ rate limited · retry in 10m");
   assert.match(statusSegments({ kind: "limited", status: 503, retrySecs: 30 })[0].text, /unavailable · retry in 30s/);
   const busy = statusSegments({ kind: "busy", elapsedMs: 2500, verb: "Recursing" });

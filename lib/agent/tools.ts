@@ -16,6 +16,10 @@ export const MAX_SIDE_EFFECTS = 2;
 /** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
 const CALENDAR = new Set(["check_availability", "suggest_times"]);
 const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
+export const WINDOWS = ["chat", "email", "resume", "play"] as const;
+export const WINDOW_ACTIONS = ["open", "close", "move", "front"] as const;
+export const SPOTS = ["left", "right", "center", "top-left", "top-right", "bottom-left", "bottom-right"] as const;
+export const SIZES = ["small", "medium", "large", "full"] as const;
 /** At most this many artifacts per step; extras are rejected. */
 const MAX_ARTIFACTS = 1;
 /** At most this many calendar lookups per step; extras are rejected. */
@@ -55,6 +59,12 @@ export function toolDefs(a: Allowed): ToolDef[] {
       subject: { type: "string", description: "Short subject line" },
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
+    fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
+      window: enumOf([...WINDOWS], "Which window"),
+      action: enumOf([...WINDOW_ACTIONS], "open (also places it), close, move (and/or resize), or front"),
+      spot: enumOf([...SPOTS], "Where on screen; optional"),
+      size: enumOf([...SIZES], "How big; optional"),
+    }, ["window", "action"]),
     fn("local_time", "Current local time in one of Rithvik's places.", { place: enumOf(a.places.map((p) => p.city), "City") }, ["place"]),
     fn("render_artifact", `Show the visitor a small chart or table of facts that are in the Profile or Records, drawn by the site from your data. Use only when a visual genuinely beats prose: a timeline of roles, a comparison of projects, skills by area, a few headline stats. Never invent numbers or dates; if the facts aren't there, answer in text. It renders at once and nothing needs confirming. Limits: up to ${MAX_POINTS} points, ${MAX_SERIES} series, ${MAX_ROWS} rows x ${MAX_COLS} columns, text up to ${MAX_TEXT} chars, finite numbers, no links or markup. data shape by type: bar|line|area {labels:[..], series:[{name, values:[numbers, one per label]}]}; donut {slices:[{label, value}]} (up to 8); timeline {items:[{label, start:"2024" or "2024-06", end?:"2025-01" or "present", note?}]}; table {columns:[..], rows:[[cells..]]}; stats {items:[{label, value, note?}]} (up to 8); graph {nodes:[{id,label,group?}], edges:[{from,to}]}; html {html:"<markup>", height: px 120-640} — your own custom visual (see html below).
 html: for "make a visual / infographic / summary card / something cool", design a polished, self-contained visual: HTML with one inline <style> block and inline SVG, ~600px wide and responsive (flex/grid, wraps). Theme colours are CSS variables: var(--fg) text, var(--muted) secondary, var(--accent) highlight, var(--line) hairlines, var(--bg) background; mix them with color-mix() and gradients. CSS animations and transitions are welcome (subtle: fade/slide in, growing bars, a glowing timeline). NOT allowed and stripped: scripts, event handlers, links, images, iframes, forms, external fonts or any URL. Every fact, number and date must come from the Profile or Records. Keep it under ${MAX_HTML} characters.`, {
@@ -149,6 +159,11 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
     }
     case "open_resume":
       return { id, name: call.name, args: {} };
+    case "arrange_window": {
+      const w = s("window"), act = s("action"), spot = s("spot"), size = s("size");
+      if (!(WINDOWS as readonly string[]).includes(w) || !(WINDOW_ACTIONS as readonly string[]).includes(act)) return null;
+      return { id, name: call.name, args: { window: w, action: act, ...((SPOTS as readonly string[]).includes(spot) ? { spot } : {}), ...((SIZES as readonly string[]).includes(size) ? { size } : {}) } };
+    }
     case "start_game": {
       const g = a.games.find((x) => x.id === s("id") || x.name.toLowerCase() === s("id"));
       return g ? { id, name: call.name, args: { id: g.id } } : null;

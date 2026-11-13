@@ -15,7 +15,8 @@ function toHtml(text: string) {
 
 /** The v7 floating email window; posts the same payload as the old composer to /api/contact. */
 export default function ComposerWindow({ subject: initialSubject, body: initialBody = "", agentSessionId }: { subject: string; body?: string; agentSessionId?: string }) {
-  const { content, close, toast } = useSite();
+  const { content, close: closeLayer, toast } = useSite();
+  const close = () => closeLayer("composer");
   const design = useContext(DesignContext); // null in the lab harness
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState(initialSubject);
@@ -50,7 +51,7 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
   const err = (show: boolean | undefined, id: string, text: string) => show && <p className="field-err" id={id}>{text}</p>;
 
   return (
-    <Window title="New message" icon="mail" label="New message" className="composer-win" place="corner" onClose={close} initialFocus="#cmp-from">
+    <Window title="New message" icon="mail" label="New message" name="email" className="composer-win" place="corner" onClose={close} initialFocus="#cmp-from">
       <form className="composer" onSubmit={send} noValidate>
         <div className="cmp-fields">
           <div className="cmp-row">

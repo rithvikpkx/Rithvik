@@ -10,7 +10,8 @@ const isHttp = (u: string) => /^https?:\/\//i.test(u);
 
 /** The project case sheet: a modal bottom sheet with the project's story, links and a next-project button. */
 export default function CaseSheet({ slug }: { slug: string }) {
-  const { content, close, openCase } = useSite();
+  const { content, close: closeLayer, openCase } = useSite();
+  const close = () => closeLayer("case");
   const [closing, setClosing] = useState(false);
   const bodyRef = useRef<HTMLElement>(null);
   const closeRef = useRef(close);

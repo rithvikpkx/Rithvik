@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { Icon } from "../Glyph";
+import { raise } from "./stack";
 import "./windows.css";
 
 type Props = {
   title: React.ReactNode;
   icon: string;
   label: string; // aria-label
+  name: string; // data-win: how the agent addresses it ("email", "resume", ...)
   className?: string; // e.g. "resume-win" | "composer-win"
   place?: "center" | "corner"; // first-open position (mockup: resume centred, composer bottom-right)
   actions?: React.ReactNode; // extra header buttons, left of the close button
@@ -15,9 +17,10 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** The shared draggable, non-modal floating window: drag by header, Esc closes, focus moves in on
- *  open and returns on close. ≤640px it becomes a bottom sheet via CSS (no drag). */
-export default function Window({ title, icon, label, className = "", place = "center", actions, onClose, initialFocus, children }: Props) {
+/** The shared draggable, resizable, non-modal floating window: several can be open; a press brings one forward; drag
+ *  by the header, resize from the corner; Esc closes the one holding focus. Focus moves in on open and returns on
+ *  close. ≤640px it becomes a bottom sheet via CSS (no drag, no resize). */
+export default function Window({ title, icon, label, name, className = "", place = "center", actions, onClose, initialFocus, children }: Props) {
   const ref = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose); // useSite().close changes identity per render; keep the effect stable
   useEffect(() => { closeRef.current = onClose; });
@@ -31,6 +34,7 @@ export default function Window({ title, icon, label, className = "", place = "ce
     const y = place === "center" ? (innerHeight - wh) / 2 : innerHeight - wh - 104;
     w.style.left = Math.max(8, Math.min(innerWidth - ww - 8, x)) + "px";
     w.style.top = Math.max(76, Math.min(innerHeight - wh - 8, y)) + "px";
+    raise(w);
   }, [place]);
 
   // Focus in on open, restore on close; Esc closes (non-modal, so listen on document).
@@ -38,7 +42,8 @@ export default function Window({ title, icon, label, className = "", place = "ce
     const prev = document.activeElement as HTMLElement | null;
     const w = ref.current;
     ((initialFocus && w?.querySelector<HTMLElement>(initialFocus)) || w)?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeRef.current(); };
+    // with several windows open, Esc closes only the one being used
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && w?.contains(document.activeElement)) closeRef.current(); };
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("keydown", onKey); prev?.focus?.({ preventScroll: true }); };
   }, [initialFocus]);
@@ -59,7 +64,8 @@ export default function Window({ title, icon, label, className = "", place = "ce
   };
 
   return (
-    <section ref={ref} className={`win front ${className}`} aria-label={label} tabIndex={-1} style={{ outline: "none" }}>
+    <section ref={ref} className={`win front ${className}`} data-win={name} aria-label={label} tabIndex={-1} style={{ outline: "none" }}
+      onPointerDownCapture={(e) => raise(e.currentTarget)}>
       <header className="win-bar" onPointerDown={startDrag}>
         <span className="win-title"><Icon name={icon} />{title}</span>
         <span className="win-actions">

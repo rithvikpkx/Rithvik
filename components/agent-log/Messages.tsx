@@ -43,12 +43,12 @@ export function AdminMessages({ messages }: { messages: MessageRow[] }) {
 }
 
 /** Public view for a share link: visitor and agent text only, with emails and phone numbers masked. */
-export function SharedMessages({ messages }: { messages: { role: "user" | "assistant"; content: string }[] }) {
+export function SharedMessages({ messages }: { messages: { role: "user" | "assistant"; content: string; model?: string | null }[] }) {
   return (
     <ol className="alog-msgs" aria-label="Conversation">
       {messages.map((m, i) => (
         <li key={i} className="alog-msg" data-role={m.role}>
-          <div className="alog-role"><b>{m.role === "user" ? "Visitor" : "Agent"}</b></div>
+          <div className="alog-role"><b>{m.role === "user" ? "Visitor" : "Agent"}</b>{m.model === "voice" && <span className="alog-muted"> · voice transcript</span>}</div>
           <div className="alog-body">{redactPII(m.content)}</div>
         </li>
       ))}

@@ -10,16 +10,17 @@ const PlayWindow = dynamic(() => import("./PlayWindow"), { ssr: false });
 const AgentDock = dynamic(() => import("./AgentDock"), { ssr: false });
 const Toasts = dynamic(() => import("./Toasts"), { ssr: false });
 
-/** Renders whichever overlay is open plus the toast stack. The agent dock is always
- *  present (it is the bottom-centre prompt); it expands when overlay.kind === "agent". */
+/** Renders every open layer plus the toast stack; the windows float over the page together. The agent dock is
+ *  always present (it is the bottom-centre prompt); it expands when the agent layer is open. A key per opening
+ *  remounts a window when it is opened again with new content (another project, a new draft). */
 export default function Overlays() {
-  const { overlay } = useSite();
+  const { layers: l } = useSite();
   return (
     <>
-      {overlay?.kind === "case" && <CaseSheet slug={overlay.slug} />}
-      {overlay?.kind === "composer" && <ComposerWindow subject={overlay.subject} body={overlay.body} agentSessionId={overlay.meta?.agentSessionId} />}
-      {overlay?.kind === "resume" && <ResumeWindow />}
-      {overlay?.kind === "play" && <PlayWindow initialId={overlay.id} />}
+      {l.case && <CaseSheet key={l.case.slug} slug={l.case.slug} />}
+      {l.composer && <ComposerWindow key={`${l.composer.subject}\u0000${l.composer.body ?? ""}`} subject={l.composer.subject} body={l.composer.body} agentSessionId={l.composer.meta?.agentSessionId} />}
+      {l.resume && <ResumeWindow />}
+      {l.play && <PlayWindow key={l.play.id ?? ""} initialId={l.play.id} />}
       <AgentDock />
       <Toasts />
     </>

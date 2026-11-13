@@ -162,7 +162,7 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 .agent-status .s-acts + .s-hint { margin-left: 0; } /* the pair shares one right-aligned group */
 @media (max-width: 640px) { .agent-status .s-hint, .agent-status .s-acts { display: none; } }
 @media (max-width: 520px) { .agent-status .s-model { display: none; } }
-@media (max-width: 440px) { .agent-status .s-time { display: none; } }
+@media (max-width: 440px) { .agent-status .s-reset { display: none; } }
 @media (max-width: 370px) { .agent-status .s-tok { display: none; } }
 .agent-status .spin { color: var(--a-accent); }
 .agent-status .warn { color: var(--a-accent); }
@@ -184,6 +184,12 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 /* full screen: Cmd+Enter */
 .agent[data-full="true"] { top: 84px; bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: min(980px, calc(100vw - 32px)); }
 .agent[data-full="true"] .agent-panel { height: auto; flex: 1; min-height: 0; }
+/* detached: a floating window, dragged by its header, resized from the corner (place() in windows/stack sets its spot) */
+.agent[data-detached="true"] { right: auto; bottom: auto; margin: 0; width: 520px; height: 620px; resize: both; overflow: hidden; padding-bottom: 8px;
+  min-width: 340px; min-height: 320px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+.agent[data-detached="true"] .agent-panel { height: auto; flex: 1; min-height: 0; }
+.agent[data-detached="true"] .agent-head { cursor: grab; touch-action: none; }
+.agent[data-detached="true"] .agent-bar { margin: 6px 12px 0; }
 @media (max-width: 640px) { .agent-panel { height: min(72dvh, 620px); } .agent[data-full="true"] { top: 76px; } }
 
 /* Per-look spin. Everything above reads the tokens, so a look only sets the ones it cares about. */

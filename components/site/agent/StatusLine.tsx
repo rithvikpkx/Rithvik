@@ -5,9 +5,7 @@ import { SPIN_INTERVAL, statusSegments, type StatusState, type Usage } from "@/l
 import { verbAt, verbOrder } from "@/lib/agent/verbs";
 
 /** The panel's bottom line, styled like Claude Code's. Owns its own clock so the spinner never re-renders the transcript. */
-export default function StatusLine({ turns, usage, busySince, cooldown, model, actions }: {
-  turns: number;
-  actions?: boolean;
+export default function StatusLine({ usage, busySince, cooldown, model }: {
   usage: Usage;
   busySince: number | null;
   cooldown: { until: number; status: 429 | 503 } | null;
@@ -23,11 +21,17 @@ export default function StatusLine({ turns, usage, busySince, cooldown, model, a
     const t = setInterval(() => setNow(Date.now()), slow ? 1000 : SPIN_INTERVAL * 2);
     return () => clearInterval(t);
   }, [ticking]);
+  // idle with a known reset: refresh the "resets in" countdown twice a minute
+  useEffect(() => {
+    if (ticking || !usage.reset) return;
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, [ticking, usage.reset]);
 
   // A fresh verb order per turn (busySince changes on every submit), flavoured by the current look.
   const order = useMemo(() => (busySince === null ? [] : verbOrder(document.documentElement.dataset.design)), [busySince]);
 
-  let state: StatusState = { kind: "idle", turns, usage, actions };
+  let state: StatusState = { kind: "idle", usage, now };
   if (busySince !== null) state = { kind: "busy", elapsedMs: Math.max(0, now - busySince), verb: verbAt(order, now - busySince) };
   else if (limited) state = { kind: "limited", status: cooldown.status, retrySecs: (cooldown.until - now) / 1000 };
 
