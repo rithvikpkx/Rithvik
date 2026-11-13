@@ -1,0 +1,75 @@
+/* The shared Experience body (Experience.tsx): stations down a connector, the education object beside them.
+   Identical structure in every look; a look themes the node (.ly-st-node), its connector and its object.
+   Connector primitives every look builds from (the box is .ly-st-link, node centre to node centre):
+     .xp-track  the whole length, unfilled     .xp-fill  the same box clipped to --fill (0–1, scroll-driven)
+     .xp-head   a carriage whose child rides the fill front
+   The object reads --px / --py (-1–1, sprung toward the pointer) and --pv (0–1, how fast it is moving). */
+
+.ly-xp {
+  --xp-node: 56px; --xp-w: 18px; --xp-gap: clamp(56px, 6vw, 88px);
+  --xp-spring: linear(0, .009, .035 2.1%, .141, .281 6.7%, .723 12.9%, .938 16.7%, 1.017, 1.077, 1.121 22.7%, 1.149 25.1%, 1.159 27.3%, 1.152 29.6%, 1.088 36.3%, 1.023 43.3%, .991 50.1%, .977 57.1%, .996 72.5%, 1.003 81.2%, 1);
+  container-type: inline-size; /* the layout follows the section's width, not the viewport: some looks set narrow columns */
+}
+.ly-xp-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .74fr); gap: 72px clamp(48px, 7vw, 120px); align-items: start; }
+.ly-xp-roles { margin: 0; padding: 0; list-style: none; }
+
+/* ---------- stations ---------- */
+.ly-st { position: relative; display: grid; grid-template-columns: var(--xp-node) minmax(0, 1fr); column-gap: clamp(20px, 2.4vw, 36px); padding-bottom: var(--xp-gap); }
+.ly-st:last-child { padding-bottom: 0; }
+.ly-st-node { position: relative; z-index: 2; display: grid; place-items: center; width: var(--xp-node); height: var(--xp-node); border-radius: 50%; background: var(--ui-bg); box-shadow: 0 0 0 1px var(--ui-line), 0 10px 24px -14px rgba(0, 0, 0, .35); color: var(--ui-muted); font: 600 12.5px/1 var(--ui-mono); letter-spacing: .06em; transition: transform 900ms var(--xp-spring), opacity 400ms ease, color 300ms ease, box-shadow 300ms ease; }
+.ly-st[data-lit] .ly-st-node { color: var(--ui-fg); box-shadow: 0 0 0 2px var(--ui-accent), 0 12px 28px -14px color-mix(in srgb, var(--ui-accent) 60%, transparent); }
+.ly-st-body { min-width: 0; padding-top: 4px; transition: transform 900ms var(--xp-spring), opacity 500ms ease; transition-delay: 60ms; }
+.ly-st-when { font: 500 12.5px/1.5 var(--ui-mono); color: var(--ui-muted); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.ly-st-role { margin-top: 8px; font: 500 clamp(1.3rem, 2vw, 1.75rem)/1.15 var(--ly-display); letter-spacing: -.02em; text-wrap: balance; }
+.ly-st-org { margin-top: 6px; color: var(--ui-muted); font-size: 15px; }
+.ly .ly-st-pts { display: grid; gap: 8px; max-width: 58ch; margin-top: 18px; padding: 0; list-style: none; color: var(--ui-muted); font-size: 15px; line-height: 1.55; text-wrap: pretty; }
+.ly-st-pts li { position: relative; padding-left: 18px; }
+.ly-st-pts li::before { content: ""; position: absolute; left: 0; top: .78em; width: 8px; height: 1px; background: currentColor; }
+/* arrival: armed only when JS runs and motion is allowed, so no-JS and calm visitors see everything at once */
+.ly-xp[data-armed] .ly-st:not([data-in]) .ly-st-node { opacity: 0; transform: scale(.35); }
+.ly-xp[data-armed] .ly-st:not([data-in]) .ly-st-body { opacity: 0; transform: translateY(32px); }
+
+/* ---------- connector box: from this node's centre to the next one's ---------- */
+.ly-st-link { position: absolute; z-index: 1; top: calc(var(--xp-node) / 2); bottom: calc(var(--xp-node) / -2); left: calc(var(--xp-node) / 2 - var(--xp-w) / 2); width: var(--xp-w); pointer-events: none; --fill: 1; }
+.ly-xp[data-armed] .ly-st-link { --fill: 0; }
+.ly-st-link > :where(i, b, span, svg) { display: block; }
+.xp-track, .xp-fill { position: absolute; inset: 0; }
+.xp-fill { clip-path: inset(-2px -40px calc(100% - var(--fill) * 100%) -40px); } /* sideways slack for glows */
+.xp-head { position: absolute; top: 0; left: 50%; width: 0; height: 100%; transform: translateY(calc(var(--fill) * 100%)); opacity: clamp(0, min(var(--fill), 1 - var(--fill)) * 14, 1); } /* it docks inside the nodes at either end */
+.xp-head > * { position: absolute; top: 0; left: 0; translate: -50% -50%; }
+
+/* ---------- education: the object, sprung toward the pointer, and its caption ---------- */
+.ly-xp-edu { position: sticky; top: calc(var(--ly-head-h) + 40px); display: grid; justify-items: center; gap: 28px; text-align: center; }
+.ly-edu-obj { --px: 0; --py: 0; --pv: 0; position: relative; width: min(100%, 360px); aspect-ratio: 1; perspective: 900px; cursor: grab; -webkit-tap-highlight-color: transparent; }
+.ly-edu-obj:active { cursor: grabbing; }
+.ly-edu-tilt { position: absolute; inset: 0; transform: rotateX(calc(var(--py) * -14deg)) rotateY(calc(var(--px) * 16deg)); transform-style: preserve-3d; }
+.ly-edu-tilt > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ly-edu-cap h3 { font: 500 clamp(1.5rem, 2.4vw, 2rem)/1.1 var(--ly-display); letter-spacing: -.02em; }
+.ly-edu-cap p { margin-top: 8px; color: var(--ui-muted); font-size: 15px; line-height: 1.45; }
+.ly-edu-cap .ly-edu-meta { font: 500 12.5px/1.5 var(--ui-mono); letter-spacing: .02em; }
+
+/* idle loops run only while the section is near the screen */
+.ly-xp:not([data-live]) :where(*, *::before, *::after) { animation-play-state: paused !important; }
+/* calm: a designed still. Every look's object must read well at rest (animation: none). */
+@media (prefers-reduced-motion: reduce) { .ly-xp :where(*, *::before, *::after) { animation: none !important; transition: none !important; } }
+html.lite .ly-xp :where(*, *::before, *::after) { animation: none !important; transition: none !important; }
+
+@container (max-width: 820px) {
+  .ly-xp-in { --xp-node: 44px; grid-template-columns: minmax(0, 1fr); }
+  .ly-st-node { font-size: 11px; }
+  .ly-xp-edu { position: relative; top: auto; }
+  .ly-edu-obj { width: min(78cqi, 320px); }
+}
+
+/* ---------- the shared defaults (Classic): a rounded thread with a bead, a refined seal ---------- */
+.xp-thread { left: 50%; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--ly-line); }
+.xp-thread-on { background: var(--ui-accent); }
+.xp-bead { width: 12px; height: 12px; border-radius: 50%; background: var(--ui-accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--ui-accent) 18%, transparent); }
+.xp-seal { overflow: visible; filter: drop-shadow(calc(var(--px) * -12px) calc(22px - var(--py) * 8px) 22px color-mix(in srgb, var(--ui-fg) 16%, transparent)); }
+.xp-seal-disc { fill: var(--ui-bg); stroke: var(--ui-line); stroke-width: 1; }
+.xp-seal-ring { fill: none; stroke: var(--ui-accent); stroke-width: .8; opacity: .6; }
+.xp-seal-ring + .xp-seal-ring { stroke-dasharray: 1.4 3.2; stroke-width: 1.4; }
+.xp-seal-rim { transform-origin: 100px 100px; animation: xp-turn 80s linear infinite; }
+.xp-seal-rim text { fill: var(--ui-muted); font: 600 9.6px/1 var(--ui-mono); letter-spacing: .14em; }
+@keyframes xp-turn { to { transform: rotate(360deg); } }
+@media (max-width: 640px) { .ly-st-pts li + li { display: none; } } /* phones: one line of evidence per station */

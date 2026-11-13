@@ -1,0 +1,45 @@
+/* Classic: the reference skin. The layout is the shared one (components/site/layout/layout.css); this file only maps
+   the palette's 7 tokens (--bg --bg-soft --text --muted --accent --accent-glow --green, from ThemeStyleInjector) onto
+   the shared --ui-* / --ly-* / --pt-* tokens. Scoped under :root[data-design="classic"]. */
+
+:root[data-design="classic"] {
+  /* body-text muted; palettes whose --muted is under 4.5:1 on bg or bg-soft are lifted toward --text below */
+  --cl-muted: var(--muted);
+  --cl-line: color-mix(in srgb, var(--text) 11%, transparent);
+  --cl-line-strong: color-mix(in srgb, var(--text) 22%, transparent);
+  --cl-chip: color-mix(in srgb, var(--text) 6%, transparent);
+
+  /* shared chrome (agent, windows, case sheet, play, toasts) takes the palette */
+  --ui-bg: var(--bg); --ui-fg: var(--text); --ui-muted: var(--cl-muted); --ui-accent: var(--accent); --ui-accent-fg: var(--bg);
+  --ui-line: var(--cl-line-strong); --ui-field: var(--cl-chip); --ui-r: 14px; --ui-font: var(--font, var(--font-geist-sans), system-ui, sans-serif);
+  --ui-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 16px 40px rgba(0, 0, 0, .14); --ui-blur: none;
+  /* layout */
+  --ly-soft: var(--bg-soft); --ly-line: var(--cl-line);
+  --ly-head-bg: color-mix(in srgb, var(--bg) 84%, transparent);
+  --ly-name-weight: 500; --ly-name-track: -.035em; /* upright sans: the owner found the italic serif too ornate */
+  /* portrait */
+  --pt-photo-bg: var(--bg-soft); --pt-ring: var(--cl-line); --pt-ring-w: 1px; --pt-shadow: 0 24px 60px -28px rgba(0, 0, 0, .4);
+  --pt-node-bg: var(--bg); --pt-node-fg: var(--text); --pt-node-line: var(--cl-line-strong); --pt-node-size: 12.5%;
+  /* cable: a sheath tinted from the palette's text over its bg (reads on light and dark), an accent core, a lifted-accent head */
+  --pt-sheath: color-mix(in srgb, var(--text) 34%, var(--bg)); --pt-sheath-w: 4.5px; --pt-edge: color-mix(in srgb, var(--text) 55%, var(--bg)); --pt-edge-w: .7px; --pt-sheen: color-mix(in srgb, var(--bg) 60%, transparent);
+  --pt-core: var(--accent); --pt-glow: var(--accent); --pt-head: color-mix(in srgb, var(--accent) 30%, #fff); --pt-halo: .14; --pt-pulse-a: var(--accent); --pt-pulse-m: color-mix(in srgb, var(--accent) 45%, var(--green)); --pt-pulse-b: var(--green);
+  --mark-accent: var(--accent);
+  scroll-padding-top: 80px;
+}
+/* contrast lift (computed per palette: smallest pull toward --text that clears 4.5:1 on bg and bg-soft) */
+:root[data-design="classic"]:is([data-theme="rithvik-terminal"]) { --cl-muted: color-mix(in srgb, var(--muted) 80%, var(--text)); }
+:root[data-design="classic"]:is([data-theme="night-owl"]) { --cl-muted: color-mix(in srgb, var(--muted) 90%, var(--text)); }
+:root[data-design="classic"]:is([data-theme="dracula"], [data-theme="catppuccin-mocha"], [data-theme="ayu-mirage"], [data-theme="tokyo-night-horizon"]) { --cl-muted: color-mix(in srgb, var(--muted) 75%, var(--text)); }
+:root[data-design="classic"]:is([data-theme="monokai-pro"]) { --cl-muted: color-mix(in srgb, var(--muted) 70%, var(--text)); }
+:root[data-design="classic"]:is([data-theme="tokyo-night"]) { --cl-muted: color-mix(in srgb, var(--muted) 65%, var(--text)); }
+:root[data-design="classic"]:is([data-theme="one-dark-pro"]) { --cl-muted: color-mix(in srgb, var(--muted) 35%, var(--text)); }
+
+@media (prefers-reduced-motion: no-preference) { :root[data-design="classic"] { scroll-behavior: smooth; } }
+
+:root[data-design="classic"] {
+  & body { background: var(--bg); color: var(--text); font: 400 16px/1.65 var(--ui-font); scrollbar-color: var(--cl-line-strong) transparent; }
+  & ::selection { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  & :focus-visible { outline-color: var(--accent); }
+  & .ly-nav { padding: 4px; border-radius: 999px; border: 1px solid var(--cl-line); background: color-mix(in srgb, var(--bg-soft) 86%, transparent); }
+  & .ly-head-r .ly-iam { background: color-mix(in srgb, var(--bg-soft) 86%, transparent); }
+}

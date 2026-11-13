@@ -1,245 +1,194 @@
-/* eslint-disable @next/next/no-html-link-for-pages --
+/* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element --
    /buffett lives in a separate root layout; next/link client-nav would skip that
-   layout's bootstrap, so the internal "/" links use a plain <a> for a full load.
-   File-level so editor reformatting can't detach an inline directive. */
-import { serverClient } from "@/lib/supabase";
-import type { Project, Experience as ExperienceRow, Education as EducationRow, GlobeMarker } from "@/lib/types";
+   layout's bootstrap, so the internal "/" links use a plain <a> for a full load. A plain
+   <img> is the point of the page. File-level so editor reformatting can't detach a directive. */
+import { getContent } from "@/lib/content";
+import type { Content } from "@/lib/content";
 
-// Match the homepage ISR cadence so content stays in sync.
+// Same cadence as the homepage content cache.
 export const revalidate = 60;
 
-interface Building {
-	title: string;
-	description: string;
-}
+const BH = "https://www.berkshirehathaway.com";
+const center = { textAlign: "center" } as const;
 
-function parseSafe<T>(json: string | undefined, fallback: T): T {
-	if (!json) return fallback;
-	try {
-		return JSON.parse(json) as T;
-	} catch {
-		return fallback;
-	}
-}
-
-// Descriptions are stored one bullet per line (see DescriptionBlock).
-function bullets(desc: string): string[] {
-	return (desc ?? "")
-		.split("\n")
-		.map((l) => l.trim())
-		.filter(Boolean);
-}
-
-function Body({ desc }: { desc: string }) {
-	const lines = bullets(desc);
-	if (lines.length > 1)
-		return (
-			<ul>
-				{lines.map((l, i) => (
-					<li key={i}>{l}</li>
+/** A two-column table of plain link lists, the way the real home page lays out its index. */
+function Index({ items }: { items: [href: string, label: string, note?: string][] }) {
+	const rows: (typeof items)[] = [];
+	for (let i = 0; i < items.length; i += 2) rows.push(items.slice(i, i + 2));
+	return (
+		<table cellSpacing={0} width="90%" align="center">
+			<tbody>
+				{rows.map((r, i) => (
+					<tr key={i}>
+						{r.map(([href, label, note]) => (
+							<td key={href} valign="top" width="50%">
+								<ul>
+									<li>
+										<a href={href}>{label}</a>
+										{note ? (
+											<>
+												<br />
+												<small>{note}</small>
+											</>
+										) : null}
+									</li>
+								</ul>
+							</td>
+						))}
+					</tr>
 				))}
-			</ul>
-		);
-	if (lines.length === 1) return <p>{lines[0]}</p>;
-	return null;
+			</tbody>
+		</table>
+	);
 }
 
+/** The plain-HTML homage page: server-rendered published content, no CSS, no JS. */
 export default async function Buffett() {
-	const sb = serverClient();
-	const [contentRes, eduRes, projRes, expRes] = await Promise.all([
-		sb.from("site_content").select("key, value"),
-		sb.from("education").select("*").order("sort_order"),
-		sb.from("projects").select("*").order("sort_order"),
-		sb.from("experience").select("*").order("sort_order"),
-	]);
-
-	const content = Object.fromEntries(
-		((contentRes.data ?? []) as { key: string; value: string }[]).map((r) => [r.key, r.value]),
-	);
-	const education = ((eduRes.data ?? []) as EducationRow[]).filter((e) => e.published);
-	// Mirror the homepage exactly: Projects.tsx and Experience.tsx show all rows
-	// regardless of `published`; only Education filters. Keeps /buffett seamless.
-	const projects = (projRes.data ?? []) as Project[];
-	const experience = (expRes.data ?? []) as ExperienceRow[];
-
-	// Full name from the DB (hero.name.line1 + line2); falls back if unset.
-	const name =
-		[content["hero.name.line1"], content["hero.name.line2"]].filter(Boolean).join(" ") || "Rithvik Praveen Kumar";
-	const tagline = content["hero.tagline"] ?? "";
-	const subLine = content["hero.sub_line"] ?? "";
-	const building = parseSafe<Building | undefined>(content["bento.building"], undefined);
-	const stack = parseSafe<string[]>(content["bento.stack"], []);
-	const interests = parseSafe<string[]>(content["bento.interests"], []);
-	const markers = parseSafe<GlobeMarker[]>(content["bento.globe_markers"], []);
-	const current = markers.find((m) => m.kind === "current") ?? markers.find((m) => m.kind === "home");
-	const location = current ? [current.city, current.region, current.country].filter(Boolean).join(", ") : "";
-
-	// Mirror the homepage's fallbacks (Hero.tsx / Contact.tsx) — these keys aren't
-	// in site_content, so the live site uses these defaults too.
-	const github = content["contact.link.github"] ?? "https://github.com/rithvikpkx";
-	const linkedin = content["contact.link.linkedin"];
-	const email = (content["contact.link.email"] ?? "mailto:rithvikpkx@gmail.com").replace(/^mailto:/, "");
-	const contactHeadline = content["contact.headline"] ?? "";
-	const contactSub = content["contact.sub"] ?? "";
+	const c: Content = await getContent();
+	const email = c.links.email.replace(/^mailto:/, "");
+	const stack = Object.entries(c.stack);
+	const edu = c.education;
 
 	return (
 		<>
-			<p className="return">
-				<a href="/">&larr; Return to the full site</a>
+			<p>
+				<i>
+					This page is an homage to the <a href={BH}>Berkshire Hathaway website</a>, famous for staying a plain,
+					unstyled page of links while the rest of the web got louder. It carries the same information as my
+					portfolio, with none of the design. <a href="/">Go to the full site.</a>
+				</i>
+			</p>
+			<hr />
+
+			<p style={center}>
+				<b>
+					<big>
+						<big>{c.name.toUpperCase()}</big>
+					</big>
+					<br />
+					{c.role}
+					<br />
+					Official Home Page
+				</b>
+			</p>
+			<hr />
+
+			<p style={center}>
+				<img src="/images/rithvik.jpeg" alt={`Portrait of ${c.name}`} width={180} height={180} />
+			</p>
+			<p style={center}>
+				{c.status}
+				<br />
+				{c.line}
+			</p>
+			<p style={center}>
+				<a href={`mailto:${email}`}>Email</a> | <a href={c.links.github}>GitHub</a> |{" "}
+				<a href={c.links.linkedin}>LinkedIn</a> | <a href="/resume.pdf">Resume</a>
 			</p>
 
-			<header className="bh-header">
-				<h1>{name}</h1>
-				{tagline ? <p className="addr">{tagline}</p> : null}
-				{location ? <p className="addr">{location}</p> : null}
-				<p className="addr">Personal Home Page</p>
-			</header>
-
+			<Index
+				items={[
+					["#about", "About"],
+					["#projects", "Projects", `${c.projects.length} listed`],
+					["#experience", "Experience"],
+					["#education", "Education"],
+					["#skills", "Skills"],
+					["#faq", "Frequently Asked Questions"],
+					["/resume.pdf", "Resume (PDF)"],
+					["/", "The full site"],
+				]}
+			/>
 			<hr />
 
-			<nav className="index" aria-label="Sections">
-				<ul>
-					<li>
-						<a href="#about">About</a>
-					</li>
-					<li>
-						<a href="#education">Education</a>
-					</li>
-					<li>
-						<a href="#projects">Projects</a>
-					</li>
-				</ul>
-				<ul>
-					<li>
-						<a href="#experience">Experience</a>
-					</li>
-					<li>
-						<a href="#contact">Contact</a>
-					</li>
-					<li>
-						<a href={github}>GitHub</a>
-					</li>
-					{linkedin ? (
-						<li>
-							<a href={linkedin}>LinkedIn</a>
-						</li>
-					) : null}
-				</ul>
-			</nav>
+			<h2 id="about">About</h2>
+			{c.about.map((t, i) => (
+				<p key={i}>{t}</p>
+			))}
 
-			<hr />
-
-			<section id="about">
-				<h2>About</h2>
-				{tagline ? <p>{tagline}</p> : null}
-				{subLine ? <p>{subLine}</p> : null}
-				{building ? (
-					<>
-						<h3>{building.title}</h3>
-						<p>{building.description}</p>
-					</>
-				) : null}
-				{stack.length ? (
+			<h2 id="projects">Projects</h2>
+			{c.projects.map((p) => (
+				<div key={p.slug}>
+					<h3 id={`project-${p.slug}`}>{p.title}</h3>
 					<p>
-						<strong>Stack:</strong> {stack.join(", ")}
+						<i>{p.headline}</i>
+						{p.ctx ? <> ({p.ctx})</> : null}
 					</p>
-				) : null}
-				{interests.length ? (
-					<p>
-						<strong>Interests:</strong> {interests.join(", ")}
-					</p>
-				) : null}
-			</section>
-
-			<hr />
-
-			<section id="education">
-				<h2>Education</h2>
-				{education.map((e) => (
-					<div key={e.id} className="entry">
-						<h3>{e.school_url ? <a href={e.school_url}>{e.school}</a> : e.school}</h3>
-						<p>{e.degree}</p>
-						{e.concentrations?.length ? <p>Concentrations: {e.concentrations.join(", ")}</p> : null}
-					</div>
-				))}
-			</section>
-
-			<hr />
-
-			<section id="projects">
-				<h2>Projects</h2>
-				{projects.map((p) => (
-					<div key={p.id} className="entry">
-						<h3>
-							{p.title}
-							{p.badge ? ` — ${p.badge}` : ""}
-						</h3>
-						<Body desc={p.description} />
-						{p.tags?.length ? <p className="tags">{p.tags.join(" · ")}</p> : null}
-						{(() => {
-							const links = p.links ?? {};
-							return Object.keys(links).length ? (
-								<p>
-									{Object.entries(links).map(([k, v], i) => (
-										<span key={k}>
-											{i > 0 ? " · " : ""}
-											<a href={v}>{k}</a>
-										</span>
-									))}
-								</p>
-							) : null;
-						})()}
-					</div>
-				))}
-			</section>
-
-			<hr />
-
-			<section id="experience">
-				<h2>Experience</h2>
-				{experience.map((x) => (
-					<div key={x.id} className="entry">
-						<h3>
-							{x.role}
-							{x.org ? <> — {x.org_url ? <a href={x.org_url}>{x.org}</a> : x.org}</> : null}
-						</h3>
-						<p className="meta">{[x.date_range, x.location].filter(Boolean).join(" · ")}</p>
-						<Body desc={x.description} />
-						{x.tags?.length ? <p className="tags">{x.tags.join(" · ")}</p> : null}
-					</div>
-				))}
-			</section>
-
-			<hr />
-
-			<section id="contact">
-				<h2>Contact</h2>
-				{contactHeadline ? <p>{contactHeadline}</p> : null}
-				{contactSub ? <p>{contactSub}</p> : null}
-				<ul>
-					<li>
-						<a href={github}>GitHub</a>
-					</li>
-					{linkedin ? (
-						<li>
-							<a href={linkedin}>LinkedIn</a>
-						</li>
+					<ul>
+						{p.desc.map((d, i) => (
+							<li key={i}>{d}</li>
+						))}
+					</ul>
+					{p.tags.length ? <p>Technologies: {p.tags.join(", ")}</p> : null}
+					{Object.keys(p.links).length ? (
+						<p>
+							{Object.entries(p.links).map(([label, url], i) => (
+								<span key={label}>
+									{i ? " | " : ""}
+									<a href={url}>{label}</a>
+								</span>
+							))}
+						</p>
 					) : null}
-					<li>Email: {email}</li>
-				</ul>
-			</section>
+				</div>
+			))}
+
+			<h2 id="experience">Experience</h2>
+			{c.experience.map((r) => (
+				<div key={r.slug}>
+					<h3 id={`experience-${r.slug}`}>
+						{r.role}, {r.org}
+					</h3>
+					<p>
+						<i>
+							{r.when}
+							{r.where ? `, ${r.where}` : ""}
+						</i>
+					</p>
+					<ul>
+						{r.desc.map((d, i) => (
+							<li key={i}>{d}</li>
+						))}
+					</ul>
+					{r.tags.length ? <p>Technologies: {r.tags.join(", ")}</p> : null}
+				</div>
+			))}
+
+			<h2 id="education">Education</h2>
+			<p>
+				<b>{edu.school}</b>
+				<br />
+				{edu.degree}
+				{edu.focus ? `, ${edu.focus}` : ""}
+				{edu.grad ? <> (expected {edu.grad})</> : null}
+			</p>
+
+			<h2 id="skills">Skills</h2>
+			<ul>
+				{stack.map(([group, items]) => (
+					<li key={group}>
+						<b>{group}:</b> {items.join(", ")}
+					</li>
+				))}
+			</ul>
+
+			<h2 id="faq">Frequently Asked Questions</h2>
+			{c.faq.map(([q, a]) => (
+				<p key={q}>
+					<b>{q}</b>
+					<br />
+					{a}
+				</p>
+			))}
 
 			<hr />
-
-			<footer className="bh-footer">
-				<p>
-					<a href="/">&larr; Return to the full experience</a>
-				</p>
-				<p>
-					Copyright &copy; {new Date().getFullYear()} {name}.
-				</p>
-				<p className="note">Inspired by the official Berkshire Hathaway website.</p>
-			</footer>
+			<p style={center}>
+				<a href="/">Return to the full site</a> | <a href={BH}>The real Berkshire Hathaway home page</a>
+			</p>
+			<p style={center}>
+				<small>
+					Copyright &copy; {new Date().getFullYear()} {c.name}
+				</small>
+			</p>
 		</>
 	);
 }

@@ -1,0 +1,24 @@
+/* PhotoFx: the click-to-apply effect layer over the portrait. A look sets --pfx-off / --pfx-on (two clip-paths of
+   the same shape) for its reveal, --pfx-scan for the leading edge colour, and styles .pfx-img + its overlays. */
+.pfx { --pfx-off: inset(0 0 100% 0); --pfx-on: inset(0 0 0 0); --pfx-scan: rgba(255, 255, 255, .9); --pfx-t: 440ms;
+  position: absolute; inset: 0; z-index: 1; overflow: hidden; border-radius: inherit; isolation: isolate; container-type: inline-size; pointer-events: none;
+  clip-path: var(--pfx-off); transition: clip-path var(--pfx-t) cubic-bezier(.65, 0, .35, 1); }
+.pfx[data-on] { clip-path: var(--pfx-on); }
+@starting-style { .pfx[data-on] { clip-path: var(--pfx-off); } }
+:where(.pfx > *) { position: absolute; inset: 0; }
+.pfx-defs { position: absolute; width: 0; height: 0; }
+.pfx-img { width: 100%; height: 100%; object-fit: cover; }
+/* the leading edge of the reveal: a bright line that rides down (on) or up (off) */
+.pfx-scan { inset: auto 0 auto 0; top: 0; height: 2px; background: var(--pfx-scan); box-shadow: 0 0 12px 2px var(--pfx-scan); opacity: 0; }
+.pfx[data-on] .pfx-scan { animation: pfx-scan-in var(--pfx-t) cubic-bezier(.65, 0, .35, 1); }
+@keyframes pfx-scan-in { 0% { top: 0; opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.pfx-cap { inset: auto 0 8% 0; display: flex; justify-content: center; opacity: 0; transition: opacity 200ms ease 200ms; }
+.pfx-cap b { padding: 4px 7px; border-radius: 3px; background: var(--pfx-cap-bg, rgba(0, 0, 0, .55)); color: var(--pfx-cap-fg, #fff); font: 600 9.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.pfx[data-on] .pfx-cap { opacity: .92; }
+/* the effect only animates while shown and on screen */
+.pfx:not([data-on]) *, .pt[data-paused] .pfx * { animation-play-state: paused !important; }
+.pt-photo:focus-visible { outline: 2px solid var(--ui-accent, currentColor); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .pfx { transition: none; } .pfx-scan { display: none; } .pfx * { animation: none !important; } }
+html.lite .pfx { transition: none; }
+html.lite .pfx-scan { display: none; }
+html.lite .pfx * { animation: none !important; }

@@ -1,0 +1,501 @@
+<title>rithvik.ai v3 Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="font-base" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@400..700&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap">
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="systems-a.css">
+<link rel="stylesheet" href="systems-b.css">
+<link rel="stylesheet" href="systems-c.css">
+<link rel="stylesheet" href="unslop.css">
+<script>
+/* Pre-paint boot: restore the saved design before first paint (mirrors the planned layout.tsx boot script). */
+(function () {
+  var d = document.documentElement;
+  var sys = "classic", pal = "github-light", mode = "light", lite = false;
+  try {
+    sys = localStorage.getItem("rv-system") || "classic";
+    pal = localStorage.getItem("rv-palette") || "github-light";
+    mode = localStorage.getItem("rv-mode") || "light";
+    lite = localStorage.getItem("rv-lite") === "1";
+  } catch (e) {}
+  d.dataset.system = sys; d.dataset.palette = pal; d.dataset.mode = mode;
+  if (lite) d.classList.add("lite");
+  d.classList.add("unslop");
+})();
+</script>
+
+<!-- ───────── Decoration layer: every slot any design uses; each design turns on its own ───────── -->
+<div class="bg-layer" aria-hidden="true">
+  <i class="deco blob b1"></i><i class="deco blob b2"></i><i class="deco blob b3"></i>
+  <i class="deco stripes"></i>
+  <i class="deco halftone"></i>
+  <i class="deco grid"></i>
+  <i class="deco ruled"></i>
+  <i class="deco sun"></i>
+  <span class="deco floor"><i></i></span>
+  <i class="deco stars"></i>
+  <i class="deco cloud c1"></i><i class="deco cloud c2"></i>
+  <i class="deco rays r1"></i><i class="deco rays r2"></i>
+  <span class="deco bubbles"><i style="--x:6%;--d:9s;--dl:0s"></i><i style="--x:18%;--d:11.5s;--dl:-1.7s"></i><i style="--x:30%;--d:14s;--dl:-3.4s"></i><i style="--x:42%;--d:16.5s;--dl:-5.1s"></i><i style="--x:54%;--d:9s;--dl:-6.8s"></i><i style="--x:66%;--d:11.5s;--dl:-8.5s"></i><i style="--x:78%;--d:14s;--dl:-10.2s"></i><i style="--x:90%;--d:16.5s;--dl:-11.9s"></i></span>
+  <span class="deco petals"><i style="--x:6%;--d:9s;--dl:0s"></i><i style="--x:18%;--d:11.5s;--dl:-1.7s"></i><i style="--x:30%;--d:14s;--dl:-3.4s"></i><i style="--x:42%;--d:16.5s;--dl:-5.1s"></i><i style="--x:54%;--d:9s;--dl:-6.8s"></i><i style="--x:66%;--d:11.5s;--dl:-8.5s"></i><i style="--x:78%;--d:14s;--dl:-10.2s"></i><i style="--x:90%;--d:16.5s;--dl:-11.9s"></i></span>
+  <i class="deco kanji">創</i>
+  <i class="deco ground"></i><i class="deco kelp k1"></i><i class="deco kelp k2"></i>
+  <i class="deco dim"></i>
+  <canvas class="deco rain" id="rain"></canvas>
+  <div class="deco taskbar"><span class="tb-start">◆ rithvik.ai</span><span class="tb-tasks"><span class="tb-task">Portfolio</span><span class="tb-task">Assistant</span></span><span class="tb-clock" id="tb-clock">12:00 PM</span></div>
+</div>
+
+<!-- ───────── Nav ───────── -->
+<header class="nav-wrap">
+  <nav class="nav" aria-label="Primary">
+    <a class="brand" href="#top" aria-label="Rithvik Praveen Kumar, home"><span class="logo-slot" data-logo="nav"></span></a>
+    <ul class="nav-links">
+      <li><a href="#projects">Work</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#education">Education</a></li>
+      <li><a href="#beyond">Play</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav-design u-only" type="button" id="nav-design" aria-label="Change design"><span class="nd-dot" aria-hidden="true"></span><span id="nd-name">GitHub Light</span><kbd>T</kbd><span class="anno" data-n="U1">Quiet design control replaces the hero chip</span></button>
+    <button class="btn sm" type="button" data-open="resume">Resume</button>
+  </nav>
+</header>
+
+<main id="top" class="content">
+
+  <!-- ───────── Hero ───────── -->
+  <section class="hero" id="hero" aria-labelledby="hero-name">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="v-orig">CS + Math @ Purdue · Open to SWE &amp; AI internships</span><span class="v-un"><span class="live-dot" aria-hidden="true"></span>CS + Math at Purdue · open to SWE and AI internships</span></p>
+        <h1 class="display kinetic" id="hero-name" aria-label="Rithvik Praveen Kumar">
+          <span class="k-line" data-text="Rithvik"></span>
+          <span class="k-line" data-text="Praveen Kumar"></span>
+        </h1>
+        <pre class="ascii-name" id="ascii-name" aria-hidden="true"></pre>
+        <p class="hero-sub"><span class="v-orig">Building at the intersection of <span class="hl">AI, systems</span>, and real-world problems. Researching TinyML at Purdue's Snowball Lab.</span><span class="v-un">I build brain-computer interfaces, computer vision, and ML small enough for a microcontroller. Researching TinyML at Purdue.</span></p>
+        <div class="hero-ctas">
+          <button class="btn" type="button" data-open="resume">View resume</button>
+          <button class="btn ghost" type="button" data-focus-chat><span class="v-orig">Ask my AI</span><span class="v-un">Ask a question</span></button>
+          <a class="btn ghost u-hide" href="#contact">Get in touch</a>
+        </div>
+
+        <!-- Discovery pattern B: hero style chip -->
+        <div class="style-chip" id="style-chip">
+          <span class="sc-dot" aria-hidden="true"></span>
+          <span class="sc-text">Viewing in <b id="sc-name">GitHub Light</b>. This site comes in 12 designs.</span>
+          <span class="sc-try" id="sc-try"></span>
+          <button class="sc-dice" type="button" id="sc-dice" aria-label="Surprise me with a random design" title="Surprise me (T)">⚄</button>
+          <span class="anno" data-n="B">Hero style chip</span>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="portrait-wrap">
+          <svg class="ouro" viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <linearGradient id="ouro-g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="var(--accent)"/>
+                <stop offset="1" stop-color="var(--accent-2, var(--accent))"/>
+              </linearGradient>
+            </defs>
+            <g class="ouro-spin">
+              <circle class="ouro-body" cx="100" cy="100" r="92" fill="none" stroke="url(#ouro-g)" stroke-width="5" stroke-linecap="round" stroke-dasharray="520 60"/>
+              <circle class="ouro-scales" cx="100" cy="100" r="92" fill="none" stroke="var(--bg)" stroke-width="2" stroke-dasharray="2 9" opacity=".55"/>
+              <path class="ouro-head" d="M100 4 l12 6 -12 6 z" fill="var(--accent)"/>
+            </g>
+          </svg>
+          <div class="portrait">
+            <img src="rithvik.jpeg" alt="Portrait of Rithvik Praveen Kumar" width="540" height="540" id="portrait-img">
+            <pre class="ascii-portrait" id="ascii-portrait" aria-hidden="true"></pre>
+          </div>
+          <pre class="ascii-ouro" id="ascii-ouro" aria-hidden="true"></pre>
+          <svg class="deco pow" viewBox="0 0 200 160" aria-hidden="true">
+            <polygon points="100,4 118,46 160,18 146,62 196,62 156,90 190,124 140,114 136,156 106,124 78,158 72,116 22,138 46,98 4,82 50,66 26,24 76,44" fill="#ffd93d" stroke="#111" stroke-width="6" stroke-linejoin="round"/>
+            <polygon points="100,26 112,56 140,40 132,70 166,72 138,90 160,112 128,106 124,132 104,112 82,134 80,108 46,120 62,94 32,82 64,72 50,44 84,58" fill="#ff6b6b"/>
+            <text x="100" y="94" text-anchor="middle" font-family="Bangers, Impact, sans-serif" font-size="36" fill="#fff" stroke="#111" stroke-width="5" paint-order="stroke" letter-spacing="2" class="v-orig">HIRE ME!</text>
+            <text x="100" y="92" text-anchor="middle" font-family="Bangers, Impact, sans-serif" font-size="27" fill="#fff" stroke="#111" stroke-width="5" paint-order="stroke" letter-spacing="1" class="v-un">OPEN TO WORK</text>
+          </svg>
+        </div>
+        <div class="socials">
+          <a class="icon-btn" href="https://github.com/rithvikpkx" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg></a>
+          <a class="icon-btn" href="https://www.linkedin.com/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.83v1.5h.05c.53-1 1.84-2.06 3.8-2.06 4.06 0 4.82 2.67 4.82 6.15v5.41h-4v-4.8c0-1.15-.02-2.62-1.6-2.62-1.6 0-1.84 1.25-1.84 2.54v4.88h-4v-11Z"/></svg></a>
+          <button class="icon-btn" type="button" data-copy="rithvikpkx@gmail.com" aria-label="Copy email address"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm1 2.4V17h16V7.4l-8 5.2-8-5.2ZM5.6 7 12 11.2 18.4 7H5.6Z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discovery pattern C: the same site, twelve designs -->
+    <div class="wrap ways-wrap">
+      <div class="ways-head">
+        <p class="eyebrow"><span class="v-orig">Same site, twelve designs</span><span class="v-un">Designs</span></p>
+        <span class="ways-hint"><span class="v-orig">Tap one to restyle the whole page</span><span class="v-un">Restyle the whole page</span></span>
+        <span class="anno" data-n="C">"12 ways" strip</span>
+      </div>
+      <div class="ways" id="ways" role="list"></div>
+    </div>
+  </section>
+
+  <!-- Neo-Brutalist ticker (an in-flow band so it never collides with the chat dock) -->
+  <div class="ticker-band" aria-hidden="true"><div class="ticker-track"><span>OPEN TO SWE &amp; AI INTERNSHIPS ● TINYML RESEARCH @ PURDUE SNOWBALL LAB ● BUILT A RAG PLATFORM FOR 500+ LEARNERS ● ASK MY AI ANYTHING ● </span><span>OPEN TO SWE &amp; AI INTERNSHIPS ● TINYML RESEARCH @ PURDUE SNOWBALL LAB ● BUILT A RAG PLATFORM FOR 500+ LEARNERS ● ASK MY AI ANYTHING ● </span></div></div>
+
+  <!-- ───────── Projects + Stack Map ───────── -->
+  <section class="section" id="projects" aria-labelledby="projects-h">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="eyebrow">Selected work</p>
+        <h2 class="display" id="projects-h">Work</h2>
+        <p class="sec-sub"><span class="v-orig">Brain-computer interfaces, computer vision, applied ML and the occasional tool for a non-profit.</span><span class="v-un">Brain-computer interfaces, computer vision and applied ML</span></p>
+      </header>
+
+      <div class="panel stackmap" data-label="STACK MAP" data-title="stack_map.exe" data-fig="1">
+        <div class="sm-head">
+          <h3 class="sm-title">Stack Map</h3>
+          <p class="sm-hint" id="sm-hint">Pick a tool to see where I've used it</p>
+          <button class="btn ghost sm" type="button" id="sm-clear" hidden>Show all</button>
+          <span class="anno" data-n="S">Stack Map filters the cards below</span>
+        </div>
+        <div class="sm-groups" id="stackmap"></div>
+      </div>
+
+      <div class="proj-grid" id="proj-grid"></div>
+    </div>
+  </section>
+
+  <!-- ───────── Experience ───────── -->
+  <section class="section" id="experience" aria-labelledby="exp-h">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="eyebrow">Where I've worked</p>
+        <h2 class="display" id="exp-h">Experience</h2>
+      </header>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+  </section>
+
+  <!-- ───────── Education ───────── -->
+  <section class="section" id="education" aria-labelledby="edu-h">
+    <div class="wrap">
+      <header class="sec-head">
+        <p class="eyebrow">Studying</p>
+        <h2 class="display" id="edu-h">Education</h2>
+      </header>
+      <article class="panel edu" data-label="EDUCATION" data-title="purdue.txt" data-fig="2">
+        <img class="edu-logo" src="purdue.png" alt="" width="64" height="64">
+        <div class="edu-body">
+          <h3 class="edu-school"><a href="https://www.cs.purdue.edu/" target="_blank" rel="noopener">Purdue University</a></h3>
+          <p class="edu-degree">B.S. in Computer Science + Mathematics</p>
+          <ul class="chips" aria-label="Concentrations"><li class="chip">Software Engineering</li><li class="chip">AI / ML</li></ul>
+          <p class="edu-meta"><span>West Lafayette, IN</span><span class="edit-mark" data-edit>Expected graduation: <em>add date</em></span></p>
+        </div>
+        <div class="edu-side">
+          <img class="edu-photo u-only" src="assets/purdue-fountain.jpg" alt="The Engineering Fountain on Purdue's campus" width="800" height="495" loading="lazy">
+          <p class="mini-label">Relevant</p>
+          <p>Snowball Lab (TinyML) · Hack The Future · Columbia SHAPE alum</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ───────── Contact ───────── -->
+  <section class="section" id="contact" aria-labelledby="contact-h">
+    <div class="wrap contact-grid">
+      <header class="sec-head contact-head">
+        <p class="eyebrow">Contact</p>
+        <h2 class="display" id="contact-h"><span class="v-orig">Let's connect.</span><span class="v-un">Contact</span></h2>
+        <p class="sec-sub"><span class="v-orig">I'm always interested in software engineering, AI, startups, research and ambitious technical projects.</span><span class="v-un">Internships, research positions, or a project that needs another engineer</span></p>
+        <div class="contact-links">
+          <div class="addr"><span class="mini-label">Email</span><code id="email-addr">rithvikpkx@gmail.com</code><button class="btn ghost sm" type="button" data-copy="rithvikpkx@gmail.com">Copy</button></div>
+          <a class="btn ghost sm" href="https://github.com/rithvikpkx" target="_blank" rel="noopener">GitHub ↗</a>
+          <a class="btn ghost sm" href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn ↗</a>
+          <button class="btn ghost sm u-hide" type="button" data-open="resume">Resume</button>
+        </div>
+      </header>
+      <form class="panel composer" id="composer" data-label="NEW MESSAGE" data-title="New message" data-fig="3" novalidate>
+        <div class="cmp-row"><label for="cmp-from">From</label><input class="field" id="cmp-from" type="email" placeholder="you@company.com" autocomplete="email" aria-describedby="err-from"><p class="field-err" id="err-from" hidden>Add your email so I can reply</p></div>
+        <div class="cmp-row"><label for="cmp-subj">Subject</label><input class="field" id="cmp-subj" type="text" placeholder="Internship opportunity"></div>
+        <div class="cmp-row grow"><label for="cmp-body" class="sr-only">Message</label><textarea class="field" id="cmp-body" rows="5" placeholder="Hi Rithvik, …" aria-describedby="err-body"></textarea><p class="field-err" id="err-body" hidden>Write a message first</p></div>
+        <div class="cmp-foot">
+          <span class="cmp-note"><span class="v-orig">Sends straight to my inbox. Replies come from me, not a bot.</span><span class="v-un">Goes straight to my inbox, and I reply myself</span></span>
+          <button class="btn" type="submit">Send</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ───────── Beyond the resume ───────── -->
+  <section class="beyond" id="beyond" aria-labelledby="beyond-h">
+    <div class="wrap">
+      <p class="eyebrow">The fun part</p>
+      <h2 class="display beyond-title" id="beyond-h">Play</h2>
+      <p class="sec-sub"><span class="v-orig">Live status, games you can beat me at, and how this site works under the hood.</span><span class="v-un">Status, records, games, and how this site works</span></p>
+    </div>
+  </section>
+
+  <!-- Now -->
+  <section class="section" id="now" aria-labelledby="now-h">
+    <div class="wrap">
+      <header class="sec-head"><p class="eyebrow">Right now</p><h2 class="display" id="now-h">Now</h2></header>
+      <div class="now-grid">
+        <article class="panel now-card" data-label="STATUS" data-title="status.txt" data-fig="4">
+          <img class="now-photo u-only" src="assets/sf-crissy.jpg" alt="Crissy Field beach and the Golden Gate Bridge in San Francisco" width="1280" height="359" loading="lazy">
+          <div class="now-place">
+            <span class="now-dot" aria-hidden="true"></span>
+            <div>
+              <p class="mini-label">Currently in</p>
+              <p class="now-city">San Francisco, CA</p>
+              <p class="now-time"><span id="now-time">--:--</span> <span id="now-tz">PT</span> · <span id="now-dn">day</span></p>
+            </div>
+          </div>
+          <dl class="now-list">
+            <div><dt>Building this week</dt><dd>rithvik.ai v3: twelve design systems on one codebase</dd></div>
+            <div><dt>Researching</dt><dd>TinyML on low-power hardware with Edge Impulse</dd></div>
+            <div><dt>Learning</dt><dd>Energy-harvesting sensors (piezo mics as power sources)</dd></div>
+          </dl>
+        </article>
+        <article class="panel globe-card" data-label="GLOBE" data-title="globe.exe" data-fig="5">
+          <canvas id="globe" width="320" height="320" aria-label="Globe showing Boston, West Lafayette and San Francisco" role="img"></canvas>
+          <ul class="legend">
+            <li><i class="lg home"></i>Home · Boston</li>
+            <li><i class="lg school"></i>School · West Lafayette</li>
+            <li><i class="lg now"></i>Now · San Francisco</li>
+          </ul>
+        </article>
+      </div>
+      <article class="panel deck" id="deck" data-label="RECORDS" data-title="records.exe" data-fig="5b">
+        <div class="deck-platter">
+          <div class="vinyl" id="vinyl" role="slider" tabindex="0" aria-label="Record: drag, or use the arrow keys, to scratch" aria-valuemin="0" aria-valuemax="72" aria-valuenow="0" aria-valuetext="0:00">
+            <div class="vinyl-disc" id="vinyl-disc"><div class="vinyl-label"><span class="logo-slot" data-logo="label"></span><span class="vl-text">Side A · 78 rpm</span></div></div>
+            <i class="vinyl-sheen" aria-hidden="true"></i>
+            <i class="vinyl-spindle" aria-hidden="true"></i>
+          </div>
+          <svg class="tonearm" id="tonearm" viewBox="0 0 100 100" aria-hidden="true"><g class="ta"><rect x="90.5" y="0" width="6" height="8" rx="1.6" class="ta-weight"/><path d="M88 12 L81 31 L66.5 66" class="ta-rod"/><path d="M66.5 66 L61.5 73" class="ta-rod"/><rect x="56" y="71.5" width="9" height="5" rx="1.2" transform="rotate(35 60.5 74)" class="ta-shell"/><circle cx="88" cy="12" r="6.5" class="ta-base"/><circle cx="88" cy="12" r="2.6" class="ta-cap"/></g></svg>
+        </div>
+        <div class="deck-side">
+          <h3 class="deck-title">Chili Pepper</h3>
+          <p class="deck-artist">Fred Longshaw, 1927</p>
+          <div class="deck-time"><span id="deck-pos">0:00</span><span class="deck-bar"><i id="deck-prog"></i></span><span id="deck-dur">1:12</span></div>
+          <button class="deck-power" id="deck-power" type="button" aria-pressed="false"><span class="dp-light" aria-hidden="true"></span><span id="deck-power-label">Play</span></button>
+          <p class="deck-hint">Drag the record to scratch</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Arcade -->
+  <section class="section" id="arcade" aria-labelledby="arcade-h">
+    <div class="wrap">
+      <header class="sec-head arcade-head">
+        <p class="eyebrow">Embedded from rithvik.si</p>
+        <h2 class="display" id="arcade-h">Games</h2>
+        <p class="sec-sub"><span class="v-orig">Small games I built. Each one compares your score against mine.</span><span class="v-un">Small games, scored against mine.</span> More live on <a href="https://rithvik.si" target="_blank" rel="noopener">rithvik.si ↗</a></p>
+        <span class="anno" data-n="G">Each game is an iframe from &lt;game&gt;.rithvik.si; it restyles to match the active design</span>
+      </header>
+      <div class="arcade-grid" id="arcade-grid"></div>
+      <div class="game-frame panel" id="game-frame" hidden data-label="GAME" data-title="game.exe" data-fig="6">
+        <div class="gf-bar">
+          <span class="gf-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="gf-url" id="gf-url">typeracer.rithvik.si</span>
+          <a class="gf-open" id="gf-open" href="https://rithvik.si" target="_blank" rel="noopener">Open on rithvik.si ↗</a>
+          <button class="icon-btn gf-close" type="button" id="gf-close" aria-label="Close game"><span class="v-orig">✕</span><span class="v-un" data-icon="x"></span></button>
+        </div>
+        <div class="gf-body" id="gf-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Under the Hood -->
+  <section class="section" id="hood" aria-labelledby="hood-h">
+    <div class="wrap">
+      <header class="sec-head"><p class="eyebrow">This site, as a project</p><h2 class="display" id="hood-h">Colophon</h2></header>
+      <div class="hood-grid">
+        <article class="panel diagram-card" data-label="ARCHITECTURE" data-title="architecture.png" data-fig="7">
+          <h3 class="card-h">How a question gets answered</h3>
+          <ol class="flow" id="flow">
+            <li><b>You ask</b><span>"What stack did BoilerFrame use?"</span></li>
+            <li><b>Rewrite</b><span>Follow-ups become standalone questions</span></li>
+            <li><b>Retrieve</b><span>Full profile + pgvector search over uploads</span></li>
+            <li><b>Answer</b><span>Streams with cited sources</span></li>
+            <li><b>Act</b><span>Opens a project, the resume or a game</span></li>
+          </ol>
+          <h3 class="card-h">How a design switch works</h3>
+          <ol class="flow flow-2">
+            <li><b>data-system</b><span>one attribute on &lt;html&gt;</span></li>
+            <li><b>Tokens</b><span>~40 CSS variables per design</span></li>
+            <li><b>Decor</b><span>CSS-only slots, no re-render</span></li>
+          </ol>
+        </article>
+        <article class="panel torus-card" data-label="RENDER LOOP" data-title="loop.exe" data-fig="8">
+          <h3 class="card-h">The render loop</h3>
+          <canvas id="torus" width="300" height="220" aria-label="A spinning torus" role="img"></canvas>
+          <pre class="ascii-torus" id="ascii-torus" aria-hidden="true"></pre>
+          <p class="card-note u-hide">Same maths in every design: drawn as dots here, as characters in ASCII Terminal. Capped at 24 fps and paused off-screen.</p>
+        </article>
+        <article class="panel changelog" data-label="CHANGELOG" data-title="git log" data-fig="9">
+          <h3 class="card-h">Changelog <span class="mini-label">from git</span></h3>
+          <ul class="log" id="log"></ul>
+        </article>
+        <article class="panel contrib" data-label="ACTIVITY" data-title="activity.exe" data-fig="10">
+          <h3 class="card-h"><span class="v-orig">Contributions <span class="mini-label">sample data</span></span><span class="v-un">Commits to this site <span class="mini-label" id="commit-total"></span></span></h3>
+          <div class="contrib-grid" id="contrib" role="img" aria-label="GitHub contribution graph (sample)"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Field Notes -->
+  <section class="section" id="notes" aria-labelledby="notes-h">
+    <div class="wrap">
+      <header class="sec-head"><p class="eyebrow">Things I care about</p><h2 class="display" id="notes-h">Notes</h2></header>
+      <div class="notes-grid" id="notes-grid"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap footer-grid">
+      <div>
+        <span class="logo-slot footer-logo" data-logo="footer"></span>
+        <p class="footer-name">Rithvik Praveen Kumar</p>
+        <p class="footer-sub"><span class="v-orig">Built with Next.js, Supabase and a lot of CSS. © 2026</span><span class="v-un">Built with Next.js and Supabase · © 2026</span></p>
+      </div>
+      <div class="footer-links">
+        <a href="#contact">Contact</a>
+        <button type="button" class="linkish" data-open="resume">Resume</button>
+        <a href="https://github.com/rithvikpkx" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <p class="credits u-only">Photos: Crissy Field and the Golden Gate Bridge, public domain; Engineering Fountain, Purdue, by Julian Herzog, CC BY 4.0, via Wikimedia Commons. Music: Chili Pepper by Fred Longshaw (1927), public domain. Icons: Lucide, Simple Icons, Bootstrap Icons. Map: Natural Earth.</p>
+      <p class="buffett-line">Prefer plain HTML? <button type="button" class="linkish" data-open="buffett">Read the Warren Buffett edition →</button><span class="anno" data-n="W">Refined Buffett entry: a quiet footer line, plus a "Berkshire '99" pill at the end of the dial</span></p>
+    </div>
+  </footer>
+</main>
+
+<!-- ───────── Theme dial (existing half-pill fan, now with two groups) ───────── -->
+<aside class="dial" id="dial" data-lenis-prevent aria-label="Design and palette selector">
+  <div class="dial-shell" id="dial-shell">
+    <div class="dial-dormant" aria-hidden="true"><i class="dd d1"></i><i class="dd d2"></i><i class="dd d3"></i><span class="dd-count">28</span></div>
+    <div class="dial-open">
+      <p class="dial-group" id="dial-group">Designs</p>
+      <div class="dial-fan" id="dial-fan" role="radiogroup" aria-label="Designs and palettes" tabindex="0"></div>
+      <div class="dial-tools">
+        <button type="button" class="dt" id="dt-mode" aria-label="Toggle dark variant" title="Light / dark variant"><span id="dt-mode-ic">☾</span></button>
+        <button type="button" class="dt" id="dt-dice" aria-label="Random design" title="Random design (T)"><span class="v-orig">⚄</span><span class="v-un" data-icon="shuffle"></span></button>
+        <button type="button" class="dt" id="dt-lite" aria-label="Reduce effects" aria-pressed="false" title="Reduce effects"><span class="v-orig">◌</span><span class="v-un" data-icon="zap-off"></span></button>
+      </div>
+    </div>
+  </div>
+  <span class="anno dial-anno" data-n="A">Dial: Designs group → divider → Palettes, with dark-variant, random and reduce-effects controls</span>
+</aside>
+
+<!-- Discovery pattern A: first-visit coach mark -->
+<div class="coach" id="coach" hidden role="dialog" aria-labelledby="coach-h">
+  <p id="coach-h" class="coach-h"><span class="v-orig">This site comes in 12 designs.</span><span class="v-un">Twelve designs, one site</span></p>
+  <p class="coach-p">Hover the dial, scroll through it, or press <kbd>T</kbd> to shuffle.</p>
+  <div class="coach-row"><button type="button" class="btn sm" id="coach-try">Surprise me</button><button type="button" class="btn ghost sm" id="coach-x">Got it</button></div>
+  <span class="anno" data-n="A">First-visit coach mark</span>
+</div>
+
+<!-- ───────── Chat dock (bottom-center) ───────── -->
+<div class="chat-dock" id="chat-dock">
+  <section class="chat-panel" id="chat-panel" data-lenis-prevent hidden aria-label="Chat with Rithvik's assistant">
+    <header class="chat-head">
+      <div class="ch-title"><span class="ch-dot" aria-hidden="true"></span><b>Rithvik's assistant</b><span class="ch-model">grounded in this site + resume</span></div>
+      <div class="ch-actions">
+        <button type="button" class="icon-btn sm" id="ch-history" aria-label="Conversation history" title="History"><span class="v-orig">☰</span><span class="v-un" data-icon="history"></span></button>
+        <button type="button" class="icon-btn sm" id="ch-new" aria-label="New chat" title="New chat"><span class="v-orig">＋</span><span class="v-un" data-icon="plus"></span></button>
+        <button type="button" class="icon-btn sm" id="ch-export" aria-label="Copy transcript" title="Copy transcript"><span class="v-orig">⇩</span><span class="v-un" data-icon="download"></span></button>
+        <button type="button" class="icon-btn sm" id="ch-close" aria-label="Collapse chat" title="Collapse (Esc)"><span class="v-orig">⌄</span><span class="v-un" data-icon="chevron-down"></span></button>
+      </div>
+    </header>
+    <aside class="chat-history" id="chat-history" hidden aria-label="Previous chats"></aside>
+    <div class="chat-log" id="chat-log" role="log" aria-live="polite"></div>
+    <button type="button" class="to-latest" id="to-latest" hidden>↓ Latest</button>
+    <div class="chat-tui-status" id="chat-status" aria-hidden="true"></div>
+  </section>
+  <div class="chat-suggest" id="chat-starters"></div>
+  <form class="chat-bar" id="chat-bar" autocomplete="off">
+    <span class="cb-prompt" aria-hidden="true">&gt;</span>
+    <label for="chat-input" class="sr-only">Ask about Rithvik</label>
+    <input id="chat-input" class="cb-input" type="text" placeholder="Ask anything about Rithvik…" maxlength="500">
+    <kbd class="cb-kbd" aria-hidden="true">/</kbd>
+    <button class="cb-send" type="submit" id="cb-send" aria-label="Send"><span id="cb-send-ic">↑</span></button>
+  </form>
+  <span class="anno chat-anno" data-n="E">Bottom-center chat: stop, regenerate, copy, edit &amp; resend, history, sources, tool actions</span>
+</div>
+
+<!-- ───────── Modals ───────── -->
+<div class="modal" id="modal-resume" data-lenis-prevent hidden role="dialog" aria-modal="true" aria-labelledby="resume-h">
+  <div class="modal-card resume-card panel" data-label="RESUME.PDF" data-title="Resume.pdf" data-fig="11">
+    <header class="modal-head">
+      <div><h2 id="resume-h" class="modal-title">Resume</h2><p class="mini-label">Synced from Google Docs · 2 hours ago</p></div>
+      <div class="modal-actions">
+        <span class="admin-only"><button class="btn ghost sm" type="button" id="rs-sync">Sync now</button><button class="btn ghost sm" type="button" id="rs-upload">Upload override</button></span>
+        <button class="btn sm" type="button" id="rs-download">Download PDF</button>
+        <button class="icon-btn" type="button" data-close aria-label="Close resume"><span class="v-orig">✕</span><span class="v-un" data-icon="x"></span></button>
+      </div>
+    </header>
+    <div class="pdf-viewport"><div class="pdf-page" id="pdf-page"></div></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-buffett" data-lenis-prevent hidden role="dialog" aria-modal="true" aria-labelledby="buffett-h">
+  <div class="modal-card buffett-card">
+    <header class="modal-head plain"><h2 id="buffett-h" class="sr-only">Warren Buffett edition preview</h2><span class="mini-label">Preview of /buffett</span><button class="icon-btn" type="button" data-close aria-label="Close preview"><span class="v-orig">✕</span><span class="v-un" data-icon="x"></span></button></header>
+    <div class="buffett-page">
+      <h1>RITHVIK PRAVEEN KUMAR</h1>
+      <p class="bf-addr">West Lafayette, Indiana · rithvikpkx@gmail.com</p>
+      <p class="bf-official">Official Home Page</p>
+      <div class="bf-cols">
+        <ul>
+          <li><a href="#">Resume (PDF)</a></li>
+          <li><a href="#">Projects</a></li>
+          <li><a href="#">Experience</a></li>
+          <li><a href="#">Education</a></li>
+        </ul>
+        <ul>
+          <li><a href="#">Letters to Recruiters</a></li>
+          <li><a href="#">GitHub</a></li>
+          <li><a href="#">LinkedIn</a></li>
+          <li><a href="#">Return to the regular site</a></li>
+        </ul>
+      </div>
+      <p class="bf-note">If you have any comments about this page, you can email them to the address above. However, due to the limited number of personnel in this office, it may take a day or two to reply.</p>
+      <p class="bf-legal"><a href="#">Legal Disclaimer</a> · Copyright © 2026 Rithvik Praveen Kumar</p>
+    </div>
+  </div>
+</div>
+
+<!-- Admin (owner preview) -->
+<div class="modal" id="modal-admin" data-lenis-prevent hidden role="dialog" aria-modal="true" aria-labelledby="admin-h">
+  <div class="modal-card admin-card panel" data-label="ANALYTICS" data-title="Visitor analytics" data-fig="12">
+    <header class="modal-head">
+      <div><h2 id="admin-h" class="modal-title">Visitors</h2><p class="mini-label">Sample data for the mockup · last 7 days</p></div>
+      <div class="modal-actions"><div class="tabs" role="tablist"><button role="tab" class="tab is-on" aria-selected="true" data-tab="overview" type="button">Overview</button><button role="tab" class="tab" aria-selected="false" data-tab="outreach" type="button">Outreach queue <span class="badge">3</span></button></div><button class="icon-btn" type="button" data-close aria-label="Close analytics"><span class="v-orig">✕</span><span class="v-un" data-icon="x"></span></button></div>
+    </header>
+    <div class="admin-body" id="admin-body"></div>
+  </div>
+</div>
+
+<!-- Toast + mockup controls -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<span class="anno toast-anno" data-n="D">Switch toast with Undo and a "next design" suggestion</span>
+
+<div class="mock-bar" aria-label="Mockup controls">
+  <span class="mb-label">Mockup</span>
+  <button type="button" class="mb-btn" id="mb-notes" aria-pressed="false">Notes</button>
+  <button type="button" class="mb-btn" id="mb-admin" aria-pressed="false">Admin mode</button>
+  <button type="button" class="mb-btn" id="mb-coach">Replay first visit</button>
+</div>
+
+<div class="deco scan" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="lg-refract" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+    <feImage id="lg-map" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="0.06" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js"></script>
+<script src="assets.js"></script>
+<script src="app.js"></script>

@@ -1,0 +1,17 @@
+/* Harness-only base: the v7 core tokens and resets the real site gets from app/(v7)/core.css. */
+:root {
+  --ui-bg: #0f0f12; --ui-fg: #f4f4f5; --ui-muted: #a1a1aa; --ui-accent: #ff4d8d; --ui-accent-fg: #0f0f12;
+  --ui-line: rgba(255, 255, 255, .14); --ui-field: rgba(255, 255, 255, .06);
+  --ui-font: -apple-system, "Segoe UI", system-ui, sans-serif; --ui-mono: ui-monospace, Menlo, monospace;
+  --ui-r: 14px; --ui-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 48px rgba(0, 0, 0, .35); --ui-blur: blur(16px) saturate(150%);
+  --bw: 1px; --press: scale(.97);
+  --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: #e9e6e1; color: #111; font-family: var(--ui-font); }
+img { max-width: 100%; display: block; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+.lab-bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; }
+.lab-bar button { padding: 8px 14px; border-radius: 999px; border: 1px solid #0003; background: #fff; cursor: pointer; }

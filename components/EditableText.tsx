@@ -26,6 +26,7 @@ export default function EditableText({
   const el = useRef<HTMLElement | null>(null);
   const lastSaved = useRef(value);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   // Sync DOM text if the value prop changes while the element isn't focused
   useEffect(() => {
@@ -55,14 +56,17 @@ export default function EditableText({
       return;
     }
     setStatus("saving");
+    setError(null);
     try {
       await onSave(newVal);
       lastSaved.current = newVal;
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 1600);
-    } catch {
+    } catch (e) {
       if (el.current) el.current.textContent = lastSaved.current;
       setStatus("idle");
+      // "cancelled" is a deliberate user abort (name confirm), not a failure
+      if (!(e instanceof Error && e.message === "cancelled")) setError("Save failed. Change reverted.");
     }
   };
 
@@ -87,6 +91,7 @@ export default function EditableText({
   const setRef = (node: HTMLElement | null) => { el.current = node; };
 
   return (
+    <>
     <Tag
       ref={setRef}
       className={cls}
@@ -98,5 +103,7 @@ export default function EditableText({
     >
       {value}
     </Tag>
+    {error && <small role="alert" className="edit-error">{error}</small>}
+    </>
   );
 }

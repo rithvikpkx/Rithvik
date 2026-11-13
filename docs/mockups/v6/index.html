@@ -1,0 +1,173 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rithvik Praveen Kumar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%23D7061C%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="themes/petal.css">
+<link rel="stylesheet" href="themes/chroma.css">
+<link rel="stylesheet" href="themes/synapse.css">
+<link rel="stylesheet" href="themes/glyph.css">
+<link rel="stylesheet" href="themes/slit.css">
+<link rel="stylesheet" href="themes/stipple.css">
+<link rel="stylesheet" href="themes/afterimage.css">
+<link rel="stylesheet" href="themes/vertigo.css">
+<link rel="stylesheet" href="themes/nimbus.css">
+<script>
+/* Pre-paint: restore the chosen design so the first frame is already the right website. */
+(function () { try { var t = new URLSearchParams(location.search).get("theme") || localStorage.getItem("rv6-theme"); if (t) document.documentElement.dataset.theme = t; if (localStorage.getItem("rv6-lite") === "1") document.documentElement.classList.add("lite"); } catch (e) {} })();
+</script>
+
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute"><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter></svg>
+<div class="gl-host" id="gl-host" aria-hidden="true"></div>
+<a class="skip" href="#stage">Skip to content</a>
+<main class="stage" id="stage" tabindex="-1"></main>
+
+<!-- ════════ Design switcher ════════ -->
+<div class="switcher" id="switcher">
+  <div class="sw-deck" id="sw-deck" role="listbox" aria-label="Designs"></div>
+  <div class="sw-bar">
+    <button type="button" class="sw-toggle" id="sw-toggle" aria-expanded="false" aria-controls="sw-deck"><span class="sw-dot" id="sw-dot" aria-hidden="true"></span><span class="sw-label">Design</span><b id="sw-name">…</b><kbd>T</kbd></button>
+    <button type="button" class="sw-ic" id="sw-shuffle" aria-label="Random design" title="Random design"><span data-icon="shuffle"></span></button>
+    <button type="button" class="sw-ic" id="sw-lite" aria-label="Calm effects" aria-pressed="false" title="Calm effects"><span data-icon="zap-off"></span></button>
+  </div>
+</div>
+
+<!-- ════════ Case sheet ════════ -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="case-h" hidden>
+  <div class="sheet-scrim" data-close-sheet></div>
+  <article class="sheet-body" id="sheet-body" tabindex="-1">
+    <button type="button" class="ui-ic sheet-close" data-close-sheet aria-label="Close"><span data-icon="x"></span></button>
+    <div class="case" id="case"></div>
+  </article>
+</div>
+
+<!-- ════════ Resume window ════════ -->
+<section class="win resume-win" id="resume-win" aria-label="Resume" hidden>
+  <header class="win-bar" data-drag><span class="win-title"><span data-icon="file-text"></span>Rithvik-Praveen-Kumar-Resume.pdf</span>
+    <span class="win-actions"><button class="ui-btn" type="button" data-download><span data-icon="download"></span>Download</button><button type="button" class="ui-ic" data-close-win aria-label="Close"><span data-icon="x"></span></button></span>
+  </header>
+  <div class="pdf-viewport"><div class="pdf-page" id="pdf-page"></div></div>
+  <p class="win-foot"><span>Synced from Google Docs</span><button type="button" class="ui-link" id="rs-sync">Sync now</button></p>
+</section>
+
+<!-- ════════ Floating email window ════════ -->
+<section class="win composer-win" id="composer-win" aria-label="New message" hidden>
+  <form class="composer" id="composer" novalidate>
+    <header class="win-bar" data-drag><span class="win-title"><span data-icon="mail"></span>New message</span><span class="win-actions"><button type="button" class="ui-ic" data-close-win aria-label="Close"><span data-icon="x"></span></button></span></header>
+    <div class="cmp-fields">
+      <div class="cmp-row"><label for="cmp-to">To</label><input class="field" id="cmp-to" value="rithvikpkx@gmail.com" readonly><button type="button" class="ui-ic" data-copy="rithvikpkx@gmail.com" aria-label="Copy address"><span data-icon="copy"></span></button></div>
+      <div class="cmp-row"><label for="cmp-from">From</label><input class="field" id="cmp-from" type="email" placeholder="you@company.com" autocomplete="email" aria-describedby="err-from"><p class="field-err" id="err-from" hidden>Add your email so I can reply</p></div>
+      <div class="cmp-row"><label for="cmp-subj">Subject</label><input class="field" id="cmp-subj" type="text" placeholder="Internship opportunity"></div>
+      <div class="cmp-row grow"><label for="cmp-body" class="sr-only">Message</label><textarea class="field" id="cmp-body" rows="7" placeholder="Hi Rithvik," aria-describedby="err-body"></textarea><p class="field-err" id="err-body" hidden>Write a message first</p></div>
+    </div>
+    <footer class="cmp-foot"><span class="cmp-note">Goes straight to my inbox</span><button class="ui-btn primary" type="submit">Send <span data-icon="send"></span></button></footer>
+  </form>
+</section>
+
+<!-- ════════ Play window: vinyl, artboard, games ════════ -->
+<section class="win play-win" id="play-win" aria-label="Play" hidden>
+  <header class="win-bar" data-drag><span class="win-title"><span data-icon="gamepad-2"></span>Play</span>
+    <nav class="play-tabs" id="play-tabs" role="tablist" aria-label="Toys"></nav>
+    <span class="win-actions"><button type="button" class="ui-ic" data-close-win aria-label="Close"><span data-icon="x"></span></button></span>
+  </header>
+  <div class="play-body">
+    <div class="play-pane" data-pane="records">
+        <div class="records" id="records">
+          <div class="rec-stage">
+            <div class="rec-platter">
+              <div class="rec-disc" id="rec-disc" role="slider" tabindex="0" aria-label="Record. Drag, or use the arrow keys, to scratch" aria-valuemin="0" aria-valuemax="72" aria-valuenow="0" aria-valuetext="0:00">
+                <div class="rec-spin" id="rec-spin">
+                  <img class="rec-photo" src="assets/record.jpg" alt="" width="960" height="960" draggable="false">
+                  <div class="rec-label"><span class="rl-mark" id="rl-mark"></span><span class="rl-title">Chili Pepper</span><span class="rl-sub">Fred Longshaw · 1927</span><span class="rl-side">Side A · 78</span></div>
+                </div>
+                <i class="rec-sheen" aria-hidden="true"></i>
+                <i class="rec-spindle" aria-hidden="true"></i>
+              </div>
+            </div>
+            <svg class="rec-arm" id="rec-arm" viewBox="0 0 100 100" aria-hidden="true">
+              <defs>
+                <linearGradient id="arm-metal" x1="0" x2="1"><stop offset="0" stop-color="#f4f4f6"/><stop offset=".5" stop-color="#c4c4ca"/><stop offset="1" stop-color="#8e8e95"/></linearGradient>
+                <radialGradient id="arm-pivot" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#bdbdc3"/><stop offset="1" stop-color="#6d6d74"/></radialGradient>
+              </defs>
+              <g class="arm">
+                <rect x="89.6" y="-1.5" width="7" height="9" rx="2" fill="#5c5c62"/>
+                <path d="M90 12 L83 30 L69 64" fill="none" stroke="url(#arm-metal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M69 64 L63.5 71.5" fill="none" stroke="url(#arm-metal)" stroke-width="2" stroke-linecap="round"/>
+                <g transform="rotate(36 61 74)"><rect x="56" y="71" width="10" height="6" rx="1.4" fill="#1f1f23"/><rect x="57" y="76.4" width="3" height="1.6" rx=".4" fill="#c9a25b"/></g>
+                <circle cx="90" cy="12" r="7" fill="url(#arm-pivot)"/>
+                <circle cx="90" cy="12" r="2.6" fill="#55555b"/>
+              </g>
+            </svg>
+          </div>
+          <div class="rec-side">
+            <div class="rec-pill-wrap">
+              <div class="goo" aria-hidden="true"><i class="goo-pill"></i><i class="goo-btn"></i></div>
+              <div class="rec-pill">
+                <span class="rp-disc" aria-hidden="true"><img src="assets/record.jpg" alt="" width="40" height="40"></span>
+                <span class="rp-meta"><b>Chili Pepper</b><span>Fred Longshaw, 1927</span></span>
+                <span class="rp-time"><span id="rp-pos">0:00</span><span class="rp-bar" id="rp-bar"><i id="rp-prog"></i></span><span id="rp-dur">1:12</span></span>
+              </div>
+              <button class="rec-play" id="rec-play" type="button" aria-pressed="false" aria-label="Play"><span class="ic-play" data-icon="play"></span><span class="ic-pause" data-icon="pause"></span></button>
+            </div>
+            <p class="rec-hint">Drag the record to scratch. Arrow keys work too.</p>
+          </div>
+        </div>
+    </div>
+    <div class="play-pane ab" data-pane="artboard" hidden>
+      <div class="ab-tools" id="ab-tools">
+        <button type="button" class="ab-cue" id="ab-cue">Draw a brain wave</button>
+        <span class="ab-inks" id="ab-inks"></span>
+        <span class="ab-sizes"><button type="button" data-size="3" aria-label="Fine pen" aria-pressed="false"><i style="--d:4px"></i></button><button type="button" data-size="6" aria-label="Medium pen" aria-pressed="true"><i style="--d:8px"></i></button><button type="button" data-size="14" aria-label="Thick pen" aria-pressed="false"><i style="--d:14px"></i></button></span>
+        <button type="button" id="ab-mirror" aria-pressed="false">Mirror</button>
+        <button type="button" id="ab-erase" aria-pressed="false">Eraser</button>
+        <button type="button" id="ab-undo" aria-label="Undo"><span data-icon="rotate-ccw"></span></button>
+        <button type="button" id="ab-clear">Clear</button>
+      </div>
+      <div class="ab-paper"><canvas id="ab-canvas" aria-label="Drawing board"></canvas><i class="ab-axis" id="ab-axis" hidden></i></div>
+    </div>
+    <div class="play-pane" data-pane="game" hidden><div class="gf-body" id="gf-body"></div></div>
+  </div>
+</section>
+
+<!-- ════════ Agent: Claude Code-style TUI, docked bottom-centre ════════ -->
+<div class="agent" id="agent" data-open="false">
+  <section class="agent-panel" id="agent-panel" aria-label="Rithvik's agent" hidden>
+    <header class="agent-head">
+      <span class="agent-title"><span class="at-mark" aria-hidden="true">✻</span> rithvik.ai agent</span>
+      <span class="agent-model">gpt-4o-mini</span>
+      <span class="agent-actions">
+        <button type="button" class="icon-btn sm" id="agent-full" aria-label="Full screen (⌘⏎)" title="Full screen"><span data-icon="maximize-2"></span></button>
+        <button type="button" class="icon-btn sm" id="agent-close" aria-label="Close (Esc)" title="Close"><span data-icon="chevron-down"></span></button>
+      </span>
+    </header>
+    <div class="agent-log" id="agent-log" role="log" aria-live="polite"></div>
+    <div class="agent-palette" id="agent-palette" role="listbox" aria-label="Commands" hidden></div>
+    <div class="agent-status" id="agent-status"></div>
+  </section>
+  <form class="agent-bar" id="agent-bar" autocomplete="off">
+    <span class="ab-prompt" aria-hidden="true">❯</span>
+    <label for="agent-input" class="sr-only">Ask about Rithvik</label>
+    <input id="agent-input" class="ab-input" type="text" placeholder="Ask about Rithvik, or type / for commands" maxlength="500">
+    <kbd class="ab-kbd" aria-hidden="true">⌘K</kbd>
+    <button class="ab-send" id="ab-send" type="submit" aria-label="Send"><span data-icon="arrow-up"></span></button>
+  </form>
+</div>
+
+<div class="toast-wrap"><div class="toast" id="toast" role="status" aria-live="polite" hidden></div></div>
+
+<script src="content.js"></script>
+<script src="assets.js"></script>
+<script src="core.js"></script>
+<script src="themes/petal.js"></script>
+<script src="themes/chroma.js"></script>
+<script src="themes/synapse.js"></script>
+<script src="themes/glyph.js"></script>
+<script src="themes/slit.js"></script>
+<script src="themes/stipple.js"></script>
+<script src="themes/afterimage.js"></script>
+<script src="themes/vertigo.js"></script>
+<script src="themes/nimbus.js"></script>

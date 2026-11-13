@@ -16,13 +16,6 @@ export const MAX_SUGGESTION_CHARS = 70;
  *  rest become chips. */
 export const WANTED_SUGGESTIONS = 3;
 
-/**
- * Separates the answer from the trailing suggestions payload on the
- * `text/plain` stream. The NUL bytes cannot occur in model prose, and the route
- * (not the model) emits it, so it can neither be forgotten nor malformed.
- */
-export const SUGGESTIONS_SENTINEL = "\u0000RAG_SUGGESTIONS\u0000";
-
 /** Coerces whatever came back into at most WANTED_SUGGESTIONS clean, unique,
  *  length-capped strings. Applied on both ends: the server trusts no model
  *  output, the client trusts no payload. */
@@ -172,41 +165,85 @@ export function containsGrounding(haystack: string, evidence: string): boolean {
   return false;
 }
 
-/**
- * Splits an accumulated stream into the visible answer and the suggestions.
- *
- * Handles the partially-arrived case: if the tail of `acc` is a prefix of the
- * sentinel, that fragment is withheld from `answer` so a half-delivered marker
- * never flashes on screen mid-stream.
- *
- * `suggestions` is null until the payload has fully arrived and parsed; the
- * answer is always correct regardless.
- */
-export function splitStream(acc: string): {
-  answer: string;
-  suggestions: string[] | null;
-  /** Raw actions payload. Left unparsed here so this module stays free of the
-   *  action types; the caller runs it through normalizeActions(). */
-  actions: unknown;
-} {
-  const idx = acc.indexOf(SUGGESTIONS_SENTINEL);
-  if (idx !== -1) {
-    const answer = acc.slice(0, idx);
-    const raw = acc.slice(idx + SUGGESTIONS_SENTINEL.length);
-    try {
-      const parsed = JSON.parse(raw) as { suggestions?: unknown; actions?: unknown };
-      return { answer, suggestions: normalizeSuggestions(parsed.suggestions), actions: parsed.actions };
-    } catch {
-      return { answer, suggestions: null, actions: null };   // still arriving, or malformed
-    }
-  }
+// ── Wire protocol v2 ─────────────────────────────────────────────────────────
+// The body is `text/plain`: answer text streams as raw text, and structured
+// events travel as NUL-delimited JSON frames between text runs:
+//   <text>␀{"t":"search",…}␀<text>␀{"t":"done"}␀␀{"t":"trailer",…}␀
+// NUL never occurs in model prose, and JSON.stringify escapes it inside a frame,
+// so a frame boundary is unambiguous. The ROUTE emits every frame, never the
+// model. Order per turn: rewrite? → search → sources → (text | tool)* → done → trailer?
 
-  // No sentinel yet — hold back any trailing prefix of it.
-  const maxKeep = Math.min(SUGGESTIONS_SENTINEL.length - 1, acc.length);
-  for (let keep = maxKeep; keep > 0; keep--) {
-    if (acc.endsWith(SUGGESTIONS_SENTINEL.slice(0, keep))) {
-      return { answer: acc.slice(0, acc.length - keep), suggestions: null, actions: null };
+import type { ArtifactSpec } from "./agent/artifacts.ts";
+
+export const FRAME = "\u0000";
+
+/** One retrieved record as the Search row shows it: `src` is a short label, `score` cosine. */
+export type SearchHit = { src: string; score: number };
+/** A citable record; the model writes `[n]` and the client footnotes it. `anchor` is the on-page
+ *  element id for site records (server-derived from retrieval metadata, never from the model). */
+export type Source = { n: number; label: string; anchor?: string };
+
+export type AgentEvent =
+  | { t: "rewrite"; q: string }
+  | { t: "search"; q: string; n: number; top: SearchHit[] }
+  | { t: "sources"; items: Source[] }
+  /** A validated tool call. `args` are server-checked values (never a URL from the model);
+   *  `result` is set for read-only tools the server already ran (local_time). */
+  | { t: "tool"; id: string; name: string; args: Record<string, string>; result?: string }
+  /** First frame of a replayed answer: it came from the response cache, `age` seconds after it was generated. */
+  | { t: "cache"; age: number }
+  /** A chart/table the model asked for: a server-rebuilt data spec (lib/agent/artifacts.ts), drawn by our own SVG components. */
+  | { t: "artifact"; id: string; spec: ArtifactSpec }
+  /** The answer is complete: the client unlocks the prompt without waiting on chips. */
+  | { t: "done" }
+  /** Always sent last; `usage.total_tokens` counts the answer model across steps. */
+  | { t: "trailer"; suggestions: string[]; actions: unknown; usage?: { total_tokens: number } };
+
+/** Serialises one event as a frame. */
+export function frame(e: AgentEvent): string {
+  return FRAME + JSON.stringify(e) + FRAME;
+}
+
+export type Part = { type: "text"; text: string } | { type: "event"; event: AgentEvent };
+
+/**
+ * Parses an accumulated stream into ordered parts. A frame whose closing NUL has
+ * not arrived yet is withheld (with everything after it), so a half-delivered
+ * frame never flashes as text. Malformed frames are dropped. Indices are stable
+ * as `acc` grows: only the last part (a text run) can still change.
+ */
+export function parseFrames(acc: string): Part[] {
+  const parts: Part[] = [];
+  let i = 0;
+  while (i < acc.length) {
+    const open = acc.indexOf(FRAME, i);
+    const text = acc.slice(i, open === -1 ? acc.length : open);
+    if (text) parts.push({ type: "text", text });
+    if (open === -1) break;
+    const close = acc.indexOf(FRAME, open + 1);
+    if (close === -1) break; // partial frame: withhold
+    try {
+      const e = JSON.parse(acc.slice(open + 1, close)) as AgentEvent;
+      if (e && typeof e === "object" && typeof e.t === "string") parts.push({ type: "event", event: e });
+    } catch {
+      // malformed frame: skip it, keep the answer
+    }
+    i = close + 1;
+  }
+  return parts;
+}
+
+/** Collapses parts into the visible answer + trailer (for callers that don't render
+ *  progressively, e.g. evals). `suggestions` is null until the trailer has arrived. */
+export function splitStream(acc: string): { answer: string; suggestions: string[] | null; actions: unknown; done: boolean } {
+  let answer = "", suggestions: string[] | null = null, actions: unknown = null, done = false;
+  for (const p of parseFrames(acc)) {
+    if (p.type === "text") answer += p.text;
+    else if (p.event.t === "done") done = true;
+    else if (p.event.t === "trailer") {
+      suggestions = normalizeSuggestions(p.event.suggestions);
+      actions = p.event.actions;
     }
   }
-  return { answer: acc, suggestions: null, actions: null };
+  return { answer, suggestions, actions, done };
 }

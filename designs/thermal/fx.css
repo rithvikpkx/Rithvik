@@ -1,0 +1,21 @@
+/* Thermal name + portrait effects (S9). */
+[data-kn="thermal"] .kn-g {
+  color: color-mix(in srgb, var(--hc, #F4F7FB) clamp(0%, calc(var(--k) * 500%), 100%), #F4F7FB);
+  text-shadow: 0 0 calc(var(--k) * .35em) color-mix(in srgb, var(--hc, transparent) 70%, transparent);
+  transform: translate3d(var(--x), var(--y), 0) skewX(calc(var(--w, 0) * 7deg)) scaleY(calc(1 + var(--k) * .1));
+  transform-origin: 50% 85%;
+}
+
+[data-pfx="thermal"] { --pfx-scan: var(--rh0); --pfx-cap-bg: rgba(5, 7, 13, .7); --pfx-cap-fg: #E8EDF5; }
+[data-pfx="thermal"] .pfx-img { transform: scale(1.02); } /* the blur's soft edge stays outside the frame */
+/* spot meter on the face: corner brackets and a centre cross */
+.th-pfx-ret { inset: auto; left: 37%; top: 30%; width: 26%; height: 28%;
+  background: linear-gradient(currentColor, currentColor) 0 0 / 10px 1.5px, linear-gradient(currentColor, currentColor) 0 0 / 1.5px 10px,
+    linear-gradient(currentColor, currentColor) 100% 0 / 10px 1.5px, linear-gradient(currentColor, currentColor) 100% 0 / 1.5px 10px,
+    linear-gradient(currentColor, currentColor) 0 100% / 10px 1.5px, linear-gradient(currentColor, currentColor) 0 100% / 1.5px 10px,
+    linear-gradient(currentColor, currentColor) 100% 100% / 10px 1.5px, linear-gradient(currentColor, currentColor) 100% 100% / 1.5px 10px;
+  background-repeat: no-repeat; color: #fff; filter: drop-shadow(0 0 2px rgba(0, 0, 0, .6)); }
+.th-pfx-ret i { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; translate: -50% -50%;
+  background: linear-gradient(#fff, #fff) 50% 0 / 1.5px 100% no-repeat, linear-gradient(#fff, #fff) 0 50% / 100% 1.5px no-repeat; animation: th-pfx-meter 2.4s ease-in-out infinite; }
+@keyframes th-pfx-meter { 50% { scale: .7; opacity: .7; } }
+.th-pfx-bar { inset: 12% 5% 22% auto; width: 6px; border: 1px solid rgba(255, 255, 255, .5); background: linear-gradient(to top, #04060C, var(--rh3), var(--rh2), var(--rh1), var(--rh0)); }

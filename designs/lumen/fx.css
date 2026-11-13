@@ -1,0 +1,16 @@
+/* Lumen name + portrait effects. */
+/* each letter carries the mesh light, lit from the pointer's side; at rest the white fill covers it completely */
+[data-kn="lumen"] .kn-g {
+  background: radial-gradient(circle at calc(50% + var(--px) * 70%) calc(45% + var(--py) * 70%), #FFFFFF 0 6%, #A8C0FF 16%, #4F6BFF 34%, #9A5CFF 54%, #FF6A3D 76%, #FFB38A 92%) 50% 50% / 220% 220% no-repeat;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: color-mix(in srgb, #FFFFFF calc(100% - clamp(0%, (var(--k) - .12) * 160%, 100%)), transparent);
+  transform: translate3d(var(--x), calc(var(--y) - var(--k) * .035em), 0);
+  filter: drop-shadow(0 0 calc(var(--k) * .22em) rgba(110, 139, 255, calc(var(--k) * .55)));
+}
+
+[data-pfx="lumen"] { --pfx-off: circle(0% at 50% 44%); --pfx-on: circle(75% at 50% 44%); --pfx-t: 720ms; --pfx-cap-bg: rgba(0, 0, 0, .62); --pfx-cap-fg: #fff; }
+[data-pfx="lumen"] .pfx-scan { display: none; }
+[data-pfx="lumen"] .pfx-cap b { border-radius: 999px; padding: 5px 10px; font-family: var(--font-geist-mono), ui-monospace, monospace; letter-spacing: .06em; text-transform: none; font-size: 10.5px; }
+/* a slow band of white light passing over the mapped face */
+.lm-pfx-sheen { background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .28) 48%, transparent 60%) 0 0 / 250% 100%; mix-blend-mode: screen; animation: lm-pfx-sheen 6s cubic-bezier(.65, 0, .35, 1) infinite; }
+@keyframes lm-pfx-sheen { from { background-position: 100% 0; } to { background-position: -50% 0; } }

@@ -1,0 +1,15 @@
+/* Classic name + portrait effects (S9). */
+[data-kn="classic"] .kn-g {
+  font-weight: calc(500 + var(--k) * 250);
+  color: color-mix(in srgb, var(--accent, currentColor) calc(var(--k) * 55%), currentColor);
+  transform: translate3d(var(--x), calc(var(--y) - var(--k) * .05em), 0);
+}
+
+/* duotone: greyscale multiplied onto the light tone, then the dark tone lifts the shadows (lighten) */
+[data-pfx="classic"] { --cl-lo: color-mix(in srgb, var(--accent, #0969da) 62%, #0b0b10); --cl-hi: color-mix(in srgb, var(--accent, #0969da) 16%, #fffaf2);
+  --pfx-off: inset(0 100% 0 0); --pfx-scan: var(--accent, #fff); background: var(--cl-hi); }
+[data-pfx="classic"] .pfx-scan { display: none; }
+[data-pfx="classic"] .pfx-img { filter: grayscale(1) contrast(1.12) brightness(1.04); mix-blend-mode: multiply; }
+.cl-pfx-dark { background: var(--cl-lo); mix-blend-mode: lighten; }
+.cl-pfx-grain { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay; opacity: .35; }

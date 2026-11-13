@@ -1,0 +1,15 @@
+/* Kinetic name: shared cells. Each letter is an inline box whose width is held by a hidden copy of the rest glyph
+   (::before); the live glyph (.kn-g) is absolutely positioned over it and centred with `translate`, so weight
+   changes and transforms never reflow the line, and a look's `transform` composes with the centring. Looks read --k (energy 0..1), --x/--y (spring offset, px), --px/--py (pointer
+   position relative to the letter, -1..1) in their own fx CSS. */
+.kn { position: relative; display: block; }
+:where(.kn) .kn-part { display: block; }
+.kn-w { white-space: nowrap; }
+.kn-l { position: relative; display: inline-block; --k: 0; --x: 0px; --y: 0px; --px: 0; --py: 0; }
+.kn-l::before { content: attr(data-c); visibility: hidden; }
+.kn-g { position: absolute; left: 50%; top: 0; translate: -50% 0; white-space: pre; transform: translate3d(var(--x), var(--y), 0); }
+.kn[data-live] .kn-g { will-change: transform; }
+.kn-fx { position: absolute; inset: 0; pointer-events: none; user-select: none; }
+/* edit mode renders plain parts; nothing kinetic applies */
+@media (prefers-reduced-motion: reduce) { .kn-g { transform: none; } }
+html.lite .kn-g { transform: none; }

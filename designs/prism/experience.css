@@ -1,0 +1,32 @@
+/* Prism Experience: white stations that take a spectrum ring when the light reaches them, a dispersing beam
+   between them, and a cut crystal for education. */
+:root[data-design="prism"] .ly-xp { --xp-w: 12px; }
+:root[data-design="prism"] .ly-st-role { font: 500 clamp(1.3rem, 2vw, 1.75rem)/1.15 var(--pr-sans); letter-spacing: -.025em; }
+:root[data-design="prism"] .ly-st-node { background: #fff; color: var(--pr-muted); font: 500 12px/1 var(--pr-mono); box-shadow: 0 0 0 1px var(--pr-line-2), 0 14px 26px -16px rgba(22, 24, 44, .45); }
+:root[data-design="prism"] .ly-st[data-lit] .ly-st-node { background: linear-gradient(#fff, #fff) padding-box, var(--pr-ring) border-box; border: 2px solid transparent; color: var(--pr-ink); box-shadow: 0 14px 28px -14px rgba(75, 43, 255, .45); }
+:root[data-design="prism"] .ly-st-pts li::before { width: 7px; height: 7px; top: .55em; background: var(--pr-spec); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+/* the beam */
+:root[data-design="prism"] .px-hair { left: 50%; width: 1px; background: var(--pr-line-2); }
+:root[data-design="prism"] .px-band { inset: 0 2px; background: linear-gradient(90deg, #FF2D3D, #FF7A00, #F5C400, #12B76A, #00B4FF, #1E6BFF, #7A3CFF); opacity: .9; -webkit-mask: linear-gradient(180deg, rgba(0, 0, 0, .35), #000 40%); mask: linear-gradient(180deg, rgba(0, 0, 0, .35), #000 40%); }
+/* white light still travelling inside the band, separating as it goes */
+:root[data-design="prism"] .px-band::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(255, 255, 255, .95) 50%, transparent) 0 0 / 100% 70px no-repeat; animation: px-run 2.6s cubic-bezier(.5, 0, .5, 1) infinite; }
+@keyframes px-run { from { background-position: 0 -70px; } to { background-position: 0 calc(100% + 70px); } }
+:root[data-design="prism"] .px-prism { width: 24px; height: 22px; overflow: visible; fill: rgba(255, 255, 255, .7); stroke: var(--pr-ink); stroke-width: 1.2; stroke-linejoin: round; filter: drop-shadow(0 4px 6px rgba(22, 24, 44, .25)); animation: px-turn 6s linear infinite; }
+@keyframes px-turn { to { rotate: 360deg; } }
+
+/* the crystal */
+:root[data-design="prism"] .px-cry { overflow: visible; }
+:root[data-design="prism"] .px-gem { transform-origin: 100px 100px; transform: rotate(calc(var(--px) * 6deg)) scale(calc(1 + var(--pv) * .03)); animation: px-float 5s ease-in-out infinite alternate; }
+@keyframes px-float { to { translate: 0 -4px; } }
+/* the glass P: ink outline, a bright rim, a pale glass face with cut facets, a chromatic fringe where it bends light */
+:root[data-design="prism"] .px-glass { overflow: visible; filter: drop-shadow(-1.2px 0 0 rgba(255, 45, 61, .55)) drop-shadow(1.2px 0 0 rgba(0, 110, 255, .5)) drop-shadow(0 8px 10px rgba(22, 24, 44, .16)); }
+:root[data-design="prism"] .px-glass .pp-o { fill: var(--pr-ink); }
+:root[data-design="prism"] .px-glass .pp-c { fill: #F3F5FC; }
+:root[data-design="prism"] .px-glass .pp-r { fill: rgba(255, 255, 255, .92); }
+:root[data-design="prism"] .px-glass .pp-f { fill: url(#px-gl); }
+:root[data-design="prism"] .px-glint { fill: #fff; animation: px-glint 3s ease-in-out infinite; }
+@keyframes px-glint { 50% { opacity: .2; } }
+/* the fan swings with the pointer and widens with speed */
+:root[data-design="prism"] .px-fan { transform-origin: 158px 100px; transform: rotate(calc(var(--py) * 10deg + var(--px) * 4deg)) scaleY(calc(1 + var(--pv) * .35)); mix-blend-mode: multiply; }
+:root[data-design="prism"] .px-in { transform-origin: 56px 100px; transform: rotate(calc(var(--py) * -3deg)); }

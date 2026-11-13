@@ -1,4 +1,5 @@
 "use client";
+import "./EditMode.css";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -45,6 +46,14 @@ export default function InlineLoginPanel() {
     }
   }
 
+  // Esc closes the panel from anywhere on the page, not only while focus is inside it.
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closePanel(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [panelOpen, closePanel]);
+
   const submitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -69,7 +78,7 @@ export default function InlineLoginPanel() {
     <AnimatePresence>
       {panelOpen && (
         <>
-          {/* Invisible backdrop — closes panel on outside click */}
+          {/* Dimmed backdrop: closes the panel on outside click */}
           <motion.div
             className="login-panel-backdrop"
             initial={{ opacity: 0 }}
@@ -79,22 +88,29 @@ export default function InlineLoginPanel() {
             onClick={closePanel}
           />
 
-          {/* Panel — springs in from top-right anchored to nav button */}
+          {/* Centered card (the header button sits in a different place in every design). `rr-block` keeps the whole panel
+              (inputs AND the "check <email>" line) out of session replays; `data-rr-mask` on the inputs is the second layer. */}
+          <div className="login-panel-wrap">
           <motion.div
-            className="login-panel"
-            initial={{ opacity: 0, scale: 0.93, y: -8 }}
+            className="login-panel rr-block"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="il-title"
+            initial={{ opacity: 0, scale: 0.94, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.93, y: -8 }}
+            exit={{ opacity: 0, scale: 0.94, y: 10, transition: { duration: 0.14 } }}
             transition={{ type: "spring", stiffness: 440, damping: 32 }}
           >
             <button className="login-panel-close" onClick={closePanel} aria-label="Close">
               ×
             </button>
 
-            <p className="login-panel-eyebrow">Admin</p>
-            <h2 className="login-panel-title">I am Rithvik.</h2>
+            <p className="login-panel-eyebrow"><span className="login-panel-tape" aria-hidden="true" />Restricted area</p>
+            <h2 className="login-panel-title" id="il-title">I am Rithvik.</h2>
             <p className="login-panel-warning">
-              🚨 Rithvik-only zone. If you&apos;re not Rithvik, there&apos;s nothing to see here. Probably.
+              {step === "email"
+                ? <>🚨 Rithvik-only zone. If you&apos;re not Rithvik, there&apos;s nothing to see here. Probably. The door opens for exactly one email.</>
+                : <>📬 Code on its way. Impostors don&apos;t get mail.</>}
             </p>
 
             {step === "email" && (
@@ -103,12 +119,13 @@ export default function InlineLoginPanel() {
                   <label htmlFor="il-email">Email</label>
                   <input
                     id="il-email"
+                    data-rr-mask
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder="the one true email"
                     autoFocus
                   />
                 </div>
@@ -116,7 +133,7 @@ export default function InlineLoginPanel() {
                 {error && <p className="admin-error">{error}</p>}
 
                 <button type="submit" className="admin-submit" disabled={loading}>
-                  {loading ? "Sending…" : "Send me a code →"}
+                  {loading ? "Knocking…" : "Let me in →"}
                 </button>
               </form>
             )}
@@ -130,6 +147,7 @@ export default function InlineLoginPanel() {
                   <label htmlFor="il-code">Code</label>
                   <input
                     id="il-code"
+                    data-rr-mask
                     type="text"
                     inputMode="numeric"
                     pattern="\d{6,10}"
@@ -147,7 +165,7 @@ export default function InlineLoginPanel() {
                 {error && <p className="admin-error">{error}</p>}
 
                 <button type="submit" className="admin-submit" disabled={loading || code.length < 6}>
-                  {loading ? "Verifying…" : "Verify →"}
+                  {loading ? "Checking…" : "Open sesame →"}
                 </button>
                 <button
                   type="button"
@@ -160,6 +178,7 @@ export default function InlineLoginPanel() {
               </form>
             )}
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

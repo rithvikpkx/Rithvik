@@ -1,0 +1,11 @@
+/* Masks of the official Purdue P (public/images/purdue-p.svg), one per layer, for looks that paint the P with a gradient:
+   --p-sil the whole silhouette with the counter cut out, --p-ring the grey band, --p-face the gold face. Generated; the shape is never edited. */
+:root {
+  --p-sil: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2065.645%2035.104'%3E%3Cpath%20fill-rule%3D'evenodd'%20d%3D'M0%2C35.104%2C5.508%2C22.168h7.081l3.931-9.238H9.455l5.506-12.93H53.998c3.43%2C0%2C8.251.397%2C10.521%2C3.832%2C2.283%2C3.454.554%2C7.515-.478%2C9.941-2.79%2C6.553-6.824%2C10.91705-17.453%2C10.91705H39.244L34.811%2C35.104M47.318%2C10.53192H35.488l-1.543%2C3.625H44.711a3.97967%2C3.97967%2C0%2C0%2C0%2C3.79-2.3c.214-.50695.228-.858.146-.982-.079-.119-.457-.343-1.329-.343Z'%2F%3E%3C%2Fsvg%3E");
+  --p-ring: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2065.645%2035.104'%3E%3Cpath%20fill-rule%3D'nonzero'%20d%3D'M62.518%2C5.154c-1.241-1.88-3.95-2.756-8.519-2.756H16.548l-3.464%2C8.134h7.065L14.173%2C24.566H7.094L3.629%2C32.707H33.226l3.467-8.141h-7.18l.968-2.273H46.589c10.36%2C0%2C13.123-4.474%2C15.245-9.458%2C1.142-2.684%2C2.134-5.487.684-7.681m-27.03%2C5.378h11.83c.872%2C0%2C1.25.22406%2C1.329.34406.082.122.068.474-.146.981a3.97822%2C3.97822%2C0%2C0%2C1-3.789%2C2.3H33.945Z'%2F%3E%3C%2Fsvg%3E");
+  --p-face: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2065.645%2035.104'%3E%3Cpath%20fill-rule%3D'nonzero'%20d%3D'M53.999%2C3.647H17.371l-2.401%2C5.64h7.067l-7.038%2C16.526H7.919l-2.404%2C5.646H32.402l2.403-5.646H27.627l2.031-4.769H46.589c9.705%2C0%2C12.145-4.111%2C14.098-8.698%2C1.954-4.589%2C3.017-8.699-6.688-8.699M44.712%2C15.404H32.059l2.605-6.11694H47.318c2.239%2C0%2C3.142%2C1.151%2C2.329%2C3.059a5.17688%2C5.17688%2C0%2C0%2C1-4.935%2C3.058'%2F%3E%3C%2Fsvg%3E");
+}
+/* the inline <PurdueP/> layers, officially coloured; a look restyles .pp-o / .pp-c / .pp-r / .pp-f */
+.pp-o, .pp-c { fill: #231f20; }
+.pp-r { fill: #9d958c; }
+.pp-f { fill: #d0b787; }

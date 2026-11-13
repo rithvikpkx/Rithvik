@@ -1,0 +1,113 @@
+/* Ember: the fire element. Tokens (the family's --el-* set, the cable, the field), then the name, the portrait, the
+   Experience rod and anvil, the Contact coals. Shared structure lives in designs/elemental/elemental.css. */
+:root[data-design="ember"] {
+  --el-bg: #0E0807; --el-panel: #140B09; --el-panel2: #1B100C; --el-fg: #F6E7DA; --el-soft: #DCC6B4; --el-mut: #A88D7C;
+  --el-acc: #FF7A2A; --el-acc2: #FFC447; --el-hot: #FFB13B; --el-acc-fg: #1A0B05;
+  --el-line: rgba(255, 170, 120, .12); --el-line2: rgba(255, 170, 120, .26); --el-glow: rgba(255, 100, 20, .55);
+  --el-stops: #FFF1C9, #FFC447 18%, #FF6A1A 45%, #C2290B 75%, #5A1206;
+  --el-d: "Big Shoulders Display", Impact, "Arial Narrow", sans-serif; --el-b: "Barlow", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --warp: 1.1; --el-r: 6px; --el-name-w: 900; --el-name-track: .004em; --el-case: uppercase; --el-h2-w: 850; --el-role-case: uppercase; --el-role-track: .01em; --el-nav-case: uppercase;
+  /* forged iron, lit from the fire below */
+  --el-mat: linear-gradient(180deg, #FFB13B, #F0520E 55%, #B8280A); --el-mat-fg: #1A0B05;
+  --el-tile: radial-gradient(120% 90% at 50% 120%, rgba(255, 90, 20, .16), transparent 60%), linear-gradient(170deg, #1E1310, #120A08); --el-tile-c: #170D0A; --el-tile-r: 10px;
+  --el-node: radial-gradient(circle at 50% 30%, #33201A, #140B08 72%); --el-node-lit: radial-gradient(circle at 50% 40%, #FFF2C8, #FFB13B 32%, #E2400E 68%, #8E1A08); --el-node-r: 50%;
+  --el-scrim: linear-gradient(90deg, rgba(11, 6, 5, .78), rgba(11, 6, 5, .4) 42%, transparent 64%);
+  /* soot grain and a faint ember glow from below on every reading section */
+  --el-tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .55 0 0 0 0 .35 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(70% 40% at 80% 100%, rgba(255, 80, 20, .07), transparent);
+  /* portrait: an iron ring with a red-hot inner lip; cables are iron sheathing with molten cores */
+  --pt-ring: #1A0F0B; --pt-ring-w: 0px; --pt-photo-bg: #1A0F0B; --pt-shadow: 0 0 60px -10px rgba(255, 90, 20, .45), 0 40px 80px -40px #000;
+  --pt-node-bg: #1A0F0B; --pt-node-fg: var(--el-fg); --pt-node-line: rgba(255, 150, 80, .35); --pt-node-r: 50%;
+  --pt-sheath: #24150F; --pt-sheath-w: 5px; --pt-body: .95; --pt-edge: rgba(255, 140, 60, .6); --pt-edge-w: 1px; --pt-sheen: rgba(255, 200, 150, .22); --pt-cap: round;
+  --pt-core: #FF8A2A; --pt-glow: #FF6A1A; --pt-head: #FFF4DC; --pt-halo: .3; --pt-pulse-a: #FFF1C9; --pt-pulse-m: #FFA53A; --pt-pulse-b: #E2320E;
+}
+@media (max-width: 860px) { :root[data-design="ember"] { --el-scrim: linear-gradient(180deg, rgba(11, 6, 5, .7), rgba(11, 6, 5, .3) 55%, transparent 80%); } }
+
+/* the ring round the photo: dark forged iron, its inner lip glowing as if just out of the fire */
+:root[data-design="ember"] .em .pt::before { content: ""; position: absolute; left: calc(var(--pt-x) - 9px); top: calc(var(--pt-y) - 9px); width: calc(var(--pt-w) + 18px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, transparent calc(100% - 13px), #FFB13B calc(100% - 11px), #C2290B calc(100% - 8px), #2A1913 calc(100% - 6px), #120A08 calc(100% - 1px), transparent),
+    conic-gradient(from 30deg, #3A2620, #160D0A 25%, #3A2620 50%, #160D0A 75%, #3A2620);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 13px), #000 calc(100% - 12px)); mask: radial-gradient(closest-side, transparent calc(100% - 13px), #000 calc(100% - 12px));
+  filter: drop-shadow(0 0 14px rgba(255, 90, 20, .4)); animation: em-breathe 3.4s ease-in-out infinite alternate; }
+@keyframes em-breathe { to { filter: drop-shadow(0 0 26px rgba(255, 110, 20, .65)); } }
+
+/* ───────── name: ignite, cool, char ───────── */
+/* forged steel at rest (lit from the forge below, darker at the crown); burning letters glow white at the base */
+[data-kn="ember"] .kn-g { color: transparent; -webkit-text-fill-color: transparent; -webkit-background-clip: text; background-clip: text;
+  background-image: linear-gradient(0deg, color-mix(in srgb, #FFF6E2 calc(var(--k) * 100%), var(--hc, #F4E6D8)), var(--hc, #F4E6D8) 55%, color-mix(in srgb, var(--hc, #F4E6D8) 72%, #3A1C10));
+  filter: drop-shadow(0 .045em 0 rgba(110, 30, 8, .75)) drop-shadow(0 0 calc(var(--k) * .28em) rgb(255 100 20 / calc(var(--k) * 1.2)));
+  transform: translate3d(var(--x), var(--y), 0) skewX(calc(var(--w, 0) * 7deg)) scaleY(calc(1 + var(--k) * .07)); transform-origin: 50% 90%; }
+/* a tongue of flame licking up off a burning letter, and an ember leaving it */
+[data-kn="ember"] .kn-g::after { content: ""; position: absolute; left: 50%; bottom: 62%; width: .55em; height: .95em; translate: -50% 0; border-radius: 50% 50% 42% 42% / 72% 72% 28% 28%; pointer-events: none;
+  background: radial-gradient(50% 62% at 50% 100%, #FFF2C8, #FFB13B 28%, #F0520E 52%, transparent 74%); mix-blend-mode: screen; filter: blur(.03em);
+  opacity: clamp(0, calc(var(--k) * 2.2 - .45), 1); transform: scale(calc(.4 + var(--k) * .9)) skewX(calc(var(--w, 0) * -18deg)); transform-origin: 50% 100%; }
+[data-kn="ember"] .kn-g::before { content: ""; position: absolute; left: calc(50% + sin(var(--i) * 2.3) * 28%); top: 18%; width: .07em; height: .07em; border-radius: 50%; background: #FFD27A; box-shadow: 0 0 .08em .04em rgba(255, 110, 20, .9); pointer-events: none; opacity: 0; scale: var(--k); }
+[data-kn="ember"][data-live] .kn-g::after { animation: em-lick 260ms ease-in-out infinite alternate; }
+[data-kn="ember"][data-live] .kn-g::before { animation: em-spark 1.3s cubic-bezier(.3, .6, .5, 1) infinite; animation-delay: calc(var(--i) * -170ms); }
+@keyframes em-lick { to { height: 1.15em; border-radius: 46% 54% 40% 44% / 78% 70% 30% 30%; } }
+@keyframes em-spark { 0% { opacity: 0; translate: 0 0; } 15% { opacity: 1; } 100% { opacity: 0; translate: calc(cos(var(--i) * 1.7) * .25em) -1.4em; } }
+
+/* ───────── portrait: heat-forged print ───────── */
+[data-pfx="ember"] { --pfx-off: polygon(0 100%, 0 130%, 14% 122%, 28% 134%, 42% 120%, 57% 136%, 71% 121%, 85% 132%, 100% 124%, 100% 100%); --pfx-on: polygon(0 100%, 0 -12%, 14% -4%, 28% -16%, 42% -2%, 57% -18%, 71% -3%, 85% -14%, 100% -6%, 100% 100%);
+  --pfx-t: 760ms; --pfx-cap-bg: rgba(14, 8, 7, .74); --pfx-cap-fg: #FFD9A8; }
+[data-pfx="ember"] .pfx-scan { display: none; } /* the flame front is the edge */
+[data-pfx="ember"] .pfx-img { transform: scale(1.04); }
+.em-pfx-glow { background: linear-gradient(to top, rgba(255, 120, 30, .5), rgba(255, 80, 10, .12) 38%, transparent 66%); mix-blend-mode: screen; animation: em-glow 2.2s ease-in-out infinite alternate; }
+@keyframes em-glow { to { opacity: .6; } }
+.em-pfx-embers i { position: absolute; bottom: -3%; width: 4px; height: 4px; border-radius: 50%; background: #FFD27A; box-shadow: 0 0 6px 2px rgba(255, 110, 20, .85); animation: em-rise 3.4s linear infinite; }
+.em-pfx-embers i:nth-child(1) { left: 18%; } .em-pfx-embers i:nth-child(2) { left: 34%; animation-delay: -1.1s; animation-duration: 2.8s; }
+.em-pfx-embers i:nth-child(3) { left: 52%; animation-delay: -2.3s; } .em-pfx-embers i:nth-child(4) { left: 66%; animation-delay: -.6s; animation-duration: 3.9s; }
+.em-pfx-embers i:nth-child(5) { left: 79%; animation-delay: -1.8s; } .em-pfx-embers i:nth-child(6) { left: 44%; animation-delay: -2.9s; animation-duration: 4.4s; width: 3px; height: 3px; }
+@keyframes em-rise { 0% { translate: 0 0; opacity: 0; } 12% { opacity: 1; } 100% { translate: 18px -340px; opacity: 0; } }
+
+/* ───────── experience: the molten rod and the anvil ───────── */
+:root[data-design="ember"] .ly-xp { --xp-w: 12px; }
+:root[data-design="ember"] .ex-rod { border-radius: 3px; background: repeating-linear-gradient(180deg, transparent 0 26px, rgba(0, 0, 0, .55) 26px 28px), linear-gradient(90deg, #120A08, #3A2620 42%, #22140F 70%, #0E0807); box-shadow: inset 0 0 0 1px rgba(255, 170, 120, .12); }
+:root[data-design="ember"] .ex-melt { inset: 0 2px; border-radius: 3px; background: linear-gradient(180deg, #FFF0C8, #FFC247 18%, #F0520E 52%, #9A1C0A); box-shadow: 0 0 12px 1px rgba(255, 110, 20, .7), 0 0 34px 6px rgba(255, 70, 10, .3); }
+:root[data-design="ember"] .ex-melt::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(180deg, rgba(255, 246, 220, 0) 0 22px, rgba(255, 246, 220, .7) 30px, rgba(255, 246, 220, 0) 40px); background-size: 100% 40px; animation: ex-pour 900ms linear infinite; }
+@keyframes ex-pour { to { background-position: 0 40px; } }
+:root[data-design="ember"] .ex-drop { width: 24px; height: 30px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 60%, #FFFBEA 0 20%, #FFC247 36%, rgba(240, 82, 14, .7) 56%, transparent 72%); animation: em-flick 180ms ease-in-out infinite alternate; }
+@keyframes em-flick { to { scale: 1.12 1.24; } }
+
+:root[data-design="ember"] .ex-forge { --hx: calc(50% + var(--px) * 30%); --hy: calc(50% + var(--py) * 26%); }
+:root[data-design="ember"] .ex-forge > * { position: absolute; display: block; }
+:root[data-design="ember"] :is(.ex-sil, .ex-ring, .ex-face, .ex-glow, .ex-scale) { inset: 5%; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
+:root[data-design="ember"] .ex-sil { background: linear-gradient(165deg, #4A2E24, #1A0F0B 55%, #0B0605); filter: drop-shadow(0 12px 10px #000); }
+:root[data-design="ember"] .ex-glow { background: #FF5A10; filter: blur(22px); opacity: .55; transform: scale(1.06); animation: em-breathe2 2.8s ease-in-out infinite alternate; }
+@keyframes em-breathe2 { to { opacity: .8; } }
+/* the bevel ring: red-hot steel, a slow heat wave running round it */
+:root[data-design="ember"] .ex-ring { -webkit-mask-image: var(--p-ring); mask-image: var(--p-ring); background: linear-gradient(100deg, #6A1206, #E2400E 25%, #FFC247 45%, #F0520E 60%, #8E1A08 80%, #6A1206) 0 0 / 220% 100%; animation: ex-wave 4.5s linear infinite; }
+@keyframes ex-wave { to { background-position: -220% 0; } }
+/* the face: hottest where the torch (pointer) is, cooling to dark iron at the edges */
+:root[data-design="ember"] .ex-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); background: radial-gradient(circle farthest-side at var(--hx) var(--hy), #FFF6E2 0%, #FFC247 12%, #F0520E 30%, #A3230B 52%, #4A1C12 76%, #2A1712 100%); background-size: 150% 150%; background-position: center; }
+/* forge scale: a mottled oxide skin over the hot face */
+:root[data-design="ember"] .ex-scale { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); opacity: .55; mix-blend-mode: multiply;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.09' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .1 0 0 0 0 .06 0 0 0 -2.4 1.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") 0 0 / 160px 160px; }
+:root[data-design="ember"] .ex-spill { left: 10%; right: 10%; bottom: 14%; height: 18%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 110, 20, .42), transparent); filter: blur(6px); transform: translateX(calc(var(--px) * 12px)); }
+/* sparks thrown off the hottest point */
+:root[data-design="ember"] .ex-sparks { left: var(--hx); top: var(--hy); width: 0; height: 0; }
+:root[data-design="ember"] .ex-sparks b { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #FFE3A0; box-shadow: 0 0 6px 2px rgba(255, 120, 20, .9); opacity: 0; animation: ex-spark 1.6s cubic-bezier(.2, .7, .4, 1) infinite; }
+:root[data-design="ember"] .ex-sparks b:nth-child(1) { --dx: -60px; --dy: -80px; } :root[data-design="ember"] .ex-sparks b:nth-child(2) { --dx: 40px; --dy: -110px; animation-delay: -.4s; }
+:root[data-design="ember"] .ex-sparks b:nth-child(3) { --dx: 90px; --dy: -50px; animation-delay: -.9s; } :root[data-design="ember"] .ex-sparks b:nth-child(4) { --dx: -100px; --dy: -30px; animation-delay: -1.2s; }
+:root[data-design="ember"] .ex-sparks b:nth-child(5) { --dx: 10px; --dy: -130px; animation-delay: -.7s; }
+@keyframes ex-spark { 0% { opacity: 0; translate: 0 0; } 10% { opacity: 1; } 100% { opacity: 0; translate: var(--dx) calc(var(--dy) + 60px); } }
+
+/* ───────── contact: the coal bed ───────── */
+:root[data-design="ember"] .em-mouth { position: relative; padding-bottom: clamp(80px, 9vw, 120px); }
+:root[data-design="ember"] .em-coals { position: absolute; left: 0; right: 0; bottom: 0; height: 42px; border-radius: 50% 50% 8px 8px / 100% 100% 8px 8px; overflow: hidden;
+  background: linear-gradient(transparent, rgba(0, 0, 0, .6)), #120A08; box-shadow: 0 -20px 60px -10px rgba(255, 90, 20, .35), inset 0 1px 0 rgba(255, 170, 100, .2); }
+:root[data-design="ember"] .em-coals i { position: absolute; inset: 0; mix-blend-mode: screen; }
+:root[data-design="ember"] .em-coals i:nth-child(1) { background: radial-gradient(16px 11px at 50% 62%, #FFD27A, #F0520E 38%, rgba(90, 20, 6, .9) 70%, transparent 74%) 0 0 / 38px 100% repeat-x; animation: em-coal 2.6s ease-in-out infinite alternate; }
+:root[data-design="ember"] .em-coals i:nth-child(2) { background: radial-gradient(12px 9px at 50% 40%, #FFB13B, #C2290B 45%, transparent 72%) 19px 0 / 52px 100% repeat-x; animation: em-coal 1.9s ease-in-out -1s infinite alternate; }
+:root[data-design="ember"] .em-coals i:nth-child(3) { background: radial-gradient(22px 8px at 50% 90%, rgba(255, 210, 120, .8), transparent 70%) 7px 0 / 67px 100% repeat-x; animation: em-coal 3.3s ease-in-out -2s infinite alternate; }
+@keyframes em-coal { from { opacity: .45; } to { opacity: 1; } }
+@media (hover: hover) and (pointer: fine) { :root[data-design="ember"] .em-mouth:hover .em-coals { box-shadow: 0 -30px 80px -6px rgba(255, 110, 20, .6), inset 0 1px 0 rgba(255, 190, 120, .35); } }
+
+/* ───────── play: an iron table by the fire ───────── */
+:root[data-design="ember"] .pf-wrap { --pf-bg: radial-gradient(120% 80% at 50% 115%, #3A140A, #130B09 62%); --pf-fog: #0E0807; --pf-grid: rgba(255, 150, 80, .13);
+  --pf-face: linear-gradient(165deg, #3A2620, #1E1310); --pf-edge: #5A2A18; --pf-a: #FF6A1A; --pf-b: #FFC447; --pf-c: #8E1A08; --pf-ink: #F6E7DA; --pf-line: rgba(255, 150, 80, .18);
+  --pf-label: radial-gradient(circle, #FFF2C8, #FFB13B 30%, #E2400E 66%, #6A1206); --pf-tag: #1A0F0B; --pf-r: 12px; --pf-shadow: 0 24px 40px -22px rgba(0, 0, 0, .9); }
+
+/* ───────── calm: a designed still (the fire holds one frame; nothing flickers) ───────── */
+:root.lite[data-design="ember"] .em .pt::before, :root.lite[data-design="ember"] .em-coals i { animation: none !important; }
+:root.lite[data-design="ember"] .ex-sparks { display: none; }
+@media (prefers-reduced-motion: reduce) { :root[data-design="ember"] :is(.em-coals i, .ex-ring, .ex-glow) { animation: none !important; } :root[data-design="ember"] .ex-sparks { display: none; } }

@@ -1,0 +1,24 @@
+/* Contact: the headline, one line, and three buttons that each open the message window. Tokens only; a skin
+   restyles .ly-contact-h in its own scope and may wrap everything in its ContactFrame. (.ly prefix: beats the
+   zero-margin reset on `.ly p`.) */
+.ly .ly-contact { display: block; text-align: var(--ly-contact-text, start); } /* a centred look sets --ly-contact-text/-mx/-just on its root */
+.ly .ly-contact-k { margin: 0 0 18px; font: 500 12px/1.3 var(--ui-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--ui-accent); }
+.ly .ly-contact-h { max-width: 16em; margin-inline: var(--ly-contact-mx, 0); font: 500 clamp(1.9rem, 3.8vw, 3.4rem)/1.04 var(--ly-display); letter-spacing: -.035em; text-wrap: balance; }
+.ly .ly-contact-s { margin: 14px 0 0; font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.4; color: var(--ui-muted); }
+
+/* the cloud: four big round buttons (icon over label) floating in a box, a faint filament between them. Skins theme it
+   through the same tokens as the portrait nodes (--pt-node-bg/-fg/-line/-r); --cl-size sets the diameter. */
+.ly .cl { --cl-size: 84px; position: relative; width: 100%; height: clamp(290px, 27vw, 350px); margin-top: clamp(20px, 3vw, 36px); touch-action: pan-y; }
+.ly .cl::before { content: ""; position: absolute; inset: 4% 8%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--pt-glow, var(--ui-accent)) 15%, transparent), transparent); pointer-events: none; }
+.ly .cl-fil { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.ly .cl-fil line { stroke: currentColor; stroke-opacity: .3; stroke-width: 1.25; stroke-dasharray: 2 6; stroke-linecap: round; }
+.ly .cl-node { position: absolute; left: 0; top: 0; width: var(--cl-size); height: var(--cl-size); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 0; border-radius: var(--pt-node-r, 50%); border: 1px solid var(--pt-node-line, var(--ui-line)); background: var(--pt-node-bg, var(--ui-bg)); font: 500 12px/1 var(--ui-font); letter-spacing: .01em; text-decoration: none; cursor: pointer; box-shadow: 0 14px 30px -16px rgba(0, 0, 0, .45); will-change: translate; transition: scale 220ms var(--ease-out), box-shadow 220ms ease, background-color 200ms ease, color 200ms ease, border-color 200ms ease; }
+.ly .cl a.cl-node, .ly .cl button.cl-node { color: var(--pt-node-fg, var(--ui-fg)); } /* one notch up: a look's `a { color: inherit }` (Prism's dark room) must not win */
+.ly .cl-node .logo, .ly .cl-node .ic { width: 30px; height: 30px; flex: none; }
+.ly .cl-node:active { scale: .95; }
+@media (hover: hover) and (pointer: fine) { .ly .cl-node:hover { scale: 1.1; background: var(--ui-accent); border-color: var(--ui-accent); box-shadow: 0 22px 40px -16px rgba(0, 0, 0, .55), 0 0 0 6px color-mix(in srgb, var(--ui-accent) 22%, transparent); z-index: 1; }
+  .ly .cl a.cl-node:hover, .ly .cl button.cl-node:hover { color: var(--ui-accent-fg, var(--ui-bg)); } }
+.ly .cl-node:focus-visible { scale: 1.1; z-index: 1; }
+@media (max-width: 520px) { .ly .cl { --cl-size: 76px; height: 360px; } .ly .cl-node .logo, .ly .cl-node .ic { width: 26px; height: 26px; } }
+@media (prefers-reduced-motion: reduce) { .ly .cl-node { transition: none; } }
+html.lite .ly .cl-node { transition: none; will-change: auto; box-shadow: none; }

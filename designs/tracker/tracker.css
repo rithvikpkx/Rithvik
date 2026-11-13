@@ -1,0 +1,232 @@
+/* Tracker: a calm light lab UI (paper-grey ground, white panes, hairlines, Inter Tight + JetBrains Mono)
+   with one loud place, the cam0 depth feed, and a vision layer of bounding boxes over everything.
+   Every selector is scoped to :root[data-design="tracker"]. */
+:root[data-design="tracker"] {
+  --tk-bg: #F2F2EE; --tk-panel: #FFFFFF; --tk-ink: #0C0D0F; --tk-mut: #565A62; --tk-dim: #8A8E95;
+  --tk-line: rgba(12, 13, 15, .1); --tk-line2: rgba(12, 13, 15, .2); --tk-acc: #1F3BFF; --tk-red: #E0103F;
+  --tk-sans: "Inter Tight", var(--font-geist-sans), system-ui, sans-serif; --tk-mono: "JetBrains Mono", var(--font-geist-mono), ui-monospace, Menlo, monospace;
+  --tk-w: 1240px; --tk-g: clamp(16px, 4vw, 48px);
+  /* chrome */
+  --ui-bg: #FFFFFF; --ui-fg: #0C0D0F; --ui-muted: #565A62; --ui-accent: #1F3BFF; --ui-accent-fg: #FFFFFF;
+  --ui-line: rgba(12, 13, 15, .16); --ui-field: #F2F2EE; --ui-font: var(--tk-sans); --ui-mono: var(--tk-mono);
+  --ui-r: 3px; --ui-shadow: 0 1px 0 rgba(12, 13, 15, .04), 0 18px 40px -18px rgba(12, 13, 15, .32); --ui-blur: none;
+  --agent-r: 3px;
+  /* portrait: white hairline ring, square-ish photo, white tags for contacts */
+  --pt-ring: rgba(255, 255, 255, .92); --pt-ring-w: 1px; --pt-photo-bg: #d9d9d4; --pt-photo-r: 3px; --pt-shadow: 0 24px 60px -24px rgba(5, 4, 30, .7);
+  --pt-node-bg: #FFFFFF; --pt-node-fg: #0C0D0F; --pt-node-line: transparent; --pt-node-r: 3px; --pt-node-size: 12%;
+  /* cable: ink sheath outlined in white over the colour map, tracker blue pulse running to red */
+  --pt-sheath: #0B0C18; --pt-sheath-w: 4.5px; --pt-edge: #FFFFFF; --pt-edge-w: 1.3px; --pt-sheen: rgba(255, 255, 255, .3); --pt-cap: butt;
+  --pt-core: #4D7CFF; --pt-glow: #4D7CFF; --pt-head: #FFFFFF; --pt-halo: .2; --pt-pulse-a: #5C86FF; --pt-pulse-m: #FFFFFF; --pt-pulse-b: #FF2D4F;
+  /* knowledge graph */
+  --kg-h: min(74vh, 720px); --kg-edge: rgba(12, 13, 15, .16); --kg-edge-lit: #1F3BFF; --kg-label: #0C0D0F; --kg-font: var(--tk-mono);
+  --kg-me: #0C0D0F; --kg-field: #C24E00; --kg-project: #00875A; --kg-role: #0A6FB0; --kg-school: #8A6A00; --kg-place: #E0103F; --kg-skill: rgba(12, 13, 15, .42);
+  --kg-card-bg: #FFFFFF; --kg-card-fg: #0C0D0F;
+}
+:root[data-design="tracker"] body { background: var(--tk-bg); color: var(--tk-ink); font: 400 16px/1.6 var(--tk-sans);
+  background-image: radial-gradient(rgba(12, 13, 15, .075) 1px, transparent 1.3px); background-size: 24px 24px; background-position: 12px 12px; }
+:root[data-design="tracker"] ::selection { background: var(--tk-acc); color: #fff; }
+:root[data-design="tracker"] .tk { position: relative; }
+:root[data-design="tracker"] .tk h1, :root[data-design="tracker"] .tk h2, :root[data-design="tracker"] .tk h3, :root[data-design="tracker"] .tk p, :root[data-design="tracker"] .tk dl, :root[data-design="tracker"] .tk dd, :root[data-design="tracker"] .tk figure { margin: 0; }
+:root[data-design="tracker"] :where(.tk a) { color: inherit; }
+:root[data-design="tracker"] .tk .ic { width: 16px; height: 16px; }
+:root[data-design="tracker"] .tk :focus-visible { outline: 2px solid var(--tk-acc); outline-offset: 3px; }
+
+/* ───────── shared bits ───────── */
+
+/* ───────── nav + HUD ───────── */
+:root[data-design="tracker"] .tk-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; font: 500 11px/1 var(--tk-mono); color: var(--tk-mut); white-space: nowrap; font-variant-numeric: tabular-nums; }
+:root[data-design="tracker"] .tk-hud b { font-weight: 600; color: var(--tk-ink); }
+:root[data-design="tracker"] .tk-hud [data-tk-fps] { display: inline-block; min-width: 4ch; text-align: right; }
+:root[data-design="tracker"] .tk-hud [data-tk-state] { display: inline-block; min-width: 8ch; }
+:root[data-design="tracker"] .tk-hud-st { display: inline-flex; align-items: center; gap: 7px; }
+:root[data-design="tracker"] .tk-hud-st i { width: 7px; height: 7px; border-radius: 50%; background: var(--tk-dim); }
+:root[data-design="tracker"] .tk.tk-busy .tk-hud-st i { background: var(--tk-red); }
+
+/* ───────── hero ───────── */
+:root[data-design="tracker"] .tk-name { position: relative; width: fit-content; font: 600 clamp(56px, 7.6vw, 118px)/.9 var(--tk-sans); letter-spacing: -.05em; }
+:root[data-design="tracker"] .tk-name span { color: var(--tk-ink); }
+
+/* the feed: the one loud place */
+:root[data-design="tracker"] .tk-feed { position: relative; background: var(--tk-panel); border: 1px solid var(--tk-line2); box-shadow: 0 30px 80px -40px rgba(12, 13, 15, .35); }
+:root[data-design="tracker"] .tk-feed-bar, :root[data-design="tracker"] .tk-feed-foot { display: flex; align-items: center; gap: 16px; height: 36px; padding: 0 14px; font: 500 11px/1 var(--tk-mono); letter-spacing: .04em; text-transform: uppercase; color: var(--tk-mut); }
+:root[data-design="tracker"] .tk-feed-bar { border-bottom: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .tk-feed-bar span:first-child { display: inline-flex; align-items: center; gap: 8px; color: var(--tk-ink); font-weight: 600; }
+:root[data-design="tracker"] .tk-feed-r { margin-left: auto; }
+:root[data-design="tracker"] .tk-rec { width: 8px; height: 8px; border-radius: 50%; background: var(--tk-red); animation: tracker-rec 2s steps(1) infinite; }
+@keyframes tracker-rec { 50% { opacity: .25; } }
+:root[data-design="tracker"] .tk-feed-foot { border-top: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .tk-ramp { flex: 1; height: 8px; background: linear-gradient(90deg, #F7F5A8, #FBA93A 22%, #E0457B 46%, #6E0BA8 72%, #0B0A3E); image-rendering: pixelated; }
+:root[data-design="tracker"] .tk-view { position: relative; aspect-ratio: 5 / 4.3; overflow: hidden; background: #0B0A3E; container-type: size; }
+:root[data-design="tracker"] .tk-gl { position: absolute; inset: 0; }
+:root[data-design="tracker"] .tk-gl canvas { image-rendering: pixelated; }
+:root[data-design="tracker"] .tk-tick { position: absolute; z-index: 2; width: 14px; height: 14px; border: 0 solid rgba(255, 255, 255, .7); pointer-events: none; }
+:root[data-design="tracker"] .tk-tick.tl { left: 12px; top: 12px; border-width: 1px 0 0 1px; }
+:root[data-design="tracker"] .tk-tick.tr { right: 12px; top: 12px; border-width: 1px 1px 0 0; }
+:root[data-design="tracker"] .tk-tick.bl { left: 12px; bottom: 12px; border-width: 0 0 1px 1px; }
+:root[data-design="tracker"] .tk-tick.br { right: 12px; bottom: 12px; border-width: 0 1px 1px 0; }
+/* the static face box (performance mode only; otherwise the live tracker draws it). Sits outside the photo, never on it. */
+
+/* ───────── readout ───────── */
+
+/* ───────── sections ───────── */
+:root[data-design="tracker"] .tk-sec { max-width: calc(var(--tk-w) + 2 * var(--tk-g)); margin: 0 auto; padding: 168px var(--tk-g) 0; scroll-margin-top: 0; }
+:root[data-design="tracker"] .tk-h2 { margin-top: 14px !important; font: 600 clamp(38px, 4.8vw, 70px)/1 var(--tk-sans); letter-spacing: -.045em; text-wrap: balance; }
+
+/* work: an index of six rows */
+
+/* scene graph */
+
+/* about */
+
+/* play: the test set */
+
+/* questions (the owner's FAQ, as given): hairline rows that open in place */
+
+/* contact + footer */
+:root[data-design="tracker"] .tk-contact { display: grid; gap: 26px; justify-items: start; padding-top: 200px; }
+
+/* ───────── the vision layer: boxes, labels, glitch slices, flow ───────── */
+:root[data-design="tracker"] .tk-ov { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; contain: strict; }
+:root[data-design="tracker"] .tk-box { position: absolute; inset: 0; opacity: 0; --k: #1F3BFF; }
+:root[data-design="tracker"] .tk-e { position: absolute; left: 0; top: 0; width: 100px; height: 1px; background: var(--k); opacity: .6; transform-origin: 0 0; will-change: transform; }
+:root[data-design="tracker"] .tk-ev { width: 1px; height: 100px; }
+:root[data-design="tracker"] .tk-c { position: absolute; left: 0; top: 0; width: 12px; height: 12px; border: 0 solid var(--k); will-change: transform; }
+:root[data-design="tracker"] .tk-c1 { border-width: 2px 0 0 2px; } :root[data-design="tracker"] .tk-c2 { border-width: 2px 2px 0 0; }
+:root[data-design="tracker"] .tk-c3 { border-width: 0 0 2px 2px; } :root[data-design="tracker"] .tk-c4 { border-width: 0 2px 2px 0; }
+:root[data-design="tracker"] .tk-lbl { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 6px; height: 17px; padding: 0 6px; background: var(--k); color: #fff; font: 600 10.5px/17px var(--tk-mono); letter-spacing: .01em; white-space: nowrap; will-change: transform; font-variant-numeric: tabular-nums; }
+:root[data-design="tracker"] .tk-lbl b { font-weight: 500; opacity: .78; }
+:root[data-design="tracker"] .tk-box.is-lock .tk-e { opacity: 1; }
+:root[data-design="tracker"] .tk-box.is-lock .tk-lbl::before { content: ""; width: 5px; height: 5px; background: #fff; }
+:root[data-design="tracker"] .tk-box.is-lost .tk-lbl { background: var(--tk-ink); }
+:root[data-design="tracker"] .tk-box.is-lost .tk-e { opacity: .3; }
+:root[data-design="tracker"] .tk-slice { position: absolute; left: 0; top: 0; width: 100px; height: 10px; background: var(--k); opacity: 0; transform-origin: 0 0; }
+:root[data-design="tracker"] .tk-flow { position: fixed; inset: 0; z-index: 29; width: 100vw; height: 100vh; pointer-events: none; opacity: 0; overflow: visible; }
+:root[data-design="tracker"] .tk-flow path { fill: none; stroke: var(--tk-acc); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ───────── performance mode: the tracker becomes a few static annotations ───────── */
+:root[data-design="tracker"].lite .tk-ov, :root[data-design="tracker"].lite .tk-flow { display: none; }
+:root[data-design="tracker"].lite [data-tk-static] { position: relative; --k: var(--tk-acc); }
+:root[data-design="tracker"].lite .tk-name[data-tk-static] { --k: #C24E00; }
+
+:root[data-design="tracker"].lite [data-tk-static]::after { content: ""; position: absolute; inset: -8px; border: 1px solid color-mix(in srgb, var(--k) 60%, transparent); pointer-events: none;
+  background: linear-gradient(var(--k), var(--k)) 0 0 / 12px 2px, linear-gradient(var(--k), var(--k)) 0 0 / 2px 12px, linear-gradient(var(--k), var(--k)) 100% 0 / 12px 2px, linear-gradient(var(--k), var(--k)) 100% 0 / 2px 12px,
+    linear-gradient(var(--k), var(--k)) 0 100% / 12px 2px, linear-gradient(var(--k), var(--k)) 0 100% / 2px 12px, linear-gradient(var(--k), var(--k)) 100% 100% / 12px 2px, linear-gradient(var(--k), var(--k)) 100% 100% / 2px 12px; background-repeat: no-repeat; }
+
+:root[data-design="tracker"].lite [data-tk-static]::before { content: attr(data-tk-static); position: absolute; z-index: 1; left: -8px; top: -26px; height: 17px; padding: 0 6px; background: var(--k); color: #fff; font: 600 10.5px/17px var(--tk-mono); letter-spacing: .01em; white-space: nowrap; pointer-events: none; }
+
+/* ───────── chrome reskin: switcher, agent, windows, sheet, toast, play ───────── */
+:root[data-design="tracker"] .switcher { font: 500 12px/1 var(--tk-mono); }
+:root[data-design="tracker"] .sw-ic { border-radius: 2px; height: 34px; }
+:root[data-design="tracker"] .sw-ic { width: 34px; }
+
+:root[data-design="tracker"] .agent { gap: 22px; } /* room for the "#00 agent" tab that sits above the bar */
+:root[data-design="tracker"] .agent-bar { position: relative; min-height: 52px; padding: 0 6px 0 16px; border-color: var(--tk-line2); }
+:root[data-design="tracker"] .agent-bar::before { content: "#00 agent ⌘K"; position: absolute; left: -1px; top: -18px; height: 17px; padding: 0 6px; background: var(--tk-acc); color: #fff; font: 600 10.5px/17px var(--tk-mono); letter-spacing: .01em; pointer-events: none; }
+:root[data-design="tracker"] .agent-bar:focus-within { border-color: var(--tk-acc); box-shadow: 0 0 0 1px var(--tk-acc), var(--ui-shadow); }
+:root[data-design="tracker"] .ab-input { font-family: var(--tk-sans); font-size: 15.5px; }
+:root[data-design="tracker"] .ab-kbd { border-radius: 2px; }
+:root[data-design="tracker"] .ab-send { width: 40px; height: 40px; border-radius: 2px; background: var(--tk-ink); color: #fff; }
+:root[data-design="tracker"] .ab-send.busy { background: var(--tk-red); }
+:root[data-design="tracker"] .agent-panel { border-color: var(--tk-line2); }
+:root[data-design="tracker"] .agent-head { padding: 0 6px 0 0; gap: 0; height: 40px; font: 500 11.5px/1 var(--tk-mono); background: var(--tk-bg); }
+:root[data-design="tracker"] .agent-title { display: flex; align-items: center; align-self: stretch; flex: none; padding: 0 14px; background: var(--tk-ink); color: #fff; font-weight: 600; }
+:root[data-design="tracker"] .agent-title .at-mark { color: #F0F921; vertical-align: 0; }
+:root[data-design="tracker"] .agent-model { flex: 1; padding-left: 14px; text-transform: uppercase; letter-spacing: .06em; font-size: 10.5px; }
+:root[data-design="tracker"] .t-chip { border-radius: 2px; border-color: var(--tk-line2); }
+:root[data-design="tracker"] .t-chip:hover { border-color: var(--tk-acc); color: var(--tk-acc); }
+:root[data-design="tracker"] .t-user b { color: var(--tk-ink); }
+:root[data-design="tracker"] .t-key { border-radius: 2px; }
+:root[data-design="tracker"] .t-body { font-size: 15.5px; }
+:root[data-design="tracker"] .agent-status { padding: 0; gap: 0; background: var(--tk-bg); font: 500 11px/28px var(--tk-mono); }
+:root[data-design="tracker"] .agent-status span { padding: 0 12px; border-right: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .agent-status span:first-child { background: var(--tk-ink); color: #fff; }
+:root[data-design="tracker"] .agent-palette button { border-radius: 2px; }
+:root[data-design="tracker"] .agent-palette button[aria-selected="true"] { background: rgba(31, 59, 255, .1); }
+
+:root[data-design="tracker"] .win { border-color: var(--tk-line2); }
+:root[data-design="tracker"] .win-bar { padding: 0 6px 0 0; height: 42px; background: var(--tk-bg); }
+:root[data-design="tracker"] .win-title { align-self: stretch; padding: 0 14px; background: var(--tk-ink); color: #fff; font: 600 11.5px/42px var(--tk-mono); }
+:root[data-design="tracker"] .win-title .ic { width: 14px; height: 14px; }
+:root[data-design="tracker"] .win-bar .ui-ic { border-radius: 2px; border-color: transparent; width: 32px; height: 32px; }
+:root[data-design="tracker"] .ui-btn { border-radius: 2px; }
+:root[data-design="tracker"] .ui-btn.primary { background: var(--tk-ink); color: #fff; }
+@media (hover: hover) and (pointer: fine) { :root[data-design="tracker"] .ui-btn.primary:hover { background: var(--tk-acc); } }
+:root[data-design="tracker"] input.field, :root[data-design="tracker"] textarea.field { border-radius: 2px; background: #FAFAF8; border-color: var(--tk-line2); }
+:root[data-design="tracker"] input.field:focus, :root[data-design="tracker"] textarea.field:focus { outline: none; border-color: var(--tk-acc); box-shadow: 0 0 0 1px var(--tk-acc); }
+:root[data-design="tracker"] .cmp-row label { text-transform: uppercase; letter-spacing: .06em; font-size: 10.5px; }
+:root[data-design="tracker"] .win-foot { font-family: var(--tk-mono); }
+:root[data-design="tracker"] .pdf-viewport { background: #E6E6E1; }
+
+:root[data-design="tracker"] .sheet-scrim { background: rgba(12, 13, 15, .4); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-design="tracker"] .sheet-body { border-radius: 4px 4px 0 0; border-top: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .sheet-close { border-radius: 2px; }
+:root[data-design="tracker"] .case-kind { color: #00875A; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; }
+:root[data-design="tracker"] .case-kind::before { content: "project 0.9"; padding: 3px 6px; margin-right: 4px; background: #00875A; color: #fff; font-weight: 600; letter-spacing: .01em; text-transform: none; }
+:root[data-design="tracker"] .case h1 { font-weight: 600; letter-spacing: -.045em; }
+:root[data-design="tracker"] .case-lede { color: var(--tk-mut); }
+:root[data-design="tracker"] .case .chip { border-radius: 2px; background: #fff; border: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .case-meta dt { font: 500 11.5px/1.4 var(--tk-mono); text-transform: uppercase; letter-spacing: .06em; }
+:root[data-design="tracker"] .case h2 { font-weight: 600; letter-spacing: -.02em; }
+:root[data-design="tracker"] .case-bullets { color: var(--tk-ink); }
+:root[data-design="tracker"] .case-next b { letter-spacing: -.03em; }
+/* the project art presented as a detection: bracketed box + label */
+:root[data-design="tracker"] .case-art { position: relative; border-radius: 2px; border: 1px solid var(--tk-line2); background: #E6E6E1; }
+:root[data-design="tracker"] .case-art::after { content: ""; position: absolute; inset: 14% 22%; pointer-events: none;
+  background: linear-gradient(#00875A, #00875A) 0 0 / 16px 2px, linear-gradient(#00875A, #00875A) 0 0 / 2px 16px, linear-gradient(#00875A, #00875A) 100% 0 / 16px 2px, linear-gradient(#00875A, #00875A) 100% 0 / 2px 16px,
+    linear-gradient(#00875A, #00875A) 0 100% / 16px 2px, linear-gradient(#00875A, #00875A) 0 100% / 2px 16px, linear-gradient(#00875A, #00875A) 100% 100% / 16px 2px, linear-gradient(#00875A, #00875A) 100% 100% / 2px 16px; background-repeat: no-repeat; }
+:root[data-design="tracker"] .case-art::before { content: "object 0.93"; position: absolute; z-index: 1; left: 22%; top: calc(14% - 19px); height: 17px; padding: 0 6px; background: #00875A; color: #fff; font: 600 10.5px/17px var(--tk-mono); }
+
+:root[data-design="tracker"] .toast { border-radius: 3px; font: 500 12.5px/1.3 var(--tk-mono); border-color: var(--tk-line2); }
+:root[data-design="tracker"] .toast button { border-radius: 2px; font-family: var(--tk-mono); }
+
+:root[data-design="tracker"] .play-win { --btn-r: 2px; --r-sm: 2px; --r-xs: 2px; --chip-bg: #ECECE7; --ok: #00875A; --font-d: var(--tk-sans); --rec-pill-bg: #0C0D0F; --rec-label: #F2F2EE; --rec-label-ink: #0C0D0F; }
+:root[data-design="tracker"] .play-tabs button { border-radius: 2px; font-size: 12.5px; }
+:root[data-design="tracker"] .play-tabs button[aria-selected="true"] { background: var(--tk-ink); color: #fff; }
+:root[data-design="tracker"] .play-body { background: #F7F7F4; background-image: radial-gradient(rgba(12, 13, 15, .08) 1px, transparent 1.3px); background-size: 16px 16px; }
+:root[data-design="tracker"] .play-win .btn { border-radius: 2px; background: var(--tk-ink); color: #fff; }
+:root[data-design="tracker"] .play-win .label { font-family: var(--tk-mono); }
+:root[data-design="tracker"] .tr-text, :root[data-design="tracker"] .g-canvas-box, :root[data-design="tracker"] .cd-box { border-radius: 2px; background: #fff; border: 1px solid var(--tk-line2); }
+:root[data-design="tracker"] .cd-div { border-radius: 2px; }
+:root[data-design="tracker"] .rc-bar, :root[data-design="tracker"] .rc-bar i { border-radius: 0; }
+
+/* ───────── responsive ───────── */
+@media (max-width: 1120px) {
+  :root[data-design="tracker"] .agent-bar::before { left: auto; right: -1px; }
+}
+@media (max-width: 640px) {
+  :root[data-design="tracker"] body { font-size: 15.5px; }
+  :root[data-design="tracker"] .tk-hud { gap: 10px; }
+  :root[data-design="tracker"] .tk-name { font-size: clamp(48px, 14.5vw, 64px); }
+  :root[data-design="tracker"] .tk-view { aspect-ratio: 4 / 4.4; }
+  :root[data-design="tracker"] .tk-feed-bar span:nth-child(2) { display: none; }
+  :root[data-design="tracker"] .tk-sec { padding-top: 112px; }
+  :root[data-design="tracker"] .tk-contact { padding-top: 128px; }
+  :root[data-design="tracker"] .agent-bar::before { content: "#00 agent"; }
+}
+
+/* "I am Rithvik" header button: the outlined twin of Resume */
+
+/* ───────── the shared layout, themed ───────── */
+:root[data-design="tracker"] { --ly-head-bg: rgba(255, 255, 255, .9); --ly-line: var(--tk-line); --ly-soft: var(--tk-panel); --ly-display: var(--tk-sans); }
+:root[data-design="tracker"] .ly-head { font: 500 12.5px/1 var(--tk-mono); }
+:root[data-design="tracker"] .ly-nav a { border-radius: 3px; }
+:root[data-design="tracker"] .ly-iam { border-radius: 3px; }
+:root[data-design="tracker"] .ly-name .tk-name { display: block; width: auto; font: inherit; letter-spacing: -.05em; }
+:root[data-design="tracker"] { --ly-name-weight: 600; --ly-name-track: -.05em; }
+:root[data-design="tracker"] .ly-status { font: 500 12.5px/1.5 var(--tk-mono); color: var(--tk-mut); }
+/* the cam0 feed sits behind the portrait: the depth shader is the backdrop the strings hang in front of */
+:root[data-design="tracker"] .ly-hero > .tk-feed { position: absolute; z-index: 0; right: var(--ly-gutter); top: calc(var(--ly-head-h) + 72px); width: min(40vw, 520px); }
+:root[data-design="tracker"] .ly-hero > .tk-hud { position: absolute; z-index: 2; top: calc(var(--ly-head-h) + 16px); right: var(--ly-gutter); margin: 0; }
+:root[data-design="tracker"] .ly-hero .pt { --pt-node-bg: #FFFFFF; }
+:root[data-design="tracker"] .tk-sec > .tk-h2 { margin: 0 0 clamp(40px, 5vw, 64px) !important; }
+@media (max-width: 860px) {
+  :root[data-design="tracker"] .ly-hero > .tk-feed { position: relative; right: auto; top: auto; width: 100%; order: 2; margin-top: 32px; }
+  :root[data-design="tracker"] .ly-hero > .tk-hud { display: none; }
+}
+@media (min-width: 861px) { :root[data-design="tracker"] .ly-hero > .tk-feed { top: calc(var(--ly-head-h) + 56px); } :root[data-design="tracker"] .ly-hero > .tk-feed .tk-view { aspect-ratio: 1 / 1.08; } }
+
+/* Play field (components/site/play/playfield.css): this look's materials */
+:root[data-design="tracker"] .pf-wrap {
+  --pf-bg: #F2F2EE; --pf-fog: #F2F2EE; --pf-a: #1F3BFF; --pf-b: #E0103F; --pf-c: #F0F921; --pf-label: #E0103F;
+  --pf-r: 4px; --pf-line: rgba(12, 13, 15, .2);
+}
