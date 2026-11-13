@@ -57,12 +57,12 @@ function Answer({ text, streaming, onCopy }: { text: string; streaming: boolean;
   );
 }
 
-const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item; h: RowHandlers; projects: number; roles: number; first: boolean }) {
+const Row = memo(function Row({ item, h, first }: { item: Item; h: RowHandlers; first: boolean }) {
   switch (item.kind) {
     case "banner":
       return (
         <>
-          <StartBlock model={process.env.NEXT_PUBLIC_CHAT_MODEL} projects={projects} roles={roles} />
+          <StartBlock model={process.env.NEXT_PUBLIC_CHAT_MODEL} />
           {first && (
             <div className="t-starters">
               {STARTERS.map((s) => <button key={s} type="button" className="t-chip" onClick={() => h.send(s)}>{s}</button>)}
@@ -143,6 +143,6 @@ const Row = memo(function Row({ item, h, projects, roles, first }: { item: Item;
 });
 
 /** The scrolling log: one memoised row per item so only the streaming answer re-renders per chunk. */
-export default function Transcript({ items, h, projects, roles }: { items: Item[]; h: RowHandlers; projects: number; roles: number }) {
-  return <>{items.map((it) => <Row key={it.id} item={it} h={h} projects={projects} roles={roles} first={items.length === 1} />)}</>;
+export default function Transcript({ items, h }: { items: Item[]; h: RowHandlers }) {
+  return <>{items.map((it) => <Row key={it.id} item={it} h={h} first={items.length === 1} />)}</>;
 }

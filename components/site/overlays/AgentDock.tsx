@@ -198,7 +198,7 @@ export default function AgentDock() {
             </span>
           </header>
           <div className="agent-log" ref={logRef} role="log">
-            <Transcript items={items} h={h} projects={content.projects.length} roles={content.experience.length} />
+            <Transcript items={items} h={h} />
           </div>
           {matches.length > 0 && (
             <div className="agent-palette" role="listbox" aria-label="Commands">
@@ -221,7 +221,7 @@ export default function AgentDock() {
           onFocus={() => { if (!open) openAgent(); }} onClick={() => { if (!open) openAgent(); }}
           onKeyDown={onKeyDown} />
         <kbd className="ab-kbd" aria-hidden="true">⌘K</kbd>
-        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} />
+        <Voice onTranscript={(t) => { openAgent(); setInput(t); inputRef.current?.focus(); }} onSend={(t) => { openAgent(); go(t); }} />
         <button className={`ab-send${busy ? " busy" : ""}`} type="submit" aria-label={busy ? "Interrupt" : "Send"}><Icon name={busy ? "square" : "arrow-up"} /></button>
       </form>
       {open && <StatusLine actions={items.some((i) => i.kind === "actions")} turns={agent.turns.length} usage={agent.usage} busySince={busySince} cooldown={agent.cooldown} model={process.env.NEXT_PUBLIC_CHAT_MODEL} />}

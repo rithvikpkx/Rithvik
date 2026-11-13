@@ -48,3 +48,26 @@ export function stripPromptEcho(text: string, prompt: string): string {
   const i = text.toLowerCase().indexOf(prompt.toLowerCase());
   return (i < 0 ? text : text.slice(0, i) + text.slice(i + prompt.length)).replace(/^[\s.,]+|[\s,]+$/g, "");
 }
+
+/** The reply voices a visitor can pick (OpenAI TTS built-ins), with a few words on each for the picker. */
+export const VOICES = [
+  { id: "sage", note: "warm, calm" }, { id: "coral", note: "bright, friendly" }, { id: "ash", note: "low, steady" },
+  { id: "ballad", note: "soft storyteller" }, { id: "verse", note: "expressive" }, { id: "nova", note: "crisp, upbeat" },
+  { id: "onyx", note: "deep" }, { id: "fable", note: "British, lively" }, { id: "shimmer", note: "light, airy" }, { id: "echo", note: "even, neutral" },
+] as const;
+/** Delivery styles, sent as the TTS `instructions`; the client only ever names one by id. */
+export const STYLES = {
+  natural: "Speak in a warm, concise, professional tone at a calm, natural pace.",
+  upbeat: "Speak with bright, upbeat energy, like an enthusiastic friend sharing good news.",
+  radio: "Speak like a smooth late-night radio host: rich, relaxed, a little dramatic.",
+  hush: "Speak softly and gently, close to the microphone, unhurried and soothing.",
+} as const;
+export type StyleId = keyof typeof STYLES;
+export const RATE_MIN = 0.75, RATE_MAX = 1.75;
+
+/** An allow-listed voice id (anything else falls back to the default). */
+export const pickVoice = (v: unknown): string => (VOICES.some((x) => x.id === v) ? (v as string) : "sage");
+/** An allow-listed style id (anything else falls back to natural). */
+export const pickStyle = (s: unknown): StyleId => (typeof s === "string" && Object.hasOwn(STYLES, s) ? (s as StyleId) : "natural");
+/** A playback rate inside the supported band (non-numbers become 1). */
+export const clampRate = (r: unknown): number => (typeof r === "number" && Number.isFinite(r) ? Math.min(RATE_MAX, Math.max(RATE_MIN, r)) : 1);

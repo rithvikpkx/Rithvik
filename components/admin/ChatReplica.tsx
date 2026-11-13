@@ -32,7 +32,7 @@ export default function ChatReplica({ messages, model, title, footer, short }: {
             </span>
           </header>
           <div className="agent-log" role="log" tabIndex={0} aria-label="Transcript">
-            {items.length ? <Transcript items={items} h={H} projects={0} roles={0} /> : <p className="t-tips">No messages in this conversation.</p>}
+            {items.length ? <Transcript items={items} h={H} /> : <p className="t-tips">No messages in this conversation.</p>}
           </div>
           <div className="adm-replica-foot"><span aria-hidden="true">❯</span>{footer ?? "Read-only replica"}</div>
         </section>

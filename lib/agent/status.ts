@@ -4,9 +4,6 @@ import { SPINNERS } from "../assets/misc.ts";
 
 export const SPIN_FRAMES: string[] = SPINNERS.dots.frames;
 export const SPIN_INTERVAL = SPINNERS.dots.interval;
-/** The reasoning effort app/api/chat/route.ts asks the answer model for, shown in the start block and status line. */
-export const AGENT_EFFORT = "low";
-
 /** Braille frame for `elapsedMs` since the turn began. */
 export function spinFrame(elapsedMs: number): string {
   return SPIN_FRAMES[Math.floor(elapsedMs / SPIN_INTERVAL) % SPIN_FRAMES.length];

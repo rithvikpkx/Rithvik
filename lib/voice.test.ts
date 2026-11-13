@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { durationOk, sniffAudio, speakable, stripPromptEcho } from "./voice.ts";
+import { clampRate, durationOk, pickStyle, pickVoice, sniffAudio, speakable, stripPromptEcho } from "./voice.ts";
 
 const bytes = (...n: number[]) => Uint8Array.from([...n, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const ascii = (s: string) => [...s].map((c) => c.charCodeAt(0));
@@ -40,4 +40,13 @@ test("stripPromptEcho drops a parroted prompt but keeps real speech", () => {
   const p = "Rithvik Praveen Kumar, Purdue, BoilerFrame";
   assert.equal(stripPromptEcho("Rithvik Praveen Kumar, Purdue, BoilerFrame.", p), "");
   assert.equal(stripPromptEcho("Tell me about BoilerFrame", p), "Tell me about BoilerFrame");
+});
+
+test("voice prefs from the client are allow-listed and clamped", () => {
+  assert.equal(pickVoice("coral"), "coral");
+  assert.equal(pickVoice("evil\"voice"), "sage");
+  assert.equal(pickStyle("radio"), "radio");
+  assert.equal(pickStyle("constructor"), "natural");
+  assert.equal(clampRate(9), 1.75);
+  assert.equal(clampRate("fast"), 1);
 });
