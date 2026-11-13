@@ -25,7 +25,23 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
   const [skip, setSkip] = useState(true);
   const [pos, setPos] = useState({ t: 0, total: 0 });
 
-  useEffect(() => () => { rp.current?.destroy(); rp.current = null; }, []);
+  const size = useRef<{ w: number; h: number } | null>(null);
+  /** Scales the recording to the card's width (never up). The stage is still `hidden` (width 0) while the Replayer
+   *  builds, so this measures the player's own box. */
+  const fit = () => {
+    const p = rp.current, sz = size.current, box = host.current?.parentElement;
+    if (!p || !sz || !box) return;
+    const s = Math.min(1, box.clientWidth / sz.w);
+    p.wrapper.style.transform = `scale(${s})`;
+    p.wrapper.style.transformOrigin = "top left";
+    if (host.current) host.current.style.height = `${Math.round(sz.h * s)}px`;
+  };
+  useEffect(() => {
+    const box = host.current?.parentElement;
+    const ro = box ? new ResizeObserver(() => fit()) : null; // the card resizes with the window
+    if (box) ro!.observe(box);
+    return () => { ro?.disconnect(); rp.current?.destroy(); rp.current = null; };
+  }, []);
 
   // Progress readout while playing.
   useEffect(() => {
@@ -47,16 +63,10 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
       const { Replayer } = await import("rrweb");
       host.current.replaceChildren();
       const p = new Replayer(all as never, { root: host.current, skipInactive: skip, speed, mouseTail: { strokeStyle: "#ef4444" }, showWarning: false });
-      const fit = (w: number, h: number) => {
-        // The stage is still `hidden` (width 0) while the Replayer builds, so measure its parent.
-        const s = Math.min(1, (host.current?.parentElement?.clientWidth || w) / w);
-        p.wrapper.style.transform = `scale(${s})`;
-        p.wrapper.style.transformOrigin = "top left";
-        if (host.current) host.current.style.height = `${h * s}px`;
-      };
-      p.on("resize", (d: unknown) => { const { width, height } = d as { width: number; height: number }; fit(width, height); });
+      p.on("resize", (d: unknown) => { const { width, height } = d as { width: number; height: number }; size.current = { w: width, h: height }; fit(); });
       p.on("finish", () => setPlaying(false));
       rp.current = p;
+      fit();
       setPos({ t: 0, total: p.getMetaData().totalTime });
       p.play();
       setPlaying(true);

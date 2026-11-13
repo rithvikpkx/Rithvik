@@ -81,10 +81,11 @@
 .alog-events li[data-type="error"] { color: #b91c1c; }
 .alog-events li[data-type="identify"], .alog-events li[data-type="composer_send"], .alog-events li[data-type="agent_turn"] { font-weight: 600; }
 @media (prefers-color-scheme: dark) { .alog-events li[data-type="error"] { color: #fca5a5; } }
-.alog-replay { margin: 0 0 8px; }
+.alog-replay { margin: 0 0 8px; min-width: 0; max-width: 100%; }
 .alog-replay-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 8px; }
 .alog-replay-bar input[type="range"] { flex: 1 1 200px; min-width: 120px; }
 .alog-replay-bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ui-muted); }
-.alog-replay-stage { overflow: hidden; border: 1px solid var(--ui-line); border-radius: 8px; background: #fff; }
-.alog-replay-stage .replayer-wrapper { position: relative; }
+.alog-replay-stage { position: relative; overflow: hidden; border: 1px solid var(--ui-line); border-radius: 8px; background: #fff; }
+/* out of flow: the recording is the visitor's full viewport (e.g. 1920px) and, in flow, it stretched every parent */
+.alog-replay-stage .replayer-wrapper { position: absolute; top: 0; left: 0; }
 @media (max-width: 640px) { .alog .alog-events li { grid-template-columns: 44px 1fr; } .alog-etype { display: none; } }
