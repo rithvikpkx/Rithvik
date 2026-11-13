@@ -22,20 +22,8 @@ button.pt-photo { cursor: pointer; }
 .pt-sheen { stroke: var(--pt-sheen, rgba(255, 255, 255, .5)); stroke-width: 1px; transform: translate(-1.05px, -.5px); } /* a thin lit edge on the glass */
 .pt-core { stroke: var(--pt-core, var(--pt-pulse-a, #fff)); stroke-width: 1px; opacity: .4; }
 
-/* the light inside the glass: lit tube around the pulse, soft tail, bloom, white-hot head. Script sets only geometry + visibility. */
-.pt-lit { fill: none; stroke-linecap: round; }
-.pt-lit-w { stroke: var(--pt-glow, #fff); stroke-width: calc(var(--pt-sheath-w, 4.5px) * 3); opacity: .3; }
-.pt-lit-t { stroke-width: calc(var(--pt-sheath-w, 4.5px) * 1.1); opacity: .95; }
-.pt-lit-c { stroke: var(--pt-head, #fff); stroke-width: 1.7px; opacity: .85; }
-.pt-bloom { opacity: .85; }
-.pt-hot { fill: var(--pt-head, #fff); opacity: .55; }
-.pt-head { fill: var(--pt-head, #fff); }
-/* the landing on the portrait's ring: a soft flare and an arc spreading along the rim */
-.pt-arc { fill: none; stroke: var(--pt-head, #fff); stroke-width: 3; stroke-linecap: round; opacity: .9; }
 
 .pt-node { position: absolute; width: max(var(--pt-node-size, 13%), 34px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; padding: 0; border-radius: var(--pt-node-r, 50%); background: var(--pt-node-bg, #fff); color: var(--pt-node-fg, #111); border: var(--bw, 1px) solid var(--pt-node-line, rgba(0, 0, 0, .14)); text-decoration: none; cursor: pointer; user-select: none; -webkit-user-drag: none; will-change: transform; transition: scale 200ms var(--ease-out, cubic-bezier(.23, 1, .32, 1)), background-color 200ms ease, color 200ms ease; }
-/* the charge glow: --g (0..1) is written by script each frame (build, dim, dark at launch); with no script or in calm mode it is a steady faint glow */
-.pt-node::before { content: ""; position: absolute; inset: -42%; z-index: -1; border-radius: 50%; pointer-events: none; opacity: calc(var(--g, .35) * .95); scale: calc(.86 + var(--g, .35) * .24); background: radial-gradient(closest-side, transparent 50%, var(--pt-glow, #fff) 60%, transparent 100%); }
 .pt-node .logo, .pt-node .ic { width: 40%; height: 40%; pointer-events: none; }
 .pt-node:active { scale: .94; }
 .pt[data-drag] .pt-node { cursor: grabbing; }
@@ -46,14 +34,13 @@ button.pt-photo { cursor: pointer; }
 
 /* before the opening runs the nodes and strings wait, so they can drop in; without JS they are simply there */
 @media (scripting: enabled) {
-  .pt:not([data-live]) .pt-node, .pt:not([data-live]) .pt-beams, .pt:not([data-live]) .pt-fx { opacity: 0; }
+  .pt:not([data-live]) .pt-node, .pt:not([data-live]) .pt-beams { opacity: 0; }
 }
 .pt[data-live="drop"] .pt-beams { animation: pt-fade 300ms ease both; }
 @keyframes pt-fade { from { opacity: 0; } }
 
-/* calm (reduced motion / performance mode): clear glass with a steady faint fibre, no light, no flashes, nodes keep a calm glow */
-@media (prefers-reduced-motion: reduce) { .pt-light, .pt-land { display: none; } .pt-core { opacity: .8; } .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); } .pt-node, .pt-photo { transition: none; animation: none; } }
-html.lite .pt-light, html.lite .pt-land { display: none; }
+/* calm (reduced motion / performance mode): a still, with a steadier fibre */
+@media (prefers-reduced-motion: reduce) { .pt-core { opacity: .8; } .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); } .pt-node, .pt-photo { transition: none; animation: none; } }
 html.lite .pt-core { opacity: .8; }
 html.lite .pt-halo { opacity: calc(var(--pt-halo, .12) * 1.8); }
 html.lite .pt-photo { animation: none; }
