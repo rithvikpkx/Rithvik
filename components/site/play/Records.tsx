@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useSite } from "../SiteProvider";
-import { Deck, DEFAULTS, type DeckParams, type Layer } from "./deck";
+import { Deck, DEFAULTS, TRACKS, type DeckParams, type Layer } from "./deck";
 import { createScope, type Scope } from "./scope";
 import Knob from "./Knob";
 import { Icon as Ic } from "../Glyph";
@@ -17,11 +17,12 @@ const DOTS = RINGS.flatMap(({ r, n }, k) => Array.from({ length: n }, (_, i) => 
 const LAYERS: [Layer, string][] = [["orig", "Original"], ["lofi", "Lo-fi"], ["rev", "Reverse"]];
 const SEEK_FROM = 0.9; // the outer 10% of the disc's radius is the seek ring
 
-/** The Play deck: "Chili Pepper" (1927, public domain) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
+/** The Play deck: a crate of two tracks (TRACKS) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
  *  Delay (echo) knobs, a Volume slider and layer switches. Audio lives in ./deck.ts; this component is the instrument's face. */
 export default function Records() {
   const { toast } = useSite();
   const [on, setOn] = useState(false);
+  const [track, setTrack] = useState(0);
   const [p, setP] = useState<DeckParams>(DEFAULTS);
   const deck = useRef<Deck | null>(null);
   const spin = useRef<HTMLDivElement>(null);
@@ -51,8 +52,8 @@ export default function Records() {
         const fr = f.pos / f.dur;
         ring.current?.style.setProperty("stroke-dasharray", `${fr.toFixed(4)} 1`);
         handle.current?.setAttribute("transform", `rotate(${(fr * 360).toFixed(2)})`);
-        if (Math.floor(f.pos) !== sec) {
-          sec = Math.floor(f.pos);
+        if (Math.floor(f.pos) * 1e4 + Math.floor(f.dur) !== sec) { // a new second, or a new track's length
+          sec = Math.floor(f.pos) * 1e4 + Math.floor(f.dur);
           if (clock.current) clock.current.textContent = `${fmtTime(f.pos)} / ${fmtTime(f.dur)}`;
           seekEl.current?.setAttribute("aria-valuenow", String(Math.round(fr * 100)));
           seekEl.current?.setAttribute("aria-valuetext", `${fmtTime(f.pos)} of ${fmtTime(f.dur)}`);
@@ -152,7 +153,15 @@ export default function Records() {
             <input type="range" min={0} max={1} step={0.01} value={p.volume} aria-label="Volume" onChange={(e) => set("volume")(+e.target.value)} />
             <span aria-hidden="true">Volume</span>
           </label>
-          <p className="dk-hint">Chili Pepper, Fred Longshaw, 1927. Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
+          <div className="dk-crate" role="radiogroup" aria-label="Record">
+            {TRACKS.map((t, i) => (
+              <button key={t.src} type="button" role="radio" aria-checked={track === i} onClick={() => { setTrack(i); deck.current?.setTrack(i); }}>
+                <i className="dk-sleeve" aria-hidden="true"><i /></i>
+                <span><b>{t.title}</b><small>{t.artist}</small></span>
+              </button>
+            ))}
+          </div>
+          <p className="dk-hint">Pick a record from the crate. Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
         </div>
       </div>
     </div>

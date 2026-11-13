@@ -1,9 +1,13 @@
-/** The Play deck's audio engine: the 1927 "Chili Pepper" through a small Web Audio graph (layers, tone filter, echo, volume, analyser)
+/** The Play deck's audio engine: the picked track (TRACKS) through a small Web Audio graph (layers, tone filter, echo, volume, analyser)
  *  plus the disc's spin physics. DOM-free; the Records component supplies the paint hook. */
 import { clamp01, delayParams, speedRate, toneFilter, volumeGain } from "@/lib/play/deckmap";
 
 const BASE_DEG = 120; // disc degrees per second at 1x
-const SRC = "/v7/chili-pepper.mp3";
+/** The crate. The owner supplies the audio files in public/v7/music/. */
+export const TRACKS = [
+  { title: "Adventure of a Lifetime", artist: "Coldplay", src: "/v7/music/adventure-of-a-lifetime.mp3" },
+  { title: "What You Know", artist: "Two Door Cinema Club", src: "/v7/music/what-you-know.mp3" },
+];
 const ECHO_S = 0.34; // fixed echo time; the Delay knob sets how much returns
 
 export type Layer = "orig" | "lofi" | "rev";
@@ -36,6 +40,7 @@ export class Deck {
   private srcs: AudioBufferSourceNode[] = [];
   private fades: GainNode[] = [];
   private loading: Promise<void> | null = null;
+  private src = TRACKS[0].src;
   private angle = 0;
   private vel = 0;
   private pos = 0;
@@ -96,29 +101,39 @@ export class Deck {
   set(k: "sound" | "speed" | "delay" | "volume", v: number) { this.params[k] = clamp01(v); this.apply(); this.kick(); }
   setLayer(l: Layer, on: boolean) { this.params.layers[l] = on; this.apply(); }
 
-  /** Creates the AudioContext (only ever called from a user gesture) and decodes the track plus a reversed copy. */
+  /** Creates the AudioContext once (only ever from a user gesture) and decodes the current track plus a reversed copy. */
   private load(): Promise<void> {
     if (this.loading) return this.loading;
+    const src = this.src;
     this.loading = (async () => {
-      const Ctor: AC = window.AudioContext || (window as unknown as { webkitAudioContext: AC }).webkitAudioContext;
-      const ctx = new Ctor();
-      this.ctx = ctx;
-      try {
-        const buf = await ctx.decodeAudioData(await (await fetch(SRC)).arrayBuffer());
-        if (this.dead) return;
-        const n = buf.length, rv = ctx.createBuffer(1, n, buf.sampleRate), o = rv.getChannelData(0);
-        const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
-        for (let i = 0; i < n; i++) o[i] = (L[n - 1 - i] + R[n - 1 - i]) * 0.5;
-        this.buf = buf; this.rev = rv;
-        this.g = this.build(ctx);
-        this.apply();
-      } catch (e) {
-        this.ctx = null; this.g = null;
-        ctx.close().catch(() => {});
-        throw e;
+      if (!this.ctx) {
+        const Ctor: AC = window.AudioContext || (window as unknown as { webkitAudioContext: AC }).webkitAudioContext;
+        this.ctx = new Ctor();
       }
+      const ctx = this.ctx;
+      const buf = await ctx.decodeAudioData(await (await fetch(src)).arrayBuffer());
+      if (this.dead || src !== this.src) return; // another track was picked while this one decoded
+      const n = buf.length, rv = ctx.createBuffer(1, n, buf.sampleRate), o = rv.getChannelData(0);
+      const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L;
+      for (let i = 0; i < n; i++) o[i] = (L[n - 1 - i] + R[n - 1 - i]) * 0.5;
+      this.buf = buf; this.rev = rv;
+      this.g ??= this.build(ctx);
+      this.apply();
     })();
     return this.loading;
+  }
+
+  /** Swaps to TRACKS[i] from the top, keeping play/pause; a paused deck decodes it on the next play. */
+  async setTrack(i: number) {
+    const src = TRACKS[i]?.src;
+    if (!src || src === this.src) return;
+    this.stopMain(false);
+    this.src = src; this.buf = null; this.rev = null; this.loading = null; this.pos = 0;
+    this.kick();
+    if (!this.on) return;
+    const ok = await this.ready();
+    if (this.dead || src !== this.src || !this.on) return;
+    if (ok) this.startMain(this.vel / BASE_DEG); else this.hooks.fail();
   }
 
   /** Awaits load and resumes a suspended context; false when audio is unavailable. */
