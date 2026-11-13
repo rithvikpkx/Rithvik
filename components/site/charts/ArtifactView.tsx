@@ -5,6 +5,7 @@ import CartesianChart from "./CartesianChart";
 import Donut from "./Donut";
 import Timeline from "./Timeline";
 import Graph from "./Graph";
+import Visual from "./Visual";
 import { StatRow, Table } from "./Figures";
 import { DataTable } from "./shared";
 
@@ -32,6 +33,8 @@ export default function ArtifactView({ spec }: { spec: ArtifactSpec }) {
         <Table columns={spec.data.columns} rows={spec.data.rows} />
       ) : spec.type === "stats" ? (
         <StatRow items={spec.data.items} />
+      ) : spec.type === "html" ? (
+        <Visual html={spec.data.html} height={spec.data.height} title={spec.title} />
       ) : (
         <Graph title={spec.title} nodes={spec.data.nodes} edges={spec.data.edges} />
       )}

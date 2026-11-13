@@ -3,7 +3,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import type { Content } from "@/lib/content/types";
 import Overlays from "./overlays/Overlays";
 
-/** Which layer is open over the page. One at a time keeps the page calm. */
 /** Where a composer draft came from. `agentSessionId` links the email to the RAG conversation (owner-only context). */
 export type ComposerMeta = { agentSessionId?: string };
 
@@ -16,18 +15,26 @@ export type Overlay =
   | { kind: "play"; id?: string }
   | null;
 
+/** A layer over the page: the case sheet, the floating windows and the agent. Several can be open at once. */
+export type LayerKind = NonNullable<Overlay>["kind"];
+export type Layers = { [K in LayerKind]?: Extract<NonNullable<Overlay>, { kind: K }> };
+
 export type Toast = { id: number; message: string; undo?: () => void; label?: string }; // label defaults to "Undo"
 
 type SiteCtx = {
   content: Content;
+  /** The layer opened most recently (tracking and design effects react to openings). */
   overlay: Overlay;
+  /** Every open layer, by kind. */
+  layers: Layers;
   openCase: (slug: string) => void;
   openComposer: (subject?: string, body?: string, meta?: ComposerMeta) => void; // body prefills the draft; it never sends
   openResume: () => void;
   /** Opens the agent. With `opts.originRect` the question flies from that rect into the prompt and is sent; plain `openAgent(q)` prefills it. */
   openAgent: (question?: string, opts?: { originRect?: DOMRect }) => void;
   openPlay: (id?: string) => void;
-  close: () => void;
+  /** Closes one layer; with no kind, the one opened most recently. */
+  close: (kind?: LayerKind) => void;
   toasts: Toast[];
   toast: (message: string, undo?: () => void, label?: string) => void;
   dismissToast: (id: number) => void;
@@ -37,7 +44,7 @@ type SiteCtx = {
 
 const Ctx = createContext<SiteCtx | null>(null);
 
-/** Shared state for the v7 site: content, the open overlay, toasts, performance mode. */
+/** Shared state for the v7 site: content, the open layers, toasts, performance mode. */
 export function useSite(): SiteCtx {
   const c = useContext(Ctx);
   if (!c) throw new Error("useSite outside SiteProvider");
@@ -59,7 +66,20 @@ function subscribeLite(cb: () => void) {
  *  stock layer stack; SitePage passes null and mounts <Overlays /> itself inside DesignProvider, so the agent
  *  and composer can read the active design (rendered here they sit outside that context). */
 export default function SiteProvider({ content, children, overlays = <Overlays /> }: { content: Content; children: React.ReactNode; overlays?: React.ReactNode }) {
-  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [overlay, setLast] = useState<Overlay>(null);
+  const [layers, setLayers] = useState<Layers>({});
+  /** Opens (or refreshes) one layer, leaving the others open. */
+  const setOverlay = useCallback((o: NonNullable<Overlay>) => { setLast(o); setLayers((l) => ({ ...l, [o.kind]: o })); }, []);
+  const close = useCallback((kind?: LayerKind) => {
+    setLayers((l) => {
+      const k = kind ?? overlay?.kind;
+      if (!k || !l[k]) return l;
+      const n = { ...l };
+      delete n[k];
+      return n;
+    });
+    setLast((o) => (!kind || o?.kind === kind ? null : o));
+  }, [overlay]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   // `html.lite` is the single source of truth (set pre-paint by the design engine), so
   // state can't drift from the class and SSR (false) hydrates without a mismatch.
@@ -94,17 +114,16 @@ export default function SiteProvider({ content, children, overlays = <Overlays /
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
-  }, [toast]);
+  }, [toast, setOverlay]);
 
   const value = useMemo<SiteCtx>(() => ({
-    content, overlay, toasts, toast, dismissToast, lite, setLite,
+    content, overlay, layers, toasts, toast, dismissToast, lite, setLite, close,
     openCase: (slug) => setOverlay({ kind: "case", slug }),
     openComposer: (subject = "", body?: string, meta?: ComposerMeta) => setOverlay({ kind: "composer", subject, body, meta }),
     openResume: () => setOverlay({ kind: "resume" }),
     openAgent: (question, opts) => setOverlay({ kind: "agent", question, originRect: opts?.originRect }),
     openPlay: (id) => setOverlay({ kind: "play", id }),
-    close: () => setOverlay(null),
-  }), [content, overlay, toasts, toast, dismissToast, lite, setLite]);
+  }), [content, overlay, layers, toasts, toast, dismissToast, lite, setLite, close, setOverlay]);
 
   return (
     <Ctx.Provider value={value}>

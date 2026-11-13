@@ -1,5 +1,5 @@
 // The contact cloud's physics: four buttons that orbit a common centre on slightly different loops, each pulled
-// to its moving home by a soft spring, pushed apart so none overlap, and nudged by the pointer. Pure maths (no DOM),
+// to its moving home by a soft spring, pushed apart so none overlap, and drawn toward the pointer. Pure maths (no DOM),
 // so node:test can check it. Units are CSS px inside a W x H box.
 
 export type Body = { x: number; y: number; vx: number; vy: number };
@@ -11,6 +11,7 @@ const LOOP = [1, 0.78, 0.92, 0.7]; // each button's share of the orbit radius
 const PHASE = [0.8, 0.8 + Math.PI / 2, 0.8 + Math.PI, 0.8 + (3 * Math.PI) / 2];
 const K = 15, C = 5; // spring and damper: soft, under-damped
 const REPEL = 70; // how hard two buttons that touch push apart
+const PULL = 11; // how hard the pointer draws a button in (the home spring is K)
 
 /** Where button `i` wants to be at time `t`: an ellipse around the box centre plus a slow bob. t = 0 is the neat still arrangement. */
 export function home(i: number, t: number, { w, h, size }: Box): [number, number] {
@@ -24,7 +25,7 @@ export function rest(box: Box): Body[] {
   return Array.from({ length: N }, (_, i) => { const [x, y] = home(i, 0, box); return { x, y, vx: 0, vy: 0 }; });
 }
 
-/** Advances every body by `dt` seconds at time `t`; `pointer` (box coords or null) pushes nearby buttons away. */
+/** Advances every body by `dt` seconds at time `t`; `pointer` (box coords or null) draws nearby buttons toward it. */
 export function step(bs: Body[], t: number, dt: number, box: Box, pointer: [number, number] | null): void {
   const min = box.size * 1.28, r = box.size / 2;
   for (let i = 0; i < bs.length; i++) {
@@ -36,8 +37,9 @@ export function step(bs: Body[], t: number, dt: number, box: Box, pointer: [numb
       if (d < min) { const f = ((min - d) * REPEL) / d; ax += dx * f; ay += dy * f; }
     }
     if (pointer) {
-      const dx = b.x - pointer[0], dy = b.y - pointer[1], d = Math.hypot(dx, dy) || 0.001, reach = box.size * 1.9;
-      if (d < reach) { const f = ((reach - d) * 9) / d; ax += dx * f; ay += dy * f; }
+      // a pull that fades with distance and vanishes at the cursor, so a button leans in without jittering under it
+      const dx = pointer[0] - b.x, dy = pointer[1] - b.y, d = Math.hypot(dx, dy), reach = box.size * 3.2;
+      if (d < reach) { const f = PULL * (1 - d / reach); ax += dx * f; ay += dy * f; }
     }
     b.vx += ax * dt; b.vy += ay * dt;
   }

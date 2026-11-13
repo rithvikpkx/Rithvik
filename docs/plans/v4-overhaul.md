@@ -1,6 +1,10 @@
 # rithvik.ai overhaul: handoff
 
-Status (2026-11-11, end of session): **Rounds 2–5 all merged on `dev`** (preview
+Status (2026-11-13): dev was merged to main (d486838), went live, then **rolled back at the owner's request**
+(revert b5953a4 on main) to fix more UI issues first. **Before the next "merge to main": `git checkout main && git revert b5953a4`**
+(revert the revert), then merge dev --no-ff; otherwise git sees dev as already merged and production gets nothing. The
+`rithvik-uptime` cron job was never scheduled (permission denied); schedule it after the real launch.
+Earlier status (2026-11-11, end of session): **Rounds 2–5 all merged on `dev`** (preview
 https://rithvik-git-dev-rithvikpkx-7614s-projects.vercel.app). Round notes: `docs/plans/review-round-2.md`; design-system
 guide: `docs/design-systems.md`. Looks: Classic + 21 designs (original nine + flux, sprawl, lucid, clay, lumen, ember,
 tide, stone, volt, grove, blueprint, corsa) + palettes, picked with the Meniscus picker. Features: shared layout +

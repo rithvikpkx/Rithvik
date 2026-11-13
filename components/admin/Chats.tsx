@@ -8,6 +8,8 @@ import { estimateCost } from "@/lib/agent/pricing";
 import type { Strip } from "@/lib/analytics/strips";
 import { fmtInt, fmtMs, fmtUsd } from "@/lib/status/format";
 import { duration } from "@/lib/track/views";
+import { deleteChat } from "@/app/admin/chats-actions";
+import Trash from "./Trash";
 import ChatReplica from "./ChatReplica";
 import { KeyNav, Logo } from "./live";
 import { ago, dayLabel, Empty, Panel, stamp, workDomain } from "./ui";
@@ -75,6 +77,7 @@ export function ChatsView({ rows, f, base, now, strips }: { rows: SessionSummary
                         <span className="meta">{s.turns} q · {duration(st?.ms ?? 0)}<small>{st ? `${fmtInt(st.tokens)} tok` : ""}</small></span>
                         <span className="when">{ago(s.created_at, now)}</span>
                       </a>
+                      <Trash id={s.id} action={deleteChat} what="conversation" />
                     </li>
                   );
                 })}

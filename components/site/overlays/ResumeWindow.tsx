@@ -7,8 +7,8 @@ import { resumeSyncing, syncResumeNow, uploadResume } from "@/app/admin/resume-a
 
 type Meta = { sha: string | null; syncedAt?: string; source?: "gdoc" | "upload"; pinned?: boolean };
 
-/** Loads /api/resume/meta (null while loading or on failure, so the summary shows). `fresh` skips the CDN copy. */
-function useResumeMeta() {
+/** Loads /api/resume/meta (null while loading; `{ sha: null }` on failure, so the summary shows). `fresh` skips the CDN copy. */
+export function useResumeMeta() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const load = useCallback((fresh = false) => {
     fetch(fresh ? `/api/resume/meta?t=${Date.now()}` : "/api/resume/meta")
@@ -27,7 +27,7 @@ function ResumeAdmin({ pinned, onChanged }: { pinned: boolean; onChanged: () => 
     setStatus("Working...");
     const r = await op();
     setStatus(r.status === "error" ? r.reason : r.status === "skipped" ? `Skipped: ${r.reason}`
-      : (r.status === "updated" ? "Updated" : "Already up to date") + (r.embedError ? ` (agent text not refreshed: ${r.embedError})` : ""));
+      : (r.status === "updated" ? "Updated" : "Already up to date"));
     onChanged();
   });
   return (
@@ -50,7 +50,8 @@ function ResumeAdmin({ pinned, onChanged }: { pinned: boolean; onChanged: () => 
 
 /** The resume window: the synced PDF (Google Doc is master) when one exists, else a paper-style summary built from site content. */
 export default function ResumeWindow() {
-  const { content: c, close } = useSite();
+  const { content: c, close: closeLayer } = useSite();
+  const close = () => closeLayer("resume");
   const { isEditing } = useEditMode();
   const [meta, reload] = useResumeMeta();
   const file = `${c.name.replace(/\s+/g, "-")}-Resume.pdf`;
@@ -58,17 +59,23 @@ export default function ResumeWindow() {
   const pdfUrl = meta?.sha ? `/resume.pdf?v=${meta.sha.slice(0, 12)}` : null;
   // iOS Safari renders framed PDFs badly (first page only), so phones get a link to a new tab instead.
   const phone = matchMedia("(max-width: 640px)").matches;
+  // the frame stays invisible until the PDF has painted, so the visitor never sees anything but the real resume;
+  // the timeout is a safety net for a viewer that never fires load
+  const [ready, setReady] = useState(false);
+  useEffect(() => { if (!pdfUrl || phone) return; const t = setTimeout(() => setReady(true), 8000); return () => clearTimeout(t); }, [pdfUrl, phone]);
+  const loading = !meta || (!!pdfUrl && !phone && !ready);
   const when = meta?.syncedAt && new Date(meta.syncedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   return (
     <Window
-      title={file} icon="file-text" label="Resume" className="resume-win" onClose={close}
+      title={file} icon="file-text" label="Resume" name="resume" className="resume-win" onClose={close}
       actions={pdfUrl && <a className="ui-btn" href={pdfUrl} download={file}>Download</a>}
     >
-      {pdfUrl && !phone && <iframe className="pdf-frame" src={`${pdfUrl}#view=FitH`} title="Resume" />}
+      {loading && <ResumeSkeleton />}
+      {pdfUrl && !phone && <iframe className="pdf-frame" src={`${pdfUrl}#view=FitH`} title="Resume" data-loading={loading || undefined} onLoad={() => setReady(true)} />}
       {pdfUrl && phone && (
         <div className="pdf-viewport pdf-open"><a className="ui-btn" href={pdfUrl} target="_blank" rel="noopener">Open PDF</a></div>
       )}
-      {!pdfUrl && <div className="pdf-viewport">
+      {meta && !pdfUrl && <div className="pdf-viewport">
         <div className="pdf-page">
           <h1>{c.name.toUpperCase()}</h1>
           <p className="pc">{c.links.email} · {c.links.github.replace(/^https?:\/\//, "")} · rithvik.ai</p>
@@ -96,7 +103,22 @@ export default function ResumeWindow() {
       </div>}
       {isEditing && <ResumeAdmin pinned={!!meta?.pinned} onChanged={() => reload(true)} />}
       {/* Work authorization lives only here and in the agent: findable for whoever looks, never a headline. */}
-      <p className="win-foot"><span>{pdfUrl ? `${meta?.source === "upload" ? "Uploaded" : "Synced from Google Docs"} · ${when}` : "Summary of the site content"}</span>{c.workAuth && <span className="win-fine">Work authorization: {c.workAuth}</span>}</p>
+      <p className="win-foot"><span>{loading ? "Loading the latest resume…" : pdfUrl ? `${meta?.source === "upload" ? "Uploaded" : "Synced from Google Docs"} · ${when}` : "Summary of the site content"}</span>{c.workAuth && <span className="win-fine">Work authorization: {c.workAuth}</span>}</p>
     </Window>
+  );
+}
+
+/** A grey wireframe of a resume page, shown until the real PDF (or, without one, the summary) is ready. */
+export function ResumeSkeleton() {
+  const block = (lines: number[]) => lines.map((w, i) => <i key={i} style={{ width: `${w}%` }} />);
+  return (
+    <div className="pdf-viewport" aria-busy="true" aria-label="Loading resume">
+      <div className="pdf-page pdf-skel" aria-hidden="true">
+        <b className="sk-h1" /><i className="sk-c" style={{ width: "62%" }} />
+        {[[92, 70], [96, 88, 74, 90], [94, 82, 66], [90, 58]].map((lines, k) => (
+          <div key={k}><b className="sk-h2" />{block(lines)}</div>
+        ))}
+      </div>
+    </div>
   );
 }

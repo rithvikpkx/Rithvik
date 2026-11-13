@@ -114,7 +114,7 @@ export default function AdminBar({ onEditContent }: { onEditContent?: () => void
           </button>
           <a className="ab-btn" href="/admin" title="Open the analytics dashboard"><Ic n="dash" /><span className="ab-l">Dashboard</span></a>
           {onEditContent && <button type="button" className="ab-btn" onClick={onEditContent} title="Lists, links, places, drafts"><Ic n="content" /><span className="ab-l">Edit content</span></button>}
-          <button type="button" className="ab-btn ab-exit" onClick={logout} title="Sign out"><Ic n="exit" /><span className="ab-l">Exit</span></button>
+          <button type="button" className="ab-btn ab-exit" onClick={logout} title="Leave edit mode (you stay signed in in this tab for up to 5 hours)"><Ic n="exit" /><span className="ab-l">Exit</span></button>
         </motion.div>
       )}
     </AnimatePresence>

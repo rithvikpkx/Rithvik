@@ -162,7 +162,7 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 .agent-status .s-acts + .s-hint { margin-left: 0; } /* the pair shares one right-aligned group */
 @media (max-width: 640px) { .agent-status .s-hint, .agent-status .s-acts { display: none; } }
 @media (max-width: 520px) { .agent-status .s-model { display: none; } }
-@media (max-width: 440px) { .agent-status .s-time { display: none; } }
+@media (max-width: 440px) { .agent-status .s-reset { display: none; } }
 @media (max-width: 370px) { .agent-status .s-tok { display: none; } }
 .agent-status .spin { color: var(--a-accent); }
 .agent-status .warn { color: var(--a-accent); }
@@ -184,6 +184,12 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 /* full screen: Cmd+Enter */
 .agent[data-full="true"] { top: 84px; bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: min(980px, calc(100vw - 32px)); }
 .agent[data-full="true"] .agent-panel { height: auto; flex: 1; min-height: 0; }
+/* detached: a floating window, dragged by its header, resized from the corner (place() in windows/stack sets its spot) */
+.agent[data-detached="true"] { right: auto; bottom: auto; margin: 0; width: 520px; height: 620px; resize: both; overflow: hidden; padding-bottom: 8px;
+  min-width: 340px; min-height: 320px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+.agent[data-detached="true"] .agent-panel { height: auto; flex: 1; min-height: 0; }
+.agent[data-detached="true"] .agent-head { cursor: grab; touch-action: none; }
+.agent[data-detached="true"] .agent-bar { margin: 6px 12px 0; }
 @media (max-width: 640px) { .agent-panel { height: min(72dvh, 620px); } .agent[data-full="true"] { top: 76px; } }
 
 /* Per-look spin. Everything above reads the tokens, so a look only sets the ones it cares about. */
@@ -194,15 +200,9 @@ html.lite .agent-hl { animation: none; } /* static ring, removed by the timer */
 [data-design="corsa"] .agent { --agent-prompt: "▸"; --agent-dot: "●"; --agent-dot-live: "○"; --agent-caret: #FF4A3D; }
 [data-design="blueprint"] .agent { --agent-prompt: "⊕"; --agent-dot: "△"; --agent-dot-live: "▲"; --agent-caret: #FFB09A; --agent-res: "└"; } /* crosshair prompt, revision deltas */
 [data-design="flux"] .agent { --agent-dot: "∴"; --agent-dot-live: "∵"; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 35%, transparent); }
-[data-design="sprawl"] .agent { --agent-prompt: "»"; --agent-dot: "▪"; --agent-dot-live: "▫"; --agent-caret: #FF2A6D; --agent-scan: .09; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 40%, transparent); }
 [data-design="lucid"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-glow: 0 0 10px color-mix(in srgb, var(--a-accent) 30%, transparent); }
 [data-design="clay"] .agent { --agent-prompt: ">"; --agent-dot: "●"; --agent-dot-live: "○"; --agent-caret: #B5542F; }
 [data-design="lumen"] .agent { --agent-prompt: "›"; --agent-dot: "●"; --agent-dot-live: "◌"; --agent-caret: #FFFFFF; --agent-glow: 0 0 10px rgba(110, 139, 255, .35); }
-[data-design="ember"] .agent { --agent-prompt: "›"; --agent-dot: "✶"; --agent-dot-live: "✷"; --agent-glow: 0 0 6px rgba(255, 110, 20, .45); }
-[data-design="tide"] .agent { --agent-prompt: "≈"; --agent-dot: "●"; --agent-dot-live: "○"; }
-[data-design="stone"] .agent { --agent-prompt: "▲"; --agent-dot: "■"; --agent-dot-live: "□"; }
-[data-design="volt"] .agent { --agent-prompt: "ϟ"; --agent-dot: "◆"; --agent-dot-live: "◇"; --agent-scan: .05; --agent-glow: 0 0 6px color-mix(in srgb, var(--a-accent) 55%, transparent); }
-[data-design="grove"] .agent { --agent-prompt: "❧"; --agent-dot: "✿"; --agent-dot-live: "❀"; }
 
 @media (prefers-reduced-motion: reduce) {
   .agent::before, .agent-panel, .ab-send, .agent-bar, .t-acts, .t-chip, .t-key { transition: none; }

@@ -69,8 +69,6 @@
 :root[data-design="flux"] .pt-node::after { font: 500 11.5px/1.2 var(--fl-m); border: 1px solid var(--fl-line2); }
 @media (hover: hover) and (pointer: fine) { :root[data-design="flux"] .pt-node:hover { background: var(--fl-c1); color: #05060C; border-color: transparent; } }
 /* the pulse runs as a stream of separate points: dotted strokes with round caps */
-:root[data-design="flux"] .pt-lit-t { stroke-dasharray: .1 6; stroke-width: calc(var(--pt-sheath-w) * 1.3); }
-:root[data-design="flux"] .pt-lit-w { stroke-dasharray: .1 6; stroke-width: calc(var(--pt-sheath-w) * 2.6); opacity: .22; }
 :root[data-design="flux"] .pt-core { stroke-dasharray: .1 9; stroke-width: 1.8px; opacity: .55; }
 /* how to play with it: one quiet line at the foot of the hero */
 :root[data-design="flux"] .fl-hint { position: absolute; z-index: 1; left: var(--ly-gutter); bottom: 34px; margin: 0; font: 500 11px/1 var(--fl-m); letter-spacing: .12em; text-transform: uppercase; color: var(--fl-mut); pointer-events: none; }

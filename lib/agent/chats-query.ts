@@ -56,13 +56,13 @@ export async function getSession(id: string): Promise<{ session: SessionRow; mes
 
 /** The transcript behind a share token, or null when the token is malformed, unknown or expired.
  *  Only user and assistant rows, only the columns the public view renders. */
-export async function getSharedTranscript(token: string): Promise<{ role: "user" | "assistant"; content: string }[] | null> {
+export async function getSharedTranscript(token: string): Promise<{ role: "user" | "assistant"; content: string; model: string | null }[] | null> {
   if (!isShareToken(token)) return null;
   const db = adminClient();
   const { data: s } = await db.from("agent_sessions").select("id, share_expires_at").eq("share_token", token).maybeSingle();
   if (!s || !isShareLive(s.share_expires_at as string | null)) return null;
   const { data, error } = await db
-    .from("agent_messages").select("role, content").eq("session_id", s.id).in("role", ["user", "assistant"]).order("created_at").order("id");
+    .from("agent_messages").select("role, content, model").eq("session_id", s.id).in("role", ["user", "assistant"]).order("created_at").order("id");
   if (error) throw error;
-  return (data ?? []) as { role: "user" | "assistant"; content: string }[];
+  return (data ?? []) as { role: "user" | "assistant"; content: string; model: string | null }[];
 }

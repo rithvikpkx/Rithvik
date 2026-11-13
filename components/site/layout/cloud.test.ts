@@ -14,10 +14,11 @@ test("the buttons never overlap, at desktop or phone size, over a minute of orbi
   }
 });
 
-test("a pointer pushes a button away and the spring brings it home; bodies stay in the box", () => {
+test("a pointer draws a button toward it and the spring brings it home; bodies stay in the box", () => {
   const box = { w: 600, h: 320, size: 80 }, bs = rest(box), b0 = { ...bs[0] };
-  for (let f = 0; f < 60; f++) step(bs, 0, 1 / 60, box, [b0.x + 10, b0.y]);
-  assert.ok(Math.hypot(bs[0].x - b0.x, bs[0].y - b0.y) > 20, "was pushed");
+  const p: [number, number] = [b0.x + 100, b0.y];
+  for (let f = 0; f < 60; f++) step(bs, 0, 1 / 60, box, p);
+  assert.ok(bs[0].x - b0.x > 20, `was pulled ${(bs[0].x - b0.x).toFixed(1)}`);
   for (let f = 0; f < 600; f++) step(bs, 0, 1 / 60, box, null);
   assert.ok(Math.hypot(bs[0].x - b0.x, bs[0].y - b0.y) < 3, "came home");
   for (const b of bs) assert.ok(b.x >= 40 && b.x <= 560 && b.y >= 40 && b.y <= 280);

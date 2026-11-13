@@ -10,6 +10,8 @@ import type { Activity } from "@/lib/analytics/strips";
 import type { ChatLink, EventRow, VisitorRow, VisitRow } from "@/lib/track/views";
 import { describeEvent, duration, offset, place, whoLabel } from "@/lib/track/views";
 import ChatReplica from "./ChatReplica";
+import Trash from "./Trash";
+import { deleteVisitor } from "@/app/admin/chats-actions";
 import { KeyNav, Logo } from "./live";
 import { ago, Empty, Panel, stamp, workDomain } from "./ui";
 import { DayCells, Ico, Sigil } from "./viz";
@@ -77,7 +79,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
             {rows.map((v, i) => {
               const a = activity[v.id];
               const who = whoLabel(v);
-              const sub = [v.email && v.email !== who ? v.email : null, (v.company_given || v.company) !== who ? v.company_given || v.company : null, v.ip_type].filter(Boolean).join(" · ");
+              const sub = [v.email && v.email !== who ? v.email : null, (v.company_given || v.company) !== who ? v.company_given || v.company : null, v.visitor_kind, v.ip_type].filter(Boolean).join(" · ");
               return (
                 <li key={v.id}>
                   <a className="d-row d-visrow" data-row href={`${base}/visitors/${v.id}`} style={{ ["--i" as string]: i } as CSSProperties}>
@@ -94,6 +96,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
                     <span className="meta">{v.visits} visit{v.visits === 1 ? "" : "s"}<small>{host(v.first_referrer) ?? "direct"}</small></span>
                     <span className="when">{ago(v.last_seen, now)}</span>
                   </a>
+                  <Trash id={v.id} action={deleteVisitor} what="visitor, their visits, replays and chats" />
                 </li>
               );
             })}
@@ -171,7 +174,7 @@ export function VisitorInspector({ v, visits, chats, messages, base, now, replay
 }) {
   const who = whoLabel(v);
   const groups: [string, [string, string | null | undefined][]][] = [
-    ["who", [["name", v.name], ["email", v.email], ["company (told)", v.company_given], ["identified", v.identified_at ? stamp(v.identified_at) : null]]],
+    ["who", [["name", v.name], ["email", v.email], ["company (told)", v.company_given], ["role", v.role], ["they are", v.visitor_kind], ["job posting", v.job_posting], ["identified", v.identified_at ? stamp(v.identified_at) : null]]],
     ["network", [["company (network)", v.company], ["owner", v.org], ["type", v.ip_type], ["asn", v.asn]]],
     ["device", [["device", v.device], ["browser", v.browser], ["os", v.os], ["screen", v.screen], ["languages", v.languages]]],
     ["origin", [["place", place(v) === "—" ? null : place(v)], ["country", v.country ? countryName(v.country) : null], ["timezone", v.timezone], ["first from", v.first_referrer],

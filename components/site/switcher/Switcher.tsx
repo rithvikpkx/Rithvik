@@ -35,6 +35,8 @@ const subscribeW = (cb: () => void) => { addEventListener("resize", cb); return 
  *  tapping swallows that look into the lens and the page switches. At most VISIBLE looks show at once; past that the
  *  strip scrolls (wheel, drag, edge hover, arrow keys). Performance mode (`html.lite`) and the /status lamp are the
  *  capsule's end caps. Picking never waits on the page: the pick is immediate and the look commits after SETTLE_MS. */
+const NUDGE_KEY = "rithvik-sw-seen";
+
 export default function Switcher() {
   const { entries, current, setDesign } = useDesign();
   const { lite, setLite, toast } = useSite();
@@ -52,6 +54,18 @@ export default function Switcher() {
   const [hover, setHover] = useState(-1); // the look under the pointer
   const [focusIdx, setFocusIdx] = useState(-1); // the keyboard-focused look
   const [kbd, setKbd] = useState(false); // focus came from the keyboard: the lens shows a ring
+  // The nudge: a visitor who hasn't opened the picker after a few seconds gets a soft ripple and a one-line callout,
+  // once per tab, and never again after they have opened it.
+  const [nudge, setNudge] = useState(false);
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem(NUDGE_KEY) === "1" || sessionStorage.getItem(NUDGE_KEY) === "1"; } catch { /* storage blocked: still nudge */ }
+    if (seen) return;
+    const on = setTimeout(() => { setNudge(true); try { sessionStorage.setItem(NUDGE_KEY, "1"); } catch { /* once per load then */ } }, 9000);
+    const off = setTimeout(() => setNudge(false), 19000);
+    return () => { clearTimeout(on); clearTimeout(off); };
+  }, []);
+  useEffect(() => { if (open) try { localStorage.setItem(NUDGE_KEY, "1"); } catch { /* not remembered */ } }, [open]);
   const [note, setNote] = useState<Note | null>(null); // the peek names an end cap while it is hovered or focused
 
   const unitRef = useRef<HTMLDivElement>(null);
@@ -341,6 +355,7 @@ export default function Switcher() {
       className="theme-dial-aside sw" // theme-dial-aside: the view-transition layer + hooks other modules key on
       data-open={open || undefined}
       data-kbd={kbd || undefined}
+      data-nudge={(nudge && !open) || undefined}
       role="group"
       aria-label="Look and performance"
       style={style}
@@ -402,6 +417,11 @@ export default function Switcher() {
           </div>
         </div>
       </div>
+      {nudge && !open && (
+        <span className="sw-nudge" role="status">
+          <b>{looks.length} looks</b> to explore<span className="sw-nudge-k"> · hover here or press <kbd>T</kbd></span><span className="sw-nudge-t"> · tap the lens</span>
+        </span>
+      )}
       <div className="sw-peek" data-sys={note ? "" : undefined} aria-hidden="true">
         <span className="sw-mini" style={{ "--b": shown.bg, "--f": shown.fg, "--a": shown.ac } as CSSProperties} />
         <b style={{ fontFamily: note ? undefined : shown.font }}>{pk.name}</b>

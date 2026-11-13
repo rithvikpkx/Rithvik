@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { artifactTable, clean, parseArtifact, type ArtifactSpec } from "./artifacts.ts";
+import { artifactTable, clean, parseArtifact, type ArtifactSpec, sanitizeVisual } from "./artifacts.ts";
 import { screenCalls, toolDefs, validateToolCall, type Allowed } from "./tools.ts";
 import { artifactMarkdown, buildTranscriptMarkdown } from "../transcript.ts";
 
@@ -119,4 +119,13 @@ test("Markdown export carries the title and a table of the data; pipes are escap
   assert.deepEqual(artifactMarkdown(s), ["**A \\| B** _(table)_", "", "| Project | Area |", "| --- | --- |", "| BoilerFrame | CV \\| video |", ""]);
   const md = buildTranscriptMarkdown([{ kind: "user", text: "q" }, { kind: "artifact", spec: ok(stats) }, { kind: "answer", text: "done" }], 0);
   assert.match(md, /\*\*Hi\*\* _\(stats\)_\n\n\| Stat \| Value \| Note \|/);
+});
+
+test("html visuals keep styles and inline SVG but lose scripts, handlers, links and every external load", () => {
+  const evil = `<style>.a{background:url(https://x.io/t.png);fill:url(#g)} @import "https://e.com/x.css";</style><div class="a" onclick="alert(1)">ok</div><script>alert(1)</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">l</a><svg><use href="https://e/x.svg#a"/><rect fill="url(#g)"/></svg><iframe src="//e"></iframe><meta http-equiv=refresh content="0;url=//e">`;
+  const out = sanitizeVisual(evil);
+  for (const bad of ["script", "onclick", "onerror", "https:", "javascript", "@import", "<img", "<iframe", "<use", "<meta", "href"]) assert.ok(!out.toLowerCase().includes(bad), `${bad} survived: ${out}`);
+  assert.ok(out.includes("fill:url(#g)") && out.includes("<rect") && out.includes(">ok</div>"));
+  const p = parseArtifact({ type: "html", title: "Card", data: { html: "<div style='color:var(--accent)'>Hello there</div>", height: 9999 } });
+  assert.ok(p.ok && p.spec.type === "html" && p.spec.data.height === 640);
 });

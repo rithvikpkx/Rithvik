@@ -1,5 +1,7 @@
 "use client";
 import { speak, stopSpeaking } from "./speech";
+import { cursorOn, perform } from "./cursor";
+import { RESUME_KEY, liveActive, liveQuiet } from "./live";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
@@ -34,6 +36,8 @@ export type Host = {
   toast: (message: string) => void;
   /** Slug of the case sheet the visitor came from, for page context. */
   caseSlug?: string | null;
+  /** Opens/closes/moves/resizes a floating window (validated args); returns what happened, for the tool row. */
+  arrange?: (a: Record<string, string>) => string;
 };
 
 type Cooldown = { until: number; status: 429 | 503 };
@@ -55,9 +59,30 @@ const cited = (text: string, sources: Source[]) =>
   citedNumbers(text).map((n) => sources.find((s) => s.n === n)).filter((s): s is Source => !!s);
 
 /** The agent's state machine: transcript items, real turns, the /api/chat stream, action buttons. */
+const LOG_KEY = "rithvik-agent-log";
+/** A full load on purpose: recruiter mode is its own root layout (the conversation is carried in sessionStorage). */
+// eslint-disable-next-line @next/next/no-location-assign-relative-destination -- crosses root layouts
+const toRecruiter = () => location.assign("/recruiter");
+
+/** The tab's saved conversation, minus action rows (their buttons can't survive a reload) and with streaming stopped. */
+function restoreLog(): { items: Item[]; turns: Turn[] } | null {
+  try {
+    const j = JSON.parse(sessionStorage.getItem(LOG_KEY) || "null") as { items?: Item[]; turns?: Turn[] } | null;
+    if (!j?.items?.length) return null;
+    const items = j.items.filter((i) => i.kind !== "actions").map((i) => (i.kind === "answer" ? { ...i, streaming: false } : i));
+    return { items, turns: j.turns ?? [] };
+  } catch { return null; }
+}
+/** Saves the conversation for this tab (last 80 rows; storage can be full or blocked, which only loses the carry-over). */
+function saveLog(items: Item[], turns: Turn[]) {
+  try { sessionStorage.setItem(LOG_KEY, JSON.stringify({ items: items.slice(-80), turns: turns.slice(-20) })); } catch { /* not carried over */ }
+}
+
 export function useAgent(host: Host) {
-  const [items, setItems] = useState<Item[]>([{ id: 0, kind: "banner" }]);
-  const [turns, setTurns] = useState<Turn[]>([]);
+  // The conversation survives page loads in this tab (recruiter mode is a full load): restored from sessionStorage.
+  const [saved] = useState(restoreLog);
+  const [items, setItems] = useState<Item[]>(() => saved?.items ?? [{ id: 0, kind: "banner" }]);
+  const [turns, setTurns] = useState<Turn[]>(() => saved?.turns ?? []);
   const [busySince, setBusySince] = useState<number | null>(null);
   const [cooldown, setCooldown] = useState<Cooldown | null>(null);
   const [usage, setUsage] = useState<Usage>({ tokens: 0 }); // rate-limit headers, trailer tokens and timings
@@ -65,7 +90,12 @@ export function useAgent(host: Host) {
   // Lazy init (not an effect): the dock only mounts client-side, so localStorage is there.
   const [history, setHistory] = useState<string[]>(() => loadHistory(typeof localStorage === "undefined" ? undefined : localStorage));
 
-  const seq = useRef(0);
+  const seq = useRef(saved ? Math.max(0, ...saved.items.map((i) => i.id)) : 0);
+  // Keep the saved copy current (a beat after changes settle, so a streaming answer isn't written per token).
+  useEffect(() => {
+    const t = setTimeout(() => saveLog(items, turns), 400);
+    return () => clearTimeout(t);
+  }, [items, turns]);
   const run = useRef<Run | null>(null);
   const hIdx = useRef(-1);
   const offers = useRef<Offer[]>([]); // this turn's proposals, turned into one row of buttons when the turn ends
@@ -173,11 +203,28 @@ export function useAgent(host: Host) {
   }, [add, patch]);
 
   /** Handles a model tool call the server already validated; the client re-checks names against content.
-   *  Side effects only become buttons here, so nothing happens until the visitor clicks. */
-  const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>) => {
+   *  Typed chat: side effects only become buttons, so nothing happens until the visitor clicks. Voice mode (`now`):
+   *  the visitor asked out loud, so they happen at once with a tool row, except a meeting request, which still waits. */
+  const runTool = useCallback((e: Extract<AgentEvent, { t: "tool" }>, now = false) => {
     const a = e.args ?? {};
     const tool = { name: pascal(e.name), args: Object.values(a).map((v) => clip(String(v), 40)).join(", ") };
+    // cursor mode is the visitor's go-ahead too: the RAG cursor acts the action out on the page, then it runs
+    const cursor = cursorOn();
+    const act: typeof offer = (key, label, go, extra) => {
+      if (!(now || cursor) || extra?.once) return offer(key, label, go, extra);
+      if (cursor) perform(e.name, a, go); else go();
+      if (!key.startsWith("design:")) add({ kind: "tool", name: tool.name, args: tool.args, result: label.replace(/^[↗↓]\s*/, "") }); // a design switch logs its own row, with undo
+    };
     switch (e.name) {
+      case "read_code":
+        add({ kind: "tool", name: "ReadCode", args: [a.repo, a.path].filter(Boolean).join(", ") || "repos", result: e.result ?? "read" });
+        return;
+      case "remember_visitor": // saved on the server; the row keeps it visible that the agent noted it
+        add({ kind: "tool", name: "Noted", args: Object.keys(a).join(", "), result: e.result ?? "Noted for Rithvik" });
+        return;
+      case "arrange_window": // window layout only: no navigation or data, so it applies at once in typed chat too
+        add({ kind: "tool", name: tool.name, args: tool.args, result: host.arrange?.(a) ?? "Not available here" });
+        return;
       case "local_time":
         add({ kind: "tool", name: tool.name, args: tool.args, result: e.result ?? "time unavailable" });
         return;
@@ -191,7 +238,7 @@ export function useAgent(host: Host) {
         const entry = d?.entries.find((x) => x.id === a.id);
         if (!d || !entry) return;
         const name = entry.kind === "design" ? entry.meta.name : entry.name;
-        offer(`design:${a.id}`, `Switch to ${name}`, () => {
+        act(`design:${a.id}`, `Switch to ${name}`, () => {
           const prev = d.current;
           d.setDesign(a.id);
           add({ kind: "tool", name: "SwitchDesign", args: a.id, result: `Applied ${name}` }, () => d.setDesign(prev));
@@ -200,30 +247,43 @@ export function useAgent(host: Host) {
       }
       case "open_project": {
         const p = host.content.projects.find((x) => x.slug === a.slug);
-        if (p) offer(`case:${p.slug}`, `↗ Open ${p.title}`, () => host.openCase(p.slug));
+        if (p) act(`case:${p.slug}`, `↗ Open ${p.title}`, () => host.openCase(p.slug));
         return;
       }
       case "show_section": {
         if (!/^[a-z0-9-]+$/.test(a.id ?? "")) return;
         const r = resolveTarget(a.id);
-        offer(`scroll:${a.id}`, `↓ Go to ${sectionName(a.id)}`, () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)));
+        act(`scroll:${a.id}`, `↓ Go to ${sectionName(a.id)}`, () => (r.kind === "case" ? scroll([a.id, "work"]) : scroll(r.ids)));
         return;
       }
       case "request_meeting": {
         if (!a.name || !a.email || !a.times) return;
         const detail = [`To: Rithvik`, `Name: ${a.name}`, `Email: ${a.email}`, a.company && `Company: ${a.company}`, a.role && `Role: ${a.role}`,
           `Times: ${a.times.split("\n").join(" · ")}`, a.notes && `Notes: ${a.notes}`].filter((x): x is string => !!x);
-        offer("meeting", "Send meeting request", () => void sendMeeting(a), { detail, once: true });
+        act("meeting", "Send meeting request", () => void sendMeeting(a), { detail, once: true });
         return;
       }
-      case "open_resume": offer("resume", "Open resume", host.openResume); return;
+      case "open_resume": act("resume", "Open resume", host.openResume); return;
+      case "open_recruiter_mode":
+        if (location.pathname !== "/recruiter") act("recruiter", "Open recruiter mode", () => {
+          // mid-conversation by voice: let it finish the sentence, and have the next page resume the session
+          if (!liveActive()) { toRecruiter(); return; }
+          try { sessionStorage.setItem(RESUME_KEY, "1"); } catch { /* voice won't resume */ }
+          void liveQuiet().then(toRecruiter);
+        });
+        return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
-        if (g) offer(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));
+        if (g) act(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));
         return;
       }
       case "draft_email":
-        offer("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
+        if (cursor) { // the cursor opens an empty draft and types it in front of the visitor
+          perform(e.name, a, () => {}, { open: () => compose("", ""), subject: a.subject ?? "", body: a.body ?? "" });
+          add({ kind: "tool", name: tool.name, args: tool.args, result: "Typing it into the email window" });
+          return;
+        }
+        act("compose", "Draft email", () => compose(a.subject ?? "", a.body ?? ""));
         return;
     }
   }, [add, offer, compose, host, scroll, sectionName, sendMeeting]);
@@ -265,6 +325,17 @@ export function useAgent(host: Host) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000); // after the click has been handled
   }, [exportMd]);
+
+  /** Reads this visitor's windows (typed chat and voice mode, or "admin: no limits") into the status bar, quietly. */
+  const refreshUsage = useCallback(async () => {
+    try {
+      const r = await fetch("/api/chat/usage", { cache: "no-store" });
+      if (!r.ok) return;
+      const j = (await r.json()) as { admin?: boolean; limit?: number; remaining?: number; reset?: number | null; voice?: { limit: number; remaining: number; reset: number | null } | null };
+      setUsage((p) => (j.admin ? { ...p, admin: true }
+        : { ...p, limit: j.limit, remaining: j.remaining, reset: j.reset ?? undefined, voice: j.voice ? { limit: j.voice.limit, remaining: j.voice.remaining, reset: j.voice.reset ?? undefined } : p.voice }));
+    } catch { /* the status bar keeps what it had */ }
+  }, []);
 
   /** The /usage row: this visitor's hourly window (a free read, it never counts as a turn), tokens and timings. */
   const showUsage = useCallback(async () => {
@@ -337,12 +408,14 @@ export function useAgent(host: Host) {
           context,
           sessionId: readSession() ?? undefined,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          cursor: cursorOn(), // actions will play out at once, so the model shouldn't talk about buttons
         }),
       });
       if (gone()) return;
       const num = (h: string) => { const v = res.headers.get(h); return v !== null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined; };
       const limit = num("X-RateLimit-Limit"), remaining = num("X-RateLimit-Remaining");
       if (limit !== undefined && remaining !== undefined) setUsage((p) => ({ ...p, limit, remaining, reset: num("X-RateLimit-Reset") }));
+      if (res.headers.get("X-Agent-Admin")) setUsage((p) => ({ ...p, admin: true }));
       const cache = res.headers.get("x-vercel-cache") ?? res.headers.get("x-cache") ?? undefined; // only when the host sends one
       const sid = res.headers.get("X-Agent-Session");
       if (sid && sid !== readSession()) { writeSession(sid); setSessionId(sid); }
@@ -490,5 +563,60 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
+  // ---- voice mode (GPT-Live): its transcripts land in the log as ordinary question and answer rows ----
+  const liveRow = useRef<{ who: "user" | "agent"; id: number; text: string } | null>(null);
+  const liveQ = useRef("");
+  const liveTools = useRef<{ name: string; result: string }[]>([]); // actions taken this voice turn, for the log
+  /** Closes the open live row: an answer stops streaming and joins the history as a turn. */
+  const liveTurnEnd = useCallback(() => {
+    const cur = liveRow.current;
+    liveRow.current = null;
+    if (!cur) return;
+    if (cur.who === "user") { liveQ.current = cur.text; return; }
+    patch(cur.id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i));
+    const q = liveQ.current, a = cur.text, tools = liveTools.current;
+    liveQ.current = ""; liveTools.current = [];
+    setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]);
+    // into the server log too, so the dashboard and share links include voice turns
+    void fetch("/api/voice/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: readSession(), user: q, agent: a, tools }) })
+      .then((r) => r.json()).then((j: { sessionId?: string }) => { if (j.sessionId && j.sessionId !== readSession()) { writeSession(j.sessionId); setSessionId(j.sessionId); } })
+      .catch(() => { /* the log is best-effort */ });
+  }, [patch]);
+  /** Appends live transcript text, opening a new row whenever the speaker changes. */
+  const liveText = useCallback((who: "user" | "agent", delta: string) => {
+    const cur = liveRow.current;
+    if (cur && cur.who === who) {
+      cur.text += delta;
+      const t = cur.text;
+      patch(cur.id, (i) => (i.kind === "user" || i.kind === "answer" ? { ...i, text: t } : i));
+      return;
+    }
+    liveTurnEnd();
+    const text = delta.replace(/^\s+/, "");
+    const id = add(who === "user" ? { kind: "user", text } : { kind: "answer", text, streaming: true });
+    liveRow.current = { who, id, text };
+  }, [add, patch, liveTurnEnd]);
+
+  /** Voice mode: one tool call from the live model. The server validates it (the same gate as typed chat); then it
+   *  runs here at once and the result text goes back to the model. */
+  const liveTool = useCallback(async (name: string, args: string): Promise<string> => {
+    let j: { call?: { id: string; name: string; args: Record<string, string>; result?: string; artifact?: unknown } | null; reply?: string } = {};
+    try {
+      const res = await fetch("/api/voice/tool", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, arguments: args, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      });
+      j = await res.json();
+    } catch { return "Rejected: the action could not run."; }
+    const c = j.call;
+    liveTools.current.push({ name, result: j.reply ?? "" });
+    if (c) {
+      if (c.artifact) { const p = parseArtifact(c.artifact); if (p.ok) add({ kind: "artifact", spec: p.spec }); }
+      else runTool({ t: "tool", id: c.id, name: c.name, args: c.args, result: c.result }, true);
+      flushOffers();
+    }
+    return j.reply ?? "Rejected.";
+  }, [add, runTool, flushOffers]);
+
+  return { refreshUsage, liveText, liveTurnEnd, liveTool, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }

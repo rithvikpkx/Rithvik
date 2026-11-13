@@ -4,6 +4,8 @@
 .win { position: fixed; z-index: 92; left: 0; top: 0; display: flex; flex-direction: column; background: var(--ui-bg, #0f0f12); color: var(--ui-fg, #f4f4f5); border: var(--bw, 1px) solid var(--ui-line, rgba(255,255,255,.14)); border-radius: var(--ui-r, 14px); box-shadow: var(--ui-shadow, 0 1px 2px rgba(0,0,0,.3),0 18px 48px rgba(0,0,0,.35)); overflow: hidden; font-family: var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); transition: opacity 200ms ease, scale 260ms var(--ease-out, cubic-bezier(.23,1,.32,1)); -webkit-backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); backdrop-filter: var(--ui-blur, blur(16px) saturate(150%)); }
 @starting-style { .win:not([hidden]) { opacity: 0; scale: .97; } }
 .win.front { z-index: 93; }
+/* resizable from the bottom-right corner (desktop); a window keeps a usable minimum and never outgrows the screen */
+@media (min-width: 641px) { .win { resize: both; min-width: 300px; min-height: 220px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); } }
 .win-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--ui-line, rgba(255,255,255,.14)); cursor: grab; user-select: none; touch-action: none; }
 .win-bar:active { cursor: grabbing; }
 .win-title { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); color: var(--ui-muted, #a1a1aa); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -19,6 +21,17 @@
 .pdf-page ul { list-style: disc; padding-left: 1.4em; margin: .2em 0 .6em; }
 .pdf-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #525659; }
 .pdf-open { display: grid; place-items: center; }
+/* loading: the frame keeps loading out of sight while a wireframe page shimmers in its place */
+.pdf-frame[data-loading] { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.pdf-skel { display: flex; flex-direction: column; gap: .9em; }
+.pdf-skel :is(b, i) { display: block; height: .8em; border-radius: 3px; background: linear-gradient(90deg, #eceef1 30%, #f7f8fa 50%, #eceef1 70%) 0 0 / 300% 100%; animation: sk-shine 1.4s linear infinite; }
+.pdf-skel > div { display: flex; flex-direction: column; gap: .55em; }
+.pdf-skel .sk-h1 { height: 2.2em; width: 48%; align-self: center; }
+.pdf-skel .sk-c { align-self: center; }
+.pdf-skel .sk-h2 { height: 1.1em; width: 26%; margin-top: .8em; }
+@keyframes sk-shine { to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .pdf-skel :is(b, i) { animation: none; } }
+html.lite .pdf-skel :is(b, i) { animation: none; }
 .resume-admin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
 .win-foot { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 8px 14px; font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); }
 .win-fine { opacity: .6; font-size: 11px; }

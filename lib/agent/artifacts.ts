@@ -5,7 +5,7 @@
  *  Pure (no "@/" imports) so node:test can load it. */
 import { yearValue } from "../charts/scale.ts";
 
-export const ARTIFACT_TYPES = ["bar", "line", "area", "donut", "timeline", "table", "stats", "graph"] as const;
+export const ARTIFACT_TYPES = ["bar", "line", "area", "donut", "timeline", "table", "stats", "graph", "html"] as const;
 export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
 
 /** Limits (also stated in the tool description). */
@@ -17,6 +17,23 @@ export const MAX_TEXT = 80;
 const MAX_SLICES = 8; // the categorical palette has eight validated hues
 const MAX_STATS = 8;
 const MAX_EDGES = 48;
+export const MAX_HTML = 20_000;
+// tags a visual never needs: anything that runs code, loads a resource, embeds a page or takes input
+const BAD = "script|style\\s+src|iframe|frameset|frame|object|embed|applet|link|meta|base|form|input|button|textarea|select|option|audio|video|source|track|picture|portal|foreignobject|noscript|template|math|img|image|use";
+
+/** Strips an HTML+SVG visual down to inert markup and styles. Defense in depth only: the real wall is where it renders,
+ *  a sandboxed iframe (no scripts, opaque origin) whose own CSP blocks every network load. */
+export function sanitizeVisual(src: string): string {
+  let s = String(src).slice(0, MAX_HTML).replace(/<!--[\s\S]*?-->/g, "");
+  s = s.replace(new RegExp(`<(${BAD})\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>`, "gi"), ""); // a banned element with its content
+  s = s.replace(new RegExp(`<\\/?(${BAD})\\b[^>]*>`, "gi"), "");                  // and any stray tag of one
+  s = s.replace(/\s(on[a-z]+|href|xlink:href|src|srcset|srcdoc|action|formaction|poster|background|ping|http-equiv)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  s = s.replace(/url\(\s*(?!['"]?#)[^)]*\)/gi, "none") // CSS url() except a local SVG reference like url(#grad)
+    .replace(/@import[^;]*;?/gi, "")
+    .replace(/(java|vb)script\s*:/gi, "")
+    .replace(/expression\s*\(/gi, "(");
+  return s.trim();
+}
 
 /** One member per form (distributive), so `spec.type` narrows cleanly. */
 type Cartesian<T extends "bar" | "line" | "area"> = T extends unknown ? { type: T; title: string; unit?: string; data: { labels: string[]; series: { name: string; values: number[] }[] } } : never;
@@ -27,7 +44,8 @@ export type ArtifactSpec =
   | { type: "timeline"; title: string; data: { items: { label: string; start: string; end?: string; note?: string }[] } }
   | { type: "table"; title: string; data: { columns: string[]; rows: string[][] } }
   | { type: "stats"; title: string; data: { items: { label: string; value: string; note?: string }[] } }
-  | { type: "graph"; title: string; data: { nodes: { id: string; label: string; group?: string }[]; edges: { from: string; to: string }[] } };
+  | { type: "graph"; title: string; data: { nodes: { id: string; label: string; group?: string }[]; edges: { from: string; to: string }[] } }
+  | { type: "html"; title: string; data: { html: string; height: number } };
 
 export type ParsedArtifact = { ok: true; spec: ArtifactSpec } | { ok: false; error: string };
 
@@ -63,6 +81,12 @@ export function parseArtifact(input: unknown, now = new Date()): ParsedArtifact 
   const unit = clean(raw.unit, 12) || undefined;
 
   switch (type) {
+    case "html": {
+      const html = sanitizeVisual(typeof data.html === "string" ? data.html : "");
+      if (html.length < 20) return fail("data.html needs the visual's markup: HTML with an inline <style> and/or inline SVG, no scripts.");
+      const h = num(data.height);
+      return { ok: true, spec: { type, title, data: { html, height: Math.round(Math.min(640, Math.max(120, h ?? 320))) } } };
+    }
     case "bar":
     case "line":
     case "area": {
@@ -159,6 +183,8 @@ export function artifactTable(spec: ArtifactSpec): { columns: string[]; rows: st
       return spec.data;
     case "stats":
       return { columns: ["Stat", "Value", "Note"], rows: spec.data.items.map((i) => [i.label, i.value, i.note ?? ""]) };
+    case "html":
+      return { columns: ["Visual"], rows: [[spec.title]] };
     case "graph":
       return { columns: ["From", "To"], rows: spec.data.edges.map((e) => [spec.data.nodes.find((n) => n.id === e.from)?.label ?? e.from, spec.data.nodes.find((n) => n.id === e.to)?.label ?? e.to]) };
   }

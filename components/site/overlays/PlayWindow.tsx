@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { raise } from "../windows/stack";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { PLAY } from "@/lib/play/games";
 import { useSite } from "../SiteProvider";
@@ -21,7 +22,8 @@ const indexOf = (id?: string) => Math.max(0, PLAY.findIndex((p) => p.id === id))
 
 /** The Play window: a draggable, non-modal window with one tab per toy. Only the open tab is mounted (the Artboard stays once visited so a drawing survives a tab switch). */
 export default function PlayWindow({ initialId }: { initialId?: string }) {
-  const { close } = useSite();
+  const { close: closeLayer } = useSite();
+  const close = () => closeLayer("play");
   const [idx, setIdx] = useState(() => indexOf(initialId));
   const [prevInitial, setPrevInitial] = useState(initialId);
   const [artSeen, setArtSeen] = useState(PLAY[indexOf(initialId)].id === "artboard");
@@ -57,7 +59,7 @@ export default function PlayWindow({ initialId }: { initialId?: string }) {
 
   const View = (GAME_VIEWS as Record<string, React.ComponentType | undefined>)[active];
   return (
-    <section ref={win} className="win play-win front" aria-label="Play" onKeyDown={(e) => { if (e.key === "Escape" && !(e.target as Element).closest(".artboard")) close(); }}>
+    <section ref={win} className="win play-win front" data-win="play" aria-label="Play" onPointerDownCapture={(e) => raise(e.currentTarget)} onKeyDown={(e) => { if (e.key === "Escape" && !(e.target as Element).closest(".artboard")) close(); }}>
       <header
         className="win-bar"
         onPointerDown={(e) => {

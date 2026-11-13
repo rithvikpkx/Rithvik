@@ -7,7 +7,9 @@ export type VisitorRow = {
   city: string | null; region: string | null; country: string | null; timezone: string | null; languages: string | null;
   user_agent: string | null; browser: string | null; os: string | null; device: string | null; screen: string | null;
   first_referrer: string | null; first_utm: Record<string, string> | null;
-  email: string | null; name: string | null; company_given: string | null; visits: number; identified_at: string | null; is_bot: boolean;
+  email: string | null; name: string | null; company_given: string | null; visits: number;
+  identified_at: string | null; is_bot: boolean;
+  role?: string | null; visitor_kind?: string | null; job_posting?: string | null; // what they told the agent
 };
 export type VisitRow = {
   id: string; visitor_id: string; started_at: string; ended_at: string; ip: string | null; entry_url: string | null; referrer: string | null;

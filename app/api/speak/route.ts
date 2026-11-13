@@ -1,22 +1,23 @@
-import { rateLimit, clientKey } from "@/lib/rate-limit";
-import { MAX_SPEAK_CHARS, speakable } from "@/lib/voice";
+import { agentLimit } from "@/lib/agent-limit";
+import { clientKey } from "@/lib/rate-limit";
+import { MAX_SPEAK_CHARS, STYLES, pickStyle, pickVoice, speakable } from "@/lib/voice";
 
-const PER_KEY = 40;      // spoken replies per IP (IPv6: per /64) per hour
-const GLOBAL = 800;      // all visitors per hour
-const MODEL = process.env.VOICE_TTS_MODEL || "gpt-4o-mini-tts";
+const PER_KEY = 20;      // spoken replies per IP (IPv6: per /64) per hour
+const GLOBAL = 300;      // all visitors per hour
+const MODEL = process.env.VOICE_TTS_MODEL || "gpt-4o-mini-tts-2025-12-15"; // the snapshot that carries marin and cedar
 
-/** POST { text } -> streamed mp3. The text is cleaned of markdown/URLs/footnotes here (the server is the
+/** POST { text, voice?, style? } -> streamed mp3. Voice and style are allow-listed ids, never free text. The text is cleaned of markdown/URLs/footnotes here (the server is the
  *  gate), rate-limited before the spend, and the audio is piped through without buffering. */
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) return Response.json({ error: "Voice is not configured." }, { status: 503 });
-  let text: unknown;
-  try { text = ((await req.json()) as { text?: unknown }).text; } catch { return Response.json({ error: "Invalid request." }, { status: 400 }); }
+  let text: unknown, voice: unknown, style: unknown;
+  try { ({ text, voice, style } = (await req.json()) as { text?: unknown; voice?: unknown; style?: unknown }); } catch { return Response.json({ error: "Invalid request." }, { status: 400 }); }
   if (typeof text !== "string" || !text.trim()) return Response.json({ error: "No text." }, { status: 400 });
   if (text.length > MAX_SPEAK_CHARS) return Response.json({ error: "Text is too long." }, { status: 413 });
   const input = speakable(text);
   if (!input) return Response.json({ error: "Nothing to speak." }, { status: 400 });
 
-  const limited = await rateLimit("tts", clientKey(req), PER_KEY, GLOBAL);
+  const limited = await agentLimit(req, "tts", clientKey(req), PER_KEY, GLOBAL);
   if (!limited.ok) {
     return Response.json({ error: limited.status === 429 ? "Too many voice requests. Try again later." : "Voice is unavailable right now." },
       { status: limited.status, headers: { "Retry-After": String(limited.retryAfter) } });
@@ -28,8 +29,8 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: MODEL, voice: "sage", input, response_format: "mp3",
-        instructions: "Speak in a warm, concise, professional tone at a calm, natural pace.",
+        model: MODEL, voice: pickVoice(voice), input, response_format: "mp3",
+        instructions: STYLES[pickStyle(style)],
       }),
       signal: AbortSignal.timeout(30_000),
     });

@@ -5,22 +5,26 @@
 import type { ToolCall, ToolDef } from "../openai.ts";
 import { calendarTools, runCalendarTool } from "../calendar/tools.ts";
 import { validateMeeting } from "./meeting.ts";
-import { ARTIFACT_TYPES, MAX_COLS, MAX_POINTS, MAX_ROWS, MAX_SERIES, MAX_TEXT, parseArtifact, type ArtifactSpec } from "./artifacts.ts";
+import { ARTIFACT_TYPES, MAX_COLS, MAX_HTML, MAX_POINTS, MAX_ROWS, MAX_SERIES, MAX_TEXT, parseArtifact, type ArtifactSpec } from "./artifacts.ts";
 
 /** Whole-page sections every design carries (plus project-<slug> / experience-<slug>). */
 export const SECTION_IDS = ["top", "work", "experience", "about", "play", "questions", "contact"];
 /** At most this many model steps (completion → tools → completion …) per turn. */
-export const MAX_STEPS = 3;
+export const MAX_STEPS = 4; // the last one answers (no tools)
 /** At most this many side-effect tools per step; extras are dropped. */
 export const MAX_SIDE_EFFECTS = 2;
 /** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
 const CALENDAR = new Set(["check_availability", "suggest_times"]);
 const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
+export const WINDOWS = ["chat", "email", "resume", "play", "project"] as const;
+export const WINDOW_ACTIONS = ["open", "close", "move", "front"] as const;
+export const SPOTS = ["left", "right", "center", "top-left", "top-right", "bottom-left", "bottom-right"] as const;
+export const SIZES = ["small", "medium", "large", "full"] as const;
 /** At most this many artifacts per step; extras are rejected. */
 const MAX_ARTIFACTS = 1;
 /** At most this many calendar lookups per step; extras are rejected. */
 const MAX_CALENDAR = 4;
-const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting"]);
+const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting", "open_recruiter_mode"]);
 /** Stands in for the real session id when validating a meeting request's fields; the id is checked again at send time. */
 const NO_SESSION = "00000000-0000-4000-8000-000000000000";
 
@@ -31,6 +35,7 @@ export type Allowed = {
   games: { id: string; name: string }[];
   looks: { id: string; name: string }[]; // design ids + palette slugs
   places: { key: string; city: string; tz: string }[];
+  repos?: string[]; // GitHub repos linked from project pages (read_code)
 };
 
 /** `artifact` is set only for render_artifact: the rebuilt spec the route sends as an `artifact` frame (no tool row). */
@@ -55,8 +60,28 @@ export function toolDefs(a: Allowed): ToolDef[] {
       subject: { type: "string", description: "Short subject line" },
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
+    fn("read_code", `Read Rithvik's public GitHub code to answer how a project works: its architecture, stack, structure or a specific function. With a repo and no path you get its README and file list; with a path, that file. With no repo, a list of his public repos. Read the README first, then at most one or two files that matter. Cite what you read ("in BoilerFrame's app.py…"); never invent code.`, {
+      ...(a.repos?.length ? { repo: enumOf(a.repos, "Repository (from his project pages)") } : {}),
+      path: { type: "string", description: "A file path inside the repo, from its file list (optional)" },
+    }),
+    fn("remember_visitor", "Save what the visitor has told you about themselves so Rithvik can follow up and you can greet them by name next time. Call it as soon as they share any of: their name, email, company, role, what kind of visitor they are, or a job posting (a link or its text). Only what they actually said; never guess.", {
+      name: { type: "string", description: "Their name, as they gave it" },
+      email: { type: "string", description: "Their email, exactly as they gave it" },
+      company: { type: "string", description: "Their company or school" },
+      role: { type: "string", description: "Their job title or the role they're hiring for" },
+      kind: enumOf(["recruiter", "engineer", "student", "founder", "other"], "What kind of visitor they said they are"),
+      job: { type: "string", description: "A job posting they shared: its link or its text" },
+    }),
+    fn("open_recruiter_mode", "Switch to recruiter mode: a minimal, content-first page with the resume, experience, projects and an email form all open. Offer it when the visitor says they are a recruiter, hiring manager or hiring, or asks for just the essentials.", {}),
+    fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games), project (the open project; open one with open_project). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
+      window: enumOf([...WINDOWS], "Which window"),
+      action: enumOf([...WINDOW_ACTIONS], "open (also places it), close, move (and/or resize), or front"),
+      spot: enumOf([...SPOTS], "Where on screen; optional"),
+      size: enumOf([...SIZES], "How big; optional"),
+    }, ["window", "action"]),
     fn("local_time", "Current local time in one of Rithvik's places.", { place: enumOf(a.places.map((p) => p.city), "City") }, ["place"]),
-    fn("render_artifact", `Show the visitor a small chart or table of facts that are in the Profile or Records, drawn by the site from your data. Use only when a visual genuinely beats prose: a timeline of roles, a comparison of projects, skills by area, a few headline stats. Never invent numbers or dates; if the facts aren't there, answer in text. It renders at once and nothing needs confirming. Limits: up to ${MAX_POINTS} points, ${MAX_SERIES} series, ${MAX_ROWS} rows x ${MAX_COLS} columns, text up to ${MAX_TEXT} chars, finite numbers, no links or markup. data shape by type: bar|line|area {labels:[..], series:[{name, values:[numbers, one per label]}]}; donut {slices:[{label, value}]} (up to 8); timeline {items:[{label, start:"2024" or "2024-06", end?:"2025-01" or "present", note?}]}; table {columns:[..], rows:[[cells..]]}; stats {items:[{label, value, note?}]} (up to 8); graph {nodes:[{id,label,group?}], edges:[{from,to}]}.`, {
+    fn("render_artifact", `Show the visitor a small chart or table of facts that are in the Profile or Records, drawn by the site from your data. Use only when a visual genuinely beats prose: a timeline of roles, a comparison of projects, skills by area, a few headline stats. Never invent numbers or dates; if the facts aren't there, answer in text. It renders at once and nothing needs confirming. Limits: up to ${MAX_POINTS} points, ${MAX_SERIES} series, ${MAX_ROWS} rows x ${MAX_COLS} columns, text up to ${MAX_TEXT} chars, finite numbers, no links or markup. data shape by type: bar|line|area {labels:[..], series:[{name, values:[numbers, one per label]}]}; donut {slices:[{label, value}]} (up to 8); timeline {items:[{label, start:"2024" or "2024-06", end?:"2025-01" or "present", note?}]}; table {columns:[..], rows:[[cells..]]}; stats {items:[{label, value, note?}]} (up to 8); graph {nodes:[{id,label,group?}], edges:[{from,to}]}; html {html:"<markup>", height: px 120-640} — your own custom visual (see html below).
+html: for "make a visual / infographic / summary card / something cool", design a polished, self-contained visual: HTML with one inline <style> block and inline SVG, ~600px wide and responsive (flex/grid, wraps). Theme colours are CSS variables: var(--fg) text, var(--muted) secondary, var(--accent) highlight, var(--line) hairlines, var(--bg) background; mix them with color-mix() and gradients. CSS animations and transitions are welcome (subtle: fade/slide in, growing bars, a glowing timeline). NOT allowed and stripped: scripts, event handlers, links, images, iframes, forms, external fonts or any URL. Every fact, number and date must come from the Profile or Records. Keep it under ${MAX_HTML} characters.`, {
       type: enumOf([...ARTIFACT_TYPES], "Chart form"),
       title: { type: "string", description: "A few words naming what is shown" },
       unit: { type: "string", description: "Optional unit for numbers, like % or ms" },
@@ -146,8 +171,29 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
         || (v.startsWith("experience-") && a.roles.some((r) => `experience-${r}` === v));
       return ok ? { id, name: call.name, args: { id: v } } : null;
     }
+    case "read_code": {
+      const repo = typeof raw.repo === "string" ? raw.repo.trim() : "";
+      const path = typeof raw.path === "string" ? raw.path.trim().replace(/^\/+/, "") : "";
+      if (repo && !a.repos?.includes(repo)) return null;
+      if (path && (!repo || !/^[\w.\-/ ]{1,200}$/.test(path) || path.includes(".."))) return null;
+      return { id, name: call.name, args: { ...(repo ? { repo } : {}), ...(path ? { path } : {}) } };
+    }
+    case "remember_visitor": {
+      const f: Record<string, string> = {};
+      for (const k of ["name", "email", "company", "role"]) { const v = plain(raw[k], 120); if (v) f[k] = v; }
+      const kind = s("kind"); if (["recruiter", "engineer", "student", "founder", "other"].includes(kind)) f.kind = kind;
+      const job = typeof raw.job === "string" ? raw.job.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, 2000) : ""; // a posting link is fine here: it is stored, never shown as a link
+      if (job) f.job = job;
+      return Object.keys(f).length ? { id, name: call.name, args: f } : null;
+    }
     case "open_resume":
+    case "open_recruiter_mode":
       return { id, name: call.name, args: {} };
+    case "arrange_window": {
+      const w = s("window"), act = s("action"), spot = s("spot"), size = s("size");
+      if (!(WINDOWS as readonly string[]).includes(w) || !(WINDOW_ACTIONS as readonly string[]).includes(act)) return null;
+      return { id, name: call.name, args: { window: w, action: act, ...((SPOTS as readonly string[]).includes(spot) ? { spot } : {}), ...((SIZES as readonly string[]).includes(size) ? { size } : {}) } };
+    }
     case "start_game": {
       const g = a.games.find((x) => x.id === s("id") || x.name.toLowerCase() === s("id"));
       return g ? { id, name: call.name, args: { id: g.id } } : null;
@@ -191,7 +237,15 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
 /** Validates a step's calls in order, caps side effects, and runs calendar lookups (`visitorTz` is the server-checked
  *  zone and overrides whatever the model passed). Returns the kept calls and, for every call (kept or not), the
  *  tool message the model sees next step. */
-export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
+/** Server-side effects a tool may need: saving what the visitor told the agent (absent for the owner and evals). */
+export type ToolCtx = {
+  /** Screen actions run at once (voice mode, cursor mode) rather than becoming buttons; the replies say so. */
+  immediate?: boolean;
+  remember?: (facts: Record<string, string>) => Promise<boolean>;
+  readCode?: (repo?: string, path?: string) => Promise<{ text: string; summary: string }>;
+};
+
+export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(), visitorTz?: string, ctx: ToolCtx = {}): Promise<{ kept: ValidCall[]; replies: { id: string; content: string }[] }> {
   const kept: ValidCall[] = [];
   const replies: { id: string; content: string }[] = [];
   let effects = 0;
@@ -218,9 +272,24 @@ export async function screenCalls(calls: ToolCall[], a: Allowed, now = new Date(
       replies.push({ id: c.id, content: JSON.stringify(out.result) });
       continue;
     }
+    if (v.name === "read_code") {
+      if (++lookups > MAX_CALENDAR) { replies.push({ id: c.id, content: "Rejected: too many lookups this step." }); continue; }
+      const out = ctx.readCode ? await ctx.readCode(v.args.repo, v.args.path) : { text: "Code reading is unavailable here.", summary: "unavailable" };
+      kept.push({ ...v, result: out.summary });
+      replies.push({ id: c.id, content: out.text });
+      continue;
+    }
+    if (v.name === "remember_visitor") {
+      const ok = ctx.remember ? await ctx.remember(v.args) : false;
+      kept.push({ ...v, result: ok ? "Noted for Rithvik" : "Not saved" });
+      replies.push({ id: c.id, content: ok ? "Saved. Thank them briefly (Rithvik will see it); don't repeat it back in full." : "Could not save; carry on without mentioning it." });
+      continue;
+    }
     if (SIDE_EFFECTS.has(v.name) && ++effects > MAX_SIDE_EFFECTS) { replies.push({ id: c.id, content: "Rejected: too many actions this step." }); continue; }
     kept.push(v);
-    replies.push({ id: c.id, content: v.result ?? "Offered as a button the visitor may click. Do not claim it already happened." });
+    // say what really happened: window layout always applies at once; other screen actions do in voice/cursor mode
+    const acted = v.name === "arrange_window" || (ctx.immediate && v.name !== "request_meeting");
+    replies.push({ id: c.id, content: v.result ?? (acted ? "Done: it happened on the visitor's screen just now. Say what you did; never mention a button." : "Offered as a button the visitor may click. Do not claim it already happened.") });
   }
   return { kept, replies };
 }

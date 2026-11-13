@@ -17,11 +17,15 @@ const DOTS = RINGS.flatMap(({ r, n }, k) => Array.from({ length: n }, (_, i) => 
 const LAYERS: [Layer, string][] = [["orig", "Original"], ["lofi", "Lo-fi"], ["rev", "Reverse"]];
 const SEEK_FROM = 0.9; // the outer 10% of the disc's radius is the seek ring
 
-/** The Play deck: "Chili Pepper" (1927, public domain) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
+type Song = { id: string; title: string; artist: string | null; url: string };
+
+/** The Play deck: the owner's record crate (uploaded on /admin/music, read from /api/songs) as a spinning disc wired to a scope screen, with Sound (filter sweep), Speed (rate, pitch follows),
  *  Delay (echo) knobs, a Volume slider and layer switches. Audio lives in ./deck.ts; this component is the instrument's face. */
 export default function Records() {
   const { toast } = useSite();
   const [on, setOn] = useState(false);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [track, setTrack] = useState(0);
   const [p, setP] = useState<DeckParams>(DEFAULTS);
   const deck = useRef<Deck | null>(null);
   const spin = useRef<HTMLDivElement>(null);
@@ -51,8 +55,8 @@ export default function Records() {
         const fr = f.pos / f.dur;
         ring.current?.style.setProperty("stroke-dasharray", `${fr.toFixed(4)} 1`);
         handle.current?.setAttribute("transform", `rotate(${(fr * 360).toFixed(2)})`);
-        if (Math.floor(f.pos) !== sec) {
-          sec = Math.floor(f.pos);
+        if (Math.floor(f.pos) * 1e4 + Math.floor(f.dur) !== sec) { // a new second, or a new track's length
+          sec = Math.floor(f.pos) * 1e4 + Math.floor(f.dur);
           if (clock.current) clock.current.textContent = `${fmtTime(f.pos)} / ${fmtTime(f.dur)}`;
           seekEl.current?.setAttribute("aria-valuenow", String(Math.round(fr * 100)));
           seekEl.current?.setAttribute("aria-valuetext", `${fmtTime(f.pos)} of ${fmtTime(f.dur)}`);
@@ -60,9 +64,14 @@ export default function Records() {
         return sc.draw(f.analyser);
       },
       state: setOn,
-      fail: () => toast("Audio could not load here. The deck still spins."),
+      fail: () => toast("No record could load here. The deck still spins."),
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     deck.current = d;
+    fetch("/api/songs").then((r) => r.json()).then((list: Song[]) => {
+      if (!Array.isArray(list) || !deck.current) return;
+      setSongs(list);
+      if (list[0]) void d.setTrack(list[0].url);
+    }).catch(() => { /* no crate: the deck spins silently */ });
     d.kick(); // paint the idle screen once
     const ro = new ResizeObserver(() => { sc.resize(); d.kick(); });
     ro.observe(canvas.current!);
@@ -152,7 +161,15 @@ export default function Records() {
             <input type="range" min={0} max={1} step={0.01} value={p.volume} aria-label="Volume" onChange={(e) => set("volume")(+e.target.value)} />
             <span aria-hidden="true">Volume</span>
           </label>
-          <p className="dk-hint">Chili Pepper, Fred Longshaw, 1927. Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
+          {songs.length > 1 && <div className="dk-crate" role="radiogroup" aria-label="Record">
+            {songs.map((t, i) => (
+              <button key={t.id} type="button" role="radio" aria-checked={track === i} onClick={() => { setTrack(i); void deck.current?.setTrack(t.url); }}>
+                <i className="dk-sleeve" aria-hidden="true"><i /></i>
+                <span><b>{t.title}</b>{t.artist && <small>{t.artist}</small>}</span>
+              </button>
+            ))}
+          </div>}
+          <p className="dk-hint">{songs[track] ? `${songs[track].title}${songs[track].artist ? `, ${songs[track].artist}` : ""}. ` : ""}Drag a knob up or down, scroll over it or use the arrow keys. Double-click resets.</p>
         </div>
       </div>
     </div>

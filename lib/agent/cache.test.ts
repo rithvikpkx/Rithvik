@@ -75,7 +75,7 @@ test("cacheThreshold defaults to 0.95 and clamps typos", () => {
 });
 
 test("the status line shows ● cached only for a cached answer; ages are compact", () => {
-  assert.ok(!statusSegments({ kind: "idle", turns: 1, usage: { tokens: 0 } }).some((s) => s.text === "● cached"));
-  assert.ok(statusSegments({ kind: "idle", turns: 1, usage: { tokens: 0, cached: true } }).some((s) => s.text === "● cached"));
+  assert.ok(!statusSegments({ kind: "idle", usage: { tokens: 0 } }).some((s) => s.text === "● cached"));
+  assert.ok(statusSegments({ kind: "idle", usage: { tokens: 0, cached: true } }).some((s) => s.text === "● cached"));
   assert.deepEqual([5, 300, 10800, 172800].map(formatAge), ["5s", "5m", "3h", "2d"]);
 });

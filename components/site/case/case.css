@@ -19,6 +19,12 @@
 .case-next { display: grid; gap: 4px; width: 100%; margin-top: 56px; padding: 22px 0 0; border: 0; border-top: 1px solid var(--ui-line, rgba(255,255,255,.14)); background: none; color: var(--ui-fg, #f4f4f5); text-align: left; cursor: pointer; }
 .case-next span { font: 500 12px/1 var(--ui-mono, "Geist Mono",ui-monospace,Menlo,monospace); color: var(--ui-muted, #a1a1aa); }
 .case-next b { font: 600 1.6rem/1.2 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); }
+/* the case as a floating window (CaseSheet): large and centred on open; the scroll body keeps .sheet-body so each
+   design's background still applies, minus the old full-screen sheet's position, slide and top-only rounding */
+.case-win { width: min(900px, calc(100vw - 32px)); height: min(calc(100dvh - 190px), 920px); } /* opens clear of the agent dock */
+.win.case-win > .sheet-body.case-body { position: relative; inset: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; transform: none; box-shadow: none; outline: none;
+  padding: clamp(24px, 4vw, 44px) clamp(18px, 6%, 56px) 48px; } /* the sheet's viewport-based gutters would crush a window */
+@media (max-width: 640px) { .case-win { height: calc(100dvh - 160px); } }
 /* case sheet: the project's procedural art (lib/art) */
 .case-art { margin: 28px 0 0; border-radius: calc(var(--ui-r, 14px) * 1.2); overflow: hidden; background: var(--art-0, #e9e6e1); aspect-ratio: 4 / 3; }
 .case-art .art { display: block; width: 100%; height: 100%; }

@@ -1,20 +1,18 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { adminClient } from "@/lib/supabase-server";
-import { chunkText, embedTexts } from "@/lib/embeddings";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { pdfProblem, redactResume, staleVersions, MAX_PDF_BYTES } from "./pure";
 
 export const RESUME_BUCKET = "resume";
 const FETCH_TIMEOUT_MS = 15_000;
-// Fixed ids so every sync overwrites the same agent document instead of piling up new ones.
-const AGENT_DOC_ID = "5e5a0b1e-0000-4000-8000-000000000001";
-const AGENT_DOC_PATH = "resume/resume.txt";
+export const RESUME_TAG = "resume-text";
 
 export type ResumeVersion = {
   id: string; created_at: string; source: "gdoc" | "upload"; sha256: string;
   storage_path: string; bytes: number; text: string; pinned: boolean; is_current: boolean;
 };
-export type SyncResult = { status: "updated" | "unchanged" | "skipped"; reason?: string; embedError?: string };
+export type SyncResult = { status: "updated" | "unchanged" | "skipped"; reason?: string };
 
 type Db = ReturnType<typeof adminClient>;
 
@@ -67,9 +65,7 @@ export async function storeResume(
   if (current?.sha256 === sha256) {
     // Same bytes: only the pin can differ (re-uploading the synced PDF, or un-pinning an identical upload).
     if (current.pinned !== pinned) must(await db.from("resume_versions").update({ pinned }).eq("id", current.id), "unpin");
-    // Heal an earlier embed failure without paying for an embed on every unchanged daily run.
-    const missing = !(must(await db.from("secondary_documents").select("id").eq("id", AGENT_DOC_ID), "agent doc lookup")?.length);
-    return { status: "unchanged", embedError: missing ? await embedResume(current.text) : undefined };
+    return { status: "unchanged" };
   }
 
   const clean = redactResume(text);
@@ -84,9 +80,10 @@ export async function storeResume(
   }
   must(await db.rpc("resume_set_current", { p_id: id }), "set current");
 
-  // Housekeeping and agent embedding run after the swap: their failure must not undo a good sync.
+  // Housekeeping runs after the swap: its failure must not undo a good sync.
   await prune(db).catch((e) => console.warn("[resume] prune failed:", e));
-  return { status: "updated", embedError: await embedResume(clean) };
+  revalidateTag(RESUME_TAG, { expire: 0 }); // the agent reads the new resume on its next turn
+  return { status: "updated" };
 }
 
 /** Deletes versions (rows + PDFs) beyond the newest 10, keeping the current one. */
@@ -98,28 +95,8 @@ async function prune(db: Db) {
   must(await db.from("resume_versions").delete().in("id", stale.map((s) => s.id)), "delete versions");
 }
 
-/** Makes the redacted resume text retrievable by the agent as ONE secondary document with a fixed id
- *  (primary rows are one-per-record and get trimmed by the backfill). Embeds first, upserts over the old
- *  chunks, then trims the tail, so there is never a moment without embeddings. Returns an error message
- *  instead of throwing. */
-async function embedResume(text: string): Promise<string | undefined> {
-  try {
-    const db = adminClient();
-    const chunks = chunkText(text).map((c) => `Rithvik Praveen Kumar's resume: ${c}`);
-    if (!chunks.length) return "resume text is empty";
-    const vectors = await embedTexts(chunks);
-    const body = Buffer.from(text);
-    // Stored in the 'secondary' bucket as plain text so "Re-embed all secondary documents" works on it unchanged.
-    must(await db.storage.from("secondary").upload(AGENT_DOC_PATH, body, { contentType: "text/plain", upsert: true }), "agent doc upload");
-    must(await db.from("secondary_documents").upsert(
-      { id: AGENT_DOC_ID, filename: "Resume (synced from Google Docs).txt", mime_type: "text/plain", storage_path: AGENT_DOC_PATH, byte_size: body.length },
-      { onConflict: "id" }), "agent doc row");
-    must(await db.from("secondary_embeddings").upsert(
-      chunks.map((content, i) => ({ document_id: AGENT_DOC_ID, chunk_index: i, content, metadata: { filename: "resume", mime_type: "text/plain" }, embedding: vectors[i] })),
-      { onConflict: "document_id,chunk_index" }), "agent embeddings");
-    must(await db.from("secondary_embeddings").delete().eq("document_id", AGENT_DOC_ID).gte("chunk_index", chunks.length), "trim embeddings");
-  } catch (e) {
-    console.warn("[resume] agent embed failed:", e);
-    return e instanceof Error ? e.message : String(e);
-  }
-}
+/** The current resume's text (already redacted at sync), for the agent's prompt: it reads the whole live resume every
+ *  turn rather than retrieving fragments. Cached 5 minutes and dropped at once by a new sync. "" when there is none. */
+export const getResumeText = unstable_cache(async (): Promise<string> => {
+  try { return (await currentVersion())?.text ?? ""; } catch { return ""; }
+}, ["resume-text"], { revalidate: 300, tags: [RESUME_TAG] });

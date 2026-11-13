@@ -48,3 +48,31 @@ export function stripPromptEcho(text: string, prompt: string): string {
   const i = text.toLowerCase().indexOf(prompt.toLowerCase());
   return (i < 0 ? text : text.slice(0, i) + text.slice(i + prompt.length)).replace(/^[\s.,]+|[\s,]+$/g, "");
 }
+
+/** The voices a visitor can pick. One pick drives both voice mode and read-aloud replies, so the agent always
+ *  sounds the same; every id here is checked to work in both. Best first. */
+export const VOICES = [
+  { id: "marin", note: "natural, warm" }, { id: "cedar", note: "natural, grounded" }, { id: "coral", note: "bright, friendly" },
+  { id: "sage", note: "calm, gentle" }, { id: "ballad", note: "soft storyteller" }, { id: "verse", note: "expressive" },
+  { id: "ash", note: "low, steady" }, { id: "shimmer", note: "light, airy" },
+] as const;
+/** Delivery styles, sent as speaking instructions; the client only ever names one by id. All aim at sounding like a
+ *  person talking, never someone reading a script. */
+export const STYLES = {
+  natural: "Talk like a friendly person in a relaxed conversation: natural rhythm, light emphasis on what matters, small pauses between thoughts, warm and easy. Never sound like you are reading a script.",
+  upbeat: "Talk with bright, genuine energy, like a friend excited to share good news: lively rhythm, smiling tone, still natural and conversational.",
+  calm: "Talk in a calm, unhurried, reassuring way, like a thoughtful friend: soft emphasis, gentle pauses, never flat or robotic.",
+} as const;
+export type StyleId = keyof typeof STYLES;
+export const RATE_MIN = 0.75, RATE_MAX = 1.75;
+/** The picker's "1x" plays at this real rate: the voices read a touch slow, so 1x is 10% brisker. */
+export const BASE_RATE = 1.1;
+
+/** An allow-listed voice id (anything else falls back to the default). */
+export const pickVoice = (v: unknown): string => (VOICES.some((x) => x.id === v) ? (v as string) : "marin");
+/** An allow-listed style id (anything else falls back to natural). */
+/** The pace to ask for in words (voice mode has no speed control, so the same slider becomes an instruction). */
+export const paceOf = (rate: number): string => (rate < 0.95 ? "a relaxed, unhurried pace" : rate < 1.15 ? "a natural, brisk conversational pace" : rate < 1.4 ? "a quick, energetic pace" : "a fast pace");
+export const pickStyle = (s: unknown): StyleId => (typeof s === "string" && Object.hasOwn(STYLES, s) ? (s as StyleId) : "natural");
+/** A playback rate inside the supported band (non-numbers become 1). */
+export const clampRate = (r: unknown): number => (typeof r === "number" && Number.isFinite(r) ? Math.min(RATE_MAX, Math.max(RATE_MIN, r)) : 1);

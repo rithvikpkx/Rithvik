@@ -40,8 +40,8 @@ function contentSecurityPolicy(): string {
       ...(isDev ? ["ws:", "http://localhost:*"] : []),
       ...(isProdDeploy ? [] : ["https://vercel.live", "wss://ws-us3.pusher.com"]),
     ],
-    // Spoken replies play from a blob: URL built from /api/speak's mp3.
-    "media-src": ["'self'", "blob:"],
+    // Spoken replies play from a blob: URL built from /api/speak's mp3; the admin music page previews songs from Storage.
+    "media-src": ["'self'", "blob:", ...(supabase ? [supabase] : ["https://*.supabase.co"])],
     "worker-src": ["'self'", "blob:"],
     // 'self' lets the resume window frame /resume.pdf.
     "frame-src": ["'self'", ...vercelLive],

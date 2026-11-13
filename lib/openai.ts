@@ -27,6 +27,8 @@ export type ChatOpts = {
   reasoningEffort?: "none" | "minimal" | "low"; // reasoning models only; keeps time-to-first-token low
   tools?: ToolDef[];
   json?: boolean; // response_format json_object
+  noTools?: boolean; // tool_choice "none": the tools stay (same cached prefix) but this completion must answer
+  cacheKey?: string; // prompt_cache_key: requests sharing a long fixed prefix land on the same cache
   signal?: AbortSignal;
 };
 
@@ -44,8 +46,9 @@ export function chatBody(o: ChatOpts, stream: boolean): Record<string, unknown> 
     ...(reasoning
       ? { max_completion_tokens: o.maxTokens, ...(o.reasoningEffort ? { reasoning_effort: o.reasoningEffort } : {}) }
       : { max_tokens: o.maxTokens, ...(o.temperature !== undefined ? { temperature: o.temperature } : {}) }),
-    ...(o.tools?.length ? { tools: o.tools } : {}),
+    ...(o.tools?.length ? { tools: o.tools, ...(o.noTools ? { tool_choice: "none" } : {}) } : {}),
     ...(o.json ? { response_format: { type: "json_object" } } : {}),
+    ...(o.cacheKey ? { prompt_cache_key: o.cacheKey } : {}),
     ...(stream ? { stream: true, stream_options: { include_usage: true } } : {}), // usage arrives in a final chunk
   };
 }

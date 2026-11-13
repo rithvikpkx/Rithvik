@@ -1,5 +1,4 @@
 import { version } from "@/package.json";
-import { AGENT_EFFORT } from "@/lib/agent/status";
 
 /** The ouroboros as a hand-built 11x11 pixel grid (X = lit, o = the eye): a ring that thickens toward the head and bites its tail. */
 const GRID = [
@@ -17,8 +16,8 @@ const GRID = [
 ];
 const PIXELS = GRID.flatMap((row, y) => [...row].flatMap((c, x) => (c === "X" ? [[x, y] as const] : [])));
 
-/** The chat's opening block, laid out like Claude Code's: logo, name and version, model and effort, tagline, then a dim hint. */
-export default function StartBlock({ model, projects, roles }: { model?: string; projects: number; roles: number }) {
+/** The chat's opening block, laid out like Claude Code's: logo, name and version, model, then a dim hint. */
+export default function StartBlock({ model }: { model?: string }) {
   return (
     <div className="agent-start">
       <svg className="as-logo" viewBox={`0 0 ${GRID[0].length} ${GRID.length}`} aria-hidden="true" shapeRendering="crispEdges">
@@ -26,8 +25,7 @@ export default function StartBlock({ model, projects, roles }: { model?: string;
       </svg>
       <div className="as-text">
         <p className="as-name"><b>RAG</b> <span>v{version}</span></p>
-        <p>{model ? `${model} with ${AGENT_EFFORT} effort · ` : ""}Rithvik Augmented Generation</p>
-        <p>Rithvik&apos;s own agent · grounded in {projects} projects + {roles} roles</p>
+        <p>{model ? `${model} · ` : ""}Rithvik Augmented Generation</p>
       </div>
       <p className="as-hint">/help for commands · ⌘K to toggle · esc to interrupt</p>
     </div>

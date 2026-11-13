@@ -13,9 +13,12 @@ function toHtml(text: string) {
   return text.split(/\n{2,}/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
 }
 
-/** The v7 floating email window; posts the same payload as the old composer to /api/contact. */
-export default function ComposerWindow({ subject: initialSubject, body: initialBody = "", agentSessionId }: { subject: string; body?: string; agentSessionId?: string }) {
-  const { content, close, toast } = useSite();
+type FormProps = { subject: string; body?: string; agentSessionId?: string };
+
+/** The email form: posts the same payload as the old composer to /api/contact. Used in the floating window and inline
+ *  (recruiter mode); `idPrefix` keeps field ids unique when both are on the page, `onSent` runs after a send. */
+export function ComposerForm({ subject: initialSubject, body: initialBody = "", agentSessionId, idPrefix: p = "cmp", onSent }: FormProps & { idPrefix?: string; onSent?: () => void }) {
+  const { content, toast } = useSite();
   const design = useContext(DesignContext); // null in the lab harness
   const [from, setFrom] = useState("");
   const [subject, setSubject] = useState(initialSubject);
@@ -29,7 +32,7 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
     e.preventDefault();
     const b = { from: !EMAIL_RE.test(from.trim()), subject: !subject.trim(), body: !body.trim() };
     setBad(b);
-    if (b.from || b.subject || b.body) { document.getElementById(b.from ? "cmp-from" : b.subject ? "cmp-subj" : "cmp-body")?.focus(); return; }
+    if (b.from || b.subject || b.body) { document.getElementById(`${p}-${b.from ? "from" : b.subject ? "subj" : "body"}`)?.focus(); return; }
     setBusy(true); setError("");
     try {
       const res = await fetch("/api/contact", {
@@ -39,7 +42,7 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
           // Owner-only context for the email footer (the route validates all of it).
           agentSessionId, pageUrl: location.href, design: design?.current, referrer: document.referrer }),
       });
-      if (res.ok) { toast("Sent. I'll reply to " + from.trim()); close(); return; }
+      if (res.ok) { toast("Sent. I'll reply to " + from.trim()); setSubject(""); setBody(""); setBusy(false); onSent?.(); return; }
       setError(res.status === 429 ? "You've sent a few already. Try again in a bit." : "Couldn't send. Please try again.");
     } catch {
       setError("Couldn't send. Please try again.");
@@ -50,30 +53,29 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
   const err = (show: boolean | undefined, id: string, text: string) => show && <p className="field-err" id={id}>{text}</p>;
 
   return (
-    <Window title="New message" icon="mail" label="New message" className="composer-win" place="corner" onClose={close} initialFocus="#cmp-from">
       <form className="composer" onSubmit={send} noValidate>
         <div className="cmp-fields">
           <div className="cmp-row">
-            <label htmlFor="cmp-to">To</label>
-            <input className="field" id="cmp-to" value={content.links.email} readOnly />
+            <label htmlFor={`${p}-to`}>To</label>
+            <input className="field" id={`${p}-to`} value={content.links.email} readOnly />
           </div>
           <div className="cmp-row">
-            <label htmlFor="cmp-from">From</label>
-            <input className="field" id="cmp-from" type="email" placeholder="you@company.com" autoComplete="email" value={from}
-              onChange={(e) => setFrom(e.target.value)} aria-invalid={!!bad.from} aria-describedby="err-from" />
-            {err(bad.from, "err-from", "Add your email so I can reply")}
+            <label htmlFor={`${p}-from`}>From</label>
+            <input className="field" id={`${p}-from`} type="email" placeholder="you@company.com" autoComplete="email" value={from}
+              onChange={(e) => setFrom(e.target.value)} aria-invalid={!!bad.from} aria-describedby={`${p}-err-from`} />
+            {err(bad.from, `${p}-err-from`, "Add your email so I can reply")}
           </div>
           <div className="cmp-row">
-            <label htmlFor="cmp-subj">Subject</label>
-            <input className="field" id="cmp-subj" type="text" placeholder="Internship opportunity" maxLength={200} value={subject}
-              onChange={(e) => setSubject(e.target.value)} aria-invalid={!!bad.subject} aria-describedby="err-subj" />
-            {err(bad.subject, "err-subj", "Add a subject")}
+            <label htmlFor={`${p}-subj`}>Subject</label>
+            <input className="field" id={`${p}-subj`} type="text" placeholder="Internship opportunity" maxLength={200} value={subject}
+              onChange={(e) => setSubject(e.target.value)} aria-invalid={!!bad.subject} aria-describedby={`${p}-err-subj`} />
+            {err(bad.subject, `${p}-err-subj`, "Add a subject")}
           </div>
           <div className="cmp-row grow">
-            <label htmlFor="cmp-body" className="sr-only">Message</label>
-            <textarea className="field" id="cmp-body" rows={7} placeholder="Hi Rithvik," value={body}
-              onChange={(e) => setBody(e.target.value)} aria-invalid={!!bad.body} aria-describedby="err-body" />
-            {err(bad.body, "err-body", "Write a message first")}
+            <label htmlFor={`${p}-body`} className="sr-only">Message</label>
+            <textarea className="field" id={`${p}-body`} rows={7} placeholder="Hi Rithvik," value={body}
+              onChange={(e) => setBody(e.target.value)} aria-invalid={!!bad.body} aria-describedby={`${p}-err-body`} />
+            {err(bad.body, `${p}-err-body`, "Write a message first")}
           </div>
           {/* Honeypot: hidden from people, bots fill it and the route drops the message. */}
           <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" value={honeypot} onChange={(e) => setHoneypot(e.target.value)}
@@ -85,6 +87,15 @@ export default function ComposerWindow({ subject: initialSubject, body: initialB
           <button className="ui-btn primary" type="submit" disabled={busy}>{busy ? "Sending…" : "Send"} <Icon name="send" /></button>
         </footer>
       </form>
+  );
+}
+
+/** The v7 floating email window. */
+export default function ComposerWindow(props: FormProps) {
+  const { close } = useSite();
+  return (
+    <Window title="New message" icon="mail" label="New message" name="email" className="composer-win" place="corner" onClose={() => close("composer")} initialFocus="#cmp-from">
+      <ComposerForm {...props} onSent={() => close("composer")} />
     </Window>
   );
 }

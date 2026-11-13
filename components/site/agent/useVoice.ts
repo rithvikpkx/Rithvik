@@ -6,6 +6,9 @@ export type VoiceState = "idle" | "listening" | "transcribing" | "error";
 
 const MIN_MS = 400; // shorter than this is a tap, not speech
 const TYPES = ["audio/webm;codecs=opus", "audio/mp4", "audio/ogg;codecs=opus"];
+// a level above SPEECH counts as talking; a clip with less than SPOKEN_MS of it is never sent, because the
+// transcriber invents text (often echoing its spelling hints) for near-silence
+const SPEECH = 0.12, SPOKEN_MS = 250;
 
 /** Push-to-talk recording: start() on press, stop() on release. The recording is POSTed to /api/transcribe
  *  and the text handed to `onTranscript`. The mic level drives a `--lvl` (0..1) CSS var on `meterRef`
@@ -81,10 +84,12 @@ export function useVoice(onTranscript: (text: string) => void) {
     const chunks: Blob[] = [];
     mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
 
-    // Level meter: RMS of the analyser, written straight to a CSS var.
-    let raf = 0;
+    // Level meter: RMS of the analyser, written straight to a CSS var (skipped under reduced motion), and summed
+    // into how long the visitor actually spoke.
+    let raf = 0, spoken = 0, last = Date.now();
     let ac: AudioContext | undefined;
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    {
       ac = new AudioContext();
       void ac.resume(); // created after an await, so Safari may start it suspended
       const an = ac.createAnalyser();
@@ -95,7 +100,10 @@ export function useVoice(onTranscript: (text: string) => void) {
         an.getByteTimeDomainData(buf);
         let sum = 0;
         for (const v of buf) sum += ((v - 128) / 128) ** 2;
-        meterRef.current?.style.setProperty("--lvl", Math.min(1, Math.sqrt(sum / buf.length) * 4).toFixed(2));
+        const lvl = Math.min(1, Math.sqrt(sum / buf.length) * 4), now = Date.now();
+        if (!still) meterRef.current?.style.setProperty("--lvl", lvl.toFixed(2));
+        if (lvl > SPEECH) spoken += now - last;
+        last = now;
         raf = requestAnimationFrame(tick);
       };
       tick();
@@ -112,6 +120,7 @@ export function useVoice(onTranscript: (text: string) => void) {
       const ms = Date.now() - state.t0;
       if (state.cancelled) { setState("idle"); setMessage(""); return; }
       if (ms < MIN_MS) return fail("Hold to talk.");
+      if (spoken < SPOKEN_MS) return fail("Didn't hear anything.");
       void transcribe(new Blob(chunks, { type: mr.mimeType }), Math.min(ms, MAX_AUDIO_MS));
     };
     mr.start();

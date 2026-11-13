@@ -4,9 +4,6 @@ import { SPINNERS } from "../assets/misc.ts";
 
 export const SPIN_FRAMES: string[] = SPINNERS.dots.frames;
 export const SPIN_INTERVAL = SPINNERS.dots.interval;
-/** The reasoning effort app/api/chat/route.ts asks the answer model for, shown in the start block and status line. */
-export const AGENT_EFFORT = "low";
-
 /** Braille frame for `elapsedMs` since the turn began. */
 export function spinFrame(elapsedMs: number): string {
   return SPIN_FRAMES[Math.floor(elapsedMs / SPIN_INTERVAL) % SPIN_FRAMES.length];
@@ -36,6 +33,10 @@ export type Usage = {
   cache?: string;
   /** The last answer was replayed from the response cache. */
   cached?: boolean;
+  /** Voice mode's hourly window (conversations), from /api/chat/usage. */
+  voice?: { limit: number; remaining: number; reset?: number };
+  /** The signed-in admin: no limits at all. */
+  admin?: boolean;
 };
 
 /** "980" under a thousand, else "1.2k" / "12.4k" / "123k". */
@@ -66,8 +67,8 @@ export function usageLines(u: Usage, model: string | undefined, nowMs: number): 
 }
 
 export type StatusState =
-  /** `actions`: the panel has action buttons, so the line points at them (shift+tab from the prompt reaches them). */
-  | { kind: "idle"; turns: number; usage?: Usage; actions?: boolean }
+  /** `now` (epoch ms) words the limit's reset as "resets in 23m". */
+  | { kind: "idle"; usage?: Usage; now?: number }
   | { kind: "busy"; elapsedMs: number; verb: string }
   | { kind: "limited"; status: 429 | 503; retrySecs: number };
 
@@ -88,14 +89,21 @@ export function statusSegments(s: StatusState): StatusSeg[] {
     const what = s.status === 429 ? "rate limited" : "unavailable";
     return [{ text: `⚠ ${what} · retry in ${formatRetry(s.retrySecs)}`, tone: "warn" }, { text: "? for shortcuts" }];
   }
-  // ● ready · 3 turns · 41/60 left · 12.4k tok · 1.9s · ? for shortcuts  (unknown pieces are left out)
+  // ● ready · 41/60 left · resets in 23m · 12.4k tok · ? for shortcuts  (unknown pieces are left out)
   const u = s.usage;
-  const segs: StatusSeg[] = [{ text: "● ready" }, { text: `${s.turns} turn${s.turns === 1 ? "" : "s"}` }];
+  const segs: StatusSeg[] = [{ text: "● ready" }];
   if (u?.cached) segs.push({ text: "● cached", cls: "s-cached" });
-  if (u?.limit !== undefined && u.remaining !== undefined) segs.push({ text: `${u.remaining}/${u.limit} left`, cls: "s-left", ...(u.remaining <= 5 ? { tone: "warn" as const } : {}) });
+  if (u?.admin) segs.push({ text: "no limits (admin)", cls: "s-left" });
+  else if (u?.limit !== undefined && u.remaining !== undefined) {
+    segs.push({ text: `${u.remaining}/${u.limit} left`, cls: "s-left", ...(u.remaining <= 5 ? { tone: "warn" as const } : {}) });
+    if (u.reset && s.now && u.reset * 1000 > s.now) segs.push({ text: `resets in ${formatRetry((u.reset * 1000 - s.now) / 1000)}`, cls: "s-reset" });
+  }
+  if (u?.voice && !u.admin) {
+    const v = u.voice, out = v.remaining <= 0;
+    const when = v.reset && s.now && v.reset * 1000 > s.now ? ` · resets in ${formatRetry((v.reset * 1000 - s.now) / 1000)}` : "";
+    segs.push({ text: `voice ${v.remaining}/${v.limit}${out ? when : ""}`, cls: "s-voice", ...(out ? { tone: "warn" as const } : {}) });
+  }
   if (u?.tokens) segs.push({ text: `${formatTokens(u.tokens)} tok`, cls: "s-tok" });
-  if (u?.totalMs !== undefined) segs.push({ text: formatSecs(u.totalMs), cls: "s-time" });
-  if (s.actions) segs.push({ text: "shift+tab to actions", cls: "s-acts" });
   segs.push({ text: "? for shortcuts", cls: "s-hint" });
   return segs;
 }
