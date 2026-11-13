@@ -2,7 +2,12 @@
 import { createContext, useContext, useRef, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-const TAB_AUTH_KEY = "rithvik-tab-auth";
+const TAB_AUTH_KEY = "rithvik-tab-auth"; // holds this tab's sign-in expiry (epoch ms)
+const SESSION_MS = 5 * 60 * 60 * 1000; // a sign-in lasts 5 hours, then a fresh code is needed
+/** Marks this tab signed in until 5 hours from now. */
+const armTab = () => sessionStorage.setItem(TAB_AUTH_KEY, String(Date.now() + SESSION_MS));
+/** Milliseconds left on this tab's sign-in (0 = none or expired). */
+const tabLeft = () => Math.max(0, Number(sessionStorage.getItem(TAB_AUTH_KEY)) - Date.now() || 0);
 
 interface EditModeCtx {
   isEditing: boolean; // signed in as the admin: the admin bar is available
@@ -33,11 +38,9 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   const [inlineOn, setInlineOn] = useState(true); // on by default at sign-in, like the old site
   const [barHidden, setBarHidden] = useState(false);
 
-  // Tracks whether the user authenticated during this specific tab session.
+  // Tracks whether the user authenticated during this specific tab session (and within 5 hours).
   // sessionStorage is wiped on tab close, so a new tab always requires login.
-  const tabAuth = useRef(
-    typeof window !== "undefined" && sessionStorage.getItem(TAB_AUTH_KEY) === "1"
-  );
+  const tabAuth = useRef(typeof window !== "undefined" && tabLeft() > 0);
 
   // Browser client is loaded on demand so ordinary visitors never download it.
   // The promise is cached; the first load also subscribes to auth changes once.
@@ -55,8 +58,8 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   useEffect(() => {
     onAuthEvent.current = (event, newSession) => {
       if (event === "SIGNED_IN") {
-        // Fresh login — mark this tab as authenticated
-        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        // Fresh login — mark this tab as authenticated (an existing, unexpired mark keeps its clock)
+        if (!tabLeft()) armTab();
         tabAuth.current = true;
         setSession(newSession);
       } else if (event === "SIGNED_OUT") {
@@ -85,7 +88,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       if (url.searchParams.get("auth") === "ok") {
-        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        armTab();
         tabAuth.current = true;
         url.searchParams.delete("auth");
         window.history.replaceState({}, "", url.pathname + url.search);
@@ -99,8 +102,9 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
       }
     }
 
-    // Only load the client when a session could already exist for this tab.
+    // Only load the client when a session could already exist for this tab; an expired mark signs the cookie out too.
     if (tabAuth.current) void getClient();
+    else if (sessionStorage.getItem(TAB_AUTH_KEY)) void getClient().then((supabase) => supabase.auth.signOut());
     return () => { if (raf) cancelAnimationFrame(raf); };
   }, []);
 
@@ -141,13 +145,22 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     return null;
   };
 
-  // Exit editing signs out; the SIGNED_OUT event clears state, the explicit clears cover a not-yet-subscribed client.
-  const logout = () => {
-    setIsEditing(false);
-    sessionStorage.removeItem(TAB_AUTH_KEY);
-    tabAuth.current = false;
-    void getClient().then((supabase) => supabase.auth.signOut());
-  };
+  // The 5-hour limit: a real sign-out when it runs out. The SIGNED_OUT event clears state; the explicit clears
+  // cover a not-yet-subscribed client.
+  useEffect(() => {
+    if (!session) return;
+    const t = setTimeout(() => {
+      setIsEditing(false);
+      sessionStorage.removeItem(TAB_AUTH_KEY);
+      tabAuth.current = false;
+      void getClient().then((supabase) => supabase.auth.signOut());
+    }, tabLeft());
+    return () => clearTimeout(t);
+  }, [session]);
+
+  // Exit editing only leaves edit mode: the tab stays signed in (until it closes or the 5 hours run out), so
+  // ?edit or the header button gets back in without a new code.
+  const logout = () => { setIsEditing(false); setBarHidden(false); };
 
   // The header's "I am Rithvik" button: sign in if needed, otherwise show or tuck away the admin bar.
   const openPanel = () => {
