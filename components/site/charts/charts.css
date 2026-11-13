@@ -73,6 +73,9 @@
 
 /* artifact chrome (in-chat) */
 .ch-art { margin: 6px 0 2px 22px; padding: 10px 12px 12px; border: 1px solid var(--a-line, var(--ui-line, var(--ch-grid))); border-radius: 10px; max-width: 100%; }
+/* a model-made HTML visual: a sandboxed frame, full card width */
+.ch-visual { margin: 0 -4px; border-radius: 8px; overflow: hidden; }
+.ch-visual iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: normal; }
 .ch-art-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .ch-art-head h4 { flex: 1; min-width: 0; margin: 0; font: 600 13px/1.3 var(--ui-font, system-ui, sans-serif); }
 .ch-art-head button { border: 0; padding: 2px 4px; background: none; color: var(--ch-muted); font: 500 11.5px var(--ui-font, system-ui, sans-serif); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
