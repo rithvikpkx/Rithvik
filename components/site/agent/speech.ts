@@ -1,16 +1,15 @@
 import { useSyncExternalStore } from "react";
-import { clampRate, pickStyle, pickVoice, speakable, type StyleId } from "@/lib/voice";
+import { BASE_RATE, clampRate, pickStyle, pickVoice, speakable, type StyleId } from "@/lib/voice";
 
 /** Spoken replies as a tiny module-level store, so the agent's state machine can call `speak(answer)` /
  *  `stopSpeaking()` without any prop plumbing, and the voice controls can subscribe to the same state.
- *  `mode` is the hands-free conversation (listen -> send -> speak -> listen); voice, style and rate are the
- *  visitor's picks, persisted per browser. */
+ *  Voice, style and rate are the visitor's picks, persisted per browser. (Voice mode is GPT-Live: ./live.ts.) */
 
 const KEY = "rithvik-agent-speaker";
 const PREFS = "rithvik-agent-voice";
-export type Snap = { on: boolean; speaking: boolean; mode: boolean; voice: string; style: StyleId; rate: number };
+export type Snap = { on: boolean; speaking: boolean; voice: string; style: StyleId; rate: number };
 
-const OFF: Snap = { on: false, speaking: false, mode: false, voice: "sage", style: "natural", rate: 1 };
+const OFF: Snap = { on: false, speaking: false, voice: "marin", style: "natural", rate: 1 };
 const subs = new Set<() => void>();
 let snap: Snap = OFF;
 let loaded = false;
@@ -41,27 +40,19 @@ export function stopSpeaking() {
   if (snap.speaking) set({ speaking: false });
 }
 
-/** Turns spoken replies on or off (persisted); turning off also silences whatever is playing and ends voice mode. */
+/** Turns spoken replies on or off (persisted); turning off also silences whatever is playing. */
 export function setSpeaker(on: boolean) {
   load();
   try { localStorage.setItem(KEY, on ? "1" : "0"); } catch { /* not persisted */ }
   if (!on) stopSpeaking();
-  set(on ? { on } : { on, mode: false });
-}
-
-/** Starts or ends the hands-free conversation; starting it also turns spoken replies on. */
-export function setVoiceMode(mode: boolean) {
-  load();
-  if (mode && !snap.on) setSpeaker(true);
-  if (!mode) stopSpeaking();
-  set({ mode });
+  set({ on });
 }
 
 /** Updates the voice, style or speed (persisted). Speed also applies to a reply already playing. */
 export function setVoicePrefs(p: Partial<Pick<Snap, "voice" | "style" | "rate">>) {
   load();
   set({ voice: pickVoice(p.voice ?? snap.voice), style: pickStyle(p.style ?? snap.style), rate: clampRate(p.rate ?? snap.rate) });
-  if (audio) audio.playbackRate = snap.rate;
+  if (audio) audio.playbackRate = snap.rate * BASE_RATE;
   try { localStorage.setItem(PREFS, JSON.stringify({ voice: snap.voice, style: snap.style, rate: snap.rate })); } catch { /* not persisted */ }
 }
 
@@ -87,7 +78,7 @@ export async function speak(text: string, force = false) {
     if (mine !== gen) return;
     url = URL.createObjectURL(blob);
     audio = new Audio(url);
-    audio.playbackRate = snap.rate; // speed is applied here (pitch is preserved), so it costs no extra TTS call
+    audio.playbackRate = snap.rate * BASE_RATE; // speed is applied here (pitch is preserved), so it costs no extra TTS call
     audio.onended = stopSpeaking;
     await audio.play();
   } catch {
@@ -95,7 +86,7 @@ export async function speak(text: string, force = false) {
   }
 }
 
-/** Voice state for the UI: the speaker toggle, whether audio is in flight/playing, voice mode and the picks. */
+/** Voice state for the UI: the speaker toggle, whether audio is in flight/playing, and the picks. */
 export function useSpeaker(): Snap {
   return useSyncExternalStore(
     (f) => { subs.add(f); return () => { subs.delete(f); }; },

@@ -49,11 +49,12 @@ export function stripPromptEcho(text: string, prompt: string): string {
   return (i < 0 ? text : text.slice(0, i) + text.slice(i + prompt.length)).replace(/^[\s.,]+|[\s,]+$/g, "");
 }
 
-/** The reply voices a visitor can pick (OpenAI TTS built-ins), with a few words on each for the picker. */
+/** The reply voices a visitor can pick (OpenAI TTS built-ins, best first: marin and cedar are OpenAI's recommended
+ *  highest-quality voices), with a few words on each for the picker. */
 export const VOICES = [
-  { id: "sage", note: "warm, calm" }, { id: "coral", note: "bright, friendly" }, { id: "ash", note: "low, steady" },
-  { id: "ballad", note: "soft storyteller" }, { id: "verse", note: "expressive" }, { id: "nova", note: "crisp, upbeat" },
-  { id: "onyx", note: "deep" }, { id: "fable", note: "British, lively" }, { id: "shimmer", note: "light, airy" }, { id: "echo", note: "even, neutral" },
+  { id: "marin", note: "natural, warm" }, { id: "cedar", note: "natural, grounded" }, { id: "coral", note: "bright, friendly" },
+  { id: "sage", note: "calm" }, { id: "ballad", note: "soft storyteller" }, { id: "verse", note: "expressive" },
+  { id: "ash", note: "low, steady" }, { id: "nova", note: "crisp, upbeat" },
 ] as const;
 /** Delivery styles, sent as the TTS `instructions`; the client only ever names one by id. */
 export const STYLES = {
@@ -64,9 +65,11 @@ export const STYLES = {
 } as const;
 export type StyleId = keyof typeof STYLES;
 export const RATE_MIN = 0.75, RATE_MAX = 1.75;
+/** The picker's "1x" plays at this real rate: the voices read a touch slow, so 1x is 10% brisker. */
+export const BASE_RATE = 1.1;
 
 /** An allow-listed voice id (anything else falls back to the default). */
-export const pickVoice = (v: unknown): string => (VOICES.some((x) => x.id === v) ? (v as string) : "sage");
+export const pickVoice = (v: unknown): string => (VOICES.some((x) => x.id === v) ? (v as string) : "marin");
 /** An allow-listed style id (anything else falls back to natural). */
 export const pickStyle = (s: unknown): StyleId => (typeof s === "string" && Object.hasOwn(STYLES, s) ? (s as StyleId) : "natural");
 /** A playback rate inside the supported band (non-numbers become 1). */

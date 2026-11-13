@@ -44,7 +44,7 @@ test("stripPromptEcho drops a parroted prompt but keeps real speech", () => {
 
 test("voice prefs from the client are allow-listed and clamped", () => {
   assert.equal(pickVoice("coral"), "coral");
-  assert.equal(pickVoice("evil\"voice"), "sage");
+  assert.equal(pickVoice("evil\"voice"), "marin");
   assert.equal(pickStyle("radio"), "radio");
   assert.equal(pickStyle("constructor"), "natural");
   assert.equal(clampRate(9), 1.75);

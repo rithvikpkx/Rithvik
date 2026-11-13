@@ -490,5 +490,33 @@ export function useAgent(host: Host) {
     patch(id, (i) => (i.kind === "tool" ? { ...i, undo: false, result: `${i.result ?? ""} · undone` } : i));
   }, [patch]);
 
-  return { items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
+  // ---- voice mode (GPT-Live): its transcripts land in the log as ordinary question and answer rows ----
+  const liveRow = useRef<{ who: "user" | "agent"; id: number; text: string } | null>(null);
+  const liveQ = useRef("");
+  /** Closes the open live row: an answer stops streaming and joins the history as a turn. */
+  const liveTurnEnd = useCallback(() => {
+    const cur = liveRow.current;
+    liveRow.current = null;
+    if (!cur) return;
+    if (cur.who === "user") { liveQ.current = cur.text; return; }
+    patch(cur.id, (i) => (i.kind === "answer" ? { ...i, streaming: false } : i));
+    const q = liveQ.current, a = cur.text;
+    setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]);
+  }, [patch]);
+  /** Appends live transcript text, opening a new row whenever the speaker changes. */
+  const liveText = useCallback((who: "user" | "agent", delta: string) => {
+    const cur = liveRow.current;
+    if (cur && cur.who === who) {
+      cur.text += delta;
+      const t = cur.text;
+      patch(cur.id, (i) => (i.kind === "user" || i.kind === "answer" ? { ...i, text: t } : i));
+      return;
+    }
+    liveTurnEnd();
+    const text = delta.replace(/^\s+/, "");
+    const id = add(who === "user" ? { kind: "user", text } : { kind: "answer", text, streaming: true });
+    liveRow.current = { who, id, text };
+  }, [add, patch, liveTurnEnd]);
+
+  return { liveText, liveTurnEnd, items, turns, usage, canExport: items.some((i) => i.kind === "user"), copyChat, downloadChat, canShare: !!sessionId && turns.length > 0, share, history, busySince, cooldown, submit, interrupt, press, recall, undo, clear, copy };
 }
