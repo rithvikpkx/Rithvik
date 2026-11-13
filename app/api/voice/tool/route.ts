@@ -7,7 +7,7 @@ import { getPalettes } from "@/lib/designs/server";
 
 const PER_KEY = 120; // tool calls per IP per hour (a voice conversation makes a handful)
 const GLOBAL = 3000;
-const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email"]);
+const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "open_recruiter_mode"]);
 
 /** POST { name, arguments, timeZone? } -> { call, reply }: validates one voice-mode tool call through the same gate as
  *  /api/chat (names checked against published content, arguments rebuilt, calendar tools run here) and returns the

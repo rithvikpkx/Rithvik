@@ -228,6 +228,9 @@ export function useAgent(host: Host) {
         return;
       }
       case "open_resume": act("resume", "Open resume", host.openResume); return;
+      case "open_recruiter_mode":
+        if (location.pathname !== "/recruiter") act("recruiter", "Open recruiter mode", () => { location.href = "/recruiter"; });
+        return;
       case "start_game": {
         const g = GAMES.find((x) => x.id === a.id);
         if (g) act(`game:${g.id}`, `Play ${g.name}`, () => host.openPlay(g.id));

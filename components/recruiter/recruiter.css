@@ -1,0 +1,81 @@
+/* Recruiter mode: one calm reading column, light or dark (<html data-rt>). It sets the shared --ui-* tokens, so the
+   agent, the email form, the resume skeleton and the case sheet follow it. */
+:root[data-rt="light"] {
+  --rt-bg: #ffffff; --rt-soft: #f6f7f9; --rt-fg: #111318; --rt-muted: #5b616e; --rt-line: #e3e6eb; --rt-accent: #2557d6;
+  --ui-bg: #ffffff; --ui-fg: #111318; --ui-muted: #5b616e; --ui-accent: #2557d6; --ui-accent-fg: #ffffff; --ui-line: #e3e6eb; --ui-field: #f6f7f9;
+  --ui-shadow: 0 1px 2px rgba(17, 19, 24, .06), 0 18px 48px rgba(17, 19, 24, .12); color-scheme: light;
+}
+:root[data-rt="dark"] {
+  --rt-bg: #0e1014; --rt-soft: #161920; --rt-fg: #eceef2; --rt-muted: #9aa1ad; --rt-line: #262a33; --rt-accent: #7ea6ff;
+  --ui-bg: #14171d; --ui-fg: #eceef2; --ui-muted: #9aa1ad; --ui-accent: #7ea6ff; --ui-accent-fg: #0e1014; --ui-line: #2a2f39; --ui-field: #1b1f27;
+  color-scheme: dark;
+}
+:root[data-rt] body { background: var(--rt-bg); color: var(--rt-fg); }
+:root[data-rt] .agent { --agent-r: 12px; }
+
+.rt { --col: 760px; min-height: 100vh; font: 400 16px/1.6 var(--ui-font); }
+.rt a { color: var(--rt-accent); }
+.rt-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 12px max(16px, calc((100vw - var(--col)) / 2)); background: color-mix(in srgb, var(--rt-bg) 88%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rt-line); }
+.rt-brand { color: var(--rt-fg) !important; font-weight: 600; text-decoration: none; }
+.rt-tag { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--rt-line); color: var(--rt-muted); font: 500 12px/1.6 var(--ui-mono); }
+.rt-top-r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.rt-ask { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--rt-line); background: var(--rt-soft); color: var(--rt-fg); cursor: pointer; font: 500 13px/1 var(--ui-font); }
+.rt-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--rt-line); background: transparent; color: var(--rt-fg); cursor: pointer; }
+.rt-icon .ic, .rt-ask .ic { width: 16px; height: 16px; }
+
+.rt-main { max-width: var(--col); margin: 0 auto; padding: 40px 16px 24px; }
+/* wide: leave room on the right for the agent, which sits open there */
+@media (min-width: 1180px) {
+  .rt-main, .rt-foot { margin-left: max(24px, calc((100vw - var(--col) - 460px) / 2)); }
+  .rt-top { padding-left: max(24px, calc((100vw - var(--col) - 460px) / 2)); padding-right: 476px; }
+  :root[data-rt] .agent[data-open="true"]:not([data-detached="true"]):not([data-full="true"]) { left: auto; right: 24px; margin: 0; top: 76px; width: 420px; }
+  :root[data-rt] .agent[data-open="true"]:not([data-detached="true"]):not([data-full="true"]) .agent-panel { height: auto; flex: 1; min-height: 0; }
+}
+.rt-main section { margin-top: 44px; }
+.rt-main h2 { margin: 0 0 14px; font: 650 13px/1.2 var(--ui-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--rt-muted); }
+.rt-main h3 { margin: 0; font: 600 17px/1.35 var(--ui-font); }
+.rt-main p { margin: 0 0 10px; }
+.rt-muted { color: var(--rt-muted); font-size: 14px; }
+
+.rt-hero { display: grid; grid-template-columns: 140px 1fr; gap: 28px; align-items: center; margin-top: 0 !important; }
+.rt-photo { position: relative; width: 140px; aspect-ratio: 1; border-radius: 50%; overflow: hidden; background: var(--rt-soft); }
+.rt-photo img { object-fit: cover; }
+.rt-hero h1 { margin: 0; font: 700 clamp(30px, 5vw, 42px)/1.05 var(--ui-font); letter-spacing: -.02em; }
+.rt-role { margin: 8px 0 4px !important; color: var(--rt-accent); font: 500 15px/1.4 var(--ui-mono); }
+.rt-line { color: var(--rt-muted); }
+.rt-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.rt-links .logo, .rt-links .ic { width: 16px; height: 16px; }
+.rt-links a { color: var(--ui-fg); }
+.rt-links a.primary { color: var(--ui-accent-fg); }
+.rt-note { margin-top: 20px !important; padding: 10px 14px; border-radius: 10px; background: var(--rt-soft); color: var(--rt-muted); font-size: 14px; }
+@media (max-width: 560px) { .rt-hero { grid-template-columns: 1fr; } .rt-photo { width: 112px; } }
+
+.rt-item { padding: 16px 0; border-top: 1px solid var(--rt-line); }
+.rt-item:first-of-type { border-top: 0; padding-top: 0; }
+.rt-item > header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 6px; }
+.rt-item ul { margin: 6px 0 8px; padding-left: 20px; }
+.rt-item li { margin: 3px 0; }
+.rt-lead { font-weight: 500; }
+.rt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.rt-tags span { padding: 2px 8px; border-radius: 6px; background: var(--rt-soft); color: var(--rt-muted); font: 500 12px/1.6 var(--ui-mono); }
+.rt-plinks { display: flex; gap: 14px; font-size: 14px; }
+.rt-skills, .rt-faq { margin: 0; display: grid; gap: 12px; }
+.rt-skills div { display: grid; grid-template-columns: 160px 1fr; gap: 12px; }
+.rt-skills dt, .rt-faq dt { font-weight: 600; }
+.rt-skills dd, .rt-faq dd { margin: 0; color: var(--rt-muted); }
+@media (max-width: 560px) { .rt-skills div { grid-template-columns: 1fr; gap: 2px; } }
+
+.rt-resume-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.rt-resume-actions a { color: var(--ui-fg); }
+.rt-resume { position: relative; height: min(1040px, 130vw); border: 1px solid var(--rt-line); border-radius: 12px; overflow: hidden; background: var(--rt-soft); }
+.rt-resume iframe { display: block; width: 100%; height: 100%; border: 0; }
+.rt-resume iframe[data-loading] { position: absolute; inset: 0; opacity: 0; }
+.rt-resume .pdf-viewport { height: 100%; }
+.rt-compose { border: 1px solid var(--rt-line); border-radius: 12px; overflow: hidden; background: var(--ui-bg); }
+.rt-compose .composer { min-height: 360px; }
+
+.rt-foot { max-width: var(--col); margin: 40px auto 0; padding: 0 16px 140px; }
+.rt-full { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 24px; border-radius: 14px; border: 1px solid var(--rt-line);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--rt-accent) 12%, var(--rt-soft)), var(--rt-soft)); color: var(--rt-fg) !important; text-decoration: none; font: 600 17px/1.35 var(--ui-font); }
+.rt-full .ic { flex: none; width: 20px; height: 20px; transition: translate 200ms var(--ease-out); }
+@media (hover: hover) { .rt-full:hover .ic { translate: 4px 0; } }

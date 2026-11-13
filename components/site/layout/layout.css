@@ -59,6 +59,15 @@
 .ly-hero-copy > * { animation: ly-rise 600ms var(--ease-out) both; }
 .ly-hero-copy > :nth-child(2) { animation-delay: 60ms; }
 .ly-hero-copy > :nth-child(3) { animation-delay: 120ms; }
+.ly-hero-copy > :nth-child(4) { animation-delay: 180ms; }
+/* recruiter mode: a quiet pill under the hero line, the same in every look (tokens only) */
+.ly-recruit { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; padding: 9px 14px 9px 16px; border-radius: 999px; border: 1px solid var(--ly-line); background: color-mix(in srgb, var(--ui-bg) 70%, transparent);
+  color: var(--ui-fg); text-decoration: none; font: 500 14px/1.2 var(--ui-font); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transition: border-color 160ms ease, translate 200ms var(--ease-out); }
+.ly-recruit-d { color: var(--ui-muted); font-weight: 400; }
+.ly-recruit svg { transition: translate 200ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .ly-recruit:hover { border-color: var(--ui-accent); } .ly-recruit:hover svg { translate: 3px 0; } }
+.ly-recruit:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+@media (max-width: 520px) { .ly-recruit-d { display: none; } }
 @keyframes ly-rise { from { opacity: 0; transform: translateY(12px); } }
 @media (prefers-reduced-motion: reduce) { .ly-hero-copy > * { animation: none; } }
 html.lite .ly-hero-copy > * { animation: none; }

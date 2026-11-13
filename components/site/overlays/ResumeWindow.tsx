@@ -8,7 +8,7 @@ import { resumeSyncing, syncResumeNow, uploadResume } from "@/app/admin/resume-a
 type Meta = { sha: string | null; syncedAt?: string; source?: "gdoc" | "upload"; pinned?: boolean };
 
 /** Loads /api/resume/meta (null while loading; `{ sha: null }` on failure, so the summary shows). `fresh` skips the CDN copy. */
-function useResumeMeta() {
+export function useResumeMeta() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const load = useCallback((fresh = false) => {
     fetch(fresh ? `/api/resume/meta?t=${Date.now()}` : "/api/resume/meta")
@@ -109,7 +109,7 @@ export default function ResumeWindow() {
 }
 
 /** A grey wireframe of a resume page, shown until the real PDF (or, without one, the summary) is ready. */
-function ResumeSkeleton() {
+export function ResumeSkeleton() {
   const block = (lines: number[]) => lines.map((w, i) => <i key={i} style={{ width: `${w}%` }} />);
   return (
     <div className="pdf-viewport" aria-busy="true" aria-label="Loading resume">

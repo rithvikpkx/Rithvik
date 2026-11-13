@@ -61,6 +61,12 @@ function Hero({ content: c, skin, backdrop, children }: { content: Content; skin
           </h1>
           <p className="ly-status" data-edit="v7.status">{c.status}</p>
           <p className="ly-line" data-edit="v7.line">{c.line}</p>
+          {/* a plain link (a full load into recruiter mode's own minimal layout) */}
+          <a className="ly-recruit" href="/recruiter" title="A minimal, content-first version: resume, projects, experience and contact, all on one page">
+            <span className="ly-recruit-k">Recruiter mode</span>
+            <span className="ly-recruit-d">Just the essentials, no effects</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+          </a>
         </div>
         <div className="ly-hero-pt">{backdrop}<Tether id="hero" fx={skin.PortraitFx} /></div>
       </div>

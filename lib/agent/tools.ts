@@ -24,7 +24,7 @@ export const SIZES = ["small", "medium", "large", "full"] as const;
 const MAX_ARTIFACTS = 1;
 /** At most this many calendar lookups per step; extras are rejected. */
 const MAX_CALENDAR = 4;
-const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting"]);
+const SIDE_EFFECTS = new Set(["open_project", "show_section", "open_resume", "start_game", "switch_design", "draft_email", "request_meeting", "open_recruiter_mode"]);
 /** Stands in for the real session id when validating a meeting request's fields; the id is checked again at send time. */
 const NO_SESSION = "00000000-0000-4000-8000-000000000000";
 
@@ -59,6 +59,7 @@ export function toolDefs(a: Allowed): ToolDef[] {
       subject: { type: "string", description: "Short subject line" },
       body: { type: "string", description: "Draft message body, written as the visitor" },
     }, ["subject", "body"]),
+    fn("open_recruiter_mode", "Switch to recruiter mode: a minimal, content-first page with the resume, experience, projects and an email form all open. Offer it when the visitor says they are a recruiter, hiring manager or hiring, or asks for just the essentials.", {}),
     fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
       window: enumOf([...WINDOWS], "Which window"),
       action: enumOf([...WINDOW_ACTIONS], "open (also places it), close, move (and/or resize), or front"),
@@ -158,6 +159,7 @@ export function validateToolCall(call: ToolCall, a: Allowed, now = new Date()): 
       return ok ? { id, name: call.name, args: { id: v } } : null;
     }
     case "open_resume":
+    case "open_recruiter_mode":
       return { id, name: call.name, args: {} };
     case "arrange_window": {
       const w = s("window"), act = s("action"), spot = s("spot"), size = s("size");
