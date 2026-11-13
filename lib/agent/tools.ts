@@ -16,7 +16,7 @@ export const MAX_SIDE_EFFECTS = 2;
 /** Read-only calendar tools: the server runs them inside the step loop; the visitor is never asked. */
 const CALENDAR = new Set(["check_availability", "suggest_times"]);
 const CALENDAR_KEYS = new Set(["startISO", "fromISO", "days", "durationMin", "count", "visitorTz"]);
-export const WINDOWS = ["chat", "email", "resume", "play"] as const;
+export const WINDOWS = ["chat", "email", "resume", "play", "project"] as const;
 export const WINDOW_ACTIONS = ["open", "close", "move", "front"] as const;
 export const SPOTS = ["left", "right", "center", "top-left", "top-right", "bottom-left", "bottom-right"] as const;
 export const SIZES = ["small", "medium", "large", "full"] as const;
@@ -73,7 +73,7 @@ export function toolDefs(a: Allowed): ToolDef[] {
       job: { type: "string", description: "A job posting they shared: its link or its text" },
     }),
     fn("open_recruiter_mode", "Switch to recruiter mode: a minimal, content-first page with the resume, experience, projects and an email form all open. Offer it when the visitor says they are a recruiter, hiring manager or hiring, or asks for just the essentials.", {}),
-    fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
+    fn("arrange_window", "Open, close, move, resize or bring forward one of the site's floating windows: chat (this conversation, floated as a window), email (the composer), resume, play (the games), project (the open project; open one with open_project). Use it when the visitor asks to open, close, move, resize, tile or arrange windows, e.g. resume on the left and chat on the right. It applies at once.", {
       window: enumOf([...WINDOWS], "Which window"),
       action: enumOf([...WINDOW_ACTIONS], "open (also places it), close, move (and/or resize), or front"),
       spot: enumOf([...SPOTS], "Where on screen; optional"),

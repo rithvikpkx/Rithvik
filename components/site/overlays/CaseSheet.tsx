@@ -1,71 +1,44 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Icon } from "../Glyph";
 import { useSite } from "../SiteProvider";
 import ProjectArt from "../work/ProjectArt";
+import Window from "../windows/Window";
+import { place, windowEl } from "../windows/stack";
 import "../case/case.css";
 
-const FOCUSABLE = 'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])';
 const isHttp = (u: string) => /^https?:\/\//i.test(u);
 
-/** The project case sheet: a modal bottom sheet with the project's story, links and a next-project button. */
+/** The project case window: a large floating window (movable, resizable, maximisable) with the project's story, links
+ *  and a next-project button. Non-modal, so the page, the chat and other windows stay usable around it. */
 export default function CaseSheet({ slug }: { slug: string }) {
   const { content, close: closeLayer, openCase } = useSite();
-  const close = () => closeLayer("case");
-  const [closing, setClosing] = useState(false);
   const bodyRef = useRef<HTMLElement>(null);
-  const closeRef = useRef(close);
-  useEffect(() => { closeRef.current = close; });
+  const prev = useRef<{ l: string; t: string; w: string; h: string } | null>(null); // size and spot before maximising
 
   const i = content.projects.findIndex((p) => p.slug === slug);
   const p = content.projects[i];
   const next = content.projects[(i + 1) % content.projects.length];
 
-  // Slide out (280ms, instant under reduced motion) before unmounting.
-  const dismiss = () => {
-    if (closing) return;
-    setClosing(true);
-    const ms = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 280;
-    setTimeout(() => closeRef.current(), ms);
-  };
-  const dismissRef = useRef(dismiss);
-  useEffect(() => { dismissRef.current = dismiss; });
-
-  // Scroll lock without layout shift (pad for the vanished scrollbar), focus in/out, Esc + Tab trap.
-  useEffect(() => {
-    const root = document.documentElement, prev = document.activeElement as HTMLElement | null;
-    const gap = innerWidth - root.clientWidth;
-    root.style.overflow = "hidden";
-    if (gap > 0) root.style.paddingRight = gap + "px";
-    bodyRef.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { dismissRef.current(); return; }
-      if (e.key !== "Tab" || !bodyRef.current) return;
-      const f = [...bodyRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-      const first = f[0], last = f[f.length - 1], a = document.activeElement;
-      if (!f.length || a === bodyRef.current) { e.preventDefault(); (e.shiftKey ? last : first)?.focus(); }
-      else if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      root.style.overflow = ""; root.style.paddingRight = "";
-      prev?.focus?.({ preventScroll: true });
-    };
-  }, []);
-
   // Next project swaps the content in place, so reset the scroll.
   useEffect(() => { bodyRef.current?.scrollTo(0, 0); }, [slug]);
+
+  /** Fills the screen, or goes back to where it was. */
+  const toggleMax = () => {
+    const w = windowEl("project");
+    if (!w) return;
+    if (prev.current) { const r = prev.current; Object.assign(w.style, { left: r.l, top: r.t, width: r.w, height: r.h }); prev.current = null; return; }
+    prev.current = { l: w.style.left, t: w.style.top, w: w.style.width, h: w.style.height };
+    place(w, "center", "full");
+  };
 
   if (!p) return null;
   const links = Object.entries(p.links).filter(([, u]) => isHttp(u));
 
   return (
-    <div className={`sheet${closing ? " closing" : ""}`} role="dialog" aria-modal="true" aria-labelledby="case-h">
-      <div className="sheet-scrim" onClick={dismiss} />
-      <article className="sheet-body" ref={bodyRef} tabIndex={-1}>
-        <button type="button" className="ui-ic sheet-close" onClick={dismiss} aria-label="Close"><Icon name="x" /></button>
+    <Window title={p.title} icon={p.icon} label={`Project: ${p.title}`} name="project" className="case-win" onClose={() => closeLayer("case")}
+      actions={<button type="button" className="ui-ic" onClick={toggleMax} aria-label="Maximise or restore"><Icon name="maximize-2" /></button>}>
+      <article className="sheet-body case-body" ref={bodyRef} tabIndex={-1} aria-labelledby="case-h">
         <div className="case">
           <p className="case-kind"><Icon name={p.icon} /> <span data-edit={`project:${p.slug}:kind`}>{p.kind}</span></p>
           <h1 id="case-h" data-edit={`project:${p.slug}:headline`}>{p.headline}</h1>
@@ -86,6 +59,6 @@ export default function CaseSheet({ slug }: { slug: string }) {
           <button type="button" className="case-next" onClick={() => openCase(next.slug)}><span>Next</span><b>{next.title}</b></button>
         </div>
       </article>
-    </div>
+    </Window>
   );
 }

@@ -17,7 +17,7 @@ export default function Overlays() {
   const { layers: l } = useSite();
   return (
     <>
-      {l.case && <CaseSheet key={l.case.slug} slug={l.case.slug} />}
+      {l.case && <CaseSheet slug={l.case.slug} />}{/* no key: Next swaps the project in the same window */}
       {l.composer && <ComposerWindow key={`${l.composer.subject}\u0000${l.composer.body ?? ""}`} subject={l.composer.subject} body={l.composer.body} agentSessionId={l.composer.meta?.agentSessionId} />}
       {l.resume && <ResumeWindow />}
       {l.play && <PlayWindow key={l.play.id ?? ""} initialId={l.play.id} />}

@@ -73,9 +73,10 @@ export default function AgentDock() {
       openCase: away(site.openCase), openResume: away(site.openResume), openComposer: away(site.openComposer), openPlay: away(site.openPlay), lite: site.lite, setLite: site.setLite,
       close, toggleFull: () => setFull((f) => !f), toast: (m: string) => site.toast(m),
       arrange: (a: Record<string, string>) => {
-        const name = a.window, kind = ({ chat: "agent", email: "composer", resume: "resume", play: "play" } as const)[name as "chat"];
+        const name = a.window, kind = ({ chat: "agent", email: "composer", resume: "resume", play: "play", project: "case" } as const)[name as "chat"];
         if (!kind) return "Unknown window";
         if (a.action === "close") { if (name === "chat") close(); else site.close(kind); return `Closed ${name}`; }
+        if (name === "project" && !site.layers.case) return "No project is open (open one with open_project)";
         if (a.action === "open" && !site.layers[kind]) {
           inputRef.current?.blur();
           if (name === "email") site.openComposer(); else if (name === "resume") site.openResume(); else if (name === "play") site.openPlay();
