@@ -67,7 +67,7 @@ export const ACTION_SIMILARITY_FLOOR = 0.45;
 
 /** Phrases the bot uses when it declines or redirects. If the answer is one of
  *  these, there is nothing to point at, so no actions are offered. */
-export const DECLINE_MARKERS = [
+const DECLINE_MARKERS = [
   "i don't have that specific detail",
   "i'm here specifically to answer questions about rithvik",
   "i'm only set up to discuss rithvik",
@@ -94,19 +94,19 @@ const LINK_LABELS: Record<string, string> = {
   paper: "Read the paper",
 };
 
-/** Accepts only plain web links (or the `protocols` the caller opts into, e.g. mailto: for
- *  chat markdown). Blocks javascript:, data: and any malformed value that might have reached the DB.
+/** Accepts only plain web links. Blocks javascript:, data:, mailto: and any
+ *  malformed value that might have reached the DB.
  *
  *  Returns the CANONICAL form, not the input: `new URL().toString()` normalises
  *  (notably adding a trailing slash to a bare origin), which is deliberate —
  *  canonicalising also neutralises obfuscated spellings of a host. */
-export function safeUrl(raw: unknown, protocols: string[] = ["http:", "https:"]): string | null {
+export function safeUrl(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const s = raw.trim();
   if (!s) return null;
   try {
     const u = new URL(s);
-    if (!protocols.includes(u.protocol)) return null;
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
     return u.toString();
   } catch {
     return null;

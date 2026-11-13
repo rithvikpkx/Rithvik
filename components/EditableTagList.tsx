@@ -12,7 +12,6 @@ interface Props {
 export default function EditableTagList({ tags, onSave, className = "" }: Props) {
   const { isEditing } = useEditMode();
   const [inputVal, setInputVal] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   if (!isEditing) {
     return (
@@ -22,21 +21,16 @@ export default function EditableTagList({ tags, onSave, className = "" }: Props)
     );
   }
 
-  // Runs a save and surfaces failure; parents roll their state back on throw.
-  const save = async (next: string[]) => {
-    setError(null);
-    try { await onSave(next); return true; }
-    catch { setError("Save failed. Change reverted."); return false; }
-  };
-
   const addTag = async (raw: string) => {
     const tag = raw.trim();
     if (!tag || tags.includes(tag)) { setInputVal(""); return; }
-    // keep the typed text on failure so it isn't lost
-    if (await save([...tags, tag])) setInputVal("");
+    await onSave([...tags, tag]);
+    setInputVal("");
   };
 
-  const removeTag = (tag: string) => save(tags.filter((t) => t !== tag));
+  const removeTag = async (tag: string) => {
+    await onSave(tags.filter((t) => t !== tag));
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(inputVal); }
@@ -59,7 +53,6 @@ export default function EditableTagList({ tags, onSave, className = "" }: Props)
         onBlur={() => { if (inputVal.trim()) addTag(inputVal); }}
         placeholder="Add tag…"
       />
-      {error && <small role="alert" className="edit-error">{error}</small>}
     </div>
   );
 }

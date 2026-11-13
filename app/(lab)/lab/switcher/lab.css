@@ -1,5 +1,0 @@
-:root { --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-drawer: cubic-bezier(.32, .72, 0, 1); }
-body { background: #f4efe6; color: #2a2620; font: 14px/1.5 system-ui, sans-serif; }
-.lab-page { padding: 28px 20px 320px; max-width: 980px; }
-.lab-page h1 { font-size: 20px; margin: 0 0 6px; }
-.lab-page p { opacity: .65; margin: 0 0 24px; }

@@ -5,7 +5,7 @@ import type { Theme } from "./types";
  * -----------------
  * Themes only NEED to define a small primary palette: bg, text, accent, etc.
  * Surface tokens (--card, --border, --nav-glass, --panel-glass) are derived in
- * CSS via color-mix() (Classic maps them onto --ui-*; edit chrome in components/EditMode.css).
+ * globals.css via color-mix() so they auto-adapt to any theme's primary values.
  *
  * Themes MAY still override any derived token by including it in their tokens map;
  * the per-theme value wins over the derived default. The set below documents which
@@ -129,27 +129,16 @@ export const FALLBACK_THEMES: Theme[] = [
   },
 ];
 
-const SLUG_RE = /^[a-z0-9-]+$/;
-// Colors, lengths, var()/calc(), font stacks. Excludes ; { } < > \ @ so a value can't leave its declaration.
-const VALUE_RE = /^[a-zA-Z0-9#%.,()\s\-_+/'"]+$/;
-
-/** True if a token value is safe to interpolate into a <style> block. */
-function isSafeTokenValue(v: unknown): v is string {
-  return typeof v === "string" && VALUE_RE.test(v) && !/url\s*\(/i.test(v);
-}
-
-/** Converts a tokens map to a CSS rule body, skipping any invalid key or value. */
+/** Converts a tokens map to a CSS rule body: "--bg: ...; --text: ...;". */
 export function tokensToCss(tokens: Record<string, string>): string {
   return Object.entries(tokens)
-    .filter(([key, value]) => SLUG_RE.test(key) && isSafeTokenValue(value))
     .map(([key, value]) => `  --${key}: ${value};`)
     .join("\n");
 }
 
-/** Builds the full <style> body for every theme as data-theme selectors; themes with an invalid slug are skipped. */
+/** Builds the full <style> body for every theme as data-theme selectors. */
 export function buildThemeStyleSheet(themes: Theme[]): string {
   return themes
-    .filter((t) => SLUG_RE.test(t.slug))
     .map((t) => `:root[data-theme="${t.slug}"] {\n${tokensToCss(t.tokens)}\n}`)
     .join("\n\n");
 }

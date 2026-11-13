@@ -23,9 +23,8 @@
  *                  Kills the C1/C2 mismatch.
  * Both gates are deterministic string checks; no extra judge model.
  */
-import { adminClient } from "@/lib/supabase-server";
+import { adminClient } from "@/lib/supabase";
 import { embedTexts } from "@/lib/embeddings";
-import { AUX_MODEL, complete } from "@/lib/openai";
 import {
   normalizeSuggestions,
   containsGrounding,
@@ -36,10 +35,13 @@ import {
   WANTED_SUGGESTIONS,
 } from "@/lib/suggestion-protocol";
 
+export { SUGGESTIONS_SENTINEL } from "@/lib/suggestion-protocol";
+
+const MODEL = "gpt-4o-mini";
 /** Kept tight on purpose. Each candidate costs a question AND a verbatim quote,
  *  and this call has to finish inside the answer's streaming window (~2.5s) to
  *  stay free. At 8 candidates with long quotes the turn went 2.4s -> 6.3s. */
-const MAX_TOKENS = 400; // reasoning AUX models count their (minimal) reasoning against this too
+const MAX_TOKENS = 340;
 /** Enough slack for the gates to reject a couple without leaving us short. */
 const CANDIDATES = 6;
 /** Quotes long enough to be verifiable, short enough to generate fast. */
@@ -98,7 +100,6 @@ function parseCandidates(raw: unknown): Candidate[] {
 async function keepRetrievable(
   candidates: Candidate[],
   vectors: number[][],
-  always: string,
 ): Promise<string[]> {
   if (candidates.length === 0) return [];
   const db = adminClient();
@@ -114,8 +115,7 @@ async function keepRetrievable(
           ? ((r.value.data as { content: string }[] | null) ?? [])
           : [],
       );
-      // `always` is the profile the answer is grounded in every turn, retrieval or not.
-      const retrieved = [always, ...rows.map((r) => r.content)].join("\n\n");
+      const retrieved = rows.map((r) => r.content).join("\n\n");
       return containsGrounding(retrieved, c.evidence) ? c.question : null;
     }),
   );
@@ -139,7 +139,6 @@ export async function generateSuggestions(
   askedQuestions: string[] = [],
   answerJustGiven = "",
   recentlyOffered: string[] = [],
-  profile = "",
 ): Promise<string[]> {
   if (!process.env.OPENAI_API_KEY) return [];
   if (!contextBlock.trim()) return [];   // nothing grounded to suggest from
@@ -165,27 +164,39 @@ export async function generateSuggestions(
     : "";
 
   try {
-    const { content } = await complete({
-      model: AUX_MODEL,
-      maxTokens: MAX_TOKENS,
-      // Low (classic models only): this is extraction against the Context, not a
-      // creative task. Higher temperature is exactly what produced invented questions.
-      temperature: 0.3,
-      reasoningEffort: "minimal",
-      json: true,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content:
-            `Already asked in this conversation — do NOT propose any of these, ` +
-            `or a reworded version of them:\n${askedBlock}` +
-            offeredBlock +
-            answerBlock +
-            `\n\nContext:\n${contextBlock}`,
-        },
-      ],
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        // Low: this is an extraction task against the Context, not a creative
+        // one. Higher temperature is exactly what produced invented questions.
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          {
+            role: "user",
+            content:
+              `Already asked in this conversation — do NOT propose any of these, ` +
+              `or a reworded version of them:\n${askedBlock}` +
+              offeredBlock +
+              answerBlock +
+              `\n\nContext:\n${contextBlock}`,
+          },
+        ],
+      }),
     });
+    if (!res.ok) {
+      console.warn(`[rag] suggestions failed (${res.status}); continuing without them`);
+      return [];
+    }
+    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const content = json.choices?.[0]?.message?.content;
     if (!content) return [];
 
     const parsed = JSON.parse(content) as { suggestions?: unknown };
@@ -223,7 +234,7 @@ export async function generateSuggestions(
     });
 
     // Gate 2: the evidence must survive a fresh retrieval for that question.
-    const retrievable = await keepRetrievable(semFresh, semVecs, profile);
+    const retrievable = await keepRetrievable(semFresh, semVecs);
 
     const final = normalizeSuggestions(retrievable);
     console.log(

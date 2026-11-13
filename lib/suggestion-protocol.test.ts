@@ -2,14 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   splitStream,
-  parseFrames,
-  frame,
-  FRAME,
   normalizeSuggestions,
   containsGrounding,
   normalizeForMatch,
   isRedundant,
   questionSimilarity,
+  SUGGESTIONS_SENTINEL as S,
   MAX_SUGGESTION_CHARS,
 } from "./suggestion-protocol.ts";
 
@@ -108,58 +106,64 @@ test("questionSimilarity is 1 for identical and 0 for disjoint", () => {
   assert.equal(questionSimilarity("What is his GPA?", "Which languages does he write?"), 0);
 });
 
-const payload = (arr: string[]) => frame({ t: "done" }) + frame({ t: "trailer", suggestions: arr, actions: [] });
+const payload = (arr: string[]) => S + JSON.stringify({ suggestions: arr });
 
-test("plain answer with no frames passes through untouched", () => {
+test("plain answer with no sentinel passes through untouched", () => {
   const r = splitStream("Rithvik studies at Purdue.");
   assert.equal(r.answer, "Rithvik studies at Purdue.");
   assert.equal(r.suggestions, null);
-  assert.equal(r.done, false);
 });
 
-test("splits answer from a complete trailer", () => {
+test("splits answer from a complete payload", () => {
   const r = splitStream("The answer." + payload(["One?", "Two?"]));
   assert.equal(r.answer, "The answer.");
   assert.deepEqual(r.suggestions, ["One?", "Two?"]);
-  assert.equal(r.done, true);
 });
 
-test("withholds a partially-arrived frame so it never flashes", () => {
-  const f = frame({ t: "search", q: "x", n: 3, top: [] });
-  for (let i = 1; i < f.length; i++) {
-    const r = splitStream("Answer" + f.slice(0, i));
-    assert.equal(r.answer, "Answer", `leaked partial frame at ${i} chars`);
+test("withholds a partially-arrived sentinel so it never flashes", () => {
+  // Simulate the stream cutting mid-sentinel.
+  for (let i = 1; i < S.length; i++) {
+    const r = splitStream("Answer" + S.slice(0, i));
+    assert.equal(r.answer, "Answer", `leaked partial sentinel at ${i} chars`);
+    assert.equal(r.suggestions, null);
   }
 });
 
-test("malformed frame never corrupts the answer", () => {
-  assert.equal(splitStream("Ans" + FRAME + "not json" + FRAME + "wer").answer, "Answer");
+test("sentinel present but JSON not yet complete → answer correct, suggestions null", () => {
+  const r = splitStream("Answer" + S + '{"sugg');
+  assert.equal(r.answer, "Answer");
+  assert.equal(r.suggestions, null);
 });
 
-test("parseFrames keeps text runs and events in order (multi-step)", () => {
-  const acc = frame({ t: "rewrite", q: "Q" }) + "Step one." + frame({ t: "tool", id: "1", name: "open_project", args: { slug: "boilerframe" } }) + "Step two.";
-  const parts = parseFrames(acc);
-  assert.deepEqual(parts.map((p) => (p.type === "text" ? p.text : p.event.t)), ["rewrite", "Step one.", "tool", "Step two."]);
+test("malformed JSON payload never corrupts the answer", () => {
+  const r = splitStream("Answer" + S + "not json at all");
+  assert.equal(r.answer, "Answer");
+  assert.equal(r.suggestions, null);
 });
 
-test("chunk-by-chunk accumulation converges and parts stay index-stable", () => {
-  const full = frame({ t: "sources", items: [{ n: 1, label: "BoilerFrame" }] }) + "Hello there." + payload(["A?", "B?", "C?"]);
+test("chunk-by-chunk accumulation converges correctly", () => {
+  const full = "Hello there." + payload(["A?", "B?", "C?"]);
   let acc = "";
-  let prev: ReturnType<typeof parseFrames> = [];
+  let last = splitStream("");
   for (const ch of full) {
     acc += ch;
-    const parts = parseFrames(acc);
-    // Every earlier part except a growing text tail is unchanged.
-    prev.slice(0, -1).forEach((p, i) => assert.deepEqual(parts[i], p));
-    assert.ok("Hello there.".startsWith(splitStream(acc).answer));
-    prev = parts;
+    last = splitStream(acc);
+    // The visible answer must never exceed the true answer at any point.
+    assert.ok("Hello there.".startsWith(last.answer) || last.answer === "Hello there.");
   }
-  assert.equal(splitStream(acc).answer, "Hello there.");
-  assert.deepEqual(splitStream(acc).suggestions, ["A?", "B?", "C?"]);
+  assert.equal(last.answer, "Hello there.");
+  assert.deepEqual(last.suggestions, ["A?", "B?", "C?"]);
+});
+
+test("answer containing the word RAG_SUGGESTIONS without NULs is not split", () => {
+  const r = splitStream("He named the constant RAG_SUGGESTIONS in the code.");
+  assert.equal(r.answer, "He named the constant RAG_SUGGESTIONS in the code.");
+  assert.equal(r.suggestions, null);
 });
 
 test("empty suggestions array yields an empty list, not null", () => {
-  assert.deepEqual(splitStream("Answer" + payload([])).suggestions, []);
+  const r = splitStream("Answer" + payload([]));
+  assert.deepEqual(r.suggestions, []);
 });
 
 test("normalizeSuggestions rejects non-arrays and non-strings", () => {

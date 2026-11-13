@@ -1,10 +1,9 @@
 import React from "react";
-import { safeUrl } from "@/lib/chat-actions";
 
 /* Minimal markdown renderer for chat messages.
    Handles: headings (#/##/###), bold (**), italic (*), inline code (`),
    fenced code blocks (```), bullet/numbered lists, links, paragraphs.
-   Output is wrapped in a <div class="rag-md">; the agent styles it in components/site/agent/agent.css. */
+   Output is wrapped in a <div class="rag-md"> so styling lives in globals.css. */
 
 type Block =
   | { type: "p"; lines: string[] }
@@ -120,20 +119,16 @@ function renderInline(text: string, keyBase: string): React.ReactNode[] {
       // link [text](url)
       const linkMatch = /\[([^\]]+)\]\(([^)]+)\)/.exec(token);
       if (linkMatch) {
-        // Model output is untrusted: only http(s)/mailto become links, anything else (javascript:, data:, relative) is plain text.
-        const url = safeUrl(linkMatch[2], ["http:", "https:", "mailto:"]);
+        const url = linkMatch[2];
+        const isExternal = /^https?:\/\//i.test(url);
         nodes.push(
-          url ? (
-            <a
-              key={`${keyBase}-${key++}`}
-              href={url}
-              {...(url.startsWith("mailto:") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-            >
-              {linkMatch[1]}
-            </a>
-          ) : (
-            linkMatch[1]
-          )
+          <a
+            key={`${keyBase}-${key++}`}
+            href={url}
+            {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+          >
+            {linkMatch[1]}
+          </a>
         );
       }
     } else if (match[3]) {

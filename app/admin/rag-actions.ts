@@ -1,7 +1,7 @@
 "use server";
-import { adminClient } from "@/lib/supabase-server";
+import { adminClient } from "@/lib/supabase";
 import {
-  buildProjectText, buildExperienceText,
+  embedPrimary, buildProjectText, buildExperienceText,
   buildEducationText, buildSiteContentText,
   chunkText, embedTexts,
 } from "@/lib/embeddings";
@@ -11,12 +11,8 @@ import { requireAuth } from "./auth-helper";
 import { RAG_SETTING_PREFIX } from "@/lib/rag-settings";
 
 /**
- * Re-embed every primary row. Builds the text for every published record,
- * embeds them in batches (embedTexts, 64/request), upserts on
- * (source_table, source_id), and only THEN deletes rows no longer backed by a
- * record (unpublished, deleted, or `rag.*` settings). Never deletes first, so a
- * failure mid-run leaves the old embeddings serving the bot instead of an
- * empty index. Use:
+ * Re-embed every primary row from scratch. Wipes primary_embeddings, then
+ * walks all four content tables and inserts a fresh row per record. Use:
  *   - After applying the initial schema migration (first-run setup).
  *   - If an inline-edit's embedding silently failed and content is now stale.
  * Returns a small report so the UI can show what happened.
@@ -28,83 +24,47 @@ export async function backfillPrimaryEmbeddings(): Promise<{
   await requireAuth();
   const db = adminClient();
   const errors: string[] = [];
+
+  // PostgREST forbids unqualified DELETE for safety. The zero UUID never
+  // collides with a real row, so .neq(...) matches everything cleanly.
+  await db.from("primary_embeddings").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
   const counts = { projects: 0, experience: 0, education: 0, site_content: 0 };
 
-  type Item = { table: keyof typeof counts; id: string; content: string; metadata: Record<string, unknown> };
-  const items: Item[] = [];
-  // Rows whose text failed to build keep their existing embedding (not trimmed).
-  const keep = new Set<string>();
-  const keyOf = (table: string, id: string) => `${table}:${id}`;
-
-  /** Collects one record, isolating a build failure to that record. */
-  async function collect(
-    table: Item["table"], id: string, label: string,
-    build: () => string | Promise<string>, metadata: Record<string, unknown>,
-  ) {
-    keep.add(keyOf(table, id));
+  const { data: projects } = await db.from("projects").select("*").eq("published", true);
+  for (const p of projects ?? []) {
     try {
-      items.push({ table, id, content: await build(), metadata });
-    } catch (e) { errors.push(`${table} ${label}: ${e instanceof Error ? e.message : e}`); }
+      await embedPrimary("projects", p.id, buildProjectText(p), { slug: p.slug, title: p.title });
+      counts.projects++;
+    } catch (e) { errors.push(`project ${p.slug}: ${e instanceof Error ? e.message : e}`); }
   }
 
-  // A failed read must abort: with an empty list the trim below would wipe the table.
-  async function read<T>(q: PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
-    const { data, error } = await q;
-    if (error) throw new Error(error.message);
-    return data ?? [];
+  const { data: experience } = await db.from("experience").select("*").eq("published", true);
+  for (const e of experience ?? []) {
+    try {
+      await embedPrimary("experience", e.id, buildExperienceText(e), { slug: e.slug, org: e.org });
+      counts.experience++;
+    } catch (err) { errors.push(`experience ${e.slug}: ${err instanceof Error ? err.message : err}`); }
   }
-  const projects = await read(db.from("projects").select("*").eq("published", true));
-  const experience = await read(db.from("experience").select("*").eq("published", true));
-  const education = await read(db.from("education").select("*").eq("published", true));
-  const site = await read(db.from("site_content").select("*"));
 
-  for (const p of projects) await collect("projects", p.id, p.slug, () => buildProjectText(p), { slug: p.slug, title: p.title });
-  for (const e of experience) await collect("experience", e.id, e.slug, () => buildExperienceText(e), { slug: e.slug, org: e.org });
-  for (const ed of education) await collect("education", ed.id, ed.school, () => buildEducationText(ed), { school: ed.school });
-  for (const row of site) {
+  const { data: education } = await db.from("education").select("*").eq("published", true);
+  for (const ed of education ?? []) {
+    try {
+      await embedPrimary("education", ed.id, buildEducationText(ed), { school: ed.school });
+      counts.education++;
+    } catch (err) { errors.push(`education ${ed.school}: ${err instanceof Error ? err.message : err}`); }
+  }
+
+  const { data: site } = await db.from("site_content").select("*");
+  for (const row of site ?? []) {
     // Settings rows (rag.*) are configuration, not content. Embedding them
     // would let the bot retrieve its own temperature as a fact about Rithvik.
     if (row.key.startsWith(RAG_SETTING_PREFIX)) continue;
-    // shortcut: v7.* copy still holds {{placeholders}} and JSON blobs the text builder doesn't read
-    // well; embed it once Step 3 adds proper builders and the owner fills the placeholders.
-    if (row.key.startsWith("v7.")) continue;
-    await collect("site_content", row.key, row.key, () => buildSiteContentText(row.key, row.value), { key: row.key });
-  }
-
-  if (items.length > 0) {
-    let vectors: number[][];
     try {
-      vectors = await embedTexts(items.map((i) => i.content));
-    } catch (e) {
-      // Nothing written yet, so the existing index is untouched.
-      return { ...counts, errors: [...errors, `embedding failed: ${e instanceof Error ? e.message : e}`] };
-    }
-    const now = new Date().toISOString();
-    const UPSERT_BATCH = 64; // keeps each request body modest (1536-float vectors)
-    for (let start = 0; start < items.length; start += UPSERT_BATCH) {
-      const batch = items.slice(start, start + UPSERT_BATCH);
-      const { error } = await db.from("primary_embeddings").upsert(
-        batch.map((it, j) => ({
-          source_table: it.table, source_id: it.id, content: it.content,
-          metadata: it.metadata, embedding: vectors[start + j], updated_at: now,
-        })),
-        { onConflict: "source_table,source_id" },
-      );
-      if (error) { errors.push(`upsert failed: ${error.message}`); continue; }
-      for (const it of batch) counts[it.table]++;
-    }
+      await embedPrimary("site_content", row.key, await buildSiteContentText(row.key, row.value), { key: row.key });
+      counts.site_content++;
+    } catch (err) { errors.push(`site_content ${row.key}: ${err instanceof Error ? err.message : err}`); }
   }
-
-  // Trim rows with no backing record. Keyed on `keep` (not on what upserted)
-  // so a transient failure never deletes a row that still has a record.
-  try {
-    const existing = await read(db.from("primary_embeddings").select("id, source_table, source_id"));
-    const stale = existing.filter((r) => !keep.has(keyOf(r.source_table, r.source_id))).map((r) => r.id);
-    if (stale.length > 0) {
-      const { error } = await db.from("primary_embeddings").delete().in("id", stale);
-      if (error) errors.push(`trim failed: ${error.message}`);
-    }
-  } catch (e) { errors.push(`trim failed: ${e instanceof Error ? e.message : e}`); }
 
   revalidatePath("/");
   return { ...counts, errors };
