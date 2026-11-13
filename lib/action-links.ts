@@ -8,7 +8,7 @@
  *
  * Server-only (service-role client).
  */
-import { adminClient } from "@/lib/supabase";
+import { adminClient } from "@/lib/supabase-server";
 import type { ActionLinkSources } from "@/lib/chat-actions";
 
 const EMPTY: ActionLinkSources = { projectLinks: {}, experienceUrls: {}, educationUrls: {} };

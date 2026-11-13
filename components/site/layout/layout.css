@@ -1,0 +1,99 @@
+/* The shared page skeleton: header, hero, section frame, default section bodies, footer. Every look renders this;
+   a skin themes it through tokens (below) and its own scoped rules. Colours come only from the shared --ui-* tokens
+   every design defines, so a new design gets a coherent page before it writes any layout CSS. */
+
+/* defaults at zero specificity, so a design's :root[data-design="x"] tokens always win */
+:where(:root) {
+  --ly-gutter: max(clamp(16px, 6vw, 88px), calc((100vw - 1264px) / 2));
+  --ly-head-h: 64px;
+  --ly-display: var(--ui-font);
+  --ly-name-font: var(--ly-display); --ly-name-weight: 500; --ly-name-style: normal; --ly-name-track: -.035em; --ly-name-case: none;
+  --ly-soft: color-mix(in srgb, var(--ui-fg) 5%, var(--ui-bg));
+  --ly-line: color-mix(in srgb, var(--ui-fg) 11%, transparent);
+  --ly-head-bg: color-mix(in srgb, var(--ui-bg) 82%, transparent);
+}
+.ly {
+  position: relative;
+  overflow-x: clip; /* clip, not hidden: hidden would break the sticky header */
+}
+.ly :where(h1, h2, h3, p, ul, ol, dl, dd, figure) { margin: 0; }
+.ly :where(.ly-head, .ly-hero, .ly-foot, .ly-body) :where(ul, ol) { padding: 0; list-style: none; }
+.ly-wrap { padding-inline: var(--ly-gutter); }
+
+/* ---------- header: sticky; mark + name | nav centred on the page | I am Rithvik ---------- */
+.ly-head { position: sticky; top: 0; z-index: 60; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; height: var(--ly-head-h); margin-bottom: calc(-1 * var(--ly-head-h)); padding-inline: var(--ly-gutter); color: var(--ui-fg); font: 500 14px/1 var(--ly-head-font, var(--ui-font)); border-bottom: 1px solid transparent; transition: background-color 240ms ease, border-color 240ms ease; }
+.ly-head[data-past] { background: var(--ly-head-bg); border-bottom-color: var(--ly-line); -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%); }
+.ly-brand { justify-self: start; display: inline-flex; align-items: center; gap: 10px; min-width: 0; color: inherit; text-decoration: none; }
+/* the mark sits in a sized box: some looks set .mark { width: 100% } globally */
+.ly-mk { display: inline-grid; place-items: center; width: 26px; height: 26px; flex: none; }
+.ly-mk .mark { width: 100%; height: auto; }
+.ly-brand-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -.005em; }
+.ly-nav { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.ly-nav a { display: block; padding: 8px 12px; border-radius: 999px; color: var(--ui-muted); text-decoration: none; white-space: nowrap; transition: color 150ms ease, background-color 200ms ease; }
+.ly-nav a:hover, .ly-nav a[aria-current="true"] { color: var(--ui-fg); }
+.ly-nav a[aria-current="true"] { background: var(--ui-field); }
+.ly-head-r { justify-self: end; display: flex; align-items: center; }
+.ly-iam { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--ly-line); background: transparent; color: var(--ui-fg); font: inherit; }
+@media (hover: hover) and (pointer: fine) { .ly-iam:hover { border-color: var(--ui-line); background: var(--ui-field); } }
+@media (max-width: 860px) {
+  .ly-head { grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; font-size: 13px; }
+  .ly-brand-n { display: none; }
+  .ly-nav { justify-content: safe center; overflow-x: auto; scrollbar-width: none; }
+  .ly-nav::-webkit-scrollbar { display: none; }
+  .ly-nav a { padding: 8px 7px; }
+}
+@media (max-width: 480px) {
+  .ly-head { gap: 6px; }
+  .ly .ly-nav a { padding: 7px 4px; font-size: 11px; letter-spacing: 0; } /* set on the link so a look's header font cannot widen it */
+  .ly-iam { width: 36px; padding: 0; justify-content: center; }
+}
+
+/* ---------- hero: name, status, line; the tethered portrait ---------- */
+.ly-hero { position: relative; isolation: isolate; display: grid; align-items: center; min-height: min(100svh, 980px); padding: calc(var(--ly-head-h) + 48px) var(--ly-gutter) 64px; }
+.ly-hero-in { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(32px, 5vw, 80px); align-items: center; }
+.ly-name { font: var(--ly-name-style) var(--ly-name-weight) clamp(3.2rem, 8vw, 7.5rem)/.92 var(--ly-name-font); letter-spacing: var(--ly-name-track); text-transform: var(--ly-name-case); text-wrap: balance; }
+.ly-name > span { display: block; }
+.ly-status { margin-top: clamp(20px, 3vw, 32px); font: 500 clamp(1.15rem, 1.8vw, 1.5rem)/1.3 var(--ly-display); letter-spacing: -.01em; }
+.ly-line { margin-top: 10px; max-width: 30em; color: var(--ui-muted); font-size: clamp(1.05rem, 1.35vw, 1.2rem); line-height: 1.5; text-wrap: pretty; }
+.ly-hero-pt { position: relative; justify-self: center; width: min(100%, 400px); }
+.ly-hero-copy > * { animation: ly-rise 600ms var(--ease-out) both; }
+.ly-hero-copy > :nth-child(2) { animation-delay: 60ms; }
+.ly-hero-copy > :nth-child(3) { animation-delay: 120ms; }
+@keyframes ly-rise { from { opacity: 0; transform: translateY(12px); } }
+@media (prefers-reduced-motion: reduce) { .ly-hero-copy > * { animation: none; } }
+html.lite .ly-hero-copy > * { animation: none; }
+@media (max-width: 860px) {
+  .ly-hero { min-height: 0; padding-top: calc(var(--ly-head-h) + 32px); }
+  .ly-hero-in { grid-template-columns: minmax(0, 1fr); }
+  .ly-hero-pt { width: min(80vw, 340px); }
+}
+
+/* ---------- section frame ---------- */
+.ly-sec { padding-top: clamp(112px, 13vw, 184px); }
+.ly-title { margin-bottom: clamp(32px, 5vw, 64px); font: 500 clamp(2.75rem, 6.2vw, 6rem)/.92 var(--ly-display); letter-spacing: -.035em; }
+.ly-sec, .ly-hero { scroll-margin-top: var(--ly-head-h); }
+.ly [id^="project-"], .ly [id^="experience-"], .ly #education { scroll-margin-top: calc(var(--ly-head-h) + 24px); }
+
+/* ---------- default bodies (Classic's; a skin may override any section) ---------- */
+.ly-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 1px solid var(--ui-line); border-radius: 999px; background: transparent; color: var(--ui-fg); font: 500 15px/1 var(--ui-font); text-decoration: none; white-space: nowrap; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 200ms ease, border-color 200ms ease; }
+.ly-btn:active { transform: var(--press); }
+@media (hover: hover) and (pointer: fine) { .ly-btn:hover { background: var(--ui-field); border-color: var(--ui-fg); } }
+@media (max-width: 520px), (hover: none) { .ly-btn kbd { display: none; } }
+.ly-ic { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--ui-bg); box-shadow: 0 0 0 1px var(--ly-line); }
+.ly-ic .ic { width: 20px; height: 20px; }
+.ly-plus { width: 12px; height: 12px; flex: none; background: linear-gradient(currentColor, currentColor) center / 12px 1.5px no-repeat, linear-gradient(currentColor, currentColor) center / 1.5px 12px no-repeat; color: var(--ui-muted); transition: transform 240ms var(--ease-out), color 150ms ease; }
+.ly details[open] > summary .ly-plus { transform: rotate(45deg); }
+.ly summary { list-style: none; cursor: pointer; }
+.ly summary::-webkit-details-marker { display: none; }
+
+/* play: components/site/play/playfield.css */
+
+/* ---------- footer: one quiet line ---------- */
+.ly-foot { position: relative; z-index: 1; display: grid; justify-items: center; gap: 40px; padding: clamp(120px, 14vw, 200px) var(--ly-gutter) calc(96px + env(safe-area-inset-bottom, 0px)); color: var(--ui-fg); }
+.ly-foot-mini { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; font: 400 12px/1.4 var(--ui-font); color: var(--ui-muted); }
+.ly-foot-mini .ly-mk { width: 16px; height: 16px; color: var(--ui-fg); }
+.ly-foot-who { display: inline-flex; align-items: center; gap: 8px; color: var(--ui-fg); }
+.ly-foot-mini nav { display: inline-flex; gap: 6px; font-size: 11px; }
+.ly-foot-mini nav a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.ly-foot-mini nav a:hover { color: var(--ui-fg); }
+@media (max-width: 640px) { .ly-foot { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); } } /* clear the agent bar and the switcher knob */

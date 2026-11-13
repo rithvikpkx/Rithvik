@@ -1,0 +1,7 @@
+-- Owner request (2026-11-09): no graduation date or start-date answers on the site; new general FAQ;
+-- work authorization stored once, shown only in the resume window fine print and answered by the agent.
+-- Idempotent. Run: supabase db query --linked -f supabase/v7_faq_refresh_migration.sql
+update site_content set value = '[["What kind of role fits best?", "Software engineering or ML work, especially close to hardware: brain-computer interfaces, computer vision and TinyML."], ["Are you open to relocating?", "Yes. I''m happy to relocate for the right role."], ["Where are you based?", "West Lafayette, Indiana during the school year. I''m in San Francisco right now."], ["Can I see code?", "Yes. Most projects link to their repositories, the rest are on GitHub at github.com/rithvikpkx, and this site''s code is public too."], ["What''s the best way to reach you?", "Email. The write-to-me button sends a message straight to my inbox."], ["Can I ask this site questions?", "Yes. Press ⌘K or / to open the agent. It answers from what''s on this site and says so when it doesn''t know."], ["What''s playing on the record player?", "Chili Pepper by Fred Longshaw, recorded in 1927. It''s in the public domain."]]' where key = 'v7.faq';
+update education set grad = '' where grad like '%{{%';
+insert into site_content (key, value) values ('profile.work_authorization', 'U.S. citizen')
+on conflict (key) do update set value = excluded.value;

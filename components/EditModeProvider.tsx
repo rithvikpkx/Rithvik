@@ -1,12 +1,14 @@
 "use client";
 import { createContext, useContext, useRef, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import type { Session } from "@supabase/supabase-js";
 
 const TAB_AUTH_KEY = "rithvik-tab-auth";
 
 interface EditModeCtx {
-  isEditing: boolean;
+  isEditing: boolean; // signed in as the admin: the admin bar is available
+  inlineOn: boolean; // inline text editing switched on (admin bar toggle)
+  setInlineOn: (on: boolean) => void;
+  barHidden: boolean; // the admin bar is tucked away (the "I am Rithvik" button brings it back)
   session: Session | null;
   panelOpen: boolean;
   openPanel: () => void;
@@ -28,12 +30,49 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   const [session, setSession] = useState<Session | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [inlineOn, setInlineOn] = useState(true); // on by default at sign-in, like the old site
+  const [barHidden, setBarHidden] = useState(false);
 
   // Tracks whether the user authenticated during this specific tab session.
   // sessionStorage is wiped on tab close, so a new tab always requires login.
   const tabAuth = useRef(
     typeof window !== "undefined" && sessionStorage.getItem(TAB_AUTH_KEY) === "1"
   );
+
+  // Browser client is loaded on demand so ordinary visitors never download it.
+  // The promise is cached; the first load also subscribes to auth changes once.
+  const clientRef = useRef<Promise<typeof import("@/lib/supabase-browser").supabase> | null>(null);
+  const getClient = () => {
+    clientRef.current ??= import("@/lib/supabase-browser").then(({ supabase }) => {
+      supabase.auth.onAuthStateChange(onAuthEvent.current);
+      return supabase;
+    });
+    return clientRef.current;
+  };
+
+  // Latest auth handler, so the one-time subscription never goes stale.
+  const onAuthEvent = useRef<(event: string, s: Session | null) => void>(() => {});
+  useEffect(() => {
+    onAuthEvent.current = (event, newSession) => {
+      if (event === "SIGNED_IN") {
+        // Fresh login — mark this tab as authenticated
+        sessionStorage.setItem(TAB_AUTH_KEY, "1");
+        tabAuth.current = true;
+        setSession(newSession);
+      } else if (event === "SIGNED_OUT") {
+        sessionStorage.removeItem(TAB_AUTH_KEY);
+        tabAuth.current = false;
+        setSession(null);
+        setIsEditing(false);
+        setPanelOpen(false);
+        setBarHidden(false);
+      } else if (newSession && tabAuth.current) {
+        // TOKEN_REFRESHED or INITIAL_SESSION with an existing tab auth — keep session alive
+        setSession(newSession);
+      }
+      // INITIAL_SESSION with no tab auth: leave session null so new tab requires login
+    };
+  });
 
   useEffect(() => {
     // Magic-link landing: /auth/callback redirected here with ?auth=ok after
@@ -52,28 +91,17 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
         window.history.replaceState({}, "", url.pathname + url.search);
         // Defer the setState off the effect's synchronous path (next frame).
         raf = requestAnimationFrame(() => setIsEditing(true));
+      } else if (url.searchParams.has("edit")) {
+        // Shortcut besides the header's "I am Rithvik" button: rithvik.ai/?edit opens the panel (or edit mode if this tab is signed in).
+        url.searchParams.delete("edit");
+        window.history.replaceState({}, "", url.pathname + url.search);
+        raf = requestAnimationFrame(() => (tabAuth.current ? setIsEditing(true) : setPanelOpen(true)));
       }
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === "SIGNED_IN") {
-        // Fresh login — mark this tab as authenticated
-        sessionStorage.setItem(TAB_AUTH_KEY, "1");
-        tabAuth.current = true;
-        setSession(newSession);
-      } else if (event === "SIGNED_OUT") {
-        sessionStorage.removeItem(TAB_AUTH_KEY);
-        tabAuth.current = false;
-        setSession(null);
-        setIsEditing(false);
-        setPanelOpen(false);
-      } else if (newSession && tabAuth.current) {
-        // TOKEN_REFRESHED or INITIAL_SESSION with an existing tab auth — keep session alive
-        setSession(newSession);
-      }
-      // INITIAL_SESSION with no tab auth: leave session null so new tab requires login
-    });
-    return () => { if (raf) cancelAnimationFrame(raf); subscription.unsubscribe(); };
+    // Only load the client when a session could already exist for this tab.
+    if (tabAuth.current) void getClient();
+    return () => { if (raf) cancelAnimationFrame(raf); };
   }, []);
 
   const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase() ?? "";
@@ -83,8 +111,9 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     // Belt + suspenders on top of shouldCreateUser: false — fail instantly
     // without burning Supabase's 4-per-hour OTP rate limit.
     if (ADMIN_EMAIL && normalized !== ADMIN_EMAIL) {
-      return "This email isn't allowed.";
+      return "Nice try. That is not the Rithvik email.";
     }
+    const supabase = await getClient();
     const { error } = await supabase.auth.signInWithOtp({
       email: normalized,
       options: {
@@ -98,6 +127,7 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
   const verifyOtpCode = async (email: string, code: string): Promise<string | null> => {
     const normalized = email.trim().toLowerCase();
     const token = code.replace(/\s+/g, "").trim();
+    const supabase = await getClient();
     const { error } = await supabase.auth.verifyOtp({
       email: normalized,
       token,
@@ -111,24 +141,24 @@ export default function EditModeProvider({ children }: { children: React.ReactNo
     return null;
   };
 
+  // Exit editing signs out; the SIGNED_OUT event clears state, the explicit clears cover a not-yet-subscribed client.
   const logout = () => {
-    // Exit edit mode without signing out of Supabase — the session and tab auth flag stay.
-    // Clicking "I am Rithvik" again re-enters edit mode immediately without re-auth.
-    // Closing the tab wipes sessionStorage, so the next tab open always requires login.
     setIsEditing(false);
+    sessionStorage.removeItem(TAB_AUTH_KEY);
+    tabAuth.current = false;
+    void getClient().then((supabase) => supabase.auth.signOut());
   };
 
+  // The header's "I am Rithvik" button: sign in if needed, otherwise show or tuck away the admin bar.
   const openPanel = () => {
-    if (session) {
-      setIsEditing(true);
-    } else {
-      setPanelOpen(true);
-    }
+    if (isEditing) setBarHidden((h) => !h);
+    else if (session) { setIsEditing(true); setBarHidden(false); }
+    else setPanelOpen(true);
   };
 
   return (
     <EditModeContext.Provider value={{
-      isEditing, session, panelOpen,
+      isEditing, inlineOn, setInlineOn, barHidden, session, panelOpen,
       openPanel, closePanel: () => setPanelOpen(false),
       requestOtp, verifyOtpCode,
       logout,

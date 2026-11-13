@@ -142,6 +142,11 @@ test("safeUrl returns the canonical form, not the raw input", () => {
   assert.equal(safeUrl("  https://a.com/x  "), "https://a.com/x");
 });
 
+test("safeUrl allows extra protocols only when the caller opts in", () => {
+  assert.equal(safeUrl("mailto:a@b.com", ["mailto:"]), "mailto:a@b.com");
+  assert.equal(safeUrl("javascript:alert(1)", ["http:", "https:", "mailto:"]), null);
+});
+
 test("safeUrl accepts http(s) and rejects everything else", () => {
   assert.ok(safeUrl("https://example.com"));
   assert.ok(safeUrl("http://example.com"));

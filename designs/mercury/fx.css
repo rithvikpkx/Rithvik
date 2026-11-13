@@ -1,0 +1,13 @@
+/* Mercury name + portrait effects (S9). */
+/* each letter carries the chrome itself (a taller-than-the-letter band), so a nearby pointer slides the band over it: a sheen, not a deformation */
+[data-kn="mercury"] .ly-first .kn-g { background: var(--mc-chrome) 50% 50% / 100% 150% no-repeat; -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+  background-position-y: calc(50% + var(--py) * var(--k) * 38%); }
+:root [data-kn="mercury"] .ly-first.kn-part { background: none; -webkit-text-fill-color: currentColor; }
+[data-kn="mercury"] .kn-g { transform: translate3d(var(--x), var(--y), 0); }
+
+[data-pfx="mercury"] { --pfx-off: circle(0% at 50% 42%); --pfx-on: circle(75% at 50% 42%); --pfx-t: 620ms; --pfx-cap-bg: rgba(10, 10, 11, .7); }
+[data-pfx="mercury"] .pfx-scan { display: none; }
+[data-pfx="mercury"] .pfx-img { transform: scale(1.04); } /* the ripple's displaced edge stays outside the frame */
+.mc-pfx-sheen { background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .55) 45%, rgba(190, 210, 255, .25) 52%, transparent 66%) 0 0 / 260% 100%;
+  mix-blend-mode: overlay; animation: mc-pfx-sheen 5.5s ease-in-out infinite; }
+@keyframes mc-pfx-sheen { from { background-position: 100% 0; } to { background-position: -60% 0; } }

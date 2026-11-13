@@ -1,0 +1,58 @@
+/* Blueprint Experience: detail-bubble stations on a dimension chain the plotter inks with scroll, and the Purdue P as
+   an exploded isometric assembly that slides home under the pointer. */
+:root[data-design="blueprint"] .ly-xp { --xp-w: 28px; }
+:root[data-design="blueprint"] .ly-st-node { background: var(--bp-paper2); color: var(--bp-ink); font: 600 12px/1 var(--bp-mono);
+  box-shadow: 0 0 0 1.25px var(--bp-ink2), 0 0 0 5px var(--bp-paper2), 0 0 0 6px var(--bp-line), 0 16px 24px -14px rgba(2, 12, 30, .8); }
+:root[data-design="blueprint"] .ly-st[data-lit] .ly-st-node { background: var(--bp-ink); color: var(--bp-paper2);
+  box-shadow: 0 0 0 1.25px var(--bp-ink), 0 0 0 5px var(--bp-paper2), 0 0 0 6px color-mix(in srgb, var(--bp-red) 70%, transparent), 0 0 30px -6px rgba(159, 212, 255, .55); }
+:root[data-design="blueprint"] .ly-st-when { font: 500 12px/1.5 var(--bp-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--bp-cyan); }
+:root[data-design="blueprint"] .ly-st-role { font: 600 clamp(1.5rem, 2.3vw, 2rem)/1.05 var(--bp-cond); letter-spacing: .01em; text-transform: uppercase; }
+:root[data-design="blueprint"] .ly-st-org { color: var(--bp-soft); }
+:root[data-design="blueprint"] .ly-st-pts { color: var(--bp-mut); }
+:root[data-design="blueprint"] .ly-st-pts li::before { width: 10px; background: var(--bp-cyan); }
+
+/* the chain: centre line, a ruler of ticks (minor 12px, major 60px), arrowheads stopping at each bubble */
+:root[data-design="blueprint"] .bx-dim {
+  background: linear-gradient(var(--bp-ink3), var(--bp-ink3)) center / 1px 100% no-repeat,
+    repeating-linear-gradient(180deg, var(--bp-ink3) 0 1px, transparent 1px 12px) center / 9px 100% no-repeat,
+    repeating-linear-gradient(180deg, var(--bp-ink2) 0 1px, transparent 1px 60px) center / 19px 100% no-repeat;
+}
+:root[data-design="blueprint"] .bx-dim b { position: absolute; left: 50%; width: 9px; height: 13px; translate: -50% 0; background: var(--bp-ink2); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+:root[data-design="blueprint"] .bx-dim b:first-child { top: calc(var(--xp-node) / 2 + 8px); }
+:root[data-design="blueprint"] .bx-dim b:last-child { bottom: calc(var(--xp-node) / 2 + 8px); rotate: 180deg; }
+:root[data-design="blueprint"] .bx-ink { background: linear-gradient(var(--bp-ink), var(--bp-ink)) center / 2px 100% no-repeat, linear-gradient(rgba(159, 212, 255, .22), rgba(159, 212, 255, .22)) center / 9px 100% no-repeat; }
+/* the plotter pen: a nib in a crosshair, ink glowing wet behind it */
+:root[data-design="blueprint"] .bx-pen { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, var(--bp-ink) 0 2.5px, transparent 3px), var(--bp-paper2);
+  box-shadow: 0 0 0 1.5px var(--bp-ink), 0 0 18px 2px rgba(159, 212, 255, .55); }
+:root[data-design="blueprint"] .bx-pen::before { content: ""; position: absolute; inset: -9px; background: linear-gradient(var(--bp-ink), var(--bp-ink)) center / 1px 100% no-repeat, linear-gradient(var(--bp-ink), var(--bp-ink)) center / 100% 1px no-repeat;
+  -webkit-mask: radial-gradient(circle, transparent 10px, #000 10.5px); mask: radial-gradient(circle, transparent 10px, #000 10.5px); }
+
+/* ---------- the assembly ---------- */
+:root[data-design="blueprint"] .bx-iso { --ex: 1; transform-style: preserve-3d; }
+:root[data-design="blueprint"] .ly-xp-edu:hover .bx-iso, :root[data-design="blueprint"] .ly-edu-obj:active .bx-iso { --ex: .06; }
+:root[data-design="blueprint"] .bx-stage { position: absolute; left: 11%; top: 34%; width: 78%; aspect-ratio: 65.645 / 35.104; transform-style: preserve-3d;
+  transform: rotateX(54deg) rotateZ(-30deg); transition: transform 1100ms var(--xp-spring); }
+:root[data-design="blueprint"] .ly-xp-edu:hover .bx-stage, :root[data-design="blueprint"] .ly-edu-obj:active .bx-stage { transform: rotateX(14deg) rotateZ(-3deg); }
+/* the base plate: dashed outline on a finer grid, the mark's true extents dimensioned on it */
+:root[data-design="blueprint"] .bx-plate { position: absolute; inset: -14% -10%; border: 1px dashed var(--bp-ink3);
+  background: linear-gradient(rgba(234, 243, 255, .08) 1px, transparent 1px) 0 0 / 100% 12.5%, linear-gradient(90deg, rgba(234, 243, 255, .08) 1px, transparent 1px) 0 0 / 8.333% 100%, rgba(8, 38, 80, .35); }
+:root[data-design="blueprint"] .bx-sh { position: absolute; left: 8.333%; top: 10.94%; width: 83.33%; height: 78.125%; background: rgba(2, 10, 28, .6);
+  -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat;
+  filter: blur(calc(2px + var(--ex) * 7px)); transform: translate(calc(var(--ex) * 22px), calc(var(--ex) * 14px)); transition: transform 1100ms var(--xp-spring), filter 1100ms ease; }
+:root[data-design="blueprint"] .bx-dw, :root[data-design="blueprint"] .bx-dh { position: absolute; font: 500 9px/1 var(--bp-mono); color: var(--bp-ink2); letter-spacing: .04em; }
+:root[data-design="blueprint"] .bx-dw { left: 8.333%; right: 8.333%; bottom: 3%; padding-top: 4px; text-align: center; border-top: 1px solid var(--bp-ink3); }
+:root[data-design="blueprint"] .bx-dh { right: 2%; top: 10.94%; bottom: 10.94%; display: grid; place-items: center; padding-left: 4px; border-left: 1px solid var(--bp-ink3); writing-mode: vertical-rl; }
+/* the parts, each lifted by its index while exploded */
+:root[data-design="blueprint"] .bx-l { position: absolute; inset: 0; transform: translateZ(calc(var(--ex) * var(--n) * 42px + var(--n) * 1.5px)); transition: transform 1100ms var(--xp-spring); transform-style: preserve-3d; }
+:root[data-design="blueprint"] .bx-l svg { display: block; width: 100%; height: 100%; }
+:root[data-design="blueprint"] .bx-l path { stroke: var(--bp-ink); stroke-width: 1.2; stroke-linejoin: round; }
+:root[data-design="blueprint"] .bx-body path { fill: rgba(8, 36, 76, .72); }
+:root[data-design="blueprint"] .bx-band path { fill: rgba(127, 196, 255, .32); }
+:root[data-design="blueprint"] .bx-face path { fill: #EAF3FF; stroke: #fff; }
+/* balloons: numbered callouts drawn on each plate, fading as the parts close up */
+:root[data-design="blueprint"] .bx-bal { position: absolute; left: 103%; top: calc(var(--n) * 22% - 14%); display: flex; align-items: center; gap: 4px; font: 500 10px/1 var(--bp-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--bp-ink); white-space: nowrap; opacity: var(--ex); transition: opacity 600ms ease; }
+:root[data-design="blueprint"] .bx-bal::before { content: ""; position: absolute; right: 100%; top: 50%; width: 14px; height: 1px; margin-right: 1px; background: var(--bp-ink3); }
+:root[data-design="blueprint"] .bx-bal b { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--bp-ink); border-radius: 50%; font-size: 10px; color: var(--bp-ink); }
+/* projector lines: dashed, standing up from the plate through the same three points of every part */
+:root[data-design="blueprint"] .bx-z { position: absolute; left: var(--zx); top: var(--zy); width: 0; height: calc(var(--ex) * 126px + 6px); border-left: 1px dashed var(--bp-ink2);
+  transform-origin: 0 0; transform: rotateX(90deg); opacity: calc(var(--ex) * .9); transition: height 1100ms var(--xp-spring), opacity 600ms ease; }

@@ -1,0 +1,72 @@
+/* v7 base: tokens, reset, type, view-transition reveal. Ported from docs/mockups/v7/core.css; component
+   rules live with their components, design rules under [data-design="<id>"]. */
+:root {
+  /* chrome tokens: switcher, agent, windows, sheet, toast */
+  --ui-bg: #0f0f12; --ui-fg: #f4f4f5; --ui-muted: #a1a1aa; --ui-accent: #ff4d8d; --ui-accent-fg: #0f0f12;
+  --ui-line: rgba(255, 255, 255, .14); --ui-field: rgba(255, 255, 255, .06);
+  --ui-font: var(--font-geist-sans), -apple-system, "Segoe UI", system-ui, sans-serif; --ui-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
+  --ui-r: 14px; --ui-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 48px rgba(0, 0, 0, .35); --ui-blur: blur(16px) saturate(150%);
+  /* portrait tokens */
+  --pt-ring: transparent; --pt-ring-w: 0px; --pt-photo-bg: #ddd; --pt-photo-r: 50%; --pt-shadow: 0 30px 80px -30px rgba(0, 0, 0, .45);
+  --pt-node-bg: #fff; --pt-node-fg: #111; --pt-node-line: rgba(0, 0, 0, .14); --pt-node-r: 50%; --pt-node-size: 13.5%;
+  --pt-beam: rgba(127, 127, 127, .35); --pt-pulse-a: #ff4d8d; --pt-pulse-b: #ffd166; --pt-beam-w: 1.4; --pt-pulse-w: 2.6;
+  /* agent skin maps onto the chrome tokens */
+  --agent-bg: var(--ui-bg); --agent-fg: var(--ui-fg); --agent-muted: var(--ui-muted); --agent-accent: var(--ui-accent); --agent-line: var(--ui-line);
+  --agent-font: var(--ui-mono); --agent-text-font: var(--ui-font); --agent-r: var(--ui-r); --agent-shadow: var(--ui-shadow);
+  --bw: 1px; --press: scale(.97);
+  --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1); --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  /* the shared theme dial reads the old site's mono token */
+  --mono: var(--ui-mono);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; overflow-x: hidden; font-family: var(--ui-font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+img { max-width: 100%; display: block; }
+button { font: inherit; color: inherit; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 16px; top: -60px; z-index: 300; padding: 8px 12px; border-radius: 8px; background: var(--ui-bg); color: var(--ui-fg); }
+.skip:focus { top: 12px; }
+:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 3px; }
+.ic { width: 16px; height: 16px; flex: none; }
+.logo { width: 16px; height: 16px; }
+.stage { position: relative; z-index: 1; display: block; min-height: 100vh; outline: none; }
+html.locked, html.locked body { overflow: hidden; }
+
+/* View-transition reveal: the new website grows out of the theme dial on the left edge and sweeps across
+   the whole display; a crossfade under reduced motion. */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.vt-reveal::view-transition-new(root) { animation: v7-reveal 900ms var(--ease-in-out) both; }
+html.vt-reveal::view-transition-old(root) { animation: v7-recede 900ms var(--ease-in-out) both; }
+html.vt-fade::view-transition-new(root) { animation: v7-fade-in 240ms ease both; }
+html.vt-fade::view-transition-old(root) { animation: v7-fade-in 240ms ease reverse both; }
+@keyframes v7-reveal { from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); } to { clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x) var(--vt-y)); } }
+@keyframes v7-recede { to { transform: scale(.94); filter: blur(6px) saturate(.6); } }
+@keyframes v7-fade-in { from { opacity: 0; } }
+/* The switcher is its own transition layer above the reveal. Its new view is live, so the knob keeps
+   turning during the sweep instead of freezing inside the page snapshot. */
+.theme-dial-aside { view-transition-name: v7-dial; }
+::view-transition-group(v7-dial) { z-index: 2; animation: none; }
+::view-transition-old(v7-dial) { display: none; }
+::view-transition-new(v7-dial) { animation: none; }
+
+/* Performance mode + reduced motion: gentler, not zero */
+html.lite *, html.lite *::before, html.lite *::after { animation-duration: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-iteration-count: 1 !important; animation-delay: 0ms !important; } }
+
+/* Shared chrome primitives (mockup core.css): buttons, icon buttons, chips, fields — used by every overlay and design. */
+.ui-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 14px; border-radius: calc(var(--ui-r) * .7); border: var(--bw) solid var(--ui-line); background: transparent; color: var(--ui-fg); font: 500 14px/1 var(--ui-font); text-decoration: none; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms ease; }
+.ui-btn.primary { background: var(--ui-accent); color: var(--ui-accent-fg); border-color: transparent; }
+.ui-btn:active { transform: var(--press); }
+.ui-ic, .icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 999px; border: var(--bw) solid var(--ui-line); background: transparent; color: var(--ui-fg); cursor: pointer; }
+.icon-btn.sm { width: 30px; height: 30px; }
+.ui-link { background: none; border: 0; padding: 0; color: var(--ui-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; font: inherit; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: var(--ui-field); color: var(--ui-fg); font: 500 12px/1.3 var(--ui-mono); white-space: nowrap; }
+.chip .logo { width: 12px; height: 12px; }
+kbd { font: 500 11px/1 var(--ui-mono); padding: 3px 6px; border-radius: 5px; border: 1px solid var(--ui-line); color: var(--ui-muted); }
+input.field, textarea.field { width: 100%; min-height: 40px; padding: 9px 12px; border: var(--bw) solid var(--ui-line); border-radius: calc(var(--ui-r) * .6); background: var(--ui-field); color: var(--ui-fg); font: 400 15px/1.4 var(--ui-font); caret-color: var(--ui-accent); }
+input.field::placeholder, textarea.field::placeholder { color: var(--ui-muted); }
+:is(input, textarea).field[aria-invalid="true"] { border-color: #ff5a5a; }
+.field-err { margin: 4px 0 0; font-size: 13px; color: #ff6b6b; }
+textarea.field { resize: vertical; min-height: 140px; }

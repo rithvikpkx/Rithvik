@@ -1,0 +1,32 @@
+/* Clay Experience: paper stations with a cut shadow that take a clay wash once the ink reaches them, a pencilled
+   guide inked over with scroll, and the cut-paper Purdue collage. The calm still is the base state. */
+:root[data-design="clay"] .ly-xp { --xp-w: 12px; }
+:root[data-design="clay"] .ly-st-node { background: var(--cy-paper); color: var(--cy-ink2); font: 500 12px/1 var(--cy-mono); box-shadow: 0 0 0 1.5px var(--cy-ink), 3px 3px 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .ly-st[data-lit] .ly-st-node { background: var(--cy-tooth), var(--cy-clay); color: var(--cy-ink); box-shadow: 0 0 0 1.5px var(--cy-ink), 3px 3px 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .ly-st-role { font: 450 clamp(1.45rem, 2.3vw, 2rem)/1.12 var(--cy-serif); letter-spacing: -.02em; }
+:root[data-design="clay"] .ly-st-when { color: var(--cy-clay-ink); }
+:root[data-design="clay"] .ly-st-pts li::before { width: 9px; height: 2px; border-radius: 2px; background: var(--cy-clay); top: .74em; }
+:root[data-design="clay"] .ly-edu-cap h3 { font-family: var(--cy-serif); font-weight: 450; }
+
+/* the guide: graphite dashes; the ink laid over them; a drop of clay at the nib */
+:root[data-design="clay"] .cx-pencil { background: repeating-linear-gradient(180deg, rgba(61, 57, 41, .4) 0 6px, transparent 6px 12px) center / 1.5px 100% no-repeat; }
+:root[data-design="clay"] .cx-ink { background: linear-gradient(var(--cy-ink), var(--cy-ink2)) center / 2.6px 100% no-repeat; }
+:root[data-design="clay"] .cx-nib { width: 13px; height: 17px; border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%; background: radial-gradient(circle at 38% 34%, #F6C6AE, var(--cy-clay) 55%, var(--cy-clay-ink)); box-shadow: 0 0 0 1.5px var(--cy-ink), 2px 2px 0 1.5px var(--cy-ink); transform-origin: 50% 0; animation: cx-swing 2.4s ease-in-out infinite alternate; }
+@keyframes cx-swing { from { rotate: -7deg; } to { rotate: 7deg; } }
+
+/* the collage: every layer at its own depth, sliding against the pointer */
+:root[data-design="clay"] .cx-obj > * { position: absolute; display: block; }
+:root[data-design="clay"] .cx-scrap { aspect-ratio: 1; background: var(--cy-tooth), var(--s); box-shadow: 0 0 0 1.5px var(--cy-ink), 5px 6px 0 1.5px var(--cy-ink); }
+:root[data-design="clay"] .cx-sky { --s: #AFCBE6; left: 4%; top: 6%; width: 44%; border-radius: 52% 48% 55% 45% / 47% 55% 45% 53%; transform: translate(calc(var(--px) * -16px), calc(var(--py) * -12px)); }
+:root[data-design="clay"] .cx-olive { --s: #AEBD92; right: 2%; bottom: 8%; width: 40%; aspect-ratio: 1.5; border-radius: 72% 28% 68% 32% / 62% 40% 60% 38%; rotate: -16deg; transform: translate(calc(var(--px) * -12px), calc(var(--py) * -9px)); }
+:root[data-design="clay"] .cx-card { left: 9%; right: 9%; top: 24%; bottom: 24%; border-radius: 6px; background: var(--cy-tooth), var(--cy-paper); box-shadow: 0 0 0 1.5px var(--cy-ink), 7px 8px 0 1.5px var(--cy-ink); rotate: 3deg; transform: translate(calc(var(--px) * -5px), calc(var(--py) * -4px)); }
+:root[data-design="clay"] .cx-p { left: 13%; top: 50%; width: 74%; height: auto; margin-top: -19.8%; overflow: visible; }
+:root[data-design="clay"] .cx-p-shadow { transform: translate(calc(5px + var(--px) * 2px), calc(6px + var(--py) * 2px)); }
+:root[data-design="clay"] .cx-p-shadow :is(.pp-o, .pp-c, .pp-r, .pp-f) { fill: var(--cy-ink); }
+:root[data-design="clay"] .cx-p-paper { transform: translate(calc(var(--px) * 3px), calc(var(--py) * 2px)); }
+:root[data-design="clay"] .cx-p-paper :is(.pp-o, .pp-c) { fill: var(--cy-ink); }
+:root[data-design="clay"] .cx-p-paper .pp-r { fill: var(--cy-paper); }
+:root[data-design="clay"] .cx-p-paper .pp-f { fill: var(--cy-clay); }
+/* the ink outline, out of register with the paper; it slides the other way */
+:root[data-design="clay"] .cx-p-line path { fill: none; stroke: var(--cy-ink); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+:root[data-design="clay"] .cx-p-line { transform: translate(calc(-6px + var(--px) * 9px), calc(-5px + var(--py) * 7px)); }

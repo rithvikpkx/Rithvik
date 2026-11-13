@@ -1,0 +1,30 @@
+/* Glyph Experience: stations as inverse-video blocks once the pipe reaches them, box-drawing pipes between them,
+   and extruded ASCII art for education. */
+:root[data-design="glyph"] .ly-xp { --xp-w: 14px; }
+:root[data-design="glyph"] .ly-st-role { font: 500 clamp(1.15rem, 1.8vw, 1.45rem)/1.25 var(--gl-d); letter-spacing: -.02em; }
+:root[data-design="glyph"] .ly-st-org { color: var(--gl-hue); }
+:root[data-design="glyph"] .ly-st-node { border-radius: 0; background: #050505; color: var(--gl-mut); font: 500 13px/1 var(--gl-d); box-shadow: 0 0 0 1px var(--gl-rule2); }
+:root[data-design="glyph"] .ly-st-node::before, :root[data-design="glyph"] .ly-st-node::after { position: absolute; top: 50%; translate: 0 -50%; color: var(--gl-dim); font: inherit; }
+:root[data-design="glyph"] .ly-st-node::before { content: "["; left: 5px; }
+:root[data-design="glyph"] .ly-st-node::after { content: "]"; right: 5px; }
+:root[data-design="glyph"] .ly-st[data-lit] .ly-st-node { background: var(--gl-hue); color: #050505; box-shadow: 0 0 0 1px var(--gl-hue), 0 0 24px -4px var(--gl-hue); }
+:root[data-design="glyph"] .ly-st[data-lit] .ly-st-node::before, :root[data-design="glyph"] .ly-st[data-lit] .ly-st-node::after { color: #050505; }
+:root[data-design="glyph"] .ly-st-pts li::before { content: ">"; width: auto; height: auto; top: 0; background: none; color: var(--gl-hue); font: 500 13px/1.55 var(--gl-d); }
+
+/* the pipe: a column of box-drawing glyphs, one per line */
+:root[data-design="glyph"] .gx-pipe { overflow: hidden; display: block; width: 100%; text-align: center; word-break: break-all; white-space: normal; color: var(--gl-rule2); font: 400 14px/14px var(--gl-d); padding: 0 calc(50% - .5ch); }
+:root[data-design="glyph"] .gx-hot { color: var(--gl-hue); text-shadow: 0 0 8px var(--gl-hue); }
+:root[data-design="glyph"] .gx-hot::after { content: "█"; position: absolute; left: 0; right: 0; top: 0; text-align: center; color: #fff; text-shadow: 0 0 10px var(--gl-hue); font: inherit; animation: gx-packet 2.4s steps(24) infinite; }
+@keyframes gx-packet { from { top: -14px; } to { top: 100%; } }
+:root[data-design="glyph"] .gx-pkt { color: var(--gl-hue); font: 500 16px/1 var(--gl-d); text-shadow: 0 0 10px var(--gl-hue); background: #050505; padding: 2px 0; animation: gx-blink 1s steps(1) infinite; }
+@keyframes gx-blink { 50% { opacity: .2; } }
+
+/* the art */
+:root[data-design="glyph"] .gx-art { display: grid; place-content: center; justify-items: center; gap: 18px; }
+:root[data-design="glyph"] .gx-cap { grid-area: 1 / 1; margin: 0; font: 400 min(9.4px, 2.2vw)/1 var(--gl-d); white-space: pre; letter-spacing: 0; }
+:root[data-design="glyph"] .gx-face { color: var(--gl-hue); text-shadow: 0 0 10px color-mix(in srgb, var(--gl-hue) 55%, transparent); animation: gx-flicker 4s steps(1) infinite; }
+@keyframes gx-flicker { 0%, 100% { opacity: 1; } 91% { opacity: .55; } 93% { opacity: 1; } 96% { opacity: .75; } }
+/* depth: the same art, dimmer, pushed away from the pointer, reads as extrusion */
+:root[data-design="glyph"] .gx-depth { color: color-mix(in srgb, var(--gl-hue) 26%, #050505); transform: translate(calc(3px - var(--px) * 7px), calc(3px - var(--py) * 5px)); }
+:root[data-design="glyph"] .gx-tag { grid-area: 2 / 1; font: 500 12px/1 var(--gl-d); color: var(--gl-mut); }
+:root[data-design="glyph"] .gx-tag span { color: var(--gl-hue); }

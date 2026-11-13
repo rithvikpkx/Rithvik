@@ -1,0 +1,96 @@
+/* Volt: the lightning element. Tokens (the family's --el-* set, the cable, the field), then the name, the portrait, the
+   Experience conduit and charged plate, the Contact cell. Shared structure lives in designs/elemental/elemental.css. */
+:root[data-design="volt"] {
+  --el-bg: #070818; --el-panel: #0A0C21; --el-panel2: #0E112B; --el-fg: #EAF0FF; --el-soft: #C4CDEA; --el-mut: #8E97BD;
+  --el-acc: #7DF9FF; --el-acc2: #A98BFF; --el-hot: #FFFFFF; --el-acc-fg: #050616;
+  --el-line: rgba(160, 190, 255, .12); --el-line2: rgba(160, 190, 255, .26); --el-glow: rgba(125, 249, 255, .55);
+  --el-stops: #FFFFFF, #7DF9FF 30%, #A98BFF 70%, #4A3AB8;
+  --el-d: "Saira", "Arial Narrow", sans-serif; --el-b: "Saira", -apple-system, "Segoe UI", system-ui, sans-serif; --el-m: "Share Tech Mono", ui-monospace, Menlo, monospace;
+  --warp: 1.3; --el-r: 3px; --el-name-w: 850; --el-name-track: -.005em; --el-case: uppercase; --el-name-style: italic; --el-h2-w: 800; --el-role-case: none; --el-role-track: 0em; --el-nav-case: uppercase;
+  /* charged glass: cyan plasma behind a dark pane */
+  --el-mat: linear-gradient(180deg, #E8FEFF, #7DF9FF 45%, #3FB8E8); --el-mat-fg: #050616;
+  --el-tile: linear-gradient(180deg, rgba(125, 249, 255, .05), transparent 30%), linear-gradient(160deg, #10132E, #090B1E); --el-tile-c: #0C0E25; --el-tile-r: 4px;
+  --el-node: radial-gradient(circle at 50% 35%, #1D2250, #090B1E 72%); --el-node-lit: radial-gradient(circle, #FFFFFF 0 18%, #7DF9FF 40%, #5B49D6 85%); --el-node-r: 4px;
+  --el-scrim: linear-gradient(90deg, rgba(5, 6, 20, .7), rgba(5, 6, 20, .3) 42%, transparent 62%);
+  --el-tex: radial-gradient(60% 40% at 90% 0%, rgba(169, 139, 255, .07), transparent), repeating-linear-gradient(0deg, transparent 0 3px, rgba(125, 249, 255, .012) 3px 4px);
+  /* portrait: an insulator ring; cables are live wires, white-hot cores in a violet corona */
+  --pt-photo-bg: #0E112B; --pt-photo-r: 50%; --pt-shadow: 0 0 60px -14px rgba(125, 249, 255, .5), 0 40px 80px -40px #000;
+  --pt-node-bg: #0C0E25; --pt-node-fg: var(--el-fg); --pt-node-line: rgba(125, 249, 255, .45); --pt-node-r: 4px;
+  --pt-sheath: #12163A; --pt-sheath-w: 4px; --pt-body: 1; --pt-edge: rgba(125, 249, 255, .75); --pt-edge-w: .8px; --pt-sheen: rgba(255, 255, 255, .3); --pt-cap: butt;
+  --pt-core: #7DF9FF; --pt-glow: #7DF9FF; --pt-head: #FFFFFF; --pt-halo: .32; --pt-pulse-a: #FFFFFF; --pt-pulse-m: #7DF9FF; --pt-pulse-b: #A98BFF;
+}
+@media (max-width: 860px) { :root[data-design="volt"] { --el-scrim: linear-gradient(180deg, rgba(5, 6, 20, .62), rgba(5, 6, 20, .25) 55%, transparent 80%); } }
+:root[data-design="volt"] .vt :is(.ly-name, .el-h2, .ly-st-role, .ly-contact-h) { font-stretch: 80%; }
+:root[data-design="volt"] .vt .ly-nav a { font-stretch: 90%; letter-spacing: .06em; }
+
+/* the ring: a ceramic insulator with a cyan filament that flickers like a tube near its limit */
+:root[data-design="volt"] .vt .pt::before { content: ""; position: absolute; left: calc(var(--pt-x) - 8px); top: calc(var(--pt-y) - 8px); width: calc(var(--pt-w) + 16px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, transparent calc(100% - 9px), #FFFFFF calc(100% - 8px), #7DF9FF calc(100% - 6.5px), rgba(169, 139, 255, .5) calc(100% - 4px), transparent);
+  filter: drop-shadow(0 0 8px rgba(125, 249, 255, .8)); animation: vt-tube 4.2s steps(1) infinite; }
+@keyframes vt-tube { 0%, 100% { opacity: 1; } 31% { opacity: .35; } 32% { opacity: 1; } 33% { opacity: .5; } 34% { opacity: 1; } 78% { opacity: .7; } 79% { opacity: 1; } }
+
+/* ───────── name: crackle ───────── */
+[data-kn="volt"] .kn-g { color: color-mix(in srgb, #FFFFFF calc(var(--f, 0) * 100%), color-mix(in srgb, #9AFBFF calc(var(--k) * 100%), #EAF0FF));
+  text-shadow: 0 0 calc(var(--k) * .25em) rgb(125 249 255 / calc(var(--k) * 1.1)), 0 0 calc(var(--k) * .7em) rgb(169 139 255 / calc(var(--k) * .7)), 0 .03em 0 rgba(0, 0, 20, .6);
+  transform: translate3d(calc(var(--x) + var(--j, 0px)), calc(var(--y) + var(--jy, 0px)), 0) skewX(calc(var(--k) * -6deg)); }
+/* an arc jumping off a charged letter, at a new angle every frame */
+[data-kn="volt"] .kn-g::after { content: ""; position: absolute; left: 50%; top: 50%; width: .9em; height: .2em; translate: 0 -50%; transform-origin: 0 50%; rotate: var(--a, 0deg); pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 20'%3E%3Cpath d='M0 10l12-6 9 9 13-11 10 8 12-6 10 9 11-5 13 4' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linejoin='bevel'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 .06em #7DF9FF) drop-shadow(0 0 .14em #A98BFF); opacity: clamp(0, calc(var(--k) * 2 - 1.1), 1); }
+
+/* ───────── portrait: electric edges ───────── */
+[data-pfx="volt"] { --pfx-scan: #7DF9FF; --pfx-t: 380ms; --pfx-cap-bg: rgba(5, 6, 20, .78); --pfx-cap-fg: #7DF9FF; }
+[data-pfx="volt"][data-on] .pfx-img { animation: vt-strike 520ms steps(1); }
+@keyframes vt-strike { 0% { filter: url(#pfx-volt) brightness(3); } 15% { filter: url(#pfx-volt) brightness(.4); } 30% { filter: url(#pfx-volt) brightness(2); } 45% { filter: url(#pfx-volt); } }
+.vt-pfx-flick { background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(125, 249, 255, .06) 3px 4px); mix-blend-mode: screen; animation: vt-flick 2.3s steps(1) infinite; }
+@keyframes vt-flick { 0%, 100% { opacity: 1; } 41% { opacity: .3; background-color: rgba(125, 249, 255, .08); } 42% { opacity: 1; background-color: transparent; } 70% { opacity: .6; } 71% { opacity: 1; } }
+
+/* ───────── experience: the conduit and the charged plate ───────── */
+:root[data-design="volt"] .ly-xp { --xp-w: 10px; }
+:root[data-design="volt"] .vx-cond { border-radius: 2px; background: linear-gradient(90deg, #05061A, #1A1E44 40%, #0C0E25 70%, #05061A); box-shadow: inset 0 0 0 1px rgba(160, 190, 255, .16); }
+:root[data-design="volt"] .vx-amp { inset: 0 1px; overflow: hidden; border-radius: 2px; background: linear-gradient(90deg, rgba(169, 139, 255, .5), #7DF9FF 40%, #FFFFFF 50%, #7DF9FF 60%, rgba(169, 139, 255, .5)); box-shadow: 0 0 12px 2px rgba(125, 249, 255, .6), 0 0 30px 6px rgba(169, 139, 255, .3); }
+/* the current: a zigzag crawling down the core, the whole conduit flickering with the load */
+:root[data-design="volt"] .vx-amp::after { content: ""; position: absolute; inset: 0 -6px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 60'%3E%3Cpath d='M10 0 4 14l12 9-10 13 9 10-5 14' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") 0 0 / 100% 60px repeat-y; animation: vx-run 600ms linear infinite, vt-tube 1.9s steps(1) infinite; }
+@keyframes vx-run { to { background-position: 0 60px; } }
+:root[data-design="volt"] .vx-spark { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle, #FFFFFF 0 16%, #7DF9FF 30%, rgba(169, 139, 255, .45) 55%, transparent 70%), repeating-conic-gradient(rgba(255, 255, 255, .85) 0 4deg, transparent 4deg 45deg); -webkit-mask: radial-gradient(circle, #000 40%, transparent 70%); mask: radial-gradient(circle, #000 40%, transparent 70%); animation: vx-spin 320ms steps(3) infinite; }
+@keyframes vx-spin { to { rotate: 120deg; } }
+
+:root[data-design="volt"] .vx-plate > * { position: absolute; display: block; }
+:root[data-design="volt"] :is(.vx-sil, .vx-face, .vx-ring, .vx-halo) { inset: 6%; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
+:root[data-design="volt"] .vx-halo { background: #7DF9FF; filter: blur(24px); opacity: .32; animation: vt-tube 3.1s steps(1) infinite; }
+:root[data-design="volt"] .vx-sil { background: linear-gradient(170deg, #2A2F5C, #0C0E25 55%, #05061A); filter: drop-shadow(0 14px 12px #000); }
+/* the face: dark glass with a plasma globe inside, its filaments reaching from a core that leans toward the pointer */
+:root[data-design="volt"] .vx-face { -webkit-mask-image: var(--p-face); mask-image: var(--p-face); overflow: hidden; background: radial-gradient(60% 120% at calc(50% + var(--px) * 30%) 50%, #2B2F7A, #0C0E25 75%); }
+:root[data-design="volt"] .vx-face::before, :root[data-design="volt"] .vx-face::after { content: ""; position: absolute; left: calc(50% + var(--px) * 30%); top: 50%; width: 130%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
+  -webkit-mask: radial-gradient(circle, #000 4%, rgba(0, 0, 0, .8) 22%, transparent 48%); mask: radial-gradient(circle, #000 4%, rgba(0, 0, 0, .8) 22%, transparent 48%); filter: drop-shadow(0 0 3px #7DF9FF); }
+:root[data-design="volt"] .vx-face::before { background: radial-gradient(circle, #FFFFFF 0 1.5%, rgba(125, 249, 255, .9) 3%, transparent 9%), repeating-conic-gradient(from 0deg, transparent 0 11deg, rgba(125, 249, 255, .95) 11.6deg, transparent 12.6deg 29deg); animation: vx-swirl 11s linear infinite, vt-tube 2.3s steps(1) infinite; }
+:root[data-design="volt"] .vx-face::after { background: repeating-conic-gradient(from 17deg, transparent 0 19deg, rgba(200, 180, 255, .9) 19.5deg, transparent 20.5deg 41deg); animation: vx-swirl 7s linear infinite reverse; }
+@keyframes vx-swirl { to { rotate: 1turn; } }
+/* the bevel ring: a live filament */
+:root[data-design="volt"] .vx-ring { -webkit-mask-image: var(--p-ring); mask-image: var(--p-ring); background: linear-gradient(90deg, #A98BFF, #7DF9FF 30%, #FFFFFF 50%, #7DF9FF 70%, #A98BFF) 0 0 / 200% 100%; filter: drop-shadow(0 0 4px #7DF9FF); animation: vx-flow 1.4s linear infinite; }
+@keyframes vx-flow { to { background-position: -200% 0; } }
+/* arcs: aimed at the pointer, longer the further it reaches */
+:root[data-design="volt"] .vx-arcs { left: 50%; top: 50%; width: 46%; height: auto; aspect-ratio: 88 / 80; translate: 0 -50%; transform-origin: 4.5% 50%; overflow: visible;
+  rotate: atan2(var(--py), var(--px)); scale: calc(.45 + max(var(--px), calc(var(--px) * -1)) * .45 + max(var(--py), calc(var(--py) * -1)) * .45);
+  fill: none; stroke: #FFFFFF; stroke-width: 1.6; stroke-linejoin: bevel; filter: drop-shadow(0 0 3px #7DF9FF) drop-shadow(0 0 8px #A98BFF); }
+:root[data-design="volt"] .vx-arcs path { opacity: .55; animation: vx-arc 900ms steps(1) infinite; }
+:root[data-design="volt"] .vx-arcs path:nth-child(2) { animation-duration: 1.3s; animation-delay: -.4s; } :root[data-design="volt"] .vx-arcs path:nth-child(3) { animation-duration: 700ms; animation-delay: -.2s; }
+@keyframes vx-arc { 0% { opacity: 1; } 12% { opacity: .15; } 20% { opacity: .9; } 28% { opacity: 0; } 60% { opacity: 1; } 66% { opacity: .3; } }
+
+/* ───────── contact: the charged cell ───────── */
+:root[data-design="volt"] .vt-cell { position: relative; padding: clamp(22px, 3vw, 40px); }
+:root[data-design="volt"] .vt-corners i { position: absolute; width: 46px; height: 46px; border: 0 solid #7DF9FF; filter: drop-shadow(0 0 4px #7DF9FF) drop-shadow(0 0 10px rgba(169, 139, 255, .8)); animation: vt-tube 2.9s steps(1) infinite; }
+:root[data-design="volt"] .vt-corners i:nth-child(1) { left: 0; top: 0; border-width: 2px 0 0 2px; }
+:root[data-design="volt"] .vt-corners i:nth-child(2) { right: 0; top: 0; border-width: 2px 2px 0 0; animation-delay: -.7s; }
+:root[data-design="volt"] .vt-corners i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 2px 2px; animation-delay: -1.4s; }
+:root[data-design="volt"] .vt-corners i:nth-child(4) { right: 0; bottom: 0; border-width: 0 2px 2px 0; animation-delay: -2.1s; }
+
+/* ───────── play: a test bench under the storm ───────── */
+:root[data-design="volt"] .pf-wrap { --pf-bg: radial-gradient(120% 90% at 50% 0%, #1B1F4A, #090B1E 68%); --pf-fog: #070818; --pf-grid: rgba(125, 249, 255, .13);
+  --pf-face: linear-gradient(165deg, #1D2250, #0E112B); --pf-edge: #2E3570; --pf-a: #7DF9FF; --pf-b: #A98BFF; --pf-c: #3B3F86; --pf-ink: #EAF0FF; --pf-line: rgba(125, 249, 255, .2);
+  --pf-label: radial-gradient(circle, #FFFFFF 0 14%, #7DF9FF 34%, #5B49D6 80%); --pf-tag: #0C0E25; --pf-r: 4px; --pf-shadow: 0 24px 40px -22px rgba(0, 0, 0, .9); }
+
+/* ───────── calm: a designed still, nothing flickers ───────── */
+:root.lite[data-design="volt"] .vt .pt::before, :root.lite[data-design="volt"] .vt-corners i { animation: none !important; }
+:root.lite[data-design="volt"] .vx-arcs path:first-child { opacity: .9; }
+@media (prefers-reduced-motion: reduce) { :root[data-design="volt"] .vt .pt::before, :root[data-design="volt"] .vt-corners i { animation: none !important; } :root[data-design="volt"] .vx-arcs path:first-child { opacity: .9; } }

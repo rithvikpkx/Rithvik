@@ -1,0 +1,34 @@
+/* Thermal Experience: cold stations that read hot once the heat reaches them, a heat pipe between them, and a
+   warm body for education. Heat colours come from the active palette (iron / rainbow / white). */
+:root[data-design="thermal"] {
+  /* the palette ramps reversed (hot centre outward), for radial heat */
+  --tx-r: #FFFADB 0%, #FFD138 12%, #FC780F 28%, #DB294D 44%, #800A85 62%, #1A0852 82%, #04060C 100%;
+}
+:root[data-design="thermal"][data-th-pal="rainbow"] { --tx-r: #FFE6D9 0%, #FF401A 13%, #FFE626 28%, #59E64D 42%, #1AD9E6 56%, #1A59F2 70%, #0D0F59 85%, #04060C 100%; }
+:root[data-design="thermal"][data-th-pal="white"] { --tx-r: #F7F9FF 0%, #7D8494 45%, #2A2E36 78%, #04060C 100%; }
+
+:root[data-design="thermal"] .ly-xp { --xp-w: 12px; }
+:root[data-design="thermal"] .ly-st-role { font: 600 clamp(1.3rem, 2vw, 1.7rem)/1.15 var(--th-sans); letter-spacing: -.025em; }
+:root[data-design="thermal"] .ly-st-node { border-radius: 6px; background: radial-gradient(circle at 50% 60%, #1A0852, #080B14 75%); color: var(--th-mut); font: 500 12px/1 var(--th-mono); box-shadow: 0 0 0 1px var(--th-line2); }
+:root[data-design="thermal"] .ly-st[data-lit] .ly-st-node { background: radial-gradient(circle at 50% 55%, var(--tx-r)); background-size: 150% 150%; background-position: center; color: #05070D; box-shadow: 0 0 0 1px rgba(255, 210, 120, .5), 0 0 28px -4px var(--rh1); }
+:root[data-design="thermal"] .ly-st-pts li::before { width: 10px; background: linear-gradient(90deg, var(--rh1), var(--rh3)); height: 2px; }
+
+/* the pipe: cold until heat is conducted down it */
+:root[data-design="thermal"] .tx-pipe { border-radius: 99px; background: linear-gradient(90deg, #0E1424, #1A2338 45%, #0B0F1A); box-shadow: inset 0 0 0 1px var(--th-line2); }
+:root[data-design="thermal"] .tx-heat { inset: 0 2px; border-radius: 99px; background: linear-gradient(180deg, var(--rh0), var(--rh1) 35%, var(--rh2) 70%, var(--rh3)); box-shadow: 0 0 14px 1px color-mix(in srgb, var(--rh1) 60%, transparent), 0 0 34px 4px color-mix(in srgb, var(--rh2) 30%, transparent); }
+:root[data-design="thermal"] .tx-heat::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(180deg, rgba(255, 250, 219, 0) 0 30px, rgba(255, 250, 219, .55) 38px, rgba(255, 250, 219, 0) 46px); background-size: 100% 46px; animation: tx-convect 1.2s linear infinite; }
+@keyframes tx-convect { to { background-position: 0 46px; } }
+:root[data-design="thermal"] .tx-front { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #FFFADB 0 18%, var(--rh0) 32%, color-mix(in srgb, var(--rh1) 60%, transparent) 52%, transparent 70%); animation: tx-flare 900ms ease-in-out infinite alternate; }
+@keyframes tx-flare { to { scale: 1.35; } }
+
+/* the warm body */
+:root[data-design="thermal"] .tx-body { --hx: calc(50% + var(--px) * 26%); --hy: calc(48% + var(--py) * 22%); }
+:root[data-design="thermal"] .tx-body > * { position: absolute; display: block; }
+:root[data-design="thermal"] .tx-shape, :root[data-design="thermal"] .tx-glow { inset: 3%; background: radial-gradient(circle farthest-side at var(--hx) var(--hy), var(--tx-r)); background-size: 130% 130%; background-position: center; -webkit-mask: var(--p-sil) center / contain no-repeat; mask: var(--p-sil) center / contain no-repeat; }
+:root[data-design="thermal"] .tx-shape { animation: tx-breathe 3.2s ease-in-out infinite alternate; }
+/* the ring band reads as a cooler iso-contour inside the P, so the letter keeps its bevelled structure */
+:root[data-design="thermal"] .tx-edge { inset: 3%; background: rgba(4, 6, 12, .42); -webkit-mask: var(--p-ring) center / contain no-repeat; mask: var(--p-ring) center / contain no-repeat; }
+@keyframes tx-breathe { to { background-size: 118% 118%; } }
+:root[data-design="thermal"] .tx-glow { filter: blur(18px); opacity: .7; transform: scale(1.04); }
+:root[data-design="thermal"] .tx-cross { left: var(--hx); top: var(--hy); width: 30px; height: 30px; translate: -50% -50%; margin: 0; background: linear-gradient(#fff, #fff) center / 1.5px 100% no-repeat, linear-gradient(#fff, #fff) center / 100% 1.5px no-repeat; -webkit-mask: radial-gradient(circle, transparent 5px, #000 5.5px); mask: radial-gradient(circle, transparent 5px, #000 5.5px); opacity: .85; mix-blend-mode: difference; }
+:root[data-design="thermal"] .tx-scale { right: -2%; top: 18%; width: 8px; height: 64%; border-radius: 2px; opacity: .9; }
