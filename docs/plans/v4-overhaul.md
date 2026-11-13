@@ -1,6 +1,7 @@
 # rithvik.ai overhaul: handoff
 
-Status (2026-11-13): dev was merged to main (d486838), went live, then **rolled back at the owner's request**
+Status (2026-11-13, later): **v7 is live on rithvik.ai.** The rollback was reverted (040e609) and dev merged as c100475 (voice mode, recruiter mode, floating windows, agent upgrades; see docs/plans/agent-recruiter-upgrades.md). Launch-day leftovers below still apply (uptime cron, prod env check).
+Previous status: dev was merged to main (d486838), went live, then **rolled back at the owner's request**
 (revert b5953a4 on main) to fix more UI issues first. **Before the next "merge to main": `git checkout main && git revert b5953a4`**
 (revert the revert), then merge dev --no-ff; otherwise git sees dev as already merged and production gets nothing. The
 `rithvik-uptime` cron job was never scheduled (permission denied); schedule it after the real launch.
