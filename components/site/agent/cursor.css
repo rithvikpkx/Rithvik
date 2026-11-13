@@ -10,7 +10,12 @@
 .rag-cursor.click::before { animation: rag-ring 520ms ease-out; }
 @keyframes rag-press { 40% { scale: .82; } }
 @keyframes rag-ring { from { opacity: .9; scale: .3; } to { opacity: 0; scale: 1.6; } }
-/* the header toggle: a labelled pill so the mode is discoverable */
-.ag-cursor { width: auto !important; gap: 5px; padding: 0 8px !important; border-radius: 999px; font: 500 11.5px/1 var(--a-mono); }
-.ag-cursor[aria-pressed="true"] { color: var(--a-bg); background: var(--a-accent); }
-@media (max-width: 480px) { .ag-cursor span { display: none; } }
+/* the header toggle: a slim labelled pill (icon + word in a row); on = a soft accent tint and a live dot */
+.agent .ag-cursor { display: inline-flex; align-items: center; gap: 5px; width: auto; height: 24px; padding: 0 9px 0 7px; margin-right: 4px;
+  border: 1px solid var(--a-line); border-radius: 999px; color: var(--a-muted); font: 500 11px/1 var(--a-mono); letter-spacing: .02em; white-space: nowrap;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease; }
+.agent .ag-cursor .ic { width: 13px; height: 13px; flex: none; }
+.agent .ag-cursor:hover { color: var(--a-fg); border-color: color-mix(in srgb, var(--a-fg) 30%, transparent); }
+.agent .ag-cursor[aria-pressed="true"] { color: var(--a-accent); border-color: color-mix(in srgb, var(--a-accent) 45%, transparent); background: color-mix(in srgb, var(--a-accent) 10%, transparent); }
+.agent .ag-cursor[aria-pressed="true"]::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--a-accent); box-shadow: 0 0 6px var(--a-accent); }
+@media (max-width: 480px) { .agent .ag-cursor span { display: none; } .agent .ag-cursor { padding: 0 7px; } }

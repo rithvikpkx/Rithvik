@@ -227,8 +227,7 @@ export default function AgentDock() {
           }}>
             <span className="agent-title"><span className="at-mark" aria-hidden="true">✻</span> RAG</span>
             <span className="agent-actions">
-              <button type="button" className="ag-btn ag-cursor" aria-pressed={cursorMode} aria-label="Cursor mode: RAG acts out its actions with its own cursor"
-                title={cursorMode ? "Cursor mode on: RAG clicks and types on the page itself" : "Cursor mode: watch RAG click and type on the page"} onClick={() => setCursorMode(!cursorMode)}>
+              <button type="button" className="ag-btn ag-cursor" aria-pressed={cursorMode} aria-label={cursorMode ? "Cursor mode on: RAG clicks and types on the page itself" : "Cursor mode: watch RAG click and type on the page"} onClick={() => setCursorMode(!cursorMode)}>
                 <Icon name="mouse-pointer-2" /><span>Cursor</span>
               </button>
               <button type="button" className="ag-btn" aria-label="Copy chat as Markdown" title="Copy chat" disabled={!agent.canExport} onClick={agent.copyChat}><Icon name="copy" /></button>
