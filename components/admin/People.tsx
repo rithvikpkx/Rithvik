@@ -10,6 +10,8 @@ import type { Activity } from "@/lib/analytics/strips";
 import type { ChatLink, EventRow, VisitorRow, VisitRow } from "@/lib/track/views";
 import { describeEvent, duration, offset, place, whoLabel } from "@/lib/track/views";
 import ChatReplica from "./ChatReplica";
+import Trash from "./Trash";
+import { deleteVisitor } from "@/app/admin/chats-actions";
 import { KeyNav, Logo } from "./live";
 import { ago, Empty, Panel, stamp, workDomain } from "./ui";
 import { DayCells, Ico, Sigil } from "./viz";
@@ -94,6 +96,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
                     <span className="meta">{v.visits} visit{v.visits === 1 ? "" : "s"}<small>{host(v.first_referrer) ?? "direct"}</small></span>
                     <span className="when">{ago(v.last_seen, now)}</span>
                   </a>
+                  <Trash id={v.id} action={deleteVisitor} what="visitor, their visits, replays and chats" />
                 </li>
               );
             })}

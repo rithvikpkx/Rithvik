@@ -531,3 +531,11 @@ html.lite .dash *, html.lite .dash *::before, html.lite .dash *::after { animati
 .d-trace .q code { font: inherit; }
 .d-keys { margin: 10px 0 0; }
 .d-main.tight { gap: 26px; }
+
+/* row delete: a trash can over the row's right edge, shown on hover or keyboard focus */
+li:has(> .d-trash) { position: relative; }
+.d-trash { position: absolute; right: 6px; top: 50%; translate: 0 -50%; opacity: 0; transition: opacity 120ms ease; }
+li:hover > .d-trash, .d-trash:focus-within { opacity: 1; }
+.d-trash button { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel-2); color: var(--muted); cursor: pointer; }
+.d-trash button:hover, .d-trash button:focus-visible { color: var(--red); border-color: var(--red); outline: none; }
+@media (hover: none) { .d-trash { opacity: 1; } }
