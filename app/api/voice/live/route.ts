@@ -3,6 +3,7 @@ import { getContent } from "@/lib/content";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { liveBackendInstructions, liveInstructions } from "@/lib/agent/live-prompt";
 import { allowedFor } from "@/lib/agent/allowed";
+import { looksPrompt } from "@/lib/designs/about";
 import { toolDefs } from "@/lib/agent/tools";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { getPalettes } from "@/lib/designs/server";
@@ -37,7 +38,8 @@ export async function POST(req: Request) {
   const [content, palettes, calendar, known] = await Promise.all([getContent(), getPalettes(), calendarPromptContext(), knownVisitor(visitorId)]);
   const profile = scrubPrivate(renderProfile(content));
   // Responses-style function tools; strict off, since several parameters are optional
-  const tools = toolDefs(allowedFor(content, palettes)).map((t) => ({ type: "function", name: t.function.name, description: t.function.description, parameters: t.function.parameters, strict: false }));
+  const allowed = allowedFor(content, palettes);
+  const tools = toolDefs(allowed).map((t) => ({ type: "function", name: t.function.name, description: t.function.description, parameters: t.function.parameters, strict: false }));
   let res: Response;
   try {
     res = await fetch("https://api.openai.com/v1/live/sessions", {
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
           model: "gpt-live-1",
           instructions: liveInstructions(STYLES[pickStyle(style)], paceOf(clampRate(rate))) + (known ? `\n${known}` : ""),
           audio: { output: { voice: pickVoice(voice) } },
-          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile, calendar) + (known ? `\n\nVisitor:\n${known}` : ""), tools, tool_choice: "auto" } },
+          delegation: { type: "responses", responses: { model: BACKEND, instructions: liveBackendInstructions(profile, calendar, looksPrompt(allowed.looks)) + (known ? `\n\nVisitor:\n${known}` : ""), tools, tool_choice: "auto" } },
         },
         transport: { type: "webrtc", sdp },
       }),

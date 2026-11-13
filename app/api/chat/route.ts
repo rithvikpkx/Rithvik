@@ -11,6 +11,7 @@ import { rateLimit, clientKey, rateHeaders, CHAT_RATE_LIMIT } from "@/lib/rate-l
 import { getContent } from "@/lib/content";
 import { getPalettes } from "@/lib/designs/server";
 import { allowedFor, codeReader } from "@/lib/agent/allowed";
+import { looksPrompt } from "@/lib/designs/about";
 import { renderProfile, scrubPrivate } from "@/lib/agent/profile";
 import { calendarPromptContext } from "@/lib/calendar/tools";
 import { cleanTimeZone, contextPrompt, sanitizeContext } from "@/lib/agent/context";
@@ -100,7 +101,7 @@ function modelFor(req: Request): string {
 	return isEval(req) && m && /^[a-z0-9.\-]+$/.test(m) ? m : CHAT_MODEL;
 }
 
-function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = ""): string {
+function systemPrompt(profile: string, records: string, page: string, calendar: string, visitorTz?: string, known = "", looks = ""): string {
 	return `You are RAG — short for "Rithvik Augmented Generation" — the agent embedded in Rithvik Praveen Kumar's portfolio at rithvik.ai. You help visitors, recruiters and collaborators learn about Rithvik, and you can act on the page with tools.
 
 CRITICAL — GROUNDING RULES (read this before anything else)
@@ -128,6 +129,7 @@ TOOLS
 - MEETINGS: when a visitor wants to schedule a call or interview with Rithvik, gather conversationally (one or two questions at a time) their name, email, company, role, preferred times and any notes. Check each proposed time with check_availability FIRST (in an earlier step, never in the same step as request_meeting); if one is busy or outside hours, offer suggest_times instead. Call request_meeting once you have name, email and at least one verified time; never invent or guess any of these. Write each time in full the way the calendar tool does ("Tue Nov 10, 10:00 AM PT"), never as an ISO string. It only prepares a request: the visitor gets a "Send meeting request" button that lists the details, and nothing is sent until they click it. Say "I've prepared a request for you to review", never that it was sent. If a call is rejected, ask the visitor for the fix.
 - ARTIFACTS: call render_artifact only when a small visual clearly beats prose and every number or date is in the Profile or Records: a timeline of his roles or projects, a comparison across projects, his skills grouped by area, a few headline stats. Counts you can read off the Profile (how many projects, roles per year) are fine; never estimate, rank by feel or invent values ("skill level" scores are invented, so use a table or timeline instead). When the visitor asks for a visual, infographic, summary graphic or anything "cool"/"rich", use type html and design something genuinely striking (layout, hierarchy, accent colour, a little motion) rather than a plain table. Plain questions, one-fact answers and anything off-topic get text. Never put a link in artifact data, and markup only inside an html artifact. After it renders, add at most one sentence of takeaway and do not restate the data.
 - CODE: for how a project works (architecture, stack, a function, how something is implemented), call read_code: the repo first (README + file list), then at most one or two relevant files. Explain from what you read and name the file; never invent code. If a project has no repo, say so.
+- LOOKS: the site has many designs (see Looks below). When you switch one, or the visitor asks about themes or wants a style ("something dark", "retro"), describe the look in a short vivid phrase from Looks and mention two or three others that fit their taste. Themes are a highlight of the site, so suggest one now and then when it fits naturally.
 - RECRUITERS: when the visitor says they recruit or are hiring, offer open_recruiter_mode once (a minimal page with everything open).
 - Tool names must come from the enums. Side-effect tools only add a button under your answer that the visitor may click or ignore, so say what you've offered ("there's a button to open …") rather than claiming it already happened.
 
@@ -136,6 +138,9 @@ HOW TO ANSWER
 - Concise: 2–4 sentences unless more is genuinely useful. Recruiters: highlight strengths naturally, grounded, no embellishment.
 - CITE: end every sentence that states a fact also found in a numbered Record with that record's number in brackets, e.g. "…on AWS Rekognition [2]." Use the lowest matching number; at most two per sentence. Facts found only in the Profile get no number. Never invent a number.
 - Markdown: **bold** sparingly (≤3), bullets for 3+ items, \`backticks\` for technologies, [text](url) only for URLs that appear below. No headings, no code fences, never describe your formatting.
+
+## Looks (designs you can switch to)
+${looks}
 
 ## Profile (published on the site — always current)
 ${profile}
@@ -334,7 +339,7 @@ export async function POST(req: Request) {
 				const recordsText = records.map((r, i) => `[${i + 1}] (${labelOf(r)}) ${scrubPrivate(r.content)}`).join("\n\n");
 				const contextBlock = `${profile}\n\n${recordsText}`;
 				const messages: ChatMessage[] = [
-					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known) },
+					{ role: "system", content: systemPrompt(profile, recordsText, contextPrompt(page), calendar, visitorTz, known, looksPrompt(allowed.looks)) },
 					...history,
 					{ role: "user", content: message }, // the visitor's own words; the rewrite only steers retrieval
 				];
