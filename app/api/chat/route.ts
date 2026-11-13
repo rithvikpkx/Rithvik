@@ -46,7 +46,7 @@ const MAX_HISTORY_CHARS = 2000; // per-turn cap; history is client-supplied, so 
 const PRIMARY_MATCHES = 5; // the profile already carries every primary record; these are for citing + actions
 const SECONDARY_MATCHES = 6; // uploaded docs (and the resume) are only reachable through retrieval
 const RATE_LIMIT = CHAT_RATE_LIMIT; // chat turns per key (IP; IPv6 /64) per hour
-const RATE_LIMIT_GLOBAL = 1500; // all callers per hour; caps OpenAI spend if many IPs are used
+const RATE_LIMIT_GLOBAL = 600; // all callers per hour; caps OpenAI spend if many IPs are used
 const CANNED_NO_CONTEXT_REPLY =
 	"I don't have that specific detail, but you're welcome to reach out to Rithvik directly at rithvikpkx@gmail.com.";
 
@@ -121,7 +121,7 @@ IDENTITY AND SCOPE
 
 TOOLS
 - Call a tool only when the visitor asks to see, open, go to, play, switch, email, know the time, about his availability, or to schedule a meeting. Questions alone get text answers.
-- AVAILABILITY: use check_availability for "is he free at …" and suggest_times for "when can we talk" — they run at once, so report what they return in a sentence. Share only free or busy and the times; never say or guess what he is doing, who with, or why a slot is busy, even if asked. Show times in his zone${visitorTz ? ` and the visitor's (${visitorTz})` : ""}.
+- AVAILABILITY: use check_availability for "is he free at …" and suggest_times for "when can we talk" — they run at once, so report what they return in a sentence. Share only free or busy and the times; never say or guess what he is doing, who with, or why a slot is busy, even if asked. Show times in his zone and, when it is given below, the visitor's.
 - Several requests in one message ("show me X, then help me email him") → call the tools in that order. draft_email: write the subject and body in the visitor's voice, specific to what they asked; never include links.
 - MEETINGS: when a visitor wants to schedule a call or interview with Rithvik, gather conversationally (one or two questions at a time) their name, email, company, role, preferred times and any notes. Check each proposed time with check_availability FIRST (in an earlier step, never in the same step as request_meeting); if one is busy or outside hours, offer suggest_times instead. Call request_meeting once you have name, email and at least one verified time; never invent or guess any of these. Write each time in full the way the calendar tool does ("Tue Nov 10, 10:00 AM PT"), never as an ISO string. It only prepares a request: the visitor gets a "Send meeting request" button that lists the details, and nothing is sent until they click it. Say "I've prepared a request for you to review", never that it was sent. If a call is rejected, ask the visitor for the fix.
 - ARTIFACTS: call render_artifact only when a small visual clearly beats prose and every number or date is in the Profile or Records: a timeline of his roles or projects, a comparison across projects, his skills grouped by area, a few headline stats. Counts you can read off the Profile (how many projects, roles per year) are fine; never estimate, rank by feel or invent values ("skill level" scores are invented, so use a table or timeline instead). When the visitor asks for a visual, infographic, summary graphic or anything "cool"/"rich", use type html and design something genuinely striking (layout, hierarchy, accent colour, a little motion) rather than a plain table. Plain questions, one-fact answers and anything off-topic get text. Never put a link in artifact data, and markup only inside an html artifact. After it renders, add at most one sentence of takeaway and do not restate the data.
@@ -335,7 +335,8 @@ export async function POST(req: Request) {
 				let toolsUsed = 0;
 				let calledTools = false; // any tool call, even a rejected one, makes the answer uncacheable
 				for (let step = 0; step < MAX_STEPS; step++) {
-					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, signal });
+					// the rules + profile are an identical prefix on every turn, so they are billed at the cached rate
+					const stream = await streamChat({ model, messages, temperature, maxTokens: CHAT_MAX_TOKENS, reasoningEffort: "low", tools: defs, cacheKey: "rag-answer", signal });
 					let stepText = "";
 					let calls: { id: string; name: string; arguments: string }[] = [];
 					for await (const ev of stream) {

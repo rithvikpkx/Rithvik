@@ -2,7 +2,7 @@ import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { durationOk, MAX_AUDIO_BYTES, sniffAudio, stripPromptEcho } from "@/lib/voice";
 
 const PER_KEY = 30;      // transcriptions per IP (IPv6: per /64) per hour
-const GLOBAL = 600;      // all visitors per hour
+const GLOBAL = 300;      // all visitors per hour
 const MODEL = process.env.VOICE_STT_MODEL || "gpt-4o-transcribe";
 // Biases spelling of the proper nouns visitors will actually say.
 const PROMPT = "Rithvik Praveen Kumar, Purdue, BoilerFrame, OpenBCI, TinyML";

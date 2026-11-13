@@ -9,8 +9,8 @@ import { getPalettes } from "@/lib/designs/server";
 import { CHAT_MODEL } from "@/lib/openai";
 import { STYLES, clampRate, paceOf, pickStyle, pickVoice } from "@/lib/voice";
 
-const PER_KEY = 6;      // voice sessions per IP (IPv6: per /64) per hour: each is billed by the minute
-const GLOBAL = 120;     // all visitors per hour
+const PER_KEY = 3;      // voice sessions per IP (IPv6: per /64) per hour: each is billed by the minute
+const GLOBAL = 30;      // all visitors per hour: worst case ~$15/hr at the 10-minute cap
 const MAX_SDP = 20_000; // a browser offer is ~3-6 KB
 const BACKEND = process.env.VOICE_LIVE_BACKEND_MODEL || CHAT_MODEL;
 

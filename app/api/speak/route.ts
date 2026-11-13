@@ -1,8 +1,8 @@
 import { rateLimit, clientKey } from "@/lib/rate-limit";
 import { MAX_SPEAK_CHARS, STYLES, pickStyle, pickVoice, speakable } from "@/lib/voice";
 
-const PER_KEY = 40;      // spoken replies per IP (IPv6: per /64) per hour
-const GLOBAL = 800;      // all visitors per hour
+const PER_KEY = 20;      // spoken replies per IP (IPv6: per /64) per hour
+const GLOBAL = 300;      // all visitors per hour
 const MODEL = process.env.VOICE_TTS_MODEL || "gpt-4o-mini-tts-2025-12-15"; // the snapshot that carries marin and cedar
 
 /** POST { text, voice?, style? } -> streamed mp3. Voice and style are allow-listed ids, never free text. The text is cleaned of markdown/URLs/footnotes here (the server is the
