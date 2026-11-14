@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { explainVisit } from "@/app/admin/visit-actions";
 
-/** The AI briefing for one visit: shown when saved, otherwise a button that writes it (and a quiet "regenerate"). */
+/** The AI briefing for one visit. Nothing is requested until the button is clicked; a saved briefing just shows. */
 export default function VisitStory({ visitId, story: saved }: { visitId: string; story: string | null }) {
   const [story, setStory] = useState(saved);
   const [error, setError] = useState("");
@@ -11,7 +11,7 @@ export default function VisitStory({ visitId, story: saved }: { visitId: string;
   return (
     <div className="d-story">
       {story ? <p>{story}</p> : null}
-      <button type="button" onClick={run} disabled={pending}>{pending ? "Reading the visit…" : story ? "Regenerate" : "What were they doing?"}</button>
+      <button type="button" onClick={run} disabled={pending}>{pending ? "Summarizing…" : story ? "Summarize again" : "Summarize this visit"}</button>
       {error && <span className="d-story-err">{error}</span>}
     </div>
   );

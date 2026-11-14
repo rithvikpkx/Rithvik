@@ -3,7 +3,7 @@ import type { EventRow, VisitorRow, VisitRow, ChatLink } from "./views";
 
 const T0 = Date.parse("2026-11-09T14:02:00Z");
 
-export const fixtureVisitor: VisitorRow = {
+export const fixtureVisitor: VisitorRow = { lat: 37.7749, lng: -122.4194,
   id: "123e4567-e89b-12d3-a456-426614174000", first_seen: "2026-11-02T09:14:00Z", last_seen: "2026-11-09T14:09:40Z",
   first_ip: "198.51.100.23", last_ip: "198.51.100.77", ips: ["198.51.100.23", "198.51.100.77"],
   company: "Acme Robotics", org: "Acme Robotics Inc", asn: "AS64500", ip_type: "business",

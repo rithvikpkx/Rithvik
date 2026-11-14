@@ -10,6 +10,7 @@ import type { Activity } from "@/lib/analytics/strips";
 import type { ChatLink, EventRow, VisitorRow, VisitRow } from "@/lib/track/views";
 import { describeEvent, duration, offset, place, whoLabel } from "@/lib/track/views";
 import ChatReplica from "./ChatReplica";
+import Globe from "./Globe";
 import Trash from "./Trash";
 import VisitStory from "./VisitStory";
 import { deleteVisitor } from "@/app/admin/chats-actions";
@@ -219,6 +220,23 @@ export function VisitorInspector({ v, visits, chats, messages, base, now, replay
           <dl>{raw.map(([k, x]) => <Fragment key={k}><dt>{k}</dt><dd>{x}</dd></Fragment>)}</dl>
         </details>
       </Panel>
+
+      {typeof v.lat === "number" && typeof v.lng === "number" && (
+        <Panel label="where">
+          <div className="d-where">
+            <div className="d-where-globe">
+              <Globe points={[{ lat: v.lat, lng: v.lng, value: 1, label: place(v) }]} focus={{ lat: v.lat, lng: v.lng }} label={`Globe centred on ${place(v)}`} />
+            </div>
+            <dl className="d-where-facts">
+              <div><dt>place</dt><dd>{place(v)}{v.country ? `, ${countryName(v.country)}` : ""}</dd></div>
+              <div><dt>network</dt><dd>{v.org || v.company || "–"}{v.ip_type ? ` (${v.ip_type})` : ""}</dd></div>
+              <div><dt>coordinates</dt><dd>{v.lat.toFixed(3)}, {v.lng.toFixed(3)} · <a href={`https://www.openstreetmap.org/?mlat=${v.lat}&mlon=${v.lng}#map=11/${v.lat}/${v.lng}`} target="_blank" rel="noopener noreferrer">open map ↗</a></dd></div>
+              {v.timezone && <div><dt>their time zone</dt><dd>{v.timezone}</dd></div>}
+              <div><dt>accuracy</dt><dd style={{ color: "var(--muted)" }}>From the IP address: usually the right city or the network&apos;s hub nearby, never a street address.</dd></div>
+            </dl>
+          </div>
+        </Panel>
+      )}
 
       <section className="d-sec" aria-labelledby="vs-h">
         <header className="d-sec-h"><span className="d-idx">01</span><h2 id="vs-h">Visits</h2><span className="d-rule" />

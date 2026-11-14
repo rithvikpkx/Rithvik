@@ -18,7 +18,7 @@ export default function AiSummary({ write, sample }: { write?: () => Promise<{ t
         <span className="d-read-mark" aria-hidden="true">✻</span>
         <span className="d-read-t">read</span>
         <button type="button" onClick={run} disabled={busy || !write} title="Sees aggregate numbers only: never names, emails or questions">
-          {busy ? "writing…" : text ? "rewrite" : "write"}
+          {busy ? "summarizing…" : text ? "summarize again" : "summarize"}
         </button>
       </header>
       {text && <p>{text}</p>}

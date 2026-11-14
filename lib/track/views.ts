@@ -10,6 +10,7 @@ export type VisitorRow = {
   email: string | null; name: string | null; company_given: string | null; visits: number;
   identified_at: string | null; is_bot: boolean;
   role?: string | null; visitor_kind?: string | null; job_posting?: string | null; // what they told the agent
+  lat?: number | null; lng?: number | null; // approximate (IP, city level), from Vercel's geo headers
 };
 export type VisitRow = {
   id: string; visitor_id: string; started_at: string; ended_at: string; ip: string | null; entry_url: string | null; referrer: string | null;
