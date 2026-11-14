@@ -2,7 +2,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { adminClient } from "@/lib/supabase-server";
 import { revalidateTag, unstable_cache } from "next/cache";
-import { pdfProblem, redactResume, staleVersions, MAX_PDF_BYTES } from "./pure";
+import { cleanResumeHtml, pdfProblem, redactResume, staleVersions, MAX_PDF_BYTES } from "./pure";
 
 export const RESUME_BUCKET = "resume";
 const FETCH_TIMEOUT_MS = 15_000;
@@ -30,7 +30,7 @@ export async function currentVersion(db: Db = adminClient()): Promise<ResumeVers
 }
 
 /** Downloads one export of the master Google Doc (public link) with a hard timeout. */
-async function pull(format: "pdf" | "txt") {
+async function pull(format: "pdf" | "txt" | "html") {
   const id = process.env.RESUME_DOC_ID || "1mxarfdKpYkUzv-id65KVlA0T9KKEVQM2czRApiGlQOg";
   const res = await fetch(`https://docs.google.com/document/d/${id}/export?format=${format}`, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store",
@@ -100,3 +100,14 @@ async function prune(db: Db) {
 export const getResumeText = unstable_cache(async (): Promise<string> => {
   try { return (await currentVersion())?.text ?? ""; } catch { return ""; }
 }, ["resume-text"], { revalidate: 300, tags: [RESUME_TAG] });
+
+/** The resume as clean HTML (the Google Doc's own export, see cleanResumeHtml), for the resume window: real page
+ *  content that session replays can show, unlike a PDF viewer. Cached an hour and dropped by each sync; "" on failure
+ *  (the window then falls back to the PDF). */
+export const getResumeHtml = unstable_cache(async (): Promise<string> => {
+  try {
+    const { bytes, type } = await pull("html");
+    if (!type?.startsWith("text/html")) return "";
+    return cleanResumeHtml(new TextDecoder().decode(bytes));
+  } catch { return ""; }
+}, ["resume-html-v2"], { revalidate: 3600, tags: [RESUME_TAG] });

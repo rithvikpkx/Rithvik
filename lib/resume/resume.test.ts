@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pdfProblem, redactResume, staleVersions, MAX_PDF_BYTES } from "./pure.ts";
+import { pdfProblem, redactResume, staleVersions, MAX_PDF_BYTES, cleanResumeHtml } from "./pure.ts";
 
 const pdf = (n = 100) => new Uint8Array(n).fill(65).map((b, i) => (i < 5 ? "%PDF-".charCodeAt(i) : b));
 
@@ -31,4 +31,13 @@ test("staleVersions keeps the newest 10 and never the current one", () => {
   const rows = Array.from({ length: 13 }, (_, i) => ({ id: i, created_at: `2026-01-${String(i + 1).padStart(2, "0")}`, is_current: i === 0 }));
   const stale = staleVersions(rows).map((r) => r.id).sort((a, b) => a - b);
   assert.deepEqual(stale, [1, 2]); // 0 is oldest but current
+});
+
+test("cleanResumeHtml: no scripts or handlers, real links, no phone or graduation date", () => {
+  const out = cleanResumeHtml(`<html><head><script>x()</script><meta http-equiv="refresh" content="0"></head><body onload="x()"><p>Call (508) 382-2974</p><p>Expected May 2028</p><a href="https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Frithvikpkx&amp;sa=D">gh</a><a href="javascript:alert(1)">bad</a></body></html>`);
+  for (const bad of ["<script", "onload", "http-equiv", "382-2974", "2028", "javascript:"]) assert.ok(!out.includes(bad), `${bad} survived`);
+  assert.ok(out.includes('href="https://github.com/rithvikpkx"') && out.includes('target="_blank"') && out.includes("max-width:none"));
+  // the stylesheet is left alone even where its digits look like a phone number
+  const css = ".lst-kix_7jhr5kqklli8-7{x:1} .c1{width:5085551234px}";
+  assert.ok(cleanResumeHtml(`<html><head><style>${css}</style></head><body>(508) 382-2974</body></html>`).includes(css));
 });

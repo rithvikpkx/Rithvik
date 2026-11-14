@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { track } from "@/lib/track/bus";
 import Window from "../windows/Window";
 import { useSite } from "../SiteProvider";
 import { useEditMode } from "@/components/EditModeProvider";
@@ -63,16 +64,34 @@ export default function ResumeWindow() {
   // the timeout is a safety net for a viewer that never fires load
   const [ready, setReady] = useState(false);
   useEffect(() => { if (!pdfUrl || phone) return; const t = setTimeout(() => setReady(true), 8000); return () => clearTimeout(t); }, [pdfUrl, phone]);
-  const loading = !meta || (!!pdfUrl && !phone && !ready);
+  // the synced Google Doc shows as real page content (/resume.html), which session replays can record and phones
+  // render; an uploaded PDF, or a failed export, uses the PDF viewer
+  const [docFailed, setDocFailed] = useState(false);
+  // How long the resume stayed open and how far down it was read (the HTML view reports its scroll), on close.
+  const depth = useRef(0);
+  useEffect(() => {
+    const t0 = Date.now();
+    return () => track("resume", { action: "close", ms: Date.now() - t0, ...(depth.current ? { pct: depth.current } : {}) });
+  }, []);
+  const watchDepth = (f: HTMLIFrameElement) => {
+    const w = f.contentWindow, d = f.contentDocument?.documentElement;
+    if (!w || !d) return;
+    w.addEventListener("scroll", () => { depth.current = Math.max(depth.current, Math.round(((w.scrollY + w.innerHeight) / d.scrollHeight) * 100)); }, { passive: true });
+  };
+  const docUrl = meta?.source !== "upload" && meta?.sha && !docFailed ? `/resume.html?v=${meta.sha.slice(0, 12)}` : null;
+  const showPdf = !!pdfUrl && !docUrl;
+  const loading = !meta || (docUrl ? !ready : showPdf && !phone && !ready);
   const when = meta?.syncedAt && new Date(meta.syncedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   return (
     <Window
       title={file} icon="file-text" label="Resume" name="resume" className="resume-win" onClose={close}
-      actions={pdfUrl && <a className="ui-btn" href={pdfUrl} download={file}>Download</a>}
+      actions={pdfUrl && <>{docUrl && <a className="ui-btn" href={pdfUrl} target="_blank" rel="noopener">Open PDF</a>}<a className="ui-btn" href={pdfUrl} download={file}>Download</a></>}
     >
       {loading && <ResumeSkeleton />}
-      {pdfUrl && !phone && <iframe className="pdf-frame" src={`${pdfUrl}#view=FitH`} title="Resume" data-loading={loading || undefined} onLoad={() => setReady(true)} />}
-      {pdfUrl && phone && (
+      {docUrl && <iframe className="pdf-frame doc-frame" src={docUrl} title="Resume" data-loading={loading || undefined} sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        onLoad={(e) => { const t = e.currentTarget.contentDocument?.body?.innerText ?? ""; if (t.length < 80) setDocFailed(true); else { setReady(true); watchDepth(e.currentTarget); } }} />}
+      {showPdf && !phone && <iframe className="pdf-frame" src={`${pdfUrl}#view=FitH`} title="Resume" data-loading={loading || undefined} onLoad={() => setReady(true)} />}
+      {showPdf && phone && (
         <div className="pdf-viewport pdf-open"><a className="ui-btn" href={pdfUrl} target="_blank" rel="noopener">Open PDF</a></div>
       )}
       {meta && !pdfUrl && <div className="pdf-viewport">
