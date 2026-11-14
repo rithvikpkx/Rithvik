@@ -55,7 +55,8 @@ export async function requireAuth() {
 
 /** True when the request carries a Supabase session belonging to the admin. The non-redirecting twin of
  *  requireAuth, for route handlers that answer 401 instead (same fail-closed allow-list check). */
-export async function isAdmin(): Promise<boolean> {
+/** `maxAgeMs`: also require the sign-in itself to be that recent (the agent's no-limits pass follows the 5-hour tab rule). */
+export async function isAdmin(maxAgeMs?: number): Promise<boolean> {
   const cookieStore = await cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,5 +65,6 @@ export async function isAdmin(): Promise<boolean> {
   );
   const { data: { user } } = await supabase.auth.getUser();
   const allowed = adminEmail();
-  return !!user && !!allowed && user.email?.trim().toLowerCase() === allowed;
+  const fresh = !maxAgeMs || (!!user?.last_sign_in_at && Date.now() - Date.parse(user.last_sign_in_at) < maxAgeMs);
+  return !!user && !!allowed && user.email?.trim().toLowerCase() === allowed && fresh;
 }
