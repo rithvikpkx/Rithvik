@@ -2,7 +2,11 @@
  *  design switches, JS errors and web-vitals. Everything is passive and cheap (no per-frame work). */
 import type { Engine } from "./engine";
 
-const SECTIONS = ["top", "work", "experience", "about", "play", "questions", "contact"];
+const SECTIONS = ["top", "experience", "work", "about", "play", "questions", "contact"];
+const READ_MIN_MS = 2000;  // shorter than this is scrolling past, not reading
+const HOVER_MIN_MS = 900;  // shorter than this is the pointer passing over
+// what a hover names: a project, a role, a contact node, a link or a button
+const HOVERABLE = '[data-case],[id^="project-"],[id^="experience-"],.pt-node,.cl-node,a[href],button';
 const HOOKS = ["case", "compose", "resume", "agent", "play", "copy", "theme-go"];
 const CLICKABLE = ["a", "button", "[role=button]", ...HOOKS.map((h) => `[data-${h}]`)].join(",");
 const ACTIVE_WINDOW_MS = 15_000;
@@ -82,6 +86,60 @@ export function observe(eng: Engine): () => void {
   };
   on("scroll", () => { lastInput = Date.now(); st ??= setTimeout(checkScroll, 250); }, { passive: true });
   off.push(() => clearTimeout(st));
+
+  // Reading: how long each section, project and role stays in the middle band of the viewport (on leaving it, or
+  // when the tab hides), so the dashboard shows what was read, not just what scrolled past.
+  const inView = new Map<string, number>();
+  const readOut = (id: string, now = Date.now()) => {
+    const t0 = inView.get(id);
+    inView.delete(id);
+    if (t0 !== undefined && now - t0 >= READ_MIN_MS) emit("read", { id, ms: now - t0 });
+  };
+  const dwell = new IntersectionObserver((entries) => {
+    for (const en of entries) {
+      const id = en.target.id;
+      if (en.isIntersecting) { if (!inView.has(id)) inView.set(id, Date.now()); } else readOut(id);
+    }
+  }, { rootMargin: "-35% 0px -35% 0px", threshold: 0 });
+  const dwellWatched = new WeakSet<Element>();
+  const scanDwell = () => {
+    const els = [...SECTIONS.map((s) => document.getElementById(s)), ...document.querySelectorAll('[id^="project-"],[id^="experience-"]')];
+    for (const el of els) if (el && !dwellWatched.has(el)) { dwellWatched.add(el); dwell.observe(el); }
+  };
+  scanDwell();
+  const dwellScans = [1500, 4000, 10_000].map((ms) => setTimeout(scanDwell, ms));
+  const hidden = () => {
+    if (document.visibilityState !== "hidden") { for (const id of inView.keys()) inView.set(id, Date.now()); return; } // back: restart the clocks
+    const now = Date.now();
+    for (const id of [...inView.keys()]) { readOut(id, now); inView.set(id, now); }
+  };
+  document.addEventListener("visibilitychange", hidden);
+  off.push(() => { dwell.disconnect(); dwellScans.forEach(clearTimeout); document.removeEventListener("visibilitychange", hidden); });
+
+  // Hovering: what the pointer rested on, and for how long (mouse only).
+  let hov: { el: Element; label: string; t0: number } | null = null;
+  const labelOf = (el: Element) => {
+    const h = el as HTMLElement;
+    return clip(h.dataset.case ? `project:${h.dataset.case}` : el.id || h.getAttribute("aria-label") || h.dataset.tip || h.textContent, 60);
+  };
+  const endHover = () => {
+    if (hov && Date.now() - hov.t0 >= HOVER_MIN_MS && hov.label) emit("hover", { target: hov.label, ms: Date.now() - hov.t0 });
+    hov = null;
+  };
+  const onOver = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    const el = (e.target as Element | null)?.closest?.(HOVERABLE);
+    if (el === hov?.el) return;
+    endHover();
+    if (el) hov = { el, label: labelOf(el), t0: Date.now() };
+  };
+  document.addEventListener("pointerover", onOver, { passive: true });
+  off.push(() => document.removeEventListener("pointerover", onOver));
+
+  // Copying: what text they took away (an email address, a project name).
+  const onCopy = () => { const t = clip(document.getSelection()?.toString(), 160); if (t) emit("copy", { text: t }); };
+  document.addEventListener("copy", onCopy);
+  off.push(() => document.removeEventListener("copy", onCopy));
 
   // Active time: a 1 s tick counts while the tab is visible and the visitor did something in the last 15 s.
   let active = 0;

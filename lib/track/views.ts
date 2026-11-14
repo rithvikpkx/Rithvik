@@ -14,6 +14,7 @@ export type VisitorRow = {
 export type VisitRow = {
   id: string; visitor_id: string; started_at: string; ended_at: string; ip: string | null; entry_url: string | null; referrer: string | null;
   utm: Record<string, string> | null; design: string | null; viewport: string | null; tz: string | null; lang: string | null; is_bot: boolean;
+  story?: string | null; // the AI briefing, once written (app/admin/visit-actions.ts)
 };
 export type EventRow = { id: number; visit_id: string; at: string; type: string; data: Record<string, unknown> | null };
 export type ChatLink = { id: string; created_at: string; visit_turns: number; preview: string };
@@ -67,7 +68,10 @@ export function describeEvent(e: Pick<EventRow, "type" | "data">): string {
     case "scroll": return `scrolled to ${num(d.pct)}%`;
     case "active": return `active ${duration(num(d.ms) || 0)}`;
     case "overlay": return `opened ${str(d.kind)}${str(d.ref) ? `: ${str(d.ref)}` : ""}`;
-    case "resume": return `resume ${str(d.action)}`;
+    case "resume": return `resume ${str(d.action)}${num(d.ms) ? ` after ${duration(num(d.ms))}` : ""}${num(d.pct) ? `, read to ${num(d.pct)}%` : ""}`;
+    case "read": return `read ${str(d.id).replace(/^(project|experience)-/, "$1 ")} for ${duration(num(d.ms) || 0)}`;
+    case "hover": return `hovered ${str(d.target)} for ${duration(num(d.ms) || 0)}`;
+    case "copy": return `copied "${str(d.text)}"`;
     case "agent_open": return `opened the agent${str(d.question) ? `: ${str(d.question)}` : ""}`;
     case "agent_turn": return `asked the agent${str(d.q) ? `: ${str(d.q)}` : ""}`;
     case "composer_open": return `opened the composer${str(d.subject) ? `: ${str(d.subject)}` : ""}`;

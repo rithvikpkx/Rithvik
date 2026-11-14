@@ -11,6 +11,7 @@ import type { ChatLink, EventRow, VisitorRow, VisitRow } from "@/lib/track/views
 import { describeEvent, duration, offset, place, whoLabel } from "@/lib/track/views";
 import ChatReplica from "./ChatReplica";
 import Trash from "./Trash";
+import VisitStory from "./VisitStory";
 import { deleteVisitor } from "@/app/admin/chats-actions";
 import { KeyNav, Logo } from "./live";
 import { ago, Empty, Panel, stamp, workDomain } from "./ui";
@@ -150,6 +151,7 @@ function Visit({ v, events, seqs, open, replay, i }: { v: VisitRow; events: Even
       </summary>
       <div className="d-visit-body">
         <p className="d-visit-meta">from {v.referrer || "direct"}{v.utm ? ` · ${Object.values(v.utm).join(" / ")}` : ""} · landed on {v.entry_url ?? "/"} · ip {v.ip ?? "–"} · {v.tz ?? "–"} · {v.lang ?? "–"}</p>
+        <VisitStory visitId={v.id} story={v.story ?? null} />
         {(seqs.length > 0 || replay) && <ReplayPlayer visitId={v.id} seqs={seqs} events={replay} />}
         {events.length ? (
           <ol className="d-tl">

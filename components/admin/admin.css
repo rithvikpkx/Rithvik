@@ -549,3 +549,10 @@ li:hover > .d-trash, .d-trash:focus-within { opacity: 1; }
 .d-songs > li { padding: 10px 46px 10px 10px; border: 1px solid var(--line); border-radius: 8px; }
 .d-song audio { flex-basis: 100%; height: 32px; }
 .d-songs .d-trash { opacity: 1; }
+
+/* the AI briefing of one visit (VisitStory) */
+.d-story { display: grid; gap: 8px; justify-items: start; margin: 4px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-left: 2px solid var(--pink); border-radius: 4px; background: rgba(255, 77, 141, .04); }
+.d-story p { margin: 0; white-space: pre-line; font: 400 13px/1.55 var(--sans); color: var(--fg); }
+.d-story button { min-height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid var(--line-2); background: transparent; color: var(--fg); font: 500 12px/1 var(--mono); cursor: pointer; }
+.d-story button:hover:not(:disabled) { border-color: var(--pink); color: var(--pink); }
+.d-story-err { color: var(--red); font: 400 12px/1.3 var(--mono); }
