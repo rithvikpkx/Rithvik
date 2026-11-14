@@ -5,6 +5,25 @@ import { useEffect, useRef, useState } from "react";
 import type { Replayer } from "rrweb";
 
 type Ev = { type: number; timestamp: number; data: unknown };
+type SNode = { tagName?: string; attributes?: Record<string, unknown>; childNodes?: SNode[] };
+
+/** rrweb absolutises every href when recording, which turns an in-document SVG reference like a textPath's "#rim" into
+ *  "https://rithvik.ai/#rim", and that no longer points at anything in the replayed document. Put the fragments back.
+ *  Mutates the snapshot nodes in place (full snapshots and added nodes). */
+export function localiseFragments(events: Ev[]): Ev[] {
+  const fix = (n: SNode | undefined) => {
+    if (!n) return;
+    const a = n.attributes;
+    if (a) for (const k of ["href", "xlink:href"]) { const v = a[k]; if (typeof v === "string" && /^https?:\/\/[^#\s]+\/?#[\w-]+$/.test(v) && /^(textpath|use)$/i.test(n.tagName ?? "")) a[k] = v.slice(v.indexOf("#")); }
+    n.childNodes?.forEach(fix);
+  };
+  for (const e of events) {
+    const d = e.data as { node?: SNode; source?: number; adds?: { node: SNode }[] };
+    if (e.type === 2) fix(d.node);
+    else if (e.type === 3 && d.source === 0) d.adds?.forEach((x) => fix(x.node));
+  }
+  return events;
+}
 
 /** Fetches one gzip'd chunk and inflates it here (the route sends raw gzip bytes). */
 async function chunk(visitId: string, seq: number): Promise<Ev[]> {
@@ -78,7 +97,7 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
       const got = events ? [] : await Promise.allSettled(seqs.map((s) => chunk(visitId, s)));
       got.forEach((g) => { if (g.status === "rejected") console.warn("[replay]", g.reason); });
       const chunks: Ev[][] = events ? [events as Ev[]] : got.flatMap((g) => (g.status === "fulfilled" ? [g.value] : []));
-      const all = chunks.flat().sort((a, b) => a.timestamp - b.timestamp);
+      const all = localiseFragments(chunks.flat().sort((a, b) => a.timestamp - b.timestamp));
       if (all.length < 2 || !host.current) throw new Error("empty");
       const { Replayer } = await import("rrweb");
       host.current.replaceChildren();
