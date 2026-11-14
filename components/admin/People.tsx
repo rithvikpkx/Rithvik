@@ -10,13 +10,15 @@ import type { Activity } from "@/lib/analytics/strips";
 import type { ChatLink, EventRow, VisitorRow, VisitRow } from "@/lib/track/views";
 import { describeEvent, duration, offset, place, whoLabel } from "@/lib/track/views";
 import ChatReplica from "./ChatReplica";
+import Globe from "./Globe";
 import Trash from "./Trash";
+import VisitStory from "./VisitStory";
 import { deleteVisitor } from "@/app/admin/chats-actions";
 import { KeyNav, Logo } from "./live";
 import { ago, Empty, Panel, stamp, workDomain } from "./ui";
 import { DayCells, Ico, Sigil } from "./viz";
 
-const TYPES: [string, string][] = [["", "any"], ["business", "business"], ["edu", "university"], ["isp", "home / isp"], ["hosting", "hosting / vpn"]];
+const TYPES: [string, string][] = [["", "any"], ["business", "business"], ["edu", "university"], ["isp", "home / isp"], ["hosting", "hosting / vpn"], ["bot", "bots"]];
 const host = (u: string | null) => { try { return u ? new URL(u).hostname.replace(/^www\./, "") : null; } catch { return null; } };
 
 /** Their employer's logo when their email names it, else their sigil. */
@@ -85,7 +87,7 @@ export function VisitorsView({ rows, total, f, base, now, pageSize, activity }: 
                   <a className="d-row d-visrow" data-row href={`${base}/visitors/${v.id}`} style={{ ["--i" as string]: i } as CSSProperties}>
                     <Face v={v} />
                     <span className="main">
-                      <b>{who === "anonymous" ? <span style={{ color: "var(--muted)" }}>anonymous</span> : who}</b>
+                      <b>{who === "anonymous" ? <span style={{ color: "var(--muted)" }}>anonymous</span> : who}{v.is_bot && <span className="d-chip dim" style={{ marginLeft: 8 }}>bot</span>}</b>
                       <span>
                         {v.device && <Ico name={v.device} label={v.device} />}
                         {v.country && <span className="d-cc">{v.country}</span>}
@@ -150,6 +152,7 @@ function Visit({ v, events, seqs, open, replay, i }: { v: VisitRow; events: Even
       </summary>
       <div className="d-visit-body">
         <p className="d-visit-meta">from {v.referrer || "direct"}{v.utm ? ` · ${Object.values(v.utm).join(" / ")}` : ""} · landed on {v.entry_url ?? "/"} · ip {v.ip ?? "–"} · {v.tz ?? "–"} · {v.lang ?? "–"}</p>
+        <VisitStory visitId={v.id} story={v.story ?? null} />
         {(seqs.length > 0 || replay) && <ReplayPlayer visitId={v.id} seqs={seqs} events={replay} />}
         {events.length ? (
           <ol className="d-tl">
@@ -187,7 +190,7 @@ export function VisitorInspector({ v, visits, chats, messages, base, now, replay
       <header className="d-who">
         <Face v={v} size={72} />
         <div>
-          <h1>{who}</h1>
+          <h1>{who}{v.is_bot && <span className="d-chip pink" style={{ marginLeft: 10, verticalAlign: "middle" }} title="Flagged automatically: automation flag, a crawler or headless browser signature, or no user agent">bot</span>}</h1>
           <p>
             {(v.company_given || v.company) && (v.company_given || v.company) !== who && <span>{v.company_given || v.company}</span>}
             {place(v) !== "—" && <span>{place(v)}</span>}
@@ -217,6 +220,23 @@ export function VisitorInspector({ v, visits, chats, messages, base, now, replay
           <dl>{raw.map(([k, x]) => <Fragment key={k}><dt>{k}</dt><dd>{x}</dd></Fragment>)}</dl>
         </details>
       </Panel>
+
+      {typeof v.lat === "number" && typeof v.lng === "number" && (
+        <Panel label="where">
+          <div className="d-where">
+            <div className="d-where-globe">
+              <Globe points={[{ lat: v.lat, lng: v.lng, value: 1, label: place(v) }]} focus={{ lat: v.lat, lng: v.lng }} label={`Globe centred on ${place(v)}`} />
+            </div>
+            <dl className="d-where-facts">
+              <div><dt>place</dt><dd>{place(v)}{v.country ? `, ${countryName(v.country)}` : ""}</dd></div>
+              <div><dt>network</dt><dd>{v.org || v.company || "–"}{v.ip_type ? ` (${v.ip_type})` : ""}</dd></div>
+              <div><dt>coordinates</dt><dd>{v.lat.toFixed(3)}, {v.lng.toFixed(3)} · <a href={`https://www.openstreetmap.org/?mlat=${v.lat}&mlon=${v.lng}#map=11/${v.lat}/${v.lng}`} target="_blank" rel="noopener noreferrer">open map ↗</a></dd></div>
+              {v.timezone && <div><dt>their time zone</dt><dd>{v.timezone}</dd></div>}
+              <div><dt>accuracy</dt><dd style={{ color: "var(--muted)" }}>From the IP address: usually the right city or the network&apos;s hub nearby, never a street address.</dd></div>
+            </dl>
+          </div>
+        </Panel>
+      )}
 
       <section className="d-sec" aria-labelledby="vs-h">
         <header className="d-sec-h"><span className="d-idx">01</span><h2 id="vs-h">Visits</h2><span className="d-rule" />

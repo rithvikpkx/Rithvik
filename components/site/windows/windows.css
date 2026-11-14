@@ -20,6 +20,7 @@
 .pdf-page .pr { font-weight: 700; } .pdf-page .pi { font-style: italic; }
 .pdf-page ul { list-style: disc; padding-left: 1.4em; margin: .2em 0 .6em; }
 .pdf-frame { flex: 1; min-height: 0; width: 100%; border: 0; background: #525659; }
+.doc-frame { background: #fff; }
 .pdf-open { display: grid; place-items: center; }
 /* loading: the frame keeps loading out of sight while a wireframe page shimmers in its place */
 .pdf-frame[data-loading] { position: absolute; inset: 0; opacity: 0; pointer-events: none; }

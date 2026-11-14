@@ -1,0 +1,13 @@
+/* the replay player: a letterboxed "screen" the recording is scaled into (ReplayPlayer.fit), controls under it.
+   contain: inline-size keeps the 1920px recording from ever widening the card or the page. */
+.alog-replay { margin: 0 0 8px; min-width: 0; max-width: 100%; contain: inline-size; }
+.alog-replay-frame { position: relative; width: 100%; overflow: hidden; border: 1px solid var(--ui-line); border-radius: 8px 8px 0 0; background: #0b0b0e; }
+.alog-replay-stage { position: absolute; overflow: hidden; background: #fff; }
+.alog-replay-stage .replayer-wrapper { position: absolute; top: 0; left: 0; }
+.alog-replay-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 10px; border: 1px solid var(--ui-line); border-top: 0; border-radius: 0 0 8px 8px; background: rgba(255, 255, 255, .03); }
+.alog-replay-bar input[type="range"] { flex: 1 1 200px; min-width: 120px; accent-color: #ff4d8d; }
+.alog-replay-bar label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ui-muted); }
+.alog-fs { margin-left: auto; }
+/* full screen: the screen takes everything above the controls */
+.alog-replay[data-fs] { display: flex; flex-direction: column; background: #0b0b0e; padding: 12px; contain: none; }
+.alog-replay[data-fs] .alog-replay-frame { flex: 1; min-height: 0; border-radius: 8px 8px 0 0; }

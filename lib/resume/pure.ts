@@ -43,3 +43,23 @@ export function redactResume(raw: string): string {
 export function staleVersions<T extends { created_at: string; is_current: boolean }>(rows: T[], keep = KEEP_VERSIONS): T[] {
   return [...rows].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(keep).filter((r) => !r.is_current);
 }
+
+/** The Google Doc's HTML export made safe and private to show on the site (and visible to session replays, which a
+ *  PDF viewer is not): scripts, frames, forms and handlers removed, Google's redirect links unwrapped, phone numbers
+ *  and graduation dates scrubbed from the text, and the page widened to fill its window. */
+export function cleanResumeHtml(raw: string): string {
+  const BAD = "script|iframe|object|embed|form|base|meta|link|noscript";
+  let s = raw
+    .replace(new RegExp(`<(${BAD})\\b[^>]*>[\\s\\S]*?</\\1\\s*>`, "gi"), "")
+    .replace(new RegExp(`</?(${BAD})\\b[^>]*>`, "gi"), "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/href="https:\/\/www\.google\.com\/url\?q=([^"&]+)[^"]*"/gi, (_, u: string) => `href="${decodeURIComponent(u)}"`)
+    .replace(/href="\s*(?:javascript|data|vbscript):[^"]*"/gi, 'href="#"')
+    .replace(/<a\s/gi, '<a target="_blank" rel="noopener noreferrer" ');
+  // scrub the body's text only: the head's stylesheet is full of digit runs the phone pattern would mangle
+  const at = s.search(/<body\b/i);
+  const scrub = (part: string) => part.replace(/>([^<]+)</g, (_, t: string) => `>${t.replace(PHONE, "").replace(GRAD, "").replace(/\|(\s*\|)+/g, "|")}<`); // and the "| |" a removed number leaves
+  s = at < 0 ? scrub(s) : s.slice(0, at) + scrub(s.slice(at));
+  const fit = "<style>html{background:#fff}body{max-width:none!important;margin:0!important;padding:28px 34px 40px!important}a{color:#1a56db}</style>";
+  return /<\/head>/i.test(s) ? s.replace(/<\/head>/i, `${fit}</head>`) : fit + s;
+}

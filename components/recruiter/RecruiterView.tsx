@@ -36,6 +36,8 @@ function ResumeInline() {
   const [ready, setReady] = useState(false);
   const phone = usePhone();
   const pdf = meta?.sha ? `/resume.pdf?v=${meta.sha.slice(0, 12)}` : null;
+  const [docFailed, setDocFailed] = useState(false);
+  const doc = meta?.source !== "upload" && meta?.sha && !docFailed ? `/resume.html?v=${meta.sha.slice(0, 12)}` : null;
   useEffect(() => { if (!pdf) return; const t = setTimeout(() => setReady(true), 8000); return () => clearTimeout(t); }, [pdf]);
   if (!meta) return <div className="rt-resume"><ResumeSkeleton /></div>;
   if (!pdf) return <p className="rt-muted">The resume is being refreshed; everything on it is in the sections above.</p>;
@@ -45,10 +47,14 @@ function ResumeInline() {
         <a className="ui-btn" href={pdf} target="_blank" rel="noopener"><Icon name="external-link" /> Open PDF</a>
         <a className="ui-btn" href={pdf} download="Rithvik-Praveen-Kumar-Resume.pdf"><Icon name="download" /> Download</a>
       </div>
-      {!phone && (
+      {/* the synced doc as real page content (works on phones, shows in replays); an upload or a failed export uses the PDF */}
+      {(doc || !phone) && (
         <div className="rt-resume">
           {!ready && <ResumeSkeleton />}
-          <iframe src={`${pdf}#view=FitH`} title="Resume" data-loading={!ready || undefined} onLoad={() => setReady(true)} />
+          {doc
+            ? <iframe src={doc} title="Resume" data-loading={!ready || undefined} sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                onLoad={(e) => { const t = e.currentTarget.contentDocument?.body?.innerText ?? ""; if (t.length < 80) setDocFailed(true); else setReady(true); }} />
+            : <iframe src={`${pdf}#view=FitH`} title="Resume" data-loading={!ready || undefined} onLoad={() => setReady(true)} />}
         </div>
       )}
     </>

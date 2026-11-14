@@ -171,9 +171,10 @@ export const getPublicTrafficCached = unstable_cache(
 export const PAGE_SIZE = 40;
 export type VisitorQuery = { q: string; country: string; type: string; identified: boolean; page: number };
 
-/** One page of visitors (bots hidden), most recently seen first, with free-text search over who/where/network. */
+/** One page of visitors, most recently seen first, with free-text search over who/where/network. Bots are hidden
+ *  unless the type filter is "bot", which shows only them. */
 export async function listVisitorsPage(f: VisitorQuery): Promise<{ rows: VisitorRow[]; total: number; activity: Record<string, Activity> }> {
-  let qb = adminClient().from("visitors").select("*", { count: "estimated" }).eq("is_bot", false)
+  let qb = adminClient().from("visitors").select("*", { count: "estimated" }).eq("is_bot", f.type === "bot")
     .order("last_seen", { ascending: false }).range(f.page * PAGE_SIZE, f.page * PAGE_SIZE + PAGE_SIZE - 1);
   if (f.identified) qb = qb.not("email", "is", null);
   if (/^[A-Z]{2}$/.test(f.country)) qb = qb.eq("country", f.country);

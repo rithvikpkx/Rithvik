@@ -99,5 +99,9 @@ export function isOwnerHeaders(h: HeaderReader): boolean {
 
 /** True when this request comes from the owner (device cookie or excluded IP). Tracking and agent logging skip it. */
 export function isOwner(req: Request): boolean {
-  return isOwnerHeaders(req.headers);
+  return LOCAL_DEV || isOwnerHeaders(req.headers);
 }
+
+/** The local dev server (next dev) shares the production database, so it never records visits, replays or chats:
+ *  development and automated test runs stay out of the dashboard. */
+export const LOCAL_DEV = process.env.NODE_ENV === "development";

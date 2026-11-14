@@ -30,7 +30,9 @@ function contentSecurityPolicy(): string {
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", ...vercelLive],
     // next/image serves from /_next/image (same origin); data:/blob: for canvas + cobe; DuckDuckGo's favicon service
     // for referrer and company logos on the admin dashboard.
-    "img-src": ["'self'", "data:", "blob:", "https://icons.duckduckgo.com", ...(isProdDeploy ? [] : ["https://vercel.live", "https://vercel.com"])],
+    // rithvik.ai too: session replays recorded on production reference its images, and a preview or local dashboard
+    // replaying them is a different origin
+    "img-src": ["'self'", "data:", "blob:", "https://icons.duckduckgo.com", "https://rithvik.ai", ...(isProdDeploy ? [] : ["https://vercel.live", "https://vercel.com"])],
     // next/font/google self-hosts the files at build time.
     "font-src": ["'self'", "data:", "https://fonts.gstatic.com", ...(isProdDeploy ? [] : ["https://vercel.live", "https://assets.vercel.com"])],
     "connect-src": [
@@ -71,6 +73,12 @@ const resumePdfHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
 ];
 
+// The resume as HTML: inert content (no scripts allowed at all), framed only by this site's resume window.
+const resumeHtmlHeaders = [
+  { key: "Content-Security-Policy", value: "default-src 'none'; style-src 'unsafe-inline'; img-src https: data:; font-src https: data:; frame-ancestors 'self'" },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+];
+
 const noIndex = [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }];
 
 const nextConfig: NextConfig = {
@@ -96,6 +104,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       { source: "/resume.pdf", headers: resumePdfHeaders },
+      { source: "/resume.html", headers: resumeHtmlHeaders },
       // Private logs and shared transcripts must never be indexed (the pages also set a robots meta).
       { source: "/admin/:path*", headers: noIndex },
       { source: "/c/:path*", headers: noIndex },

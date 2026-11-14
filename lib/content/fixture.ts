@@ -16,11 +16,11 @@ export const fixture: Content = {
     "I study computer science and math at Purdue.",
     "Right now I research TinyML at Purdue's Snowball Lab. Before that I built a RAG learning platform for a non-profit serving 500+ learners, and spent two years teaching kids to code through game development.",
   ],
-  now: { city: "San Francisco", tz: "America/Los_Angeles", building: "rithvik.ai", researching: "TinyML on Edge Impulse", learning: "Energy-harvesting sensors" },
+  now: { city: "West Lafayette", tz: "America/Indiana/Indianapolis", building: "rithvik.ai", researching: "TinyML on Edge Impulse", learning: "Energy-harvesting sensors" },
   places: [
     { key: "home", city: "Boston", tz: "America/New_York", lat: 42.36, lng: -71.06 },
     { key: "school", city: "West Lafayette", tz: "America/Indiana/Indianapolis", lat: 40.43, lng: -86.91 },
-    { key: "now", city: "San Francisco", tz: "America/Los_Angeles", lat: 37.77, lng: -122.42 },
+    { key: "now", city: "West Lafayette", tz: "America/Indiana/Indianapolis", lat: 40.43, lng: -86.91 },
   ],
   workAuth: "U.S. citizen", // discreet: resume fine print + agent only, never a page headline
   links: {
@@ -71,7 +71,7 @@ export const fixture: Content = {
     ["What kind of role fits best?", "Software engineering or AI/ML internships."],
     ["Are you open to relocating?", "Yes. I'm happy to relocate for the right role."],
     ["Can I see code?", "Yes. Most projects link to their repositories, the rest are on GitHub at github.com/rithvikpkx, and this site's code is public too."],
-    ["Where are you based?", "West Lafayette, Indiana during the school year. I'm in San Francisco right now."],
+    ["Where are you based?", "West Lafayette, Indiana, at Purdue."],
     ["What's the best way to reach you?", "Email. The Contact section opens a message window."],
     ["Can I ask this site questions?", "Yes. Press ⌘K or / to open the agent. It answers from what's on this site and says so when it doesn't know."],
     ["What's playing on the record player?", "A rotating crate of my favourite songs. Open Play to see what is in it and pick a record."],

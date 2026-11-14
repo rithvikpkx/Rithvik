@@ -14,6 +14,7 @@ export const MAX_REPLAY_SEQ = 999;
 export const EVENT_TYPES = [
   "pageview", "design", "section", "click", "outbound", "scroll", "active", "overlay", "resume",
   "agent_open", "agent_turn", "composer_open", "composer_send", "error", "perf", "identify",
+  "read", "hover", "copy",
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 const TYPE_SET = new Set<string>(EVENT_TYPES);

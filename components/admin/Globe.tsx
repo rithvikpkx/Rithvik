@@ -17,7 +17,7 @@ function rgb(css: string): [number, number, number] {
 /** A cobe globe of visitor locations: one marker per point, sized by sqrt(count) so a big city doesn't swallow the map.
  *  Colours come from the look's tokens. Drag to rotate; it drifts slowly otherwise, pauses off-screen and in hidden
  *  tabs, and holds still under reduced motion. cobe is loaded lazily so the dashboard paints first. */
-export default function Globe({ points, label }: { points: GeoPoint[]; label: string }) {
+export default function Globe({ points, label, focus }: { points: GeoPoint[]; label: string; focus?: { lat: number; lng: number } }) {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [on, setOn] = useState(false);
@@ -27,8 +27,11 @@ export default function Globe({ points, label }: { points: GeoPoint[]; label: st
     if (!el || !box) return;
     let globe: { update: (s: Record<string, unknown>) => void; destroy: () => void } | null = null;
     let raf = 0, visible = true, dead = false;
-    let phi = 4.2, theta = 0.32, vel = 0, drag: { x: number; y: number; phi: number; theta: number } | null = null;
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // `focus`: start facing that spot (cobe's longitude/latitude to rotation) and hold still there instead of drifting
+    let phi = focus ? Math.PI - ((focus.lng * Math.PI) / 180 - Math.PI / 2) : 4.2;
+    let theta = focus ? Math.max(-0.6, Math.min(0.9, (focus.lat * Math.PI) / 180 * 0.85)) : 0.32;
+    let vel = 0, drag: { x: number; y: number; phi: number; theta: number } | null = null;
+    const still = !!focus || matchMedia("(prefers-reduced-motion: reduce)").matches;
     const max = Math.max(1, ...points.map((p) => p.value));
 
     import("cobe").then(({ default: createGlobe }) => {
@@ -78,7 +81,7 @@ export default function Globe({ points, label }: { points: GeoPoint[]; label: st
     }).catch(() => {});
     let cleanup = () => {};
     return () => { dead = true; cancelAnimationFrame(raf); cleanup(); globe?.destroy(); };
-  }, [points]);
+  }, [points, focus?.lat, focus?.lng]); // eslint-disable-line react-hooks/exhaustive-deps -- the focus object is recreated per render
 
   return (
     <div className="adm-globe" ref={host}>
