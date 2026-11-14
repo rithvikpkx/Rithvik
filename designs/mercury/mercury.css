@@ -3,7 +3,7 @@
 
 /* ───────── tokens ───────── */
 :root[data-design="mercury"] {
-  --mc-bg: #0A0A0B; --mc-s1: #101012; --mc-s2: #16161A; --mc-fg: #EDEDEF; --mc-mut: #A4A4AD; --mc-dim: #76767F;
+  --mc-bg: #0A0A0B; --mc-s1: #101012; --mc-s2: #16161A; --mc-fg: #EDEDEF; --mc-mut: #B6B6BF; --mc-dim: #76767F;
   --mc-line: rgba(237, 237, 239, .1); --mc-line2: rgba(237, 237, 239, .22); --mc-hue: #B9C8FF;
   --mc-d: "Bodoni Moda", Didot, "Bodoni 72", Georgia, serif; --mc-b: "Hanken Grotesk", -apple-system, system-ui, sans-serif; --mc-m: var(--font-geist-mono), ui-monospace, Menlo, monospace;
   --mc-chrome: linear-gradient(180deg, #FFFFFF 0%, #E2E4E8 34%, #9DA1AA 49%, #5E616A 53%, #A9ACB4 70%, #F1F2F4 100%);
@@ -181,3 +181,11 @@
   --pf-a: #E9EAEE; --pf-b: #9EA2AD; --pf-c: #44464D; --pf-vinyl: #0B0B0D; --pf-pod: #0B0B0D; /* the dots capsule; chrome dots need a dark ground */
   --pf-label: conic-gradient(#FFFFFF, #8A8D96, #F4F5F8, #5D6068, #FFFFFF, #9A9DA6, #FFFFFF);
 }
+
+/* readability: Bodoni at its display optical size has hairline strokes that vanish at heading sizes on dark. Every
+   Bodoni heading uses the sturdier text cut (opsz 14) at weight 600; the hero name keeps its own weight. */
+:root[data-design="mercury"] :is(.ly-title, .ly-st-role, .ly-edu-cap h3, .ab-v, .ab-big, .ly-contact-h, .wk-t, .qz-q, .mc-h2,
+  .case h1, .case h2, .case-next b, .g-title, .agent-title, .win-title, .rec-hint) {
+  font-weight: 600; font-optical-sizing: none; font-variation-settings: "opsz" 14;
+}
+:root[data-design="mercury"] .ly-name { font-optical-sizing: none; font-variation-settings: "opsz" 24; }
