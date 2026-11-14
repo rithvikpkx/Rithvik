@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { Content } from "@/lib/content/types";
 
 /** The page's sections after the hero, in render order. Each id is also the anchor the agent scrolls to. */
-export const SECTIONS = ["work", "experience", "about", "play", "questions", "contact"] as const;
+export const SECTIONS = ["experience", "work", "about", "play", "questions", "contact"] as const;
 export type SectionId = (typeof SECTIONS)[number];
 
 /** One-word default titles (also the header nav labels). */
@@ -11,7 +11,7 @@ export const SECTION_LABELS: Record<SectionId, string> = {
 };
 
 /** The sections linked from the header nav (Questions sits next to Contact, so it stays off the bar). */
-export const NAV_SECTIONS: SectionId[] = ["work", "experience", "about", "play", "contact"];
+export const NAV_SECTIONS: SectionId[] = ["experience", "work", "about", "play", "contact"];
 
 /** Props every section body gets. `skin` lets a shared body pick up the per-item slots. */
 export type SectionProps = { content: Content; skin: Skin };
