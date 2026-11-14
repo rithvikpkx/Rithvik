@@ -8,7 +8,7 @@
   --mc-d: "Bodoni Moda", Didot, "Bodoni 72", Georgia, serif; --mc-b: "Hanken Grotesk", -apple-system, system-ui, sans-serif; --mc-m: var(--font-geist-mono), ui-monospace, Menlo, monospace;
   --mc-chrome: linear-gradient(180deg, #FFFFFF 0%, #E2E4E8 34%, #9DA1AA 49%, #5E616A 53%, #A9ACB4 70%, #F1F2F4 100%);
   --mc-satin: linear-gradient(180deg, #FBFBFC 0%, #DCDEE2 46%, #C3C6CC 54%, #ECEDF0 100%);
-  --mc-sphere: radial-gradient(circle at 34% 26%, #fff 0 5%, rgba(255, 255, 255, 0) 20%), radial-gradient(120% 70% at 50% 108%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #F6F7F9 0%, #C4C7CE 26%, #6E727B 46%, #1E1F23 52%, #34363C 62%, #9EA2AA 84%, #E3E5E9 100%);
+  --mc-sphere: radial-gradient(circle at 34% 26%, #fff 0 5%, rgba(255, 255, 255, 0) 20%), radial-gradient(120% 70% at 50% 108%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, #FAFBFC 0%, #E4E6EA 30%, #C8CBD1 56%, #A3A7AF 72%, #4B4E56 82%, #2C2E33 86%, #7C8088 92%, #D9DBE0 100%); /* horizon kept low: icons and labels sit on bright chrome */
   --ui-bg: #111113; --ui-fg: #EDEDEF; --ui-muted: #A4A4AD; --ui-accent: #E9EAEE; --ui-accent-fg: #0A0A0B;
   --ui-line: rgba(237, 237, 239, .14); --ui-field: rgba(237, 237, 239, .05);
   --ui-font: var(--mc-b); --ui-mono: var(--mc-m); --ui-r: 18px; --ui-blur: none;
