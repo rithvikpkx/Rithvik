@@ -351,3 +351,12 @@
 /* ---------- S10: shared Contact / About / Questions bodies ---------- */
 :root[data-design="nimbus"] .ly-contact { padding-top: 28px; }
 :root[data-design="nimbus"] .ly-contact-h { font-family: var(--nb-serif); font-weight: 500; }
+
+/* readability: the status line and tagline sit on frosted sky pills, so the pixel clouds behind never cut through them */
+:root[data-design="nimbus"] .ly-hero .ly-status, :root[data-design="nimbus"] .ly-hero .ly-line {
+  width: fit-content; max-width: 100%; margin-left: -12px; padding: 5px 12px; border-radius: 12px;
+  background: rgba(255, 255, 255, .78); -webkit-backdrop-filter: blur(6px) saturate(1.2); backdrop-filter: blur(6px) saturate(1.2);
+  box-shadow: 0 0 0 1px rgba(14, 27, 43, .06);
+}
+:root[data-design="nimbus"] .ly-hero .ly-status { color: var(--nb-ink); }
+:root[data-design="nimbus"] .ly-hero .ly-line { color: #2C3E55; }

@@ -56,8 +56,8 @@
 :root[data-design="glyph"] .gl-sl { margin-right: .1em; color: var(--sh); font-weight: 200; font-stretch: 75%; letter-spacing: -.22em; }
 
 /* ───────── top: the one loud screen ───────── */
-:root[data-design="glyph"] .gl-word { display: flex; align-items: flex-end; gap: .14em; margin: 0; font: 800 clamp(64px, 15.2vw, 250px)/.76 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.055em; color: var(--gl-fg); white-space: nowrap; }
-:root[data-design="glyph"] .gl-w2 { writing-mode: vertical-rl; transform: rotate(180deg); padding-bottom: .02em; font-size: .072em; font-weight: 700; line-height: 1; letter-spacing: .14em; color: var(--gl-hue); }
+:root[data-design="glyph"] .gl-word { display: flex; flex-direction: column; align-items: flex-start; gap: .1em; margin: 0; font: 800 clamp(64px, 15.2vw, 250px)/.76 var(--gl-d); font-stretch: 112.5%; letter-spacing: -.055em; color: var(--gl-fg); white-space: nowrap; }
+:root[data-design="glyph"] .gl-w2 { font-size: .34em; font-weight: 800; line-height: .9; letter-spacing: -.035em; color: var(--gl-hue); } /* the surname: horizontal under the first name, big enough to read */
 
 /* whoami */
 @keyframes glyph-blink { 50% { opacity: 0; } }
@@ -171,7 +171,7 @@
   :root[data-design="glyph"] .gl-msg { position: absolute; top: 100%; right: 0; background: #0A0A0A; border: 1px solid var(--gl-rule); line-height: 26px; }
   :root[data-design="glyph"] .gl-pane { margin-top: 96px; }
   :root[data-design="glyph"] .gl-word { font-size: clamp(48px, 15vw, 96px); }
-  :root[data-design="glyph"] .gl-w2 { font-size: .1em; }
+  :root[data-design="glyph"] .gl-w2 { font-size: .4em; }
   :root[data-design="glyph"] .gl-h2 { font-size: clamp(42px, 15vw, 72px); }
   :root[data-design="glyph"] .agent-bar::before { content: "─ agent ─"; }
 }
@@ -192,7 +192,7 @@
 :root[data-design="glyph"] .ly-nav a[aria-current="true"]::after { content: "*"; }
 :root[data-design="glyph"] .ly-iam { border-radius: 0; border-color: var(--gl-rule2); }
 :root[data-design="glyph"] .ly-name .gl-word { flex-wrap: wrap; font-size: clamp(52px, 9.4vw, 152px); text-transform: uppercase; white-space: normal; }
-:root[data-design="glyph"] .ly-name .gl-w2 { font-size: .1em; }
+:root[data-design="glyph"] .ly-name .gl-w2 { font-size: .4em; white-space: nowrap; }
 :root[data-design="glyph"] .ly-status { font: 500 12px/1.6 var(--gl-d); letter-spacing: .08em; text-transform: uppercase; color: var(--gl-hue); }
 :root[data-design="glyph"] .ly-line { font-family: var(--gl-b); color: var(--gl-mut); }
 :root[data-design="glyph"] .gl-sec.gl-hb { --sh: var(--gl-blue); }

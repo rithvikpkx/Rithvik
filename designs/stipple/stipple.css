@@ -372,3 +372,12 @@
 
 /* ---------- S10: shared Contact / About / Questions bodies ---------- */
 :root[data-design="stipple"] { --ly-contact-text: center; --ly-contact-mx: auto; --ly-contact-just: center; }
+
+/* readability: text that sits over the stipple cloud (the project index, the contact copy) gets a frosted paper panel */
+:root[data-design="stipple"] .wk-list, :root[data-design="stipple"] .ly-contact-h, :root[data-design="stipple"] .ly-contact-s {
+  background: rgba(249, 205, 176, .82); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+}
+:root[data-design="stipple"] .wk-list { padding: 4px 18px; border-radius: 10px; box-shadow: 0 0 0 1px rgba(23, 17, 14, .08); }
+:root[data-design="stipple"] .ly-contact-h, :root[data-design="stipple"] .ly-contact-s { width: fit-content; margin-inline: auto; padding: 2px 14px; border-radius: 10px; }
+/* the seal sits centred under the contact copy */
+:root[data-design="stipple"] .st-seal { justify-self: center; margin-inline: auto; }
