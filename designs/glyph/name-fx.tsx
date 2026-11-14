@@ -15,7 +15,7 @@ const paint: Paint = (el, l, i, now) => {
 const rest = (_: HTMLElement, els: HTMLElement[]) => els.forEach((el) => delete (el.firstElementChild as HTMLElement).dataset.s);
 
 /** Glyph: the terminal name. Letters under the pointer scramble through ASCII in the accent colour and step up a
- *  line, then decode back. Keeps the look's big word + vertical surname layout. */
+ *  line, then decode back. Keeps the look's big word with the surname set large beneath it. */
 export default function GlyphName({ first, last }: { first: string; last: string }) {
   return <KineticName first={first} last={last} look="glyph" className="gl-word" firstClass="gl-w1" lastClass="gl-w2" feel={{ push: 0.02, drag: 0.02, release: 3, radius: 1.1 }} paint={paint} rest={rest} />;
 }
