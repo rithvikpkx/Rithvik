@@ -21,7 +21,25 @@
 .case-next b { font: 600 1.6rem/1.2 var(--ui-font, "Geist",-apple-system,"Segoe UI",system-ui,sans-serif); }
 /* the case as a floating window (CaseSheet): large and centred on open; the scroll body keeps .sheet-body so each
    design's background still applies, minus the old full-screen sheet's position, slide and top-only rounding */
-.case-win { width: min(900px, calc(100vw - 32px)); height: min(calc(100dvh - 190px), 920px); } /* opens clear of the agent dock */
+.case-win { width: min(700px, calc(100vw - 32px)); height: min(calc(100dvh - 190px), 760px); } /* a compact card, clear of the agent dock */
+/* the compact project card: kind and context, headline, big source buttons, bullets, tags, a small artwork */
+.win.case-win .case-card h1 { margin: 10px 0 0; font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.12; }
+.case-ctx { color: var(--ui-muted, #a1a1aa); }
+.case-ctx::before { content: "·"; margin-right: 8px; }
+.case-src { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 6px; }
+.case-src-b { display: inline-flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 18px 8px 14px; border-radius: calc(var(--ui-r, 14px) * .8);
+  border: 1px solid var(--ui-line, rgba(255,255,255,.14)); background: var(--ui-field, rgba(255,255,255,.06)); color: var(--ui-fg, #f4f4f5); text-decoration: none; transition: transform 160ms var(--ease-out, ease), border-color 160ms ease; }
+.case-src-b .ic, .case-src-b .logo { width: 20px; height: 20px; flex: none; }
+.case-src-b span { display: grid; gap: 2px; text-align: left; }
+.case-src-b b { font: 600 15px/1.2 var(--ui-font, system-ui); }
+.case-src-b small { font: 400 12px/1.2 var(--ui-mono, ui-monospace, monospace); opacity: .7; }
+.case-src-b.primary { background: var(--ui-accent, #ff4d8d); color: var(--ui-accent-fg, #0f0f12); border-color: transparent; }
+@media (hover: hover) { .case-src-b:hover { transform: translateY(-1px); border-color: var(--ui-accent, #ff4d8d); } }
+.case-src-b:focus-visible { outline: 2px solid var(--ui-accent, #ff4d8d); outline-offset: 2px; }
+.win.case-win .case-card .case-bullets { margin-top: 18px; }
+.win.case-win .case-card .chips { margin-top: 16px; }
+.win.case-win .case-card .case-art { aspect-ratio: 16 / 7; margin-top: 22px; }
+.win.case-win .case-card .case-next { margin-top: 28px; }
 .win.case-win > .sheet-body.case-body { position: relative; inset: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-radius: 0; transform: none; box-shadow: none; outline: none;
   padding: clamp(24px, 4vw, 44px) clamp(18px, 6%, 56px) 48px; } /* the sheet's viewport-based gutters would crush a window */
 @media (max-width: 640px) { .case-win { height: calc(100dvh - 160px); } }

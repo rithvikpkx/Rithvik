@@ -1,5 +1,6 @@
 "use client";
 import "rrweb/dist/style.css";
+import "./replay.css"; // the player's own layout, so it is the same on every page that uses it
 import { useEffect, useRef, useState } from "react";
 import type { Replayer } from "rrweb";
 
@@ -17,6 +18,9 @@ async function chunk(visitId: string, seq: number): Promise<Ev[]> {
  *  which is itself imported lazily. `events` lets the lab harness play fixtures without a backend. */
 export default function ReplayPlayer({ visitId, seqs, events }: { visitId: string; seqs: number[]; events?: unknown[] }) {
   const host = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null); // the "screen": a letterboxed box the recording is scaled into
+  const player = useRef<HTMLDivElement>(null); // what goes full screen (screen + controls)
+  const [fs, setFs] = useState(false);
   const rp = useRef<Replayer | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [why, setWhy] = useState("");
@@ -26,22 +30,38 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
   const [pos, setPos] = useState({ t: 0, total: 0 });
 
   const size = useRef<{ w: number; h: number } | null>(null);
-  /** Scales the recording to the card's width (never up). The stage is still `hidden` (width 0) while the Replayer
-   *  builds, so this measures the player's own box. */
+  /** Scales the recording to fit the screen box like a video (contain), centred with letterbox bars. Inline
+   *  the box is the card's width and at most 70% of the window's height; full screen it is the whole display. */
   const fit = () => {
-    const p = rp.current, sz = size.current, box = host.current?.parentElement;
-    if (!p || !sz || !box) return;
-    const s = Math.min(1, box.clientWidth / sz.w);
-    p.wrapper.style.transform = `scale(${s})`;
+    const p = rp.current, sz = size.current, f = frame.current, h = host.current;
+    if (!p || !sz || !f || !h) return;
+    const full = document.fullscreenElement === player.current;
+    const fw = f.clientWidth;
+    const fh = full ? f.clientHeight : Math.min(Math.round(fw * (sz.h / sz.w)), Math.round(innerHeight * 0.7));
+    if (!full) f.style.height = `${fh}px`; else f.style.removeProperty("height");
+    const sc = Math.min(fw / sz.w, fh / sz.h); // contain: shrink a big recording, enlarge a small one
+    p.wrapper.style.transform = `scale(${sc})`;
     p.wrapper.style.transformOrigin = "top left";
-    if (host.current) host.current.style.height = `${Math.round(sz.h * s)}px`;
+    h.style.width = `${Math.round(sz.w * sc)}px`;
+    h.style.height = `${Math.round(sz.h * sc)}px`;
+    h.style.left = `${Math.round((fw - sz.w * sc) / 2)}px`;
+    h.style.top = `${Math.round((fh - sz.h * sc) / 2)}px`;
   };
+  const fitRef = useRef(fit);
+  useEffect(() => { fitRef.current = fit; });
   useEffect(() => {
-    const box = host.current?.parentElement;
-    const ro = box ? new ResizeObserver(() => fit()) : null; // the card resizes with the window
-    if (box) ro!.observe(box);
-    return () => { ro?.disconnect(); rp.current?.destroy(); rp.current = null; };
+    const f = frame.current;
+    const ro = f ? new ResizeObserver(() => fitRef.current()) : null; // the card (or the screen) resized
+    if (f) ro!.observe(f);
+    const onFs = () => { setFs(document.fullscreenElement === player.current); requestAnimationFrame(() => fitRef.current()); };
+    document.addEventListener("fullscreenchange", onFs);
+    return () => { ro?.disconnect(); document.removeEventListener("fullscreenchange", onFs); rp.current?.destroy(); rp.current = null; };
   }, []);
+  /** Enters or leaves full screen (the screen and its controls). */
+  const toggleFs = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void player.current?.requestFullscreen?.().catch(() => {});
+  };
 
   // Progress readout while playing.
   useEffect(() => {
@@ -82,10 +102,13 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
   const seek = (t: number) => { rp.current?.play(t); setPlaying(true); setPos((x) => ({ ...x, t })); };
 
   return (
-    <div className="alog-replay">
+    <div className="alog-replay" ref={player} data-fs={fs || undefined}>
       {status === "idle" && <button type="button" onClick={load}>Load replay ({seqs.length || 1} chunk{seqs.length === 1 ? "" : "s"})</button>}
       {status === "loading" && <p className="alog-muted">Loading replay…</p>}
       {status === "error" && <p className="alog-err">Could not load this replay{why === "empty" ? " (no recorded frames; it may have expired)" : why ? ` (${why})` : ""}.</p>}
+      <div ref={frame} className="alog-replay-frame" hidden={status !== "ready"}>
+        <div ref={host} className="alog-replay-stage" />
+      </div>
       {status === "ready" && (
         <div className="alog-replay-bar" role="group" aria-label="Replay controls">
           <button type="button" onClick={toggle} aria-pressed={playing}>{playing ? "Pause" : "Play"}</button>
@@ -97,9 +120,9 @@ export default function ReplayPlayer({ visitId, seqs, events }: { visitId: strin
             </select>
           </label>
           <label className="inline"><input type="checkbox" checked={skip} onChange={(e) => { setSkip(e.target.checked); rp.current?.setConfig({ skipInactive: e.target.checked }); }} />Skip idle</label>
+          <button type="button" className="alog-fs" onClick={toggleFs} aria-pressed={fs}>{fs ? "Exit full screen" : "Full screen"}</button>
         </div>
       )}
-      <div ref={host} className="alog-replay-stage" hidden={status !== "ready"} />
     </div>
   );
 }

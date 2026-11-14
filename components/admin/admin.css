@@ -457,11 +457,8 @@ line.d-gl { stroke: var(--line); stroke-dasharray: 2 4; }
 
 /* replay player (components/visitor-log/ReplayPlayer markup) */
 .dash .alog-replay button, .dash .alog-replay select { min-height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid var(--line-2); background: transparent; color: var(--fg); font: 500 12px/1 var(--mono); cursor: pointer; }
-.dash .alog-replay-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; }
 .dash .alog-replay-bar input[type="range"] { flex: 1 1 200px; min-width: 120px; accent-color: var(--pink); }
 .dash .alog-replay-bar label { display: flex; align-items: center; gap: 6px; font: 400 12px/1 var(--mono); color: var(--muted); }
-.dash .alog-replay-stage { overflow: hidden; border: 1px solid var(--line-2); border-radius: 4px; background: #fff; }
-.dash .alog-replay-stage .replayer-wrapper { position: relative; }
 .dash .alog-muted { color: var(--muted); } .dash .alog-err { color: var(--red); } .dash .alog-mono { font: 500 12px var(--mono); }
 
 /* ── phones ───────────────────────────────────────────────────────────────────────────────────────────── */
