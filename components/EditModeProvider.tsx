@@ -2,8 +2,7 @@
 import { createContext, useContext, useRef, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-const TAB_AUTH_KEY = "rithvik-tab-auth"; // holds this tab's sign-in expiry (epoch ms)
-const SESSION_MS = 5 * 60 * 60 * 1000; // a sign-in lasts 5 hours, then a fresh code is needed
+import { ADMIN_SESSION_MS as SESSION_MS, TAB_AUTH_KEY } from "@/lib/admin-tab"; // a sign-in lasts 5 hours, then a fresh code is needed
 /** Marks this tab signed in until 5 hours from now. */
 const armTab = () => sessionStorage.setItem(TAB_AUTH_KEY, String(Date.now() + SESSION_MS));
 /** Milliseconds left on this tab's sign-in (0 = none or expired). */

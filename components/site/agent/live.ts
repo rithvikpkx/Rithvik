@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { adminHeaders } from "@/lib/admin-tab";
 
 /** Voice mode: one live voice session over WebRTC (mic up, voice down, events on the "oai-events" data channel), as a
  *  module-level store like ./speech. /api/voice/live trades the browser's offer for OpenAI's answer, so the key never
@@ -140,7 +141,7 @@ export async function startLive(h: LiveHandlers, prefs: LivePrefs) {
       const t = setTimeout(done, 4000);
       pc!.addEventListener("icegatheringstatechange", () => { if (pc!.iceGatheringState === "complete") { clearTimeout(t); done(); } });
     });
-    const res = await fetch("/api/voice/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sdp: pc.localDescription?.sdp, ...prefs }) });
+    const res = await fetch("/api/voice/live", { method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() }, body: JSON.stringify({ sdp: pc.localDescription?.sdp, ...prefs }) });
     const data = (await res.json().catch(() => ({}))) as { sdp?: string; error?: string };
     if (!res.ok || !data.sdp) throw new Error(data.error ?? "Voice mode could not start.");
     if (mine !== gen) throw new Error("");

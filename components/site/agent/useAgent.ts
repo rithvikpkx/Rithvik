@@ -2,6 +2,7 @@
 import { speak, stopSpeaking } from "./speech";
 import { cursorOn, perform } from "./cursor";
 import { RESUME_KEY, liveActive, liveQuiet } from "./live";
+import { adminHeaders } from "@/lib/admin-tab";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadHistory, pushHistory, saveHistory, stepHistory } from "@/lib/agent/history";
 import { resolveTarget } from "@/lib/agent/targets";
@@ -329,7 +330,7 @@ export function useAgent(host: Host) {
   /** Reads this visitor's windows (typed chat and voice mode, or "admin: no limits") into the status bar, quietly. */
   const refreshUsage = useCallback(async () => {
     try {
-      const r = await fetch("/api/chat/usage", { cache: "no-store" });
+      const r = await fetch("/api/chat/usage", { cache: "no-store", headers: adminHeaders() });
       if (!r.ok) return;
       const j = (await r.json()) as { admin?: boolean; limit?: number; remaining?: number; reset?: number | null; voice?: { limit: number; remaining: number; reset: number | null } | null };
       setUsage((p) => (j.admin ? { ...p, admin: true }
@@ -342,7 +343,7 @@ export function useAgent(host: Host) {
     const rid = add({ kind: "tool", name: "Usage", args: "", result: "checking…" });
     let u = usageRef.current;
     try {
-      const r = await fetch("/api/chat/usage", { cache: "no-store" });
+      const r = await fetch("/api/chat/usage", { cache: "no-store", headers: adminHeaders() });
       if (r.ok) {
         const j = (await r.json()) as { limit: number; remaining: number; reset: number | null };
         u = { ...u, limit: j.limit, remaining: j.remaining, reset: j.reset ?? undefined };
@@ -398,7 +399,7 @@ export function useAgent(host: Host) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...adminHeaders() },
         signal: me.ctl.signal,
         body: JSON.stringify({
           message: q,
@@ -578,7 +579,7 @@ export function useAgent(host: Host) {
     liveQ.current = ""; liveTools.current = [];
     setTurns((p) => [...p, { q, a, suggestions: [], at: Date.now() }]);
     // into the server log too, so the dashboard and share links include voice turns
-    void fetch("/api/voice/log", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: readSession(), user: q, agent: a, tools }) })
+    void fetch("/api/voice/log", { method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() }, body: JSON.stringify({ sessionId: readSession(), user: q, agent: a, tools }) })
       .then((r) => r.json()).then((j: { sessionId?: string }) => { if (j.sessionId && j.sessionId !== readSession()) { writeSession(j.sessionId); setSessionId(j.sessionId); } })
       .catch(() => { /* the log is best-effort */ });
   }, [patch]);
@@ -603,7 +604,7 @@ export function useAgent(host: Host) {
     let j: { call?: { id: string; name: string; args: Record<string, string>; result?: string; artifact?: unknown } | null; reply?: string } = {};
     try {
       const res = await fetch("/api/voice/tool", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() },
         body: JSON.stringify({ name, arguments: args, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       });
       j = await res.json();

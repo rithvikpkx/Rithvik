@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { adminHeaders } from "@/lib/admin-tab";
 import { BASE_RATE, clampRate, pickStyle, pickVoice, speakable, type StyleId } from "@/lib/voice";
 
 /** Spoken replies as a tiny module-level store, so the agent's state machine can call `speak(answer)` /
@@ -70,7 +71,7 @@ export async function speak(text: string, force = false) {
   set({ speaking: true });
   try {
     const res = await fetch("/api/speak", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", ...adminHeaders() },
       body: JSON.stringify({ text: input, voice: snap.voice, style: snap.style }), signal: ctl.signal,
     });
     if (!res.ok) throw new Error(String(res.status));

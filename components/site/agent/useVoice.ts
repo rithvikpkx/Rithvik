@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { adminHeaders } from "@/lib/admin-tab";
 import { MAX_AUDIO_MS } from "@/lib/voice";
 
 export type VoiceState = "idle" | "listening" | "transcribing" | "error";
@@ -39,7 +40,7 @@ export function useVoice(onTranscript: (text: string) => void) {
       const body = new FormData();
       body.set("audio", blob, "voice");
       body.set("ms", String(ms));
-      const res = await fetch("/api/transcribe", { method: "POST", body, signal: ctl.current.signal });
+      const res = await fetch("/api/transcribe", { method: "POST", body, headers: adminHeaders(), signal: ctl.current.signal });
       const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
       if (!res.ok) return fail(data.error ?? "Voice failed.");
       if (!data.text) return fail("Didn't catch that.");
