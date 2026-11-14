@@ -2,7 +2,7 @@ import "server-only";
 import { adminClient } from "@/lib/supabase-server";
 import { headers } from "next/headers";
 import { ipBucket } from "@/lib/rate-limit";
-import { isOwner, isOwnerHeaders } from "@/lib/track/owner";
+import { isOwner, isOwnerHeaders, LOCAL_DEV } from "@/lib/track/owner";
 import { visitorIdFromCookie } from "@/lib/track/schema";
 import { clip, geoFromHeaders, hashIp, isUuid, safeInt, toMessageRow, type TurnRow } from "./obs";
 
@@ -18,6 +18,7 @@ export async function startSession(
   opts: { firstDesign?: string; referrer?: string } = {},
 ): Promise<string | null> {
   // The owner's chats are logged (so Share works) but flagged `is_owner`, and skip visitor linking below.
+  if (LOCAL_DEV) return null; // local dev and test runs never reach the conversation log
   const owner = isOwner(req);
   try {
     const db = adminClient();
@@ -71,7 +72,7 @@ export async function logRequest(m: {
 }): Promise<void> {
   try {
     // No request is passed in, so read it from the ambient context; outside one it throws and we log.
-    if (isOwnerHeaders(await headers())) return;
+    if (LOCAL_DEV || isOwnerHeaders(await headers())) return;
   } catch { /* no request context */ }
   try {
     const { error } = await adminClient().from("agent_requests").insert({
