@@ -75,7 +75,7 @@ export function DayRing({ values, labels, now, label, size = 300, children }: {
   );
 }
 
-const ORDER = ["top", "work", "experience", "about", "play", "questions", "contact"];
+const ORDER = ["top", "experience", "work", "about", "play", "questions", "contact"];
 
 /** How far people get down the page: the site's sections in order as one river whose width is the visits that
  *  reached each, with dwell under each station. */

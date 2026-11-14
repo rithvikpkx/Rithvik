@@ -74,7 +74,7 @@ export const fixture: Content = {
     ["Where are you based?", "West Lafayette, Indiana during the school year. I'm in San Francisco right now."],
     ["What's the best way to reach you?", "Email. The Contact section opens a message window."],
     ["Can I ask this site questions?", "Yes. Press ⌘K or / to open the agent. It answers from what's on this site and says so when it doesn't know."],
-    ["What's playing on the record player?", "Smooth Operator by Sade and Adventure of a Lifetime by Coldplay. Pick one from the crate under the deck."],
+    ["What's playing on the record player?", "A rotating crate of my favourite songs. Open Play to see what is in it and pick a record."],
   ],
   numbers: [
     ["500+", "learners on the RAG platform"],
